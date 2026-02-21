@@ -1,0 +1,402 @@
+/* NavLink.css */
+
+/* Base NavLink Styles */
+.nav-link-custom {
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.3s ease;
+  position: relative;
+  font-family: 'Lato', sans-serif;
+  font-weight: 500;
+  font-size: 1rem;
+  padding: 0.5rem 0;
+  cursor: pointer;
+  display: inline-block;
+}
+
+.nav-link-custom:hover {
+  color: #4a2c2a;
+}
+
+/* Active state styles */
+.nav-link-custom.active {
+  color: #4a2c2a;
+  font-weight: 600;
+}
+
+/* Active indicator (underline effect) */
+.nav-link-custom.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, #4a2c2a, #8b5e3c);
+  border-radius: 2px;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+/* Hover effect with animated underline */
+.nav-link-custom::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, #4a2c2a, #8b5e3c);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.3s ease;
+  border-radius: 2px;
+}
+
+.nav-link-custom:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+/* Dark background variant (for headers with dark background) */
+.nav-link-custom.light {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.nav-link-custom.light:hover {
+  color: white;
+}
+
+.nav-link-custom.light::after {
+  background: linear-gradient(90deg, white, #e8d6c0);
+}
+
+.nav-link-custom.light.active {
+  color: white;
+}
+
+/* Pending state styles */
+.nav-link-custom.pending {
+  opacity: 0.7;
+  pointer-events: none;
+  position: relative;
+}
+
+.nav-link-custom.pending::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: -20px;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 12px;
+  border: 2px solid #4a2c2a;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: translateY(-50%) rotate(360deg);
+  }
+}
+
+/* Different sizes */
+.nav-link-custom.sm {
+  font-size: 0.875rem;
+  padding: 0.375rem 0;
+}
+
+.nav-link-custom.lg {
+  font-size: 1.125rem;
+  padding: 0.625rem 0;
+}
+
+/* Variants */
+.nav-link-custom.underline-none::after {
+  display: none;
+}
+
+.nav-link-custom.underline-none:hover::after {
+  display: none;
+}
+
+.nav-link-custom.underline-none.active::after {
+  display: none;
+}
+
+/* Button-like variant */
+.nav-link-custom.button-like {
+  padding: 0.625rem 1.25rem;
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background: transparent;
+  transition: all 0.3s ease;
+}
+
+.nav-link-custom.button-like::after {
+  display: none;
+}
+
+.nav-link-custom.button-like:hover {
+  border-color: #4a2c2a;
+  background: rgba(74, 44, 42, 0.05);
+  transform: translateY(-2px);
+}
+
+.nav-link-custom.button-like.active {
+  background: #4a2c2a;
+  color: white;
+  border-color: #4a2c2a;
+}
+
+.nav-link-custom.button-like.active:hover {
+  background: #5f3a37;
+}
+
+.nav-link-custom.button-like.light:hover {
+  border-color: white;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.nav-link-custom.button-like.light.active {
+  background: white;
+  color: #4a2c2a;
+  border-color: white;
+}
+
+/* Icon support */
+.nav-link-custom.icon-left,
+.nav-link-custom.icon-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.nav-link-custom.icon-left svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  transition: transform 0.3s ease;
+}
+
+.nav-link-custom.icon-right svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  transition: transform 0.3s ease;
+}
+
+.nav-link-custom.icon-left:hover svg {
+  transform: translateX(-3px);
+}
+
+.nav-link-custom.icon-right:hover svg {
+  transform: translateX(3px);
+}
+
+/* Disabled state */
+.nav-link-custom.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .nav-link-custom {
+    font-size: 0.9375rem;
+    padding: 0.375rem 0;
+  }
+  
+  .nav-link-custom.lg {
+    font-size: 1rem;
+  }
+  
+  .nav-link-custom.button-like {
+    padding: 0.5rem 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .nav-link-custom {
+    font-size: 0.875rem;
+  }
+  
+  .nav-link-custom::after {
+    bottom: -1px;
+    height: 1.5px;
+  }
+}
+
+/* Print styles */
+@media print {
+  .nav-link-custom {
+    color: black !important;
+    text-decoration: underline !important;
+  }
+  
+  .nav-link-custom::after {
+    display: none !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .nav-link-custom {
+    color: black;
+  }
+  
+  .nav-link-custom:hover {
+    color: #4a2c2a;
+    text-decoration: underline;
+  }
+  
+  .nav-link-custom.active {
+    color: #4a2c2a;
+    font-weight: bold;
+    text-decoration: underline;
+  }
+  
+  .nav-link-custom::after {
+    display: none;
+  }
+  
+  .nav-link-custom.light {
+    color: white;
+  }
+  
+  .nav-link-custom.light.active {
+    color: white;
+  }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .nav-link-custom,
+  .nav-link-custom::after,
+  .nav-link-custom svg,
+  .nav-link-custom.pending::before {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .nav-link-custom:not(.light) {
+    color: #f0f0f0;
+  }
+  
+  .nav-link-custom:not(.light):hover {
+    color: #e8d6c0;
+  }
+  
+  .nav-link-custom:not(.light).active {
+    color: #e8d6c0;
+  }
+  
+  .nav-link-custom:not(.light)::after {
+    background: linear-gradient(90deg, #e8d6c0, #c0a890);
+  }
+  
+  .nav-link-custom:not(.light).button-like:hover {
+    background: rgba(232, 214, 192, 0.1);
+    border-color: #e8d6c0;
+  }
+  
+  .nav-link-custom:not(.light).button-like.active {
+    background: #e8d6c0;
+    color: #2c1e1c;
+  }
+}
+
+/* Focus styles for accessibility */
+.nav-link-custom:focus-visible {
+  outline: 2px solid #4a2c2a;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.nav-link-custom.light:focus-visible {
+  outline-color: white;
+}
+
+/* Active className styles */
+.nav-link-custom.active-class {
+  color: #4a2c2a;
+  font-weight: 600;
+  position: relative;
+}
+
+.nav-link-custom.active-class::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: #4a2c2a;
+  border-radius: 2px;
+}
+
+/* Pending className styles */
+.nav-link-custom.pending-class {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* Ensure smooth transitions */
+.nav-link-custom {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Make sure the link is always clickable in the right area */
+.nav-link-custom {
+  cursor: pointer;
+  user-select: none;
+}
+
+/* For react-router-dom NavLink compatibility */
+a.active {
+  color: #4a2c2a;
+  font-weight: 600;
+}
+
+a.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: #4a2c2a;
+  border-radius: 2px;
+}
+
+/* Custom animation for active state */
+@keyframes activePulse {
+  0% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.6;
+  }
+}
+
+.nav-link-custom.active-pulse {
+  animation: activePulse 2s ease-in-out infinite;
+}

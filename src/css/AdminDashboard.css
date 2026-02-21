@@ -1,0 +1,842 @@
+/* AdminDashboard.css */
+
+.admin-dashboard {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  animation: fadeUp 0.5s ease-out;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dashboard-header {
+  margin-bottom: 2rem;
+}
+
+.dashboard-header h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #2c1e1c;
+  margin: 0 0 0.25rem 0;
+}
+
+.dashboard-header p {
+  font-family: 'Lato', sans-serif;
+  font-size: 0.875rem;
+  color: #6b5752;
+  margin: 0;
+}
+
+/* Stats Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  border: 1px solid #e0d6cc;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-title {
+  font-family: 'Lato', sans-serif;
+  font-size: 0.875rem;
+  color: #6b5752;
+  margin: 0 0 0.25rem 0;
+}
+
+.stat-value {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #2c1e1c;
+  margin: 0;
+}
+
+.stat-trend {
+  font-family: 'Lato', sans-serif;
+  font-size: 0.75rem;
+  color: #10b981;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.25rem;
+}
+
+.trend-icon {
+  stroke-width: 2.5;
+}
+
+.stat-icon {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background-color: rgba(0, 123, 255, 0.1);
+}
+
+.stat-card.info .stat-icon {
+  background-color: rgba(0, 123, 255, 0.1);
+  color: #007bff;
+}
+
+.stat-card.success .stat-icon {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+.stat-card.danger .stat-icon {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+/* Dashboard Grid */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Chart Card */
+.chart-card {
+  background: white;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  border: 1px solid #e0d6cc;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.chart-card h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #2c1e1c;
+  margin: 0 0 1.5rem 0;
+}
+
+.chart-container {
+  width: 100%;
+  height: 240px;
+}
+
+/* Cards */
+.recent-orders-card,
+.summary-card {
+  background: white;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  border: 1px solid #e0d6cc;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.recent-orders-card h3,
+.summary-card h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #2c1e1c;
+  margin: 0 0 1.5rem 0;
+}
+
+/* Orders List */
+.orders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.order-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.order-info {
+  overflow: hidden;
+  flex: 1;
+}
+
+.order-client {
+  font-family: 'Lato', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #2c1e1c;
+  margin: 0 0 0.25rem 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.order-total {
+  font-family: 'Lato', sans-serif;
+  font-size: 0.75rem;
+  color: #6b5752;
+  margin: 0;
+}
+
+/* Status Badges */
+.status-badge {
+  font-family: 'Lato', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.status-badge.new {
+  background-color: #f8f4f0;
+  color: #6b5752;
+}
+
+.status-badge.confirmed {
+  background-color: rgba(0, 123, 255, 0.1);
+  color: #007bff;
+}
+
+.status-badge.shipped {
+  background-color: rgba(255, 193, 7, 0.1);
+  color: #b88b0f;
+}
+
+.status-badge.delivered {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+.status-badge.cancelled {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.status-badge.returned {
+  background-color: rgba(139, 92, 246, 0.1);
+  color: #8b5cf6;
+}
+
+/* Summary Items */
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #e0d6cc;
+}
+
+.summary-item:last-child {
+  border-bottom: none;
+}
+
+.summary-item span:first-child {
+  font-family: 'Lato', sans-serif;
+  color: #6b5752;
+  font-size: 0.875rem;
+}
+
+.summary-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 0 0;
+  margin-top: 0.5rem;
+  border-top: 2px solid #e0d6cc;
+}
+
+.summary-total span:first-child {
+  font-family: 'Playfair Display', serif;
+  font-weight: 600;
+  color: #2c1e1c;
+}
+
+.amount {
+  font-family: 'Lato', sans-serif;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.amount.positive {
+  color: #10b981;
+}
+
+.amount.negative {
+  color: #ef4444;
+}
+
+/* No Data State */
+.no-data {
+  text-align: center;
+  color: #a38f89;
+  padding: 1.25rem;
+  font-family: 'Lato', sans-serif;
+  font-size: 0.875rem;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-dashboard {
+    padding: 1rem;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .dashboard-header h2 {
+    font-size: 1.5rem;
+  }
+  
+  .stat-value {
+    font-size: 1.5rem;
+  }
+  
+  .chart-container {
+    height: 200px;
+  }
+}/* Add these new styles to your existing AdminDashboard.css */
+
+/* Section Title */
+.section-title {
+  margin: 1.5rem 0 1rem 0;
+}
+
+.section-title h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2c1e1c;
+  margin: 0;
+  position: relative;
+  padding-bottom: 0.5rem;
+}
+
+.section-title h3::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 40px;
+  height: 2px;
+  background: #4a2c2a;
+  border-radius: 2px;
+}
+
+.section-title p {
+  font-family: 'Lato', sans-serif;
+  font-size: 0.875rem;
+  color: #6b5752;
+  margin: 0.25rem 0 0 0;
+}
+
+/* Header Stats */
+.header-stats {
+  display: flex;
+  align-items: center;
+}
+
+.last-update {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: 'Lato', sans-serif;
+  font-size: 0.75rem;
+  color: #8b7a75;
+  background: white;
+  padding: 0.5rem 1rem;
+  border-radius: 2rem;
+  border: 1px solid #e0d6cc;
+}
+
+.last-update svg {
+  color: #4a2c2a;
+}
+
+/* Status Grid - for 8 cards */
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+/* Status Circle */
+.status-circle {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.05);
+}
+
+.status-circle.new {
+  background-color: #007bff;
+}
+
+.status-circle.confirmed {
+  background-color: #10b981;
+}
+
+.status-circle.shipped {
+  background-color: #f59e0b;
+}
+
+.status-circle.delivered {
+  background-color: #34d399;
+}
+
+.status-circle.cancelled {
+  background-color: #ef4444;
+}
+
+.status-circle.returned {
+  background-color: #8b5cf6;
+}
+
+/* Order Item Enhancement */
+.order-main {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.order-details {
+  font-family: 'Lato', sans-serif;
+  font-size: 0.7rem;
+  color: #8b7a75;
+  margin: 0;
+}
+
+.order-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.status-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.status-icon.new {
+  color: #007bff;
+}
+
+.status-icon.confirmed {
+  color: #10b981;
+}
+
+.status-icon.shipped {
+  color: #f59e0b;
+}
+
+.status-icon.delivered {
+  color: #34d399;
+}
+
+.status-icon.cancelled {
+  color: #ef4444;
+}
+
+.status-icon.returned {
+  color: #8b5cf6;
+}
+
+/* New color classes for stat cards */
+.stat-card.primary .stat-icon {
+  background-color: rgba(74, 44, 42, 0.1);
+  color: #4a2c2a;
+}
+
+.stat-card.primary .stat-value {
+  color: #4a2c2a;
+}
+
+.stat-card.purple .stat-icon {
+  background-color: rgba(139, 92, 246, 0.1);
+  color: #8b5cf6;
+}
+
+.stat-card.purple .stat-value {
+  color: #8b5cf6;
+}
+
+.stat-card.warning .stat-icon {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+}
+
+.stat-card.warning .stat-value {
+  color: #f59e0b;
+}
+
+.stat-trend {
+  font-family: 'Lato', sans-serif;
+  font-size: 0.7rem;
+  color: #10b981;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.25rem;
+}
+
+/* Responsive for status grid */
+@media (max-width: 1200px) {
+  .status-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .status-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .status-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* No Data Enhancement */
+.no-data {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 2rem;
+  color: #a38f89;
+  font-family: 'Lato', sans-serif;
+  font-size: 0.875rem;
+}
+
+.no-data svg {
+  opacity: 0.5;
+}
+
+/* Amount success */
+.amount.success {
+  color: #10b981;
+}/* Add these new styles to your existing AdminDashboard.css */
+
+/* Section Title */
+.section-title {
+  margin: 1.5rem 0 1rem 0;
+}
+
+.section-title h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2c1e1c;
+  margin: 0;
+  position: relative;
+  padding-bottom: 0.5rem;
+}
+
+.section-title h3::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 40px;
+  height: 2px;
+  background: #4a2c2a;
+  border-radius: 2px;
+}
+
+.section-title p {
+  font-family: 'Lato', sans-serif;
+  font-size: 0.875rem;
+  color: #6b5752;
+  margin: 0.25rem 0 0 0;
+}
+
+/* Header Stats */
+.header-stats {
+  display: flex;
+  align-items: center;
+}
+
+.last-update {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: 'Lato', sans-serif;
+  font-size: 0.75rem;
+  color: #8b7a75;
+  background: white;
+  padding: 0.5rem 1rem;
+  border-radius: 2rem;
+  border: 1px solid #e0d6cc;
+}
+
+.last-update svg {
+  color: #4a2c2a;
+}
+
+/* Status Grid - for 8 cards */
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+/* Charts Grid */
+.charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin: 2rem 0;
+}
+
+.chart-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.chart-header svg {
+  color: #4a2c2a;
+}
+
+.chart-header h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #2c1e1c;
+  margin: 0;
+}
+
+.pie-chart-container {
+  width: 100%;
+  height: 280px;
+}
+
+/* Status Circle */
+.status-circle {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.05);
+}
+
+.status-circle.new {
+  background-color: #007bff;
+}
+
+.status-circle.confirmed {
+  background-color: #10b981;
+}
+
+.status-circle.shipped {
+  background-color: #f59e0b;
+}
+
+.status-circle.delivered {
+  background-color: #34d399;
+}
+
+.status-circle.cancelled {
+  background-color: #ef4444;
+}
+
+.status-circle.returned {
+  background-color: #8b5cf6;
+}
+
+/* Order Item Enhancement */
+.order-main {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.order-details {
+  font-family: 'Lato', sans-serif;
+  font-size: 0.7rem;
+  color: #8b7a75;
+  margin: 0;
+}
+
+.order-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.status-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.status-icon.new {
+  color: #007bff;
+}
+
+.status-icon.confirmed {
+  color: #10b981;
+}
+
+.status-icon.shipped {
+  color: #f59e0b;
+}
+
+.status-icon.delivered {
+  color: #34d399;
+}
+
+.status-icon.cancelled {
+  color: #ef4444;
+}
+
+.status-icon.returned {
+  color: #8b5cf6;
+}
+
+/* New color classes for stat cards */
+.stat-card.primary .stat-icon {
+  background-color: rgba(74, 44, 42, 0.1);
+  color: #4a2c2a;
+}
+
+.stat-card.primary .stat-value {
+  color: #4a2c2a;
+}
+
+.stat-card.purple .stat-icon {
+  background-color: rgba(139, 92, 246, 0.1);
+  color: #8b5cf6;
+}
+
+.stat-card.purple .stat-value {
+  color: #8b5cf6;
+}
+
+.stat-card.warning .stat-icon {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+}
+
+.stat-card.warning .stat-value {
+  color: #f59e0b;
+}
+
+.stat-trend {
+  font-family: 'Lato', sans-serif;
+  font-size: 0.7rem;
+  color: #10b981;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.25rem;
+}
+
+/* Recent Orders Section */
+.recent-orders-section {
+  margin: 2rem 0;
+}
+
+.recent-orders-card.full-width {
+  width: 100%;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .status-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .status-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .status-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* No Data Enhancement */
+.no-data {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 2rem;
+  color: #a38f89;
+  font-family: 'Lato', sans-serif;
+  font-size: 0.875rem;
+}
+
+.no-data svg {
+  opacity: 0.5;
+}
+
+/* Amount success */
+.amount.success {
+  color: #10b981;
+}

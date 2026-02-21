@@ -1,0 +1,58 @@
+.carousel-container {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  padding: 20px 0;
+}
+
+.carousel-gradient {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 100px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.carousel-gradient-left {
+  left: 0;
+  background: linear-gradient(to right, #f8f4f0, transparent);
+}
+
+.carousel-gradient-right {
+  right: 0;
+  background: linear-gradient(to left, #f8f4f0, transparent);
+}
+
+.carousel-track-container {
+  overflow: hidden;
+  cursor: grab;
+}
+
+.carousel-track-container:active {
+  cursor: grabbing;
+}
+
+.carousel-track {
+  display: flex;
+  gap: 20px;
+  width: max-content;
+  will-change: transform;
+  transition: transform 0.05s linear;
+}
+
+.carousel-item {
+  width: 220px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .carousel-gradient-left,
+  .carousel-gradient-right {
+    width: 50px;
+  }
+  
+  .carousel-item {
+    width: 180px;
+  }
+}

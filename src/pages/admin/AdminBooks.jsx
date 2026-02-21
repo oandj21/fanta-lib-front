@@ -8,6 +8,9 @@ import {
 import { fetchLivres, createLivre, updateLivre, deleteLivre, deleteLivreImage } from "../../store/store";
 import "../../css/AdminBooks.css";
 
+// API Base URL - should match your backend
+const API_BASE_URL = "https://fanta-lib-back-production.up.railway.app";
+
 export default function AdminBooks() {
   const dispatch = useDispatch();
   const { list: bookList = [], loading } = useSelector((state) => state.livres);
@@ -50,6 +53,62 @@ export default function AdminBooks() {
     setCurrentPage(1);
   }, [searchTerm, statusFilter, categoryFilter, sortBy, sortOrder]);
 
+  // Helper function to get proper image URL
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return null;
+    
+    // If it's already a full URL
+    if (imagePath.startsWith('http')) return imagePath;
+    
+    // Clean the path - remove any 'storage/' prefix if present
+    // The path might come as 'storage/books/filename.jpg' or '/storage/books/filename.jpg' or 'books/filename.jpg'
+    let cleanPath = imagePath;
+    
+    // Remove leading slash if present
+    if (cleanPath.startsWith('/')) {
+      cleanPath = cleanPath.substring(1);
+    }
+    
+    // Remove 'storage/' prefix if present (case insensitive)
+    if (cleanPath.toLowerCase().startsWith('storage/')) {
+      cleanPath = cleanPath.substring(8); // Remove 'storage/'
+    }
+    
+    return `${API_BASE_URL}/storage/${cleanPath}`;
+  };
+
+  // Function to safely get images array from different formats
+  const getImagesArray = (images) => {
+    if (!images) return [];
+    
+    // If it's already an array
+    if (Array.isArray(images)) return images;
+    
+    // If it's a string
+    if (typeof images === 'string') {
+      // Try to parse JSON
+      try {
+        const parsed = JSON.parse(images);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        // If it's not JSON, it might be a comma-separated string
+        if (images.includes(',')) {
+          return images.split(',').map(path => path.trim());
+        }
+        // Single image path
+        return [images];
+      }
+    }
+    
+    // If it's an object with a path property
+    if (images && typeof images === 'object') {
+      if (images.path) return [images.path];
+      if (images.url) return [images.url];
+    }
+    
+    return [];
+  };
+
   // Get unique categories for filter dropdown and suggestions
   const categories = useMemo(() => {
     const cats = bookList
@@ -77,7 +136,7 @@ export default function AdminBooks() {
     const inputLower = categoryInput.toLowerCase();
     return categories
       .filter(cat => cat.toLowerCase().includes(inputLower))
-      .slice(0, 5); // Limit to 5 suggestions
+      .slice(0, 5);
   }, [categories, categoryInput]);
 
   // Filter and search books
@@ -276,21 +335,6 @@ export default function AdminBooks() {
     setCurrentPage(pageNumber);
     // Scroll to top of table
     document.querySelector('.table-wrapper')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
-
-  // Function to safely get images array from different formats
-  const getImagesArray = (images) => {
-    if (!images) return [];
-    if (Array.isArray(images)) return images;
-    if (typeof images === 'string') {
-      try {
-        const parsed = JSON.parse(images);
-        return Array.isArray(parsed) ? parsed : [];
-      } catch (e) {
-        return [];
-      }
-    }
-    return [];
   };
 
   // Cleanup preview URLs on unmount
@@ -603,10 +647,11 @@ export default function AdminBooks() {
                       <td>
                         {bookImages.length > 0 ? (
                           <img 
-                            src={`https://fanta-lib-back-production.up.railway.app/storage/${bookImages[0]}`} 
+                            src={getImageUrl(bookImages[0])} 
                             alt={book.titre} 
                             className="book-thumb"
                             onError={(e) => {
+                              console.log('Image failed to load:', e.target.src);
                               e.target.onerror = null;
                               e.target.src = 'https://via.placeholder.com/40x52?text=No+Image';
                             }}
@@ -818,9 +863,10 @@ export default function AdminBooks() {
                           existingImages.map((image, index) => (
                             <div key={index} className="image-item">
                               <img 
-                                src={`https://fanta-lib-back-production.up.railway.app/storage/${image}`} 
+                                src={getImageUrl(image)} 
                                 alt={`${editing.titre} - ${index + 1}`}
                                 onError={(e) => {
+                                  console.log('Failed to load image:', e.target.src);
                                   e.target.onerror = null;
                                   e.target.src = 'https://via.placeholder.com/100x150?text=Image+Error';
                                 }}

@@ -8,9 +8,6 @@ import {
 import { fetchLivres, createLivre, updateLivre, deleteLivre, deleteLivreImage } from "../../store/store";
 import "../../css/AdminBooks.css";
 
-// API Base URL - should match your backend
-const API_BASE_URL = "https://fanta-lib-back-production.up.railway.app";
-
 export default function AdminBooks() {
   const dispatch = useDispatch();
   const { list: bookList = [], loading } = useSelector((state) => state.livres);
@@ -53,61 +50,6 @@ export default function AdminBooks() {
     setCurrentPage(1);
   }, [searchTerm, statusFilter, categoryFilter, sortBy, sortOrder]);
 
-  // Helper function to get proper image URL
-  const getImageUrl = (imagePath) => {
-    if (!imagePath) return null;
-    
-    // If it's already a full URL
-    if (imagePath.startsWith('http')) return imagePath;
-    
-    // Clean the path - remove any 'storage/' prefix if present
-    let cleanPath = imagePath;
-    
-    // Remove leading slash if present
-    if (cleanPath.startsWith('/')) {
-      cleanPath = cleanPath.substring(1);
-    }
-    
-    // Remove 'storage/' prefix if present (case insensitive)
-    if (cleanPath.toLowerCase().startsWith('storage/')) {
-      cleanPath = cleanPath.substring(8); // Remove 'storage/'
-    }
-    
-    return `${API_BASE_URL}/storage/${cleanPath}`;
-  };
-
-  // Function to safely get images array from different formats
-  const getImagesArray = (images) => {
-    if (!images) return [];
-    
-    // If it's already an array
-    if (Array.isArray(images)) return images;
-    
-    // If it's a string
-    if (typeof images === 'string') {
-      // Try to parse JSON
-      try {
-        const parsed = JSON.parse(images);
-        return Array.isArray(parsed) ? parsed : [];
-      } catch (e) {
-        // If it's not JSON, it might be a comma-separated string
-        if (images.includes(',')) {
-          return images.split(',').map(path => path.trim());
-        }
-        // Single image path
-        return [images];
-      }
-    }
-    
-    // If it's an object with a path property
-    if (images && typeof images === 'object') {
-      if (images.path) return [images.path];
-      if (images.url) return [images.url];
-    }
-    
-    return [];
-  };
-
   // Get unique categories for filter dropdown and suggestions
   const categories = useMemo(() => {
     const cats = bookList
@@ -135,7 +77,7 @@ export default function AdminBooks() {
     const inputLower = categoryInput.toLowerCase();
     return categories
       .filter(cat => cat.toLowerCase().includes(inputLower))
-      .slice(0, 5);
+      .slice(0, 5); // Limit to 5 suggestions
   }, [categories, categoryInput]);
 
   // Filter and search books
@@ -334,6 +276,21 @@ export default function AdminBooks() {
     setCurrentPage(pageNumber);
     // Scroll to top of table
     document.querySelector('.table-wrapper')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  // Function to safely get images array from different formats
+  const getImagesArray = (images) => {
+    if (!images) return [];
+    if (Array.isArray(images)) return images;
+    if (typeof images === 'string') {
+      try {
+        const parsed = JSON.parse(images);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        return [];
+      }
+    }
+    return [];
   };
 
   // Cleanup preview URLs on unmount
@@ -603,7 +560,7 @@ export default function AdminBooks() {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th style={{ width: '80px' }}>Image</th>
+                  <th style={{ width: '60px' }}>Image</th>
                   <th onClick={() => {
                     setSortBy('titre');
                     setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
@@ -641,55 +598,24 @@ export default function AdminBooks() {
               <tbody>
                 {currentBooks.map((book) => {
                   const bookImages = getImagesArray(book.images);
-                  const hasMultipleImages = bookImages.length > 1;
-                  
                   return (
                     <tr key={book.id}>
                       <td>
-                        <div className="book-image-wrapper">
-                          {hasMultipleImages ? (
-                            <>
-                              {/* DEFAULT/STATIC: Show SECOND image (index 1) */}
-                              <img 
-                                src={getImageUrl(bookImages[1])} 
-                                alt={book.titre} 
-                                className="book-thumb default-image"
-                                onError={(e) => {
-                                  // Fallback to first image if second fails
-                                  e.target.src = getImageUrl(bookImages[0]) || 'https://via.placeholder.com/60x80?text=No+Image';
-                                }}
-                              />
-                              
-                              {/* HOVER: Show FIRST image (index 0) */}
-                              <img 
-                                src={getImageUrl(bookImages[0])} 
-                                alt={`${book.titre} - Alternate view`} 
-                                className="book-thumb hover-image"
-                                onError={(e) => {
-                                  // Fallback to placeholder if first fails
-                                  e.target.onerror = null;
-                                  e.target.src = 'https://via.placeholder.com/60x80?text=No+Image';
-                                }}
-                              />
-                            </>
-                          ) : bookImages.length === 1 ? (
-                            // Single image - no hover effect
-                            <img 
-                              src={getImageUrl(bookImages[0])} 
-                              alt={book.titre} 
-                              className="book-thumb single-image"
-                              onError={(e) => {
-                                e.target.onerror = null;
-                                e.target.src = 'https://via.placeholder.com/60x80?text=No+Image';
-                              }}
-                            />
-                          ) : (
-                            // No image at all
-                            <div className="book-thumb-placeholder">
-                              <ImageIcon size={24} />
-                            </div>
-                          )}
-                        </div>
+                        {bookImages.length > 0 ? (
+                          <img 
+                            src={`https://fanta-lib-back-production.up.railway.app/storage/${bookImages[0]}`} 
+                            alt={book.titre} 
+                            className="book-thumb"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = 'https://via.placeholder.com/40x52?text=No+Image';
+                            }}
+                          />
+                        ) : (
+                          <div className="book-thumb-placeholder">
+                            <ImageIcon size={20} />
+                          </div>
+                        )}
                       </td>
                       <td className="book-tit">{book.titre || "-"}</td>
                       <td>{book.auteur || "-"}</td>
@@ -892,10 +818,9 @@ export default function AdminBooks() {
                           existingImages.map((image, index) => (
                             <div key={index} className="image-item">
                               <img 
-                                src={getImageUrl(image)} 
+                                src={`https://fanta-lib-back-production.up.railway.app/storage/${image}`} 
                                 alt={`${editing.titre} - ${index + 1}`}
                                 onError={(e) => {
-                                  console.log('Failed to load image:', e.target.src);
                                   e.target.onerror = null;
                                   e.target.src = 'https://via.placeholder.com/100x150?text=Image+Error';
                                 }}
@@ -966,65 +891,6 @@ export default function AdminBooks() {
           </div>
         </div>
       )}
-
-      {/* Add CSS for image hover effect */}
-      <style jsx>{`
-        .book-image-wrapper {
-          position: relative;
-          width: 60px;
-          height: 80px;
-          overflow: hidden;
-          border-radius: 4px;
-          background-color: #f5f5f5;
-        }
-
-        .book-thumb {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          position: absolute;
-          top: 0;
-          left: 0;
-          transition: opacity 0.3s ease-in-out;
-        }
-
-        /* DEFAULT/STATIC: Show SECOND image */
-        .default-image {
-          opacity: 1;
-          z-index: 1;
-        }
-
-        /* HOVER: Show FIRST image */
-        .hover-image {
-          opacity: 0;
-          z-index: 2;
-        }
-
-        .single-image {
-          opacity: 1;
-          z-index: 1;
-        }
-
-        /* On hover, hide default (second) and show hover (first) */
-        tr:hover .default-image {
-          opacity: 0;
-        }
-
-        tr:hover .hover-image {
-          opacity: 1;
-        }
-
-        .book-thumb-placeholder {
-          width: 60px;
-          height: 80px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background-color: #f0f0f0;
-          border-radius: 4px;
-          color: #999;
-        }
-      `}</style>
     </div>
   );
 }

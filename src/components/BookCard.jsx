@@ -15,7 +15,7 @@ export default function BookCard({ book }) {
       try {
         const parsed = JSON.parse(images);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return `https://fanta-lib-back-production.up.railway.app/storage/${parsed[0]}`;
+          return `https://fanta-lib-back-production.up.railway.app/api/storage/${parsed[0]}`;
         }
       } catch (e) {
         console.error('Error parsing images:', e);
@@ -23,7 +23,7 @@ export default function BookCard({ book }) {
     }
     
     if (Array.isArray(images) && images.length > 0) {
-      return `https://fanta-lib-back-production.up.railway.app/storage/${images[0]}`;
+      return `https://fanta-lib-back-production.up.railway.app/api/storage/${images[0]}`;
     }
     
     return 'https://via.placeholder.com/300x400?text=No+Cover';

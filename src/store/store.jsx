@@ -1396,179 +1396,7 @@ const dashboardSlice = createSlice({
       });
   }
 });
-// ==============================================
-// 🚚 DELIVERY ACTIONS
-// ==============================================
 
-export const fetchDeliveryCities = createAsyncThunk(
-  "delivery/fetchCities",
-  async (_, thunkAPI) => {
-    try {
-      const response = await api.get("/delivery/cities");
-      return response.data.cities || [];
-    } catch (error) {
-      return handleApiError(error, thunkAPI);
-    }
-  }
-);
-
-export const fetchDeliveryStatuses = createAsyncThunk(
-  "delivery/fetchStatuses",
-  async (_, thunkAPI) => {
-    try {
-      const response = await api.get("/delivery/statuses");
-      return response.data.statuses || [];
-    } catch (error) {
-      return handleApiError(error, thunkAPI);
-    }
-  }
-);
-
-export const generateDeliveryCode = createAsyncThunk(
-  "delivery/generateCode",
-  async (prefix = "WLIV", thunkAPI) => {
-    try {
-      const response = await api.get(`/delivery/generate-code?prefix=${prefix}`);
-      return response.data.code;
-    } catch (error) {
-      return handleApiError(error, thunkAPI);
-    }
-  }
-);
-
-export const testDeliveryConnection = createAsyncThunk(
-  "delivery/testConnection",
-  async (_, thunkAPI) => {
-    try {
-      const response = await api.get("/delivery/test-connection");
-      return response.data;
-    } catch (error) {
-      return handleApiError(error, thunkAPI);
-    }
-  }
-);
-
-export const syncOrderWithDelivery = createAsyncThunk(
-  "commandes/syncWithDelivery",
-  async ({ id, deliveryData }, thunkAPI) => {
-    try {
-      const response = await api.post(`/commandes/${id}/sync-delivery`, deliveryData);
-      return response.data;
-    } catch (error) {
-      return handleApiError(error, thunkAPI);
-    }
-  }
-);
-
-export const trackDelivery = createAsyncThunk(
-  "commandes/trackDelivery",
-  async (id, thunkAPI) => {
-    try {
-      const response = await api.get(`/commandes/${id}/track-delivery`);
-      return response.data;
-    } catch (error) {
-      return handleApiError(error, thunkAPI);
-    }
-  }
-);
-
-export const requestReturn = createAsyncThunk(
-  "commandes/requestReturn",
-  async ({ id, reason }, thunkAPI) => {
-    try {
-      const response = await api.post(`/commandes/${id}/request-return`, { reason });
-      return response.data;
-    } catch (error) {
-      return handleApiError(error, thunkAPI);
-    }
-  }
-);
-
-export const requestRedelivery = createAsyncThunk(
-  "commandes/requestRedelivery",
-  async ({ id, reason, new_address, new_phone }, thunkAPI) => {
-    try {
-      const response = await api.post(`/commandes/${id}/request-redelivery`, {
-        reason,
-        new_address,
-        new_phone
-      });
-      return response.data;
-    } catch (error) {
-      return handleApiError(error, thunkAPI);
-    }
-  }
-);
-
-// ==============================================
-// 🚚 DELIVERY SLICE
-// ==============================================
-
-const deliverySlice = createSlice({
-  name: "delivery",
-  initialState: {
-    cities: [],
-    statuses: [],
-    loading: false,
-    error: null,
-    connectionTest: null,
-    generatedCode: null,
-  },
-  reducers: {
-    clearDeliveryError: (state) => {
-      state.error = null;
-    },
-    clearGeneratedCode: (state) => {
-      state.generatedCode = null;
-    }
-  },
-  extraReducers: (builder) => {
-    builder
-      // Fetch cities
-      .addCase(fetchDeliveryCities.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(fetchDeliveryCities.fulfilled, (state, action) => {
-        state.loading = false;
-        state.cities = action.payload;
-      })
-      .addCase(fetchDeliveryCities.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
-      // Fetch statuses
-      .addCase(fetchDeliveryStatuses.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(fetchDeliveryStatuses.fulfilled, (state, action) => {
-        state.loading = false;
-        state.statuses = action.payload;
-      })
-      .addCase(fetchDeliveryStatuses.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
-      // Generate code
-      .addCase(generateDeliveryCode.fulfilled, (state, action) => {
-        state.generatedCode = action.payload;
-      })
-      // Test connection
-      .addCase(testDeliveryConnection.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(testDeliveryConnection.fulfilled, (state, action) => {
-        state.loading = false;
-        state.connectionTest = action.payload;
-      })
-      .addCase(testDeliveryConnection.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      });
-  }
-});
 // ==============================================
 // 🏪 Configure Redux Store
 // ==============================================
@@ -1582,9 +1410,7 @@ const store = configureStore({
     finances: financesSlice.reducer,
     utilisateurs: utilisateursSlice.reducer,
     messages: messagesSlice.reducer,
-    dashboard: dashboardSlice.reducer,
-    delivery: deliverySlice.reducer
-
+    dashboard: dashboardSlice.reducer
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
@@ -1677,13 +1503,5 @@ export const selectDashboardStats = (state) => state.dashboard.stats;
 export const selectMonthlyStats = (state) => state.dashboard.monthlyStats;
 export const selectDashboardLoading = (state) => state.dashboard.loading;
 export const selectDashboardError = (state) => state.dashboard.error;
-export const { clearDeliveryError, clearGeneratedCode } = deliverySlice.actions;
-
-// Selectors
-export const selectDeliveryCities = (state) => state.delivery.cities;
-export const selectDeliveryStatuses = (state) => state.delivery.statuses;
-export const selectDeliveryLoading = (state) => state.delivery.loading;
-export const selectDeliveryError = (state) => state.delivery.error;
-export const selectGeneratedCode = (state) => state.delivery.generatedCode;
 
 export default store;

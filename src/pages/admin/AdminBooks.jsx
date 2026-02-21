@@ -9,7 +9,7 @@ import { fetchLivres, createLivre, updateLivre, deleteLivre, deleteLivreImage } 
 import "../../css/AdminBooks.css";
 
 // API Base URL - should match your backend
-const API_BASE_URL = "https://fanta-lib-back-production.up.railway.app/api";
+const API_BASE_URL = "https://fanta-lib-back-production.up.railway.app";
 
 export default function AdminBooks() {
   const dispatch = useDispatch();

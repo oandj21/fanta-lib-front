@@ -192,12 +192,13 @@ export default function AdminBooks() {
     
     // Validate file size (max 2MB)
     const validFiles = files.filter(file => {
-      if (file.size > 2 * 1024 * 1024) {
-        alert(`L'image ${file.name} est trop volumineuse. Maximum 2MB.`);
-        return false;
-      }
-      return true;
-    });
+  if (file.size > 10 * 1024 * 1024) {
+    alert(`L'image ${file.name} est trop volumineuse. Maximum 10MB.`);
+    return false;
+  }
+  return true;
+});
+
     
     setSelectedImages(validFiles);
     

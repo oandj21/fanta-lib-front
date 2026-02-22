@@ -57,7 +57,6 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
       setLoading(true);
       setError(null);
       
-      // Get token from localStorage
       const token = localStorage.getItem("token");
       
       const response = await axios.get(
@@ -72,7 +71,6 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
       
       console.log("Cities API response:", response.data);
       
-      // Handle different response structures
       let citiesData = [];
       if (Array.isArray(response.data)) {
         citiesData = response.data;
@@ -85,7 +83,6 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
       // Transform data to include delivery fees if not present
       citiesData = citiesData.map(city => {
         if (typeof city === 'string') {
-          // If city is just a string, add default delivery fee based on city name
           return {
             name: city,
             delivery_fee: getDefaultDeliveryFee(city)
@@ -147,7 +144,7 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
         return fee;
       }
     }
-    return 30; // Default fee
+    return 30;
   };
 
   // Load cities on component mount
@@ -163,7 +160,7 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
           const cityName = city.name || city.city || city.label || '';
           return cityName.toLowerCase().includes(query.toLowerCase());
         })
-        .slice(0, 10); // Limit to 10 suggestions
+        .slice(0, 10);
       setSuggestions(filtered);
       setShowSuggestions(true);
     } else {
@@ -259,15 +256,15 @@ export default function AdminOrders() {
   const [updateError, setUpdateError] = useState(null);
   const [addError, setAddError] = useState(null);
   
-  // Form state for update
+  // Form state for update - WITH ALL FIELDS
   const [formData, setFormData] = useState({
     parcel_receiver: "",
     parcel_phone: "",
     parcel_city: "",
     parcel_address: "",
     parcel_price: "",
-    frais_livraison: 0,
-    frais_packaging: 0,
+    frais_livraison: "",
+    frais_packaging: "",
     parcel_note: "",
     parcel_open: 0,
     parcel_livreur_sent: "",
@@ -305,7 +302,7 @@ export default function AdminOrders() {
     setCurrentPage(1);
   }, [searchTerm, statusFilter]);
 
-  // Update form data when selected order changes - FIXED TO INCLUDE ALL FIELDS
+  // Update form data when selected order changes
   useEffect(() => {
     if (selectedOrder) {
       console.log("Setting update form data with:", selectedOrder);
@@ -314,11 +311,11 @@ export default function AdminOrders() {
         parcel_phone: selectedOrder.parcel_phone || "",
         parcel_city: selectedOrder.parcel_city || "",
         parcel_address: selectedOrder.parcel_address || "",
-        parcel_price: selectedOrder.parcel_price || "",
-        frais_livraison: selectedOrder.frais_livraison || 0,
-        frais_packaging: selectedOrder.frais_packaging || 0,
+        parcel_price: selectedOrder.parcel_price?.toString() || "",
+        frais_livraison: selectedOrder.frais_livraison?.toString() || "",
+        frais_packaging: selectedOrder.frais_packaging?.toString() || "",
         parcel_note: selectedOrder.parcel_note || "",
-        parcel_open: selectedOrder.parcel_open || 0,
+        parcel_open: selectedOrder.parcel_open ? 1 : 0,
         parcel_livreur_sent: selectedOrder.parcel_livreur_sent || "",
         parcel_livreurname_sent: selectedOrder.parcel_livreurname_sent || "",
         statut: selectedOrder.statut || "new"
@@ -333,7 +330,6 @@ export default function AdminOrders() {
     const packaging = parseFloat(newOrderData.frais_packaging) || 0;
     
     const total = price + delivery + packaging;
-    // Profit calculation - you can adjust this formula
     const profit = price - (delivery + packaging);
     
     setNewOrderData(prev => ({
@@ -372,8 +368,8 @@ export default function AdminOrders() {
       parcel_city: "",
       parcel_address: "",
       parcel_price: "",
-      frais_livraison: 0,
-      frais_packaging: 0,
+      frais_livraison: "",
+      frais_packaging: "",
       parcel_note: "",
       parcel_open: 0,
       parcel_livreur_sent: "",
@@ -445,11 +441,11 @@ export default function AdminOrders() {
     setFormData(prev => ({
       ...prev,
       parcel_city: city,
-      frais_livraison: deliveryFee || prev.frais_livraison
+      frais_livraison: deliveryFee?.toString() || prev.frais_livraison
     }));
   };
 
-  // Handle city selection for new order form - WITH AUTO DELIVERY FEE
+  // Handle city selection for new order form
   const handleNewCitySelect = (city, deliveryFee) => {
     console.log("City selected:", city, "with fee:", deliveryFee);
     setNewOrderData(prev => ({
@@ -459,101 +455,155 @@ export default function AdminOrders() {
     }));
   };
 
+  // FIXED: handleUpdateSubmit with proper change detection
   const handleUpdateSubmit = async (e) => {
-  e.preventDefault();
-  if (!selectedOrder) return;
+    e.preventDefault();
+    if (!selectedOrder) return;
 
-  setUpdateLoading(true);
-  setUpdateError(null);
+    setUpdateLoading(true);
+    setUpdateError(null);
 
-  try {
-    // Prepare the data for the API with proper type handling
-    const updatePayload = {};
+    try {
+      // Log the original and new values for debugging
+      console.log("========== UPDATE DEBUG ==========");
+      console.log("Selected Order ID:", selectedOrder.id);
+      console.log("Selected Order Data:", selectedOrder);
+      console.log("Form Data:", formData);
 
-    // Helper function to safely compare and add fields
-    const addIfChanged = (fieldName, value, originalValue, transformFn = (v) => v) => {
-      // Handle null/undefined/empty string cases
-      const processedValue = value === "" || value === null || value === undefined ? null : value;
-      const processedOriginal = originalValue === "" || originalValue === null || originalValue === undefined ? null : originalValue;
-      
-      // Compare and add if different
-      if (JSON.stringify(processedValue) !== JSON.stringify(processedOriginal)) {
-        updatePayload[fieldName] = transformFn(processedValue);
-      }
-    };
+      const updatePayload = {};
 
-    // String fields - ensure they're strings or null
-    addIfChanged('parcel_receiver', formData.parcel_receiver, selectedOrder.parcel_receiver, v => v === null ? null : String(v));
-    addIfChanged('parcel_phone', formData.parcel_phone, selectedOrder.parcel_phone, v => v === null ? null : String(v));
-    addIfChanged('parcel_city', formData.parcel_city, selectedOrder.parcel_city, v => v === null ? null : String(v));
-    addIfChanged('parcel_address', formData.parcel_address, selectedOrder.parcel_address, v => v === null ? null : String(v));
-    addIfChanged('parcel_note', formData.parcel_note, selectedOrder.parcel_note, v => v === null ? null : String(v));
-    addIfChanged('parcel_livreur_sent', formData.parcel_livreur_sent, selectedOrder.parcel_livreur_sent, v => v === null ? null : String(v));
-    addIfChanged('parcel_livreurname_sent', formData.parcel_livreurname_sent, selectedOrder.parcel_livreurname_sent, v => v === null ? null : String(v));
-    addIfChanged('statut', formData.statut, selectedOrder.statut, v => v === null ? null : String(v));
-
-    // Numeric fields - ensure they're numbers or null
-    addIfChanged('parcel_price', formData.parcel_price, selectedOrder.parcel_price, v => v === null ? null : parseFloat(v) || 0);
-    addIfChanged('frais_livraison', formData.frais_livraison, selectedOrder.frais_livraison, v => v === null ? null : parseFloat(v) || 0);
-    addIfChanged('frais_packaging', formData.frais_packaging, selectedOrder.frais_packaging, v => v === null ? null : parseFloat(v) || 0);
-
-    // Boolean/Integer field - ensure it's 0 or 1
-    addIfChanged('parcel_open', formData.parcel_open, selectedOrder.parcel_open, v => v ? 1 : 0);
-
-    // If no changes were detected, close the modal
-    if (Object.keys(updatePayload).length === 0) {
-      console.log("No changes detected, closing modal.");
-      closeUpdateModal();
-      return;
-    }
-
-    console.log("📤 Sending update payload to backend:", updatePayload);
-    
-    const result = await dispatch(updateCommande({ 
-      id: selectedOrder.id, 
-      ...updatePayload 
-    })).unwrap();
-
-    console.log("✅ Update successful. Full response:", result);
-    
-    // Show detailed response to user
-    let message = "Mise à jour réussie!";
-    if (result.fields_sent_to_welivexpress && result.fields_sent_to_welivexpress.length > 0) {
-      message = `Mise à jour réussie! Champs envoyés à Welivexpress: ${result.fields_sent_to_welivexpress.join(', ')}`;
-    } else {
-      message = "Mise à jour locale réussie (aucun champ envoyé à Welivexpress)";
-    }
-    
-    // Check if the backend reported any issues with the Welivexpress update
-    if (result.welivexpress_response) {
-        console.log("Welivexpress response:", result.welivexpress_response);
-        if (result.welivexpress_response.success === false) {
-            alert(`Mise à jour locale OK, mais Welivexpress a répondu: ${result.welivexpress_response.message || 'Erreur'}`);
+      // Helper function to normalize values for comparison
+      const normalizeValue = (value, fieldName) => {
+        if (fieldName.includes('price') || fieldName.includes('frais_')) {
+          // Numeric fields
+          return value === "" || value === null || value === undefined ? 0 : parseFloat(value);
+        } else if (fieldName === 'parcel_open') {
+          // Boolean/Integer field
+          return value ? 1 : 0;
         } else {
-            alert(message);
+          // String fields
+          return value === "" || value === null || value === undefined ? "" : String(value).trim();
         }
+      };
+
+      // List of Welivexpress fields that should trigger an external update
+      const welivexpressFields = [
+        'parcel_receiver',
+        'parcel_phone',
+        'parcel_city',
+        'parcel_price',
+        'parcel_address',
+        'parcel_note',
+        'parcel_open',
+        'parcel_livreur_sent',
+        'parcel_livreurname_sent'
+      ];
+
+      // List of local-only fields
+      const localFields = [
+        'frais_livraison',
+        'frais_packaging',
+        'statut'
+      ];
+
+      // Check ALL fields
+      const allFields = [...welivexpressFields, ...localFields];
+      
+      allFields.forEach(fieldName => {
+        const formValue = formData[fieldName];
+        const originalValue = selectedOrder[fieldName];
+        
+        const normalizedFormValue = normalizeValue(formValue, fieldName);
+        const normalizedOriginalValue = normalizeValue(originalValue, fieldName);
+        
+        console.log(`Comparing ${fieldName}:`, {
+          formValue,
+          originalValue,
+          normalizedFormValue,
+          normalizedOriginalValue,
+          isDifferent: normalizedFormValue !== normalizedOriginalValue
+        });
+        
+        if (normalizedFormValue !== normalizedOriginalValue) {
+          // Add to payload with appropriate formatting
+          if (welivexpressFields.includes(fieldName)) {
+            // For Welivexpress fields, send null for empty strings, otherwise send the value
+            if (fieldName === 'parcel_price') {
+              updatePayload[fieldName] = normalizedFormValue;
+            } else if (fieldName === 'parcel_open') {
+              updatePayload[fieldName] = normalizedFormValue;
+            } else {
+              // String fields - send null if empty, otherwise send the string
+              updatePayload[fieldName] = normalizedFormValue === "" ? null : normalizedFormValue;
+            }
+          } else {
+            // Local-only fields
+            updatePayload[fieldName] = normalizedFormValue;
+          }
+        }
+      });
+
+      console.log("📦 Final updatePayload:", updatePayload);
+      
+      // Separate Welivexpress fields from local fields for logging
+      const welivexpressChanges = Object.keys(updatePayload).filter(key => welivexpressFields.includes(key));
+      const localChanges = Object.keys(updatePayload).filter(key => localFields.includes(key));
+      
+      console.log("Changes for Welivexpress:", welivexpressChanges);
+      console.log("Local-only changes:", localChanges);
+
+      // If no changes were detected, close the modal
+      if (Object.keys(updatePayload).length === 0) {
+        console.log("No changes detected, closing modal.");
+        alert("Aucune modification détectée");
+        closeUpdateModal();
+        return;
+      }
+
+      console.log("📤 Sending update payload to backend:", updatePayload);
+      
+      const result = await dispatch(updateCommande({ 
+        id: selectedOrder.id, 
+        ...updatePayload 
+      })).unwrap();
+
+      console.log("✅ Update successful. Full response:", result);
+      
+      // Show appropriate message based on what was updated
+      if (welivexpressChanges.length > 0) {
+        alert(`Mise à jour réussie! Champs envoyés à Welivexpress: ${welivexpressChanges.join(', ')}`);
+      } else {
+        alert(`Mise à jour locale réussie (champs modifiés: ${localChanges.join(', ')})`);
+      }
+      
+      // Check if the backend reported any issues with the Welivexpress update
+      if (result.welivexpress_response) {
+          console.log("Welivexpress response:", result.welivexpress_response);
+          if (result.welivexpress_response.success === false) {
+              alert(`Attention: Mise à jour locale OK, mais Welivexpress a répondu: ${result.welivexpress_response.message || 'Erreur'}`);
+          }
+      }
+      
+      await dispatch(fetchCommandes());
+      closeUpdateModal();
+      
+    } catch (error) {
+      console.error("❌ Update process failed:", error);
+      
+      // Log the full error details
+      if (error.response) {
+        console.error("Error response data:", error.response.data);
+        console.error("Error response status:", error.response.status);
+      }
+      
+      const errorMessage = error?.message || 
+                           error?.data?.message || 
+                           "Erreur lors de la mise à jour. Veuillez réessayer.";
+      setUpdateError(errorMessage);
+    } finally {
+      setUpdateLoading(false);
     }
-    
-    await dispatch(fetchCommandes());
-    closeUpdateModal();
-    
-  } catch (error) {
-    console.error("❌ Update process failed:", error);
-    
-    // Log the full error details
-    if (error.response) {
-      console.error("Error response data:", error.response.data);
-      console.error("Error response status:", error.response.status);
-    }
-    
-    const errorMessage = error?.message || 
-                         error?.data?.message || 
-                         "Erreur lors de la mise à jour. Veuillez réessayer.";
-    setUpdateError(errorMessage);
-  } finally {
-    setUpdateLoading(false);
-  }
-};
+  };
 
   const handleAddSubmit = async (e) => {
     e.preventDefault();
@@ -1285,7 +1335,7 @@ export default function AdminOrders() {
         </div>
       )}
 
-      {/* UPDATE MODAL - FIXED TO SHOW EXISTING VALUES */}
+      {/* UPDATE MODAL */}
       {showUpdateModal && selectedOrder && (
         <div className="modal-overlay" onClick={closeUpdateModal}>
           <div className="modal-content update-order-modal" onClick={e => e.stopPropagation()}>
@@ -1434,7 +1484,9 @@ export default function AdminOrders() {
                         step="0.01"
                       />
                     </div>
+                  </div>
 
+                  <div className="form-row" style={{ marginTop: '1rem' }}>
                     <div className="form-group">
                       <label htmlFor="statut">
                         Statut

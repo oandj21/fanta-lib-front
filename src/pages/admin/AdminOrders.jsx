@@ -1,7 +1,16 @@
 import { useState, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Pencil, Trash2, Check, Search, XCircle, Filter } from "lucide-react";
-import { fetchCommandes, updateCommande, deleteCommande, markCommandeAsDelivered } from "../../store/store";
+import { 
+  Pencil, Trash2, Check, Search, XCircle, Filter, 
+  X, Save, MapPin, Phone, User, Package, DollarSign,
+  Map, FileText, Truck, UserCircle, Building
+} from "lucide-react";
+import { 
+  fetchCommandes, 
+  updateCommande, 
+  deleteCommande, 
+  markCommandeAsDelivered 
+} from "../../store/store";
 import "../../css/AdminOrders.css";
 
 const statusLabels = {
@@ -35,8 +44,25 @@ export default function AdminOrders() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(20);
   
-  const [editingId, setEditingId] = useState(null);
-  const [editStatus, setEditStatus] = useState("new");
+  // Modal states
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [updateLoading, setUpdateLoading] = useState(false);
+  const [updateError, setUpdateError] = useState(null);
+  
+  // Form state for update
+  const [formData, setFormData] = useState({
+    parcel_receiver: "",
+    parcel_phone: "",
+    parcel_city: "",
+    parcel_address: "",
+    parcel_price: "",
+    parcel_note: "",
+    parcel_open: 0,
+    parcel_livreur_sent: "",
+    parcel_livreurname_sent: "",
+    statut: "new"
+  });
 
   useEffect(() => {
     dispatch(fetchCommandes());
@@ -47,6 +73,24 @@ export default function AdminOrders() {
     setCurrentPage(1);
   }, [searchTerm, statusFilter]);
 
+  // Update form data when selected order changes
+  useEffect(() => {
+    if (selectedOrder) {
+      setFormData({
+        parcel_receiver: selectedOrder.parcel_receiver || "",
+        parcel_phone: selectedOrder.parcel_phone || "",
+        parcel_city: selectedOrder.parcel_city || "",
+        parcel_address: selectedOrder.parcel_address || "",
+        parcel_price: selectedOrder.parcel_price || "",
+        parcel_note: selectedOrder.parcel_note || "",
+        parcel_open: selectedOrder.parcel_open || 0,
+        parcel_livreur_sent: selectedOrder.parcel_livreur_sent || "",
+        parcel_livreurname_sent: selectedOrder.parcel_livreurname_sent || "",
+        statut: selectedOrder.statut || "new"
+      });
+    }
+  }, [selectedOrder]);
+
   const handleDelete = (id) => {
     if (window.confirm("Êtes-vous sûr de vouloir supprimer cette commande ?")) {
       dispatch(deleteCommande(id));
@@ -54,12 +98,94 @@ export default function AdminOrders() {
   };
 
   const markDelivered = (id) => {
-    dispatch(markCommandeAsDelivered(id));
+    if (window.confirm("Marquer cette commande comme livrée ?")) {
+      dispatch(markCommandeAsDelivered(id));
+    }
   };
 
-  const saveStatus = (id) => {
-    dispatch(updateCommande({ id, status: editStatus }));
-    setEditingId(null);
+  const openUpdateModal = (order) => {
+    setSelectedOrder(order);
+    setUpdateError(null);
+    setShowUpdateModal(true);
+  };
+
+  const closeUpdateModal = () => {
+    setShowUpdateModal(false);
+    setSelectedOrder(null);
+    setFormData({
+      parcel_receiver: "",
+      parcel_phone: "",
+      parcel_city: "",
+      parcel_address: "",
+      parcel_price: "",
+      parcel_note: "",
+      parcel_open: 0,
+      parcel_livreur_sent: "",
+      parcel_livreurname_sent: "",
+      statut: "new"
+    });
+    setUpdateError(null);
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? (checked ? 1 : 0) : value
+    }));
+  };
+
+  const handleUpdateSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedOrder) return;
+
+    setUpdateLoading(true);
+    setUpdateError(null);
+
+    try {
+      // Filter out empty values to only send changed fields
+      const updateData = {};
+      Object.keys(formData).forEach(key => {
+        if (formData[key] !== selectedOrder[key] && formData[key] !== "") {
+          updateData[key] = formData[key];
+        }
+      });
+
+      // Always include status if it's changed
+      if (formData.statut !== selectedOrder.statut) {
+        updateData.statut = formData.statut;
+      }
+
+      // If no changes, close modal
+      if (Object.keys(updateData).length === 0) {
+        closeUpdateModal();
+        return;
+      }
+
+      console.log("Updating order with data:", updateData);
+      
+      // Dispatch update action
+      const result = await dispatch(updateCommande({ 
+        id: selectedOrder.id, 
+        ...updateData 
+      })).unwrap();
+
+      console.log("Update successful:", result);
+      
+      // Refresh orders list
+      await dispatch(fetchCommandes());
+      
+      closeUpdateModal();
+      
+    } catch (error) {
+      console.error("Update failed:", error);
+      setUpdateError(
+        error?.message || 
+        "Erreur lors de la mise à jour. Veuillez réessayer."
+      );
+    } finally {
+      setUpdateLoading(false);
+    }
   };
 
   // Filter and search orders
@@ -67,9 +193,10 @@ export default function AdminOrders() {
     return orderList.filter(order => {
       // Search filter
       const matchesSearch = searchTerm === "" || 
-        order.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.client?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.city?.toLowerCase().includes(searchTerm.toLowerCase());
+        order.parcel_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.parcel_receiver?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.parcel_city?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.parcel_phone?.toLowerCase().includes(searchTerm.toLowerCase());
       
       // Status filter
       const matchesStatus = statusFilter === "all" || order.statut === statusFilter;
@@ -93,12 +220,12 @@ export default function AdminOrders() {
 
   const stats = {
     total: orderList.length,
-    new: orderList.filter(o => o.status === "new").length,
-    confirmed: orderList.filter(o => o.status === "confirmed").length,
-    shipped: orderList.filter(o => o.status === "shipped").length,
-    delivered: orderList.filter(o => o.status === "delivered").length,
-    cancelled: orderList.filter(o => o.status === "cancelled").length,
-    returned: orderList.filter(o => o.status === "returned").length,
+    new: orderList.filter(o => o.statut === "new").length,
+    confirmed: orderList.filter(o => o.statut === "confirmed").length,
+    shipped: orderList.filter(o => o.statut === "shipped").length,
+    delivered: orderList.filter(o => o.statut === "delivered").length,
+    cancelled: orderList.filter(o => o.statut === "cancelled").length,
+    returned: orderList.filter(o => o.statut === "returned").length,
   };
 
   const clearFilters = () => {
@@ -108,7 +235,6 @@ export default function AdminOrders() {
 
   const paginate = (pageNumber) => {
     setCurrentPage(pageNumber);
-    // Scroll to top of table
     document.querySelector('.table-wrapper')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
@@ -252,7 +378,7 @@ export default function AdminOrders() {
           <Search size={18} className="search-icon" />
           <input
             type="text"
-            placeholder="Rechercher par code, client ou ville..."
+            placeholder="Rechercher par code, client, ville ou téléphone..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="search-input"
@@ -319,11 +445,12 @@ export default function AdminOrders() {
                 <tr>
                   <th>Code</th>
                   <th>Client</th>
+                  <th>Téléphone</th>
                   <th>Ville</th>
-                  <th>Qté</th>
-                  <th>Total</th>
-                  <th>Profit</th>
+                  <th>Adresse</th>
+                  <th>Prix</th>
                   <th>Statut</th>
+                  <th>Livreur</th>
                   <th>Date</th>
                   <th>Actions</th>
                 </tr>
@@ -333,51 +460,38 @@ export default function AdminOrders() {
                   <tr key={order.id}>
                     <td className="order-code">{order.parcel_code || "-"}</td>
                     <td className="order-client">{order.parcel_receiver || "-"}</td>
+                    <td>{order.parcel_phone || "-"}</td>
                     <td>{order.parcel_city || "-"}</td>
-                    <td>{order.livres?.length || 0}</td> 
+                    <td className="order-address" title={order.parcel_address}>
+                      {order.parcel_address ? 
+                        (order.parcel_address.length > 30 ? 
+                          order.parcel_address.substring(0, 30) + "..." : 
+                          order.parcel_address) 
+                        : "-"}
+                    </td>
+                    <td className="order-price">{order.parcel_price ? `${order.parcel_price} MAD` : "-"}</td>
                     <td>
-                      {editingId === order.id ? (
-                        <div className="edit-status">
-                          <select
-                            value={editStatus}
-                            onChange={(e) => setEditStatus(e.target.value)}
-                            className="status-select"
-                          >
-                            {Object.entries(statusLabels).map(([value, label]) => (
-                              <option key={value} value={value}>{label}</option>
-                            ))}
-                          </select>
-                          <button 
-                            onClick={() => saveStatus(order.id)} 
-                            className="btn-icon success"
-                            title="Valider"
-                          >
-                            <Check size={16} />
-                          </button>
-                        </div>
-                      ) : (
-                        <span 
-                          className="status-bad"
-                          style={{ 
-                            backgroundColor: `${statusColors[order.statut] || "#666"}20`,
-                            color: statusColors[order.statut] || "#666",
-                            border: `1px solid ${(statusColors[order.statut] || "#666")}40`
-                          }}
-                        >
-                          {statusLabels[order.statut] || "Nouvelle"}
-                        </span>
-                      )}
+                      <span 
+                        className="status-badge"
+                        style={{ 
+                          backgroundColor: `${statusColors[order.statut] || "#666"}20`,
+                          color: statusColors[order.statut] || "#666",
+                          border: `1px solid ${(statusColors[order.statut] || "#666")}40`
+                        }}
+                      >
+                        {statusLabels[order.statut] || order.statut || "Nouvelle"}
+                      </span>
+                    </td>
+                    <td>
+                      {order.parcel_livreurname_sent || order.parcel_livreur_sent || "-"}
                     </td>
                     <td>{order.date ? new Date(order.date).toLocaleDateString('fr-FR') : "-"}</td>
                     <td>
                       <div className="action-buttons">
                         <button
-                          onClick={() => {
-                            setEditingId(order.id);
-                            setEditStatus(order.statut || "new");
-                          }}
+                          onClick={() => openUpdateModal(order)}
                           className="btn-icon edit"
-                          title="Modifier statut"
+                          title="Modifier la commande"
                         >
                           <Pencil size={16} />
                         </button>
@@ -407,6 +521,251 @@ export default function AdminOrders() {
           {/* Pagination */}
           <Pagination />
         </>
+      )}
+
+      {/* Update Modal */}
+      {showUpdateModal && selectedOrder && (
+        <div className="modal-overlay" onClick={closeUpdateModal}>
+          <div className="modal-content update-order-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Modifier la commande</h3>
+              <button onClick={closeUpdateModal} className="modal-close">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="modal-body">
+              {updateError && (
+                <div className="modal-error">
+                  <span className="error-icon">⚠️</span>
+                  {updateError}
+                </div>
+              )}
+
+              <form onSubmit={handleUpdateSubmit} className="update-form">
+                <div className="form-section">
+                  <h4>
+                    <User size={16} />
+                    Informations client
+                  </h4>
+                  
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label htmlFor="parcel_receiver">
+                        <UserCircle size={14} />
+                        Nom complet
+                      </label>
+                      <input
+                        type="text"
+                        id="parcel_receiver"
+                        name="parcel_receiver"
+                        value={formData.parcel_receiver}
+                        onChange={handleInputChange}
+                        placeholder="Nom du client"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="parcel_phone">
+                        <Phone size={14} />
+                        Téléphone
+                      </label>
+                      <input
+                        type="text"
+                        id="parcel_phone"
+                        name="parcel_phone"
+                        value={formData.parcel_phone}
+                        onChange={handleInputChange}
+                        placeholder="Numéro de téléphone"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="form-section">
+                  <h4>
+                    <Map size={16} />
+                    Adresse de livraison
+                  </h4>
+                  
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label htmlFor="parcel_city">
+                        <Building size={14} />
+                        Ville
+                      </label>
+                      <input
+                        type="text"
+                        id="parcel_city"
+                        name="parcel_city"
+                        value={formData.parcel_city}
+                        onChange={handleInputChange}
+                        placeholder="Ville"
+                      />
+                    </div>
+
+                    <div className="form-group full-width">
+                      <label htmlFor="parcel_address">
+                        <MapPin size={14} />
+                        Adresse complète
+                      </label>
+                      <textarea
+                        id="parcel_address"
+                        name="parcel_address"
+                        value={formData.parcel_address}
+                        onChange={handleInputChange}
+                        placeholder="Adresse détaillée"
+                        rows="2"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="form-section">
+                  <h4>
+                    <DollarSign size={16} />
+                    Informations financières
+                  </h4>
+                  
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label htmlFor="parcel_price">
+                        Prix (MAD)
+                      </label>
+                      <input
+                        type="number"
+                        id="parcel_price"
+                        name="parcel_price"
+                        value={formData.parcel_price}
+                        onChange={handleInputChange}
+                        placeholder="0.00"
+                        min="0"
+                        step="0.01"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="statut">
+                        Statut
+                      </label>
+                      <select
+                        id="statut"
+                        name="statut"
+                        value={formData.statut}
+                        onChange={handleInputChange}
+                        className="status-select-modal"
+                      >
+                        {Object.entries(statusLabels).map(([value, label]) => (
+                          <option key={value} value={value}>{label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="form-section">
+                  <h4>
+                    <Truck size={16} />
+                    Informations livreur
+                  </h4>
+                  
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label htmlFor="parcel_livreur_sent">
+                        ID Livreur
+                      </label>
+                      <input
+                        type="text"
+                        id="parcel_livreur_sent"
+                        name="parcel_livreur_sent"
+                        value={formData.parcel_livreur_sent}
+                        onChange={handleInputChange}
+                        placeholder="ID du livreur"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="parcel_livreurname_sent">
+                        Nom du livreur
+                      </label>
+                      <input
+                        type="text"
+                        id="parcel_livreurname_sent"
+                        name="parcel_livreurname_sent"
+                        value={formData.parcel_livreurname_sent}
+                        onChange={handleInputChange}
+                        placeholder="Nom du livreur"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="form-section">
+                  <h4>
+                    <FileText size={16} />
+                    Informations supplémentaires
+                  </h4>
+                  
+                  <div className="form-group full-width">
+                    <label htmlFor="parcel_note">
+                      Note
+                    </label>
+                    <textarea
+                      id="parcel_note"
+                      name="parcel_note"
+                      value={formData.parcel_note}
+                      onChange={handleInputChange}
+                      placeholder="Notes ou instructions spéciales"
+                      rows="3"
+                    />
+                  </div>
+
+                  <div className="form-checkbox">
+                    <input
+                      type="checkbox"
+                      id="parcel_open"
+                      name="parcel_open"
+                      checked={formData.parcel_open === 1}
+                      onChange={handleInputChange}
+                    />
+                    <label htmlFor="parcel_open">
+                      Colis ouvert / vérifié
+                    </label>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            <div className="modal-footer">
+              <button 
+                type="button" 
+                onClick={closeUpdateModal}
+                className="btn-secondary"
+                disabled={updateLoading}
+              >
+                Annuler
+              </button>
+              <button 
+                type="submit"
+                onClick={handleUpdateSubmit}
+                className="btn-primary"
+                disabled={updateLoading}
+              >
+                {updateLoading ? (
+                  <>
+                    <span className="spinner-small"></span>
+                    Mise à jour...
+                  </>
+                ) : (
+                  <>
+                    <Save size={16} />
+                    Enregistrer
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

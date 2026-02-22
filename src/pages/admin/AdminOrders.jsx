@@ -3,13 +3,14 @@ import { useDispatch, useSelector } from "react-redux";
 import { 
   Pencil, Trash2, Check, Search, XCircle, Filter, 
   X, Save, MapPin, Phone, User, Package, DollarSign,
-  Map, FileText, Truck, UserCircle, Building
+  Map, FileText, Truck, UserCircle, Building, Plus
 } from "lucide-react";
 import { 
   fetchCommandes, 
   updateCommande, 
   deleteCommande, 
-  markCommandeAsDelivered 
+  markCommandeAsDelivered,
+  createCommande  // Add this import
 } from "../../store/store";
 import "../../css/AdminOrders.css";
 
@@ -46,9 +47,12 @@ export default function AdminOrders() {
   
   // Modal states
   const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);  // Add this
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [updateLoading, setUpdateLoading] = useState(false);
+  const [addLoading, setAddLoading] = useState(false);  // Add this
   const [updateError, setUpdateError] = useState(null);
+  const [addError, setAddError] = useState(null);  // Add this
   
   // Form state for update
   const [formData, setFormData] = useState({
@@ -62,6 +66,22 @@ export default function AdminOrders() {
     parcel_livreur_sent: "",
     parcel_livreurname_sent: "",
     statut: "new"
+  });
+
+  // Form state for new order
+  const [newOrderData, setNewOrderData] = useState({
+    parcel_code: "",
+    parcel_receiver: "",
+    parcel_phone: "",
+    parcel_city: "",
+    parcel_address: "",
+    parcel_price: "",
+    parcel_note: "",
+    parcel_open: 0,
+    parcel_livreur_sent: "",
+    parcel_livreurname_sent: "",
+    statut: "new",
+    date: new Date().toISOString().split('T')[0] // Today's date
   });
 
   useEffect(() => {
@@ -103,12 +123,14 @@ export default function AdminOrders() {
     }
   };
 
+  // Open update modal
   const openUpdateModal = (order) => {
     setSelectedOrder(order);
     setUpdateError(null);
     setShowUpdateModal(true);
   };
 
+  // Close update modal
   const closeUpdateModal = () => {
     setShowUpdateModal(false);
     setSelectedOrder(null);
@@ -127,9 +149,50 @@ export default function AdminOrders() {
     setUpdateError(null);
   };
 
+  // Open add modal
+  const openAddModal = () => {
+    // Generate a unique parcel code
+    const newParcelCode = `CMD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    setNewOrderData({
+      ...newOrderData,
+      parcel_code: newParcelCode,
+      date: new Date().toISOString().split('T')[0]
+    });
+    setAddError(null);
+    setShowAddModal(true);
+  };
+
+  // Close add modal
+  const closeAddModal = () => {
+    setShowAddModal(false);
+    setNewOrderData({
+      parcel_code: "",
+      parcel_receiver: "",
+      parcel_phone: "",
+      parcel_city: "",
+      parcel_address: "",
+      parcel_price: "",
+      parcel_note: "",
+      parcel_open: 0,
+      parcel_livreur_sent: "",
+      parcel_livreurname_sent: "",
+      statut: "new",
+      date: new Date().toISOString().split('T')[0]
+    });
+    setAddError(null);
+  };
+
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? (checked ? 1 : 0) : value
+    }));
+  };
+
+  const handleNewOrderChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setNewOrderData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? (checked ? 1 : 0) : value
     }));
@@ -185,6 +248,42 @@ export default function AdminOrders() {
       );
     } finally {
       setUpdateLoading(false);
+    }
+  };
+
+  const handleAddSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Validate required fields
+    if (!newOrderData.parcel_receiver || !newOrderData.parcel_city || !newOrderData.parcel_price) {
+      setAddError("Veuillez remplir tous les champs obligatoires (client, ville, prix)");
+      return;
+    }
+
+    setAddLoading(true);
+    setAddError(null);
+
+    try {
+      console.log("Creating new order with data:", newOrderData);
+      
+      // Dispatch create action
+      const result = await dispatch(createCommande(newOrderData)).unwrap();
+
+      console.log("Create successful:", result);
+      
+      // Refresh orders list
+      await dispatch(fetchCommandes());
+      
+      closeAddModal();
+      
+    } catch (error) {
+      console.error("Create failed:", error);
+      setAddError(
+        error?.message || 
+        "Erreur lors de la création de la commande. Veuillez réessayer."
+      );
+    } finally {
+      setAddLoading(false);
     }
   };
 
@@ -324,6 +423,12 @@ export default function AdminOrders() {
             }
           </p>
         </div>
+        
+        {/* ADD BUTTON - Here it is! */}
+        <button onClick={openAddModal} className="btn-add-order">
+          <Plus size={20} />
+          Nouvelle commande
+        </button>
       </div>
 
       {/* Stats Cards */}
@@ -523,7 +628,295 @@ export default function AdminOrders() {
         </>
       )}
 
-      {/* Update Modal */}
+      {/* ADD MODAL */}
+      {showAddModal && (
+        <div className="modal-overlay" onClick={closeAddModal}>
+          <div className="modal-content add-order-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Nouvelle commande</h3>
+              <button onClick={closeAddModal} className="modal-close">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="modal-body">
+              {addError && (
+                <div className="modal-error">
+                  <span className="error-icon">⚠️</span>
+                  {addError}
+                </div>
+              )}
+
+              <form onSubmit={handleAddSubmit} className="update-form">
+                <div className="form-section">
+                  <h4>
+                    <Package size={16} />
+                    Informations de la commande
+                  </h4>
+                  
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label htmlFor="parcel_code">
+                        Code colis <span className="required">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        id="parcel_code"
+                        name="parcel_code"
+                        value={newOrderData.parcel_code}
+                        onChange={handleNewOrderChange}
+                        placeholder="Code unique"
+                        readOnly
+                        className="readonly-input"
+                      />
+                      <small className="field-hint">Généré automatiquement</small>
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="date">
+                        Date <span className="required">*</span>
+                      </label>
+                      <input
+                        type="date"
+                        id="date"
+                        name="date"
+                        value={newOrderData.date}
+                        onChange={handleNewOrderChange}
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="form-section">
+                  <h4>
+                    <User size={16} />
+                    Informations client <span className="required">*</span>
+                  </h4>
+                  
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label htmlFor="parcel_receiver">
+                        <UserCircle size={14} />
+                        Nom complet
+                      </label>
+                      <input
+                        type="text"
+                        id="parcel_receiver"
+                        name="parcel_receiver"
+                        value={newOrderData.parcel_receiver}
+                        onChange={handleNewOrderChange}
+                        placeholder="Nom du client"
+                        required
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="parcel_phone">
+                        <Phone size={14} />
+                        Téléphone
+                      </label>
+                      <input
+                        type="text"
+                        id="parcel_phone"
+                        name="parcel_phone"
+                        value={newOrderData.parcel_phone}
+                        onChange={handleNewOrderChange}
+                        placeholder="Numéro de téléphone"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="form-section">
+                  <h4>
+                    <Map size={16} />
+                    Adresse de livraison <span className="required">*</span>
+                  </h4>
+                  
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label htmlFor="parcel_city">
+                        <Building size={14} />
+                        Ville
+                      </label>
+                      <input
+                        type="text"
+                        id="parcel_city"
+                        name="parcel_city"
+                        value={newOrderData.parcel_city}
+                        onChange={handleNewOrderChange}
+                        placeholder="Ville"
+                        required
+                      />
+                    </div>
+
+                    <div className="form-group full-width">
+                      <label htmlFor="parcel_address">
+                        <MapPin size={14} />
+                        Adresse complète
+                      </label>
+                      <textarea
+                        id="parcel_address"
+                        name="parcel_address"
+                        value={newOrderData.parcel_address}
+                        onChange={handleNewOrderChange}
+                        placeholder="Adresse détaillée"
+                        rows="2"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="form-section">
+                  <h4>
+                    <DollarSign size={16} />
+                    Informations financières <span className="required">*</span>
+                  </h4>
+                  
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label htmlFor="parcel_price">
+                        Prix (MAD)
+                      </label>
+                      <input
+                        type="number"
+                        id="parcel_price"
+                        name="parcel_price"
+                        value={newOrderData.parcel_price}
+                        onChange={handleNewOrderChange}
+                        placeholder="0.00"
+                        min="0"
+                        step="0.01"
+                        required
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="statut">
+                        Statut
+                      </label>
+                      <select
+                        id="statut"
+                        name="statut"
+                        value={newOrderData.statut}
+                        onChange={handleNewOrderChange}
+                        className="status-select-modal"
+                      >
+                        {Object.entries(statusLabels).map(([value, label]) => (
+                          <option key={value} value={value}>{label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="form-section">
+                  <h4>
+                    <Truck size={16} />
+                    Informations livreur
+                  </h4>
+                  
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label htmlFor="parcel_livreur_sent">
+                        ID Livreur
+                      </label>
+                      <input
+                        type="text"
+                        id="parcel_livreur_sent"
+                        name="parcel_livreur_sent"
+                        value={newOrderData.parcel_livreur_sent}
+                        onChange={handleNewOrderChange}
+                        placeholder="ID du livreur"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="parcel_livreurname_sent">
+                        Nom du livreur
+                      </label>
+                      <input
+                        type="text"
+                        id="parcel_livreurname_sent"
+                        name="parcel_livreurname_sent"
+                        value={newOrderData.parcel_livreurname_sent}
+                        onChange={handleNewOrderChange}
+                        placeholder="Nom du livreur"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="form-section">
+                  <h4>
+                    <FileText size={16} />
+                    Informations supplémentaires
+                  </h4>
+                  
+                  <div className="form-group full-width">
+                    <label htmlFor="parcel_note">
+                      Note
+                    </label>
+                    <textarea
+                      id="parcel_note"
+                      name="parcel_note"
+                      value={newOrderData.parcel_note}
+                      onChange={handleNewOrderChange}
+                      placeholder="Notes ou instructions spéciales"
+                      rows="3"
+                    />
+                  </div>
+
+                  <div className="form-checkbox">
+                    <input
+                      type="checkbox"
+                      id="parcel_open"
+                      name="parcel_open"
+                      checked={newOrderData.parcel_open === 1}
+                      onChange={handleNewOrderChange}
+                    />
+                    <label htmlFor="parcel_open">
+                      Colis ouvert / vérifié
+                    </label>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            <div className="modal-footer">
+              <button 
+                type="button" 
+                onClick={closeAddModal}
+                className="btn-secondary"
+                disabled={addLoading}
+              >
+                Annuler
+              </button>
+              <button 
+                type="submit"
+                onClick={handleAddSubmit}
+                className="btn-primary"
+                disabled={addLoading}
+              >
+                {addLoading ? (
+                  <>
+                    <span className="spinner-small"></span>
+                    Création...
+                  </>
+                ) : (
+                  <>
+                    <Save size={16} />
+                    Créer la commande
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* UPDATE MODAL (same as before) */}
       {showUpdateModal && selectedOrder && (
         <div className="modal-overlay" onClick={closeUpdateModal}>
           <div className="modal-content update-order-modal" onClick={e => e.stopPropagation()}>

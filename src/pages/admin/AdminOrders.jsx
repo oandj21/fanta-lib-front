@@ -456,8 +456,7 @@ export default function AdminOrders() {
   };
 
   // FIXED: handleUpdateSubmit with proper change detection
- // FIXED: handleUpdateSubmit with proper field separation
-const handleUpdateSubmit = async (e) => {
+ const handleUpdateSubmit = async (e) => {
   e.preventDefault();
   if (!selectedOrder) return;
 
@@ -476,18 +475,15 @@ const handleUpdateSubmit = async (e) => {
     // Helper function to normalize values for comparison
     const normalizeValue = (value, fieldName) => {
       if (fieldName.includes('price') || fieldName.includes('frais_')) {
-        // Numeric fields
         return value === "" || value === null || value === undefined ? 0 : parseFloat(value);
       } else if (fieldName === 'parcel_open') {
-        // Boolean/Integer field
         return value ? 1 : 0;
       } else {
-        // String fields
         return value === "" || value === null || value === undefined ? "" : String(value).trim();
       }
     };
 
-    // ✅ CORRECTED: Only fields that Welivexpress accepts
+    // Fields that Welivexpress accepts
     const welivexpressFields = [
       'parcel_receiver',
       'parcel_phone',
@@ -496,10 +492,8 @@ const handleUpdateSubmit = async (e) => {
       'parcel_address',
       'parcel_note',
       'parcel_open'
-      // ❌ REMOVED: 'parcel_livreur_sent' and 'parcel_livreurname_sent' - these are local only
     ];
 
-    // List of local-only fields (including livreur fields)
     const localFields = [
       'frais_livraison',
       'frais_packaging',
@@ -518,43 +512,19 @@ const handleUpdateSubmit = async (e) => {
       const normalizedFormValue = normalizeValue(formValue, fieldName);
       const normalizedOriginalValue = normalizeValue(originalValue, fieldName);
       
-      console.log(`Comparing ${fieldName}:`, {
-        formValue,
-        originalValue,
-        normalizedFormValue,
-        normalizedOriginalValue,
-        isDifferent: normalizedFormValue !== normalizedOriginalValue
-      });
-      
       if (normalizedFormValue !== normalizedOriginalValue) {
-        // Add to payload with appropriate formatting
-        if (welivexpressFields.includes(fieldName)) {
-          // For Welivexpress fields
-          if (fieldName === 'parcel_price') {
-            updatePayload[fieldName] = normalizedFormValue;
-          } else if (fieldName === 'parcel_open') {
-            updatePayload[fieldName] = normalizedFormValue;
-          } else {
-            // String fields - send empty string if empty, not null
-            updatePayload[fieldName] = normalizedFormValue === "" ? "" : normalizedFormValue;
-          }
-        } else {
-          // Local-only fields (including livreur fields)
-          updatePayload[fieldName] = normalizedFormValue;
-        }
+        updatePayload[fieldName] = normalizedFormValue;
       }
     });
 
     console.log("📦 Final updatePayload:", updatePayload);
     
-    // Separate Welivexpress fields from local fields for logging
     const welivexpressChanges = Object.keys(updatePayload).filter(key => welivexpressFields.includes(key));
     const localChanges = Object.keys(updatePayload).filter(key => localFields.includes(key));
     
     console.log("Changes for Welivexpress:", welivexpressChanges);
     console.log("Local-only changes:", localChanges);
 
-    // If no changes were detected, close the modal
     if (Object.keys(updatePayload).length === 0) {
       console.log("No changes detected, closing modal.");
       alert("Aucune modification détectée");
@@ -571,21 +541,20 @@ const handleUpdateSubmit = async (e) => {
 
     console.log("✅ Update successful. Full response:", result);
     
-    // Show appropriate message based on what was updated
-    if (welivexpressChanges.length > 0) {
-      alert(`Mise à jour réussie! Champs envoyés à Welivexpress: ${welivexpressChanges.join(', ')}`);
-    } else {
-      alert(`Mise à jour locale réussie (champs modifiés: ${localChanges.join(', ')})`);
-    }
-    
-    // Check if the backend reported any issues with the Welivexpress update
+    // Detailed Welivexpress response logging
     if (result.welivexpress_response) {
-        console.log("Welivexpress response:", result.welivexpress_response);
-        if (result.welivexpress_response.error) {
-            console.warn("Welivexpress error:", result.welivexpress_response.error);
-            // Show alert if Welivexpress update failed
-            alert(`⚠️ Attention: La mise à jour locale a réussi, mais l'envoi à Welivexpress a échoué: ${result.welivexpress_response.error}`);
+      console.log("========== WELIVEXPRESS RESPONSE DETAILS ==========");
+      console.log("Full response:", result.welivexpress_response);
+      
+      if (result.welivexpress_response.error) {
+        console.error("Welivexpress error message:", result.welivexpress_response.error);
+        alert(`❌ Erreur Welivexpress: ${result.welivexpress_response.error}`);
+      } else {
+        console.log("✅ Welivexpress update successful");
+        if (welivexpressChanges.length > 0) {
+          alert(`✅ Mise à jour réussie! Champs envoyés à Welivexpress: ${welivexpressChanges.join(', ')}`);
         }
+      }
     }
     
     await dispatch(fetchCommandes());
@@ -594,16 +563,19 @@ const handleUpdateSubmit = async (e) => {
   } catch (error) {
     console.error("❌ Update process failed:", error);
     
-    // Log the full error details
     if (error.response) {
       console.error("Error response data:", error.response.data);
       console.error("Error response status:", error.response.status);
+      console.error("Error response headers:", error.response.headers);
+      
+      // Show detailed error
+      const errorDetail = error.response.data?.welivexpress_response?.error || 
+                          error.response.data?.message ||
+                          "Erreur lors de la mise à jour";
+      setUpdateError(errorDetail);
+    } else {
+      setUpdateError(error?.message || "Erreur lors de la mise à jour");
     }
-    
-    const errorMessage = error?.message || 
-                         error?.data?.message || 
-                         "Erreur lors de la mise à jour. Veuillez réessayer.";
-    setUpdateError(errorMessage);
   } finally {
     setUpdateLoading(false);
   }

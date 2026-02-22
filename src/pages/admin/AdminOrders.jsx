@@ -35,7 +35,7 @@ const statusColors = {
   returned: "#6f42c1",
 };
 
-// City Autocomplete Component
+// City Autocomplete Component with delivery fees
 const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
   const [query, setQuery] = useState(value || "");
   const [suggestions, setSuggestions] = useState([]);
@@ -79,23 +79,23 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
     } catch (err) {
       console.error("Error fetching cities:", err);
       setError("Impossible de charger les villes");
-      // Fallback cities in case API fails
+      // Fallback cities with delivery fees in case API fails
       setCities([
-        "Casablanca",
-        "Rabat",
-        "Fès",
-        "Marrakech",
-        "Agadir",
-        "Tanger",
-        "Meknès",
-        "Oujda",
-        "Kénitra",
-        "Tétouan",
-        "Safi",
-        "Mohammédia",
-        "El Jadida",
-        "Béni Mellal",
-        "Nador"
+        { name: "Casablanca", delivery_fee: 25 },
+        { name: "Rabat", delivery_fee: 30 },
+        { name: "Fès", delivery_fee: 35 },
+        { name: "Marrakech", delivery_fee: 40 },
+        { name: "Agadir", delivery_fee: 45 },
+        { name: "Tanger", delivery_fee: 35 },
+        { name: "Meknès", delivery_fee: 35 },
+        { name: "Oujda", delivery_fee: 45 },
+        { name: "Kénitra", delivery_fee: 30 },
+        { name: "Tétouan", delivery_fee: 35 },
+        { name: "Safi", delivery_fee: 35 },
+        { name: "Mohammédia", delivery_fee: 25 },
+        { name: "El Jadida", delivery_fee: 30 },
+        { name: "Béni Mellal", delivery_fee: 35 },
+        { name: "Nador", delivery_fee: 45 }
       ]);
     } finally {
       setLoading(false);
@@ -132,9 +132,11 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
 
   const handleSelectCity = (city) => {
     const cityName = typeof city === 'string' ? city : city.name || city.city || city.label || city;
+    const deliveryFee = typeof city === 'object' ? city.delivery_fee || city.frais_livraison || 0 : 0;
+    
     setQuery(cityName);
     onChange(cityName);
-    if (onSelect) onSelect(cityName);
+    if (onSelect) onSelect(cityName, deliveryFee);
     setShowSuggestions(false);
   };
 
@@ -163,6 +165,8 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
         <ul className="suggestions-list">
           {suggestions.map((city, index) => {
             const cityName = typeof city === 'string' ? city : city.name || city.city || city.label || city;
+            const deliveryFee = typeof city === 'object' ? city.delivery_fee || city.frais_livraison || 0 : 0;
+            
             return (
               <li
                 key={index}
@@ -170,7 +174,10 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
                 className="suggestion-item"
               >
                 <MapPin size={14} />
-                {cityName}
+                <span className="city-name">{cityName}</span>
+                {deliveryFee > 0 && (
+                  <span className="delivery-fee-badge">{deliveryFee} MAD</span>
+                )}
               </li>
             );
           })}
@@ -278,8 +285,8 @@ export default function AdminOrders() {
     
     setNewOrderData(prev => ({
       ...prev,
-      total: total,
-      profit: profit
+      total: parseFloat(total.toFixed(2)),
+      profit: parseFloat(profit.toFixed(2))
     }));
   }, [newOrderData.parcel_price, newOrderData.frais_livraison, newOrderData.frais_packaging]);
 
@@ -380,18 +387,19 @@ export default function AdminOrders() {
   };
 
   // Handle city selection for update form
-  const handleCitySelect = (city) => {
+  const handleCitySelect = (city, deliveryFee) => {
     setFormData(prev => ({
       ...prev,
       parcel_city: city
     }));
   };
 
-  // Handle city selection for new order form
-  const handleNewCitySelect = (city) => {
+  // Handle city selection for new order form - WITH AUTO DELIVERY FEE
+  const handleNewCitySelect = (city, deliveryFee) => {
     setNewOrderData(prev => ({
       ...prev,
-      parcel_city: city
+      parcel_city: city,
+      frais_livraison: deliveryFee || 0 // Auto-populate delivery fee
     }));
   };
 
@@ -841,7 +849,7 @@ export default function AdminOrders() {
         </>
       )}
 
-      {/* ADD MODAL with all fields */}
+      {/* ADD MODAL with all fields and auto delivery fee */}
       {showAddModal && (
         <div className="modal-overlay" onClick={closeAddModal}>
           <div className="modal-content add-order-modal" onClick={e => e.stopPropagation()}>
@@ -958,6 +966,7 @@ export default function AdminOrders() {
                         onChange={(value) => setNewOrderData(prev => ({ ...prev, parcel_city: value }))}
                         onSelect={handleNewCitySelect}
                       />
+                      <small className="field-hint">La sélection d'une ville mettra à jour les frais de livraison</small>
                     </div>
 
                     <div className="form-group full-width">
@@ -1014,7 +1023,11 @@ export default function AdminOrders() {
                         placeholder="0.00"
                         min="0"
                         step="0.01"
+                        className={newOrderData.frais_livraison > 0 ? "auto-filled" : ""}
                       />
+                      {newOrderData.frais_livraison > 0 && (
+                        <small className="field-hint success">Frais automatiques appliqués</small>
+                      )}
                     </div>
 
                     <div className="form-group">
@@ -1045,7 +1058,7 @@ export default function AdminOrders() {
                         name="total"
                         value={newOrderData.total}
                         readOnly
-                        className="readonly-input"
+                        className="readonly-input total-field"
                       />
                       <small className="field-hint">Calculé automatiquement</small>
                     </div>
@@ -1060,7 +1073,7 @@ export default function AdminOrders() {
                         name="profit"
                         value={newOrderData.profit}
                         readOnly
-                        className="readonly-input"
+                        className={`readonly-input ${newOrderData.profit >= 0 ? 'profit-positive' : 'profit-negative'}`}
                       />
                       <small className="field-hint">Calculé automatiquement</small>
                     </div>

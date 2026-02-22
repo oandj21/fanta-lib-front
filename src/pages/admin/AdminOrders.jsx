@@ -72,7 +72,7 @@ export default function AdminOrders() {
         order.city?.toLowerCase().includes(searchTerm.toLowerCase());
       
       // Status filter
-      const matchesStatus = statusFilter === "all" || order.status === statusFilter;
+      const matchesStatus = statusFilter === "all" || order.statut === statusFilter;
       
       return matchesSearch && matchesStatus;
     }).sort((a, b) => {
@@ -331,12 +331,10 @@ export default function AdminOrders() {
               <tbody>
                 {currentOrders.map((order) => (
                   <tr key={order.id}>
-                    <td className="order-code">{order.code || "-"}</td>
-                    <td className="order-client">{order.client || "-"}</td>
-                    <td>{order.city || "-"}</td>
-                    <td className="text-center">{Number(order.quantity || 0)}</td>
-                    <td className="order-total">{Number(order.total || 0).toFixed(2)} DH</td>
-                    <td className="order-profit">{Number(order.profit || 0).toFixed(2)} DH</td>
+                    <td className="order-code">{order.parcel_code || "-"}</td>
+                    <td className="order-client">{order.parcel_receiver || "-"}</td>
+                    <td>{order.parcel_city || "-"}</td>
+                    <td>{order.livres?.length || 0}</td> 
                     <td>
                       {editingId === order.id ? (
                         <div className="edit-status">
@@ -361,12 +359,12 @@ export default function AdminOrders() {
                         <span 
                           className="status-bad"
                           style={{ 
-                            backgroundColor: `${statusColors[order.status] || "#666"}20`,
-                            color: statusColors[order.status] || "#666",
-                            border: `1px solid ${(statusColors[order.status] || "#666")}40`
+                            backgroundColor: `${statusColors[order.statut] || "#666"}20`,
+                            color: statusColors[order.statut] || "#666",
+                            border: `1px solid ${(statusColors[order.statut] || "#666")}40`
                           }}
                         >
-                          {statusLabels[order.status] || "Nouvelle"}
+                          {statusLabels[order.statut] || "Nouvelle"}
                         </span>
                       )}
                     </td>
@@ -376,7 +374,7 @@ export default function AdminOrders() {
                         <button
                           onClick={() => {
                             setEditingId(order.id);
-                            setEditStatus(order.status || "new");
+                            setEditStatus(order.statut || "new");
                           }}
                           className="btn-icon edit"
                           title="Modifier statut"
@@ -387,7 +385,7 @@ export default function AdminOrders() {
                           onClick={() => markDelivered(order.id)}
                           className="btn-icon success"
                           title="Marquer livrée"
-                          disabled={order.status === "delivered"}
+                          disabled={order.statut === "delivered"}
                         >
                           <Check size={16} />
                         </button>

@@ -1,35 +1,167 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { 
   Pencil, Trash2, Check, Search, XCircle, Filter, 
   X, Save, MapPin, Phone, User, Package, DollarSign,
-  Map, FileText, Truck, UserCircle, Building, Plus
+  Map, FileText, Truck, UserCircle, Building, Plus,
+  Loader, ChevronDown
 } from "lucide-react";
+import axios from "axios";
 import { 
   fetchCommandes, 
   updateCommande, 
   deleteCommande, 
   markCommandeAsDelivered,
-  createCommande  // Add this import
+  createCommande
 } from "../../store/store";
 import "../../css/AdminOrders.css";
 
-const statusLabels = {
-  new: "Nouvelle",
-  confirmed: "Confirmée",
-  shipped: "Expédiée",
-  delivered: "Livrée",
-  cancelled: "Annulée",
-  returned: "Retournée",
-};
+// City Autocomplete Component
+const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
+  const [query, setQuery] = useState(value || "");
+  const [suggestions, setSuggestions] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [cities, setCities] = useState([]);
+  const [error, setError] = useState(null);
 
-const statusColors = {
-  new: "#666",
-  confirmed: "#007bff",
-  shipped: "#ffc107",
-  delivered: "#28a745",
-  cancelled: "#dc3545",
-  returned: "#6f42c1",
+  // Fetch cities from Welivexpress API
+  const fetchCities = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Get token from localStorage
+      const token = localStorage.getItem("token");
+      
+      const response = await axios.get(
+        "https://fanta-lib-back-production.up.railway.app/api/welivexpress/listcities",
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json'
+          }
+        }
+      );
+      
+      console.log("Cities API response:", response.data);
+      
+      // Handle different response structures
+      let citiesData = [];
+      if (Array.isArray(response.data)) {
+        citiesData = response.data;
+      } else if (response.data.data && Array.isArray(response.data.data)) {
+        citiesData = response.data.data;
+      } else if (response.data.cities && Array.isArray(response.data.cities)) {
+        citiesData = response.data.cities;
+      }
+      
+      setCities(citiesData);
+    } catch (err) {
+      console.error("Error fetching cities:", err);
+      setError("Impossible de charger les villes");
+      // Fallback cities in case API fails
+      setCities([
+        "Casablanca",
+        "Rabat",
+        "Fès",
+        "Marrakech",
+        "Agadir",
+        "Tanger",
+        "Meknès",
+        "Oujda",
+        "Kénitra",
+        "Tétouan",
+        "Safi",
+        "Mohammédia",
+        "El Jadida",
+        "Béni Mellal",
+        "Nador"
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Load cities on component mount
+  useEffect(() => {
+    fetchCities();
+  }, [fetchCities]);
+
+  // Filter cities based on query
+  useEffect(() => {
+    if (query.length >= 1) {
+      const filtered = cities
+        .filter(city => {
+          const cityName = typeof city === 'string' ? city : city.name || city.city || city.label || '';
+          return cityName.toLowerCase().includes(query.toLowerCase());
+        })
+        .slice(0, 10); // Limit to 10 suggestions
+      setSuggestions(filtered);
+      setShowSuggestions(true);
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  }, [query, cities]);
+
+  const handleInputChange = (e) => {
+    const newValue = e.target.value;
+    setQuery(newValue);
+    onChange(newValue);
+  };
+
+  const handleSelectCity = (city) => {
+    const cityName = typeof city === 'string' ? city : city.name || city.city || city.label || city;
+    setQuery(cityName);
+    onChange(cityName);
+    if (onSelect) onSelect(cityName);
+    setShowSuggestions(false);
+  };
+
+  return (
+    <div className="city-autocomplete">
+      <div className="autocomplete-input-wrapper">
+        <input
+          type="text"
+          value={query}
+          onChange={handleInputChange}
+          onFocus={() => query.length >= 1 && setSuggestions.length > 0 && setShowSuggestions(true)}
+          onBlur={() => {
+            // Delay hiding to allow click on suggestions
+            setTimeout(() => setShowSuggestions(false), 200);
+          }}
+          placeholder="Tapez pour rechercher une ville..."
+          className="city-input"
+          disabled={disabled}
+        />
+        {loading && <Loader size={16} className="autocomplete-spinner" />}
+        {!loading && suggestions.length > 0 && (
+          <ChevronDown size={16} className="autocomplete-arrow" />
+        )}
+      </div>
+      
+      {showSuggestions && suggestions.length > 0 && (
+        <ul className="suggestions-list">
+          {suggestions.map((city, index) => {
+            const cityName = typeof city === 'string' ? city : city.name || city.city || city.label || city;
+            return (
+              <li
+                key={index}
+                onMouseDown={() => handleSelectCity(city)}
+                className="suggestion-item"
+              >
+                <MapPin size={14} />
+                {cityName}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      
+      {error && <div className="city-error">{error}</div>}
+    </div>
+  );
 };
 
 export default function AdminOrders() {
@@ -47,12 +179,12 @@ export default function AdminOrders() {
   
   // Modal states
   const [showUpdateModal, setShowUpdateModal] = useState(false);
-  const [showAddModal, setShowAddModal] = useState(false);  // Add this
+  const [showAddModal, setShowAddModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [updateLoading, setUpdateLoading] = useState(false);
-  const [addLoading, setAddLoading] = useState(false);  // Add this
+  const [addLoading, setAddLoading] = useState(false);
   const [updateError, setUpdateError] = useState(null);
-  const [addError, setAddError] = useState(null);  // Add this
+  const [addError, setAddError] = useState(null);
   
   // Form state for update
   const [formData, setFormData] = useState({
@@ -81,7 +213,7 @@ export default function AdminOrders() {
     parcel_livreur_sent: "",
     parcel_livreurname_sent: "",
     statut: "new",
-    date: new Date().toISOString().split('T')[0] // Today's date
+    date: new Date().toISOString().split('T')[0]
   });
 
   useEffect(() => {
@@ -195,6 +327,22 @@ export default function AdminOrders() {
     setNewOrderData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? (checked ? 1 : 0) : value
+    }));
+  };
+
+  // Handle city selection for update form
+  const handleCitySelect = (city) => {
+    setFormData(prev => ({
+      ...prev,
+      parcel_city: city
+    }));
+  };
+
+  // Handle city selection for new order form
+  const handleNewCitySelect = (city) => {
+    setNewOrderData(prev => ({
+      ...prev,
+      parcel_city: city
     }));
   };
 
@@ -424,7 +572,7 @@ export default function AdminOrders() {
           </p>
         </div>
         
-        {/* ADD BUTTON - Here it is! */}
+        {/* ADD BUTTON */}
         <button onClick={openAddModal} className="btn-add-order">
           <Plus size={20} />
           Nouvelle commande
@@ -628,7 +776,7 @@ export default function AdminOrders() {
         </>
       )}
 
-      {/* ADD MODAL */}
+      {/* ADD MODAL with City Autocomplete */}
       {showAddModal && (
         <div className="modal-overlay" onClick={closeAddModal}>
           <div className="modal-content add-order-modal" onClick={e => e.stopPropagation()}>
@@ -740,14 +888,10 @@ export default function AdminOrders() {
                         <Building size={14} />
                         Ville
                       </label>
-                      <input
-                        type="text"
-                        id="parcel_city"
-                        name="parcel_city"
+                      <CityAutocomplete
                         value={newOrderData.parcel_city}
-                        onChange={handleNewOrderChange}
-                        placeholder="Ville"
-                        required
+                        onChange={(value) => setNewOrderData(prev => ({ ...prev, parcel_city: value }))}
+                        onSelect={handleNewCitySelect}
                       />
                     </div>
 
@@ -916,7 +1060,7 @@ export default function AdminOrders() {
         </div>
       )}
 
-      {/* UPDATE MODAL (same as before) */}
+      {/* UPDATE MODAL with City Autocomplete */}
       {showUpdateModal && selectedOrder && (
         <div className="modal-overlay" onClick={closeUpdateModal}>
           <div className="modal-content update-order-modal" onClick={e => e.stopPropagation()}>
@@ -987,13 +1131,10 @@ export default function AdminOrders() {
                         <Building size={14} />
                         Ville
                       </label>
-                      <input
-                        type="text"
-                        id="parcel_city"
-                        name="parcel_city"
+                      <CityAutocomplete
                         value={formData.parcel_city}
-                        onChange={handleInputChange}
-                        placeholder="Ville"
+                        onChange={(value) => setFormData(prev => ({ ...prev, parcel_city: value }))}
+                        onSelect={handleCitySelect}
                       />
                     </div>
 

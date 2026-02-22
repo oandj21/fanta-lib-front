@@ -35,7 +35,7 @@ const statusColors = {
   returned: "#6f42c1",
 };
 
-// City Autocomplete Component
+// City Autocomplete Component with delivery fees
 const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
   const [query, setQuery] = useState(value || "");
   const [suggestions, setSuggestions] = useState([]);
@@ -43,6 +43,13 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [cities, setCities] = useState([]);
   const [error, setError] = useState(null);
+
+  // Update query when value prop changes (for update form)
+  useEffect(() => {
+    if (value !== query) {
+      setQuery(value || "");
+    }
+  }, [value]);
 
   // Fetch cities from Welivexpress API
   const fetchCities = useCallback(async () => {
@@ -75,32 +82,73 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
         citiesData = response.data.cities;
       }
       
+      // Transform data to include delivery fees if not present
+      citiesData = citiesData.map(city => {
+        if (typeof city === 'string') {
+          // If city is just a string, add default delivery fee based on city name
+          return {
+            name: city,
+            delivery_fee: getDefaultDeliveryFee(city)
+          };
+        }
+        return city;
+      });
+      
       setCities(citiesData);
     } catch (err) {
       console.error("Error fetching cities:", err);
       setError("Impossible de charger les villes");
-      // Fallback cities in case API fails
+      // Fallback cities with delivery fees
       setCities([
-        "Casablanca",
-        "Rabat",
-        "Fès",
-        "Marrakech",
-        "Agadir",
-        "Tanger",
-        "Meknès",
-        "Oujda",
-        "Kénitra",
-        "Tétouan",
-        "Safi",
-        "Mohammédia",
-        "El Jadida",
-        "Béni Mellal",
-        "Nador"
+        { name: "Casablanca", delivery_fee: 25 },
+        { name: "Rabat", delivery_fee: 30 },
+        { name: "Fès", delivery_fee: 35 },
+        { name: "Marrakech", delivery_fee: 40 },
+        { name: "Agadir", delivery_fee: 45 },
+        { name: "Tanger", delivery_fee: 35 },
+        { name: "Meknès", delivery_fee: 35 },
+        { name: "Oujda", delivery_fee: 45 },
+        { name: "Kénitra", delivery_fee: 30 },
+        { name: "Tétouan", delivery_fee: 35 },
+        { name: "Safi", delivery_fee: 35 },
+        { name: "Mohammédia", delivery_fee: 25 },
+        { name: "El Jadida", delivery_fee: 30 },
+        { name: "Béni Mellal", delivery_fee: 35 },
+        { name: "Nador", delivery_fee: 45 }
       ]);
     } finally {
       setLoading(false);
     }
   }, []);
+
+  // Helper function to get default delivery fee based on city name
+  const getDefaultDeliveryFee = (cityName) => {
+    const cityFees = {
+      'casablanca': 25,
+      'rabat': 30,
+      'fès': 35,
+      'marrakech': 40,
+      'agadir': 45,
+      'tanger': 35,
+      'meknès': 35,
+      'oujda': 45,
+      'kénitra': 30,
+      'tétouan': 35,
+      'safi': 35,
+      'mohammédia': 25,
+      'el jadida': 30,
+      'béni mellal': 35,
+      'nador': 45
+    };
+    
+    const lowerCity = cityName.toLowerCase();
+    for (const [key, fee] of Object.entries(cityFees)) {
+      if (lowerCity.includes(key)) {
+        return fee;
+      }
+    }
+    return 30; // Default fee
+  };
 
   // Load cities on component mount
   useEffect(() => {
@@ -112,7 +160,7 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
     if (query.length >= 1) {
       const filtered = cities
         .filter(city => {
-          const cityName = typeof city === 'string' ? city : city.name || city.city || city.label || '';
+          const cityName = city.name || city.city || city.label || '';
           return cityName.toLowerCase().includes(query.toLowerCase());
         })
         .slice(0, 10); // Limit to 10 suggestions
@@ -131,10 +179,12 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
   };
 
   const handleSelectCity = (city) => {
-    const cityName = typeof city === 'string' ? city : city.name || city.city || city.label || city;
+    const cityName = city.name || city.city || city.label || city;
+    const deliveryFee = city.delivery_fee || city.frais_livraison || getDefaultDeliveryFee(cityName);
+    
     setQuery(cityName);
     onChange(cityName);
-    if (onSelect) onSelect(cityName);
+    if (onSelect) onSelect(cityName, deliveryFee);
     setShowSuggestions(false);
   };
 
@@ -145,7 +195,7 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
           type="text"
           value={query}
           onChange={handleInputChange}
-          onFocus={() => query.length >= 1 && setSuggestions.length > 0 && setShowSuggestions(true)}
+          onFocus={() => query.length >= 1 && suggestions.length > 0 && setShowSuggestions(true)}
           onBlur={() => {
             setTimeout(() => setShowSuggestions(false), 200);
           }}
@@ -162,7 +212,9 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
       {showSuggestions && suggestions.length > 0 && (
         <ul className="suggestions-list">
           {suggestions.map((city, index) => {
-            const cityName = typeof city === 'string' ? city : city.name || city.city || city.label || city;
+            const cityName = city.name || city.city || city.label || city;
+            const deliveryFee = city.delivery_fee || city.frais_livraison || getDefaultDeliveryFee(cityName);
+            
             return (
               <li
                 key={index}
@@ -170,7 +222,10 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
                 className="suggestion-item"
               >
                 <MapPin size={14} />
-                {cityName}
+                <span className="city-name">{cityName}</span>
+                {deliveryFee > 0 && (
+                  <span className="delivery-fee-badge">{deliveryFee} MAD</span>
+                )}
               </li>
             );
           })}
@@ -211,6 +266,8 @@ export default function AdminOrders() {
     parcel_city: "",
     parcel_address: "",
     parcel_price: "",
+    frais_livraison: 0,
+    frais_packaging: 0,
     parcel_note: "",
     parcel_open: 0,
     parcel_livreur_sent: "",
@@ -218,7 +275,7 @@ export default function AdminOrders() {
     statut: "new"
   });
 
-  // Form state for new order - WITH ALL REQUIRED FIELDS
+  // Form state for new order
   const [newOrderData, setNewOrderData] = useState({
     parcel_code: "",
     parcel_receiver: "",
@@ -248,15 +305,18 @@ export default function AdminOrders() {
     setCurrentPage(1);
   }, [searchTerm, statusFilter]);
 
-  // Update form data when selected order changes
+  // Update form data when selected order changes - FIXED TO INCLUDE ALL FIELDS
   useEffect(() => {
     if (selectedOrder) {
+      console.log("Setting update form data with:", selectedOrder);
       setFormData({
         parcel_receiver: selectedOrder.parcel_receiver || "",
         parcel_phone: selectedOrder.parcel_phone || "",
         parcel_city: selectedOrder.parcel_city || "",
         parcel_address: selectedOrder.parcel_address || "",
         parcel_price: selectedOrder.parcel_price || "",
+        frais_livraison: selectedOrder.frais_livraison || 0,
+        frais_packaging: selectedOrder.frais_packaging || 0,
         parcel_note: selectedOrder.parcel_note || "",
         parcel_open: selectedOrder.parcel_open || 0,
         parcel_livreur_sent: selectedOrder.parcel_livreur_sent || "",
@@ -273,13 +333,13 @@ export default function AdminOrders() {
     const packaging = parseFloat(newOrderData.frais_packaging) || 0;
     
     const total = price + delivery + packaging;
-    // Profit calculation - you can adjust this formula based on your business logic
+    // Profit calculation - you can adjust this formula
     const profit = price - (delivery + packaging);
     
     setNewOrderData(prev => ({
       ...prev,
-      total: total,
-      profit: profit
+      total: parseFloat(total.toFixed(2)),
+      profit: parseFloat(profit.toFixed(2))
     }));
   }, [newOrderData.parcel_price, newOrderData.frais_livraison, newOrderData.frais_packaging]);
 
@@ -312,6 +372,8 @@ export default function AdminOrders() {
       parcel_city: "",
       parcel_address: "",
       parcel_price: "",
+      frais_livraison: 0,
+      frais_packaging: 0,
       parcel_note: "",
       parcel_open: 0,
       parcel_livreur_sent: "",
@@ -323,7 +385,6 @@ export default function AdminOrders() {
 
   // Open add modal
   const openAddModal = () => {
-    // Generate a unique parcel code
     const newParcelCode = `CMD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     setNewOrderData({
       ...newOrderData,
@@ -380,18 +441,21 @@ export default function AdminOrders() {
   };
 
   // Handle city selection for update form
-  const handleCitySelect = (city) => {
+  const handleCitySelect = (city, deliveryFee) => {
     setFormData(prev => ({
       ...prev,
-      parcel_city: city
+      parcel_city: city,
+      frais_livraison: deliveryFee || prev.frais_livraison
     }));
   };
 
-  // Handle city selection for new order form
-  const handleNewCitySelect = (city) => {
+  // Handle city selection for new order form - WITH AUTO DELIVERY FEE
+  const handleNewCitySelect = (city, deliveryFee) => {
+    console.log("City selected:", city, "with fee:", deliveryFee);
     setNewOrderData(prev => ({
       ...prev,
-      parcel_city: city
+      parcel_city: city,
+      frais_livraison: deliveryFee || 0
     }));
   };
 
@@ -424,7 +488,6 @@ export default function AdminOrders() {
 
       console.log("Updating order with data:", updateData);
       
-      // Dispatch update action
       const result = await dispatch(updateCommande({ 
         id: selectedOrder.id, 
         ...updateData 
@@ -432,9 +495,7 @@ export default function AdminOrders() {
 
       console.log("Update successful:", result);
       
-      // Refresh orders list
       await dispatch(fetchCommandes());
-      
       closeUpdateModal();
       
     } catch (error) {
@@ -451,13 +512,11 @@ export default function AdminOrders() {
   const handleAddSubmit = async (e) => {
     e.preventDefault();
     
-    // Validate required fields
     if (!newOrderData.parcel_receiver || !newOrderData.parcel_city || !newOrderData.parcel_price) {
       setAddError("Veuillez remplir tous les champs obligatoires (client, ville, prix)");
       return;
     }
 
-    // Ensure all numeric fields are properly parsed
     const orderToCreate = {
       ...newOrderData,
       parcel_price: parseFloat(newOrderData.parcel_price) || 0,
@@ -475,14 +534,10 @@ export default function AdminOrders() {
     try {
       console.log("Creating new order with data:", orderToCreate);
       
-      // Dispatch create action
       const result = await dispatch(createCommande(orderToCreate)).unwrap();
-
       console.log("Create successful:", result);
       
-      // Refresh orders list
       await dispatch(fetchCommandes());
-      
       closeAddModal();
       
     } catch (error) {
@@ -499,31 +554,26 @@ export default function AdminOrders() {
   // Filter and search orders
   const filteredOrders = useMemo(() => {
     return orderList.filter(order => {
-      // Search filter
       const matchesSearch = searchTerm === "" || 
         order.parcel_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.parcel_receiver?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.parcel_city?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.parcel_phone?.toLowerCase().includes(searchTerm.toLowerCase());
       
-      // Status filter
       const matchesStatus = statusFilter === "all" || order.statut === statusFilter;
       
       return matchesSearch && matchesStatus;
     }).sort((a, b) => {
-      // Sort by date (most recent first)
       return new Date(b.date || 0) - new Date(a.date || 0);
     });
   }, [orderList, searchTerm, statusFilter]);
 
-  // Get current page orders
   const currentOrders = useMemo(() => {
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     return filteredOrders.slice(indexOfFirstItem, indexOfLastItem);
   }, [filteredOrders, currentPage, itemsPerPage]);
 
-  // Calculate total pages
   const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
 
   const stats = {
@@ -546,7 +596,6 @@ export default function AdminOrders() {
     document.querySelector('.table-wrapper')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  // Pagination component
   const Pagination = () => {
     if (totalPages <= 1) return null;
 
@@ -574,7 +623,6 @@ export default function AdminOrders() {
             onClick={() => paginate(currentPage - 1)}
             disabled={currentPage === 1}
             className="pagination-btn"
-            aria-label="Page précédente"
           >
             &lsaquo;
           </button>
@@ -607,7 +655,6 @@ export default function AdminOrders() {
             onClick={() => paginate(currentPage + 1)}
             disabled={currentPage === totalPages}
             className="pagination-btn"
-            aria-label="Page suivante"
           >
             &rsaquo;
           </button>
@@ -633,7 +680,6 @@ export default function AdminOrders() {
           </p>
         </div>
         
-        {/* ADD BUTTON */}
         <button onClick={openAddModal} className="btn-add-order">
           <Plus size={20} />
           Nouvelle commande
@@ -836,12 +882,11 @@ export default function AdminOrders() {
             </table>
           </div>
           
-          {/* Pagination */}
           <Pagination />
         </>
       )}
 
-      {/* ADD MODAL with all fields */}
+      {/* ADD MODAL */}
       {showAddModal && (
         <div className="modal-overlay" onClick={closeAddModal}>
           <div className="modal-content add-order-modal" onClick={e => e.stopPropagation()}>
@@ -958,6 +1003,7 @@ export default function AdminOrders() {
                         onChange={(value) => setNewOrderData(prev => ({ ...prev, parcel_city: value }))}
                         onSelect={handleNewCitySelect}
                       />
+                      <small className="field-hint">La sélection d'une ville mettra à jour les frais de livraison</small>
                     </div>
 
                     <div className="form-group full-width">
@@ -1014,7 +1060,11 @@ export default function AdminOrders() {
                         placeholder="0.00"
                         min="0"
                         step="0.01"
+                        className={newOrderData.frais_livraison > 0 ? "auto-filled" : ""}
                       />
+                      {newOrderData.frais_livraison > 0 && (
+                        <small className="field-hint success">Frais automatiques appliqués</small>
+                      )}
                     </div>
 
                     <div className="form-group">
@@ -1045,7 +1095,7 @@ export default function AdminOrders() {
                         name="total"
                         value={newOrderData.total}
                         readOnly
-                        className="readonly-input"
+                        className="readonly-input total-field"
                       />
                       <small className="field-hint">Calculé automatiquement</small>
                     </div>
@@ -1060,7 +1110,7 @@ export default function AdminOrders() {
                         name="profit"
                         value={newOrderData.profit}
                         readOnly
-                        className="readonly-input"
+                        className={`readonly-input ${newOrderData.profit >= 0 ? 'profit-positive' : 'profit-negative'}`}
                       />
                       <small className="field-hint">Calculé automatiquement</small>
                     </div>
@@ -1189,7 +1239,7 @@ export default function AdminOrders() {
         </div>
       )}
 
-      {/* UPDATE MODAL */}
+      {/* UPDATE MODAL - FIXED TO SHOW EXISTING VALUES */}
       {showUpdateModal && selectedOrder && (
         <div className="modal-overlay" onClick={closeUpdateModal}>
           <div className="modal-content update-order-modal" onClick={e => e.stopPropagation()}>
@@ -1300,6 +1350,38 @@ export default function AdminOrders() {
                         id="parcel_price"
                         name="parcel_price"
                         value={formData.parcel_price}
+                        onChange={handleInputChange}
+                        placeholder="0.00"
+                        min="0"
+                        step="0.01"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="frais_livraison">
+                        Frais de livraison (MAD)
+                      </label>
+                      <input
+                        type="number"
+                        id="frais_livraison"
+                        name="frais_livraison"
+                        value={formData.frais_livraison}
+                        onChange={handleInputChange}
+                        placeholder="0.00"
+                        min="0"
+                        step="0.01"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="frais_packaging">
+                        Frais de packaging (MAD)
+                      </label>
+                      <input
+                        type="number"
+                        id="frais_packaging"
+                        name="frais_packaging"
+                        value={formData.frais_packaging}
                         onChange={handleInputChange}
                         placeholder="0.00"
                         min="0"

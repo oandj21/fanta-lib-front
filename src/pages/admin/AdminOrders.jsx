@@ -459,55 +459,111 @@ export default function AdminOrders() {
     }));
   };
 
-  const handleUpdateSubmit = async (e) => {
-    e.preventDefault();
-    if (!selectedOrder) return;
+  // In your AdminOrders.jsx - Replace your handleUpdateSubmit with this:
 
-    setUpdateLoading(true);
-    setUpdateError(null);
+const handleUpdateSubmit = async (e) => {
+  e.preventDefault();
+  if (!selectedOrder) return;
 
-    try {
-      // Filter out empty values to only send changed fields
-      const updateData = {};
-      Object.keys(formData).forEach(key => {
-        if (formData[key] !== selectedOrder[key] && formData[key] !== "") {
-          updateData[key] = formData[key];
-        }
-      });
+  setUpdateLoading(true);
+  setUpdateError(null);
 
-      // Always include status if it's changed
-      if (formData.statut !== selectedOrder.statut) {
-        updateData.statut = formData.statut;
-      }
+  try {
+    // --- Prepare the data for the API ---
+    // Map the formData state to the exact fields Welivexpress expects.
+    // This ensures your backend receives the correctly named fields.
+    const updatePayload = {};
 
-      // If no changes, close modal
-      if (Object.keys(updateData).length === 0) {
-        closeUpdateModal();
-        return;
-      }
-
-      console.log("Updating order with data:", updateData);
-      
-      const result = await dispatch(updateCommande({ 
-        id: selectedOrder.id, 
-        ...updateData 
-      })).unwrap();
-
-      console.log("Update successful:", result);
-      
-      await dispatch(fetchCommandes());
-      closeUpdateModal();
-      
-    } catch (error) {
-      console.error("Update failed:", error);
-      setUpdateError(
-        error?.message || 
-        "Erreur lors de la mise à jour. Veuillez réessayer."
-      );
-    } finally {
-      setUpdateLoading(false);
+    // Only include fields that have changed and map them to API field names
+    if (formData.parcel_receiver !== selectedOrder.parcel_receiver) {
+      updatePayload.parcel_receiver = formData.parcel_receiver;
     }
-  };
+    if (formData.parcel_phone !== selectedOrder.parcel_phone) {
+      updatePayload.parcel_phone = formData.parcel_phone;
+    }
+    if (formData.parcel_city !== selectedOrder.parcel_city) {
+      updatePayload.parcel_city = formData.parcel_city; // Can be city name or ID
+    }
+    if (parseFloat(formData.parcel_price) !== parseFloat(selectedOrder.parcel_price)) {
+      updatePayload.parcel_price = parseFloat(formData.parcel_price) || 0;
+    }
+    if (formData.parcel_address !== selectedOrder.parcel_address) {
+      updatePayload.parcel_address = formData.parcel_address;
+    }
+    if (formData.parcel_note !== selectedOrder.parcel_note) {
+      updatePayload.parcel_note = formData.parcel_note;
+    }
+    // Map 'parcel_open' (checkbox) to 'parcel_open' (0 or 1)
+    if (parseInt(formData.parcel_open) !== parseInt(selectedOrder.parcel_open)) {
+      updatePayload.parcel_open = formData.parcel_open ? 1 : 0;
+    }
+    if (formData.parcel_livreur_sent !== selectedOrder.parcel_livreur_sent) {
+      updatePayload.parcel_livreur_sent = formData.parcel_livreur_sent;
+    }
+    if (formData.parcel_livreurname_sent !== selectedOrder.parcel_livreurname_sent) {
+      updatePayload.parcel_livreurname_sent = formData.parcel_livreurname_sent;
+    }
+    // Map 'statut' - this might be for your internal status, not for Welivexpress.
+    // Welivexpress likely manages its own status. Include it if your backend uses it.
+    if (formData.statut !== selectedOrder.statut) {
+      updatePayload.statut = formData.statut;
+    }
+    
+    // IMPORTANT: Also include fields that might be needed for your local DB update
+    // but are NOT sent to Welivexpress. Your backend controller will handle the separation.
+    // For example, 'frais_livraison' and 'frais_packaging' are likely for your local DB only.
+    if (parseFloat(formData.frais_livraison) !== parseFloat(selectedOrder.frais_livraison)) {
+      updatePayload.frais_livraison = parseFloat(formData.frais_livraison) || 0;
+    }
+    if (parseFloat(formData.frais_packaging) !== parseFloat(selectedOrder.frais_packaging)) {
+      updatePayload.frais_packaging = parseFloat(formData.frais_packaging) || 0;
+    }
+
+    // If no changes were detected, close the modal
+    if (Object.keys(updatePayload).length === 0) {
+      console.log("No changes detected, closing modal.");
+      closeUpdateModal();
+      return;
+    }
+
+    console.log("📤 Sending update payload to backend:", updatePayload);
+    
+    // Dispatch the update action. Your backend controller will:
+    // 1. Update the local database with all fields in updatePayload.
+    // 2. Send a PUT request to Welivexpress with the relevant fields.
+    const result = await dispatch(updateCommande({ 
+      id: selectedOrder.id, 
+      ...updatePayload 
+    })).unwrap();
+
+    console.log("✅ Update successful. Full response:", result);
+    
+    // Check if the backend reported any issues with the Welivexpress update
+    if (result.welivexpress_response) {
+        console.log("Welivexpress response:", result.welivexpress_response);
+        if (result.welivexpress_response.success === false) {
+            // Optionally show a warning to the user
+            setUpdateError(`Mise à jour locale OK, mais Welivexpress a répondu: ${result.welivexpress_response.message || 'Erreur'}`);
+            // Keep modal open? Or close? Your choice.
+            // return; 
+        }
+    }
+    
+    // Refresh the orders list to show updated data
+    await dispatch(fetchCommandes());
+    closeUpdateModal();
+    
+  } catch (error) {
+    console.error("❌ Update process failed:", error);
+    // The error from the API might contain details
+    const errorMessage = error?.message || 
+                         error?.data?.message || 
+                         "Erreur lors de la mise à jour. Veuillez réessayer.";
+    setUpdateError(errorMessage);
+  } finally {
+    setUpdateLoading(false);
+  }
+};
 
   const handleAddSubmit = async (e) => {
     e.preventDefault();

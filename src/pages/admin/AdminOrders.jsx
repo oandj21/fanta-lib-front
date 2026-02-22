@@ -259,9 +259,6 @@ export default function AdminOrders() {
   const [updateError, setUpdateError] = useState(null);
   const [addError, setAddError] = useState(null);
   
-  // Welivexpress warning state
-  const [showWelivexpressWarning, setShowWelivexpressWarning] = useState(false);
-  
   // Form state for update
   const [formData, setFormData] = useState({
     parcel_receiver: "",
@@ -299,16 +296,6 @@ export default function AdminOrders() {
     date: new Date().toISOString().split('T')[0]
   });
 
-  // Auto-hide Welivexpress warning
-  useEffect(() => {
-    if (showWelivexpressWarning) {
-      const timer = setTimeout(() => {
-        setShowWelivexpressWarning(false);
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [showWelivexpressWarning]);
-
   useEffect(() => {
     dispatch(fetchCommandes());
   }, [dispatch]);
@@ -318,7 +305,7 @@ export default function AdminOrders() {
     setCurrentPage(1);
   }, [searchTerm, statusFilter]);
 
-  // Update form data when selected order changes
+  // Update form data when selected order changes - FIXED TO INCLUDE ALL FIELDS
   useEffect(() => {
     if (selectedOrder) {
       console.log("Setting update form data with:", selectedOrder);
@@ -356,51 +343,6 @@ export default function AdminOrders() {
     }));
   }, [newOrderData.parcel_price, newOrderData.frais_livraison, newOrderData.frais_packaging]);
 
-  // Update Welivexpress function
-  const updateWelivexpressParcel = async (parcelData) => {
-    try {
-      console.log("📦 Sending to Welivexpress:", parcelData);
-      
-      const response = await axios.post(
-        'https://welivexpress.ma/apiclient/updateparcel',
-        {
-          parcel_code: parcelData.parcel_code,
-          parcel_receiver: parcelData.parcel_receiver,
-          parcel_phone: parcelData.parcel_phone || '',
-          parcel_city: parcelData.parcel_city,
-          parcel_price: parcelData.parcel_price ? parseFloat(parcelData.parcel_price) : 0,
-          parcel_address: parcelData.parcel_address || '',
-        },
-        {
-          headers: {
-            'Authorization': 'ffed4b3336e29bc62db39126e5d9c6a9ce4b44991e1d674737c03a98b5cee4ef',
-            'Content-Type': 'application/json',
-          },
-          timeout: 10000 // 10 second timeout
-        }
-      );
-      
-      console.log("✅ Welivexpress response:", response.data);
-      return response.data;
-      
-    } catch (error) {
-      console.error('❌ Failed to update Welivexpress:', error);
-      
-      // Return a more user-friendly error
-      if (error.code === 'ECONNABORTED') {
-        throw new Error('⏱️ Timeout - Welivexpress ne répond pas');
-      }
-      if (error.response) {
-        console.error('Welivexpress error response:', error.response.data);
-        throw new Error(`Erreur Welivexpress: ${error.response.status} - ${error.response.data?.message || 'Erreur inconnue'}`);
-      } else if (error.request) {
-        throw new Error('🌐 Pas de réponse de Welivexpress');
-      } else {
-        throw new Error(`Erreur: ${error.message}`);
-      }
-    }
-  };
-
   const handleDelete = (id) => {
     if (window.confirm("Êtes-vous sûr de vouloir supprimer cette commande ?")) {
       dispatch(deleteCommande(id));
@@ -417,7 +359,6 @@ export default function AdminOrders() {
   const openUpdateModal = (order) => {
     setSelectedOrder(order);
     setUpdateError(null);
-    setShowWelivexpressWarning(false);
     setShowUpdateModal(true);
   };
 
@@ -524,19 +465,13 @@ export default function AdminOrders() {
 
     setUpdateLoading(true);
     setUpdateError(null);
-    setShowWelivexpressWarning(false);
 
     try {
       // Filter out empty values to only send changed fields
       const updateData = {};
       Object.keys(formData).forEach(key => {
         if (formData[key] !== selectedOrder[key] && formData[key] !== "") {
-          // Convert numeric fields to numbers
-          if (['parcel_price', 'frais_livraison', 'frais_packaging'].includes(key)) {
-            updateData[key] = parseFloat(formData[key]) || 0;
-          } else {
-            updateData[key] = formData[key];
-          }
+          updateData[key] = formData[key];
         }
       });
 
@@ -545,51 +480,26 @@ export default function AdminOrders() {
         updateData.statut = formData.statut;
       }
 
-      // If no changes, just close modal
+      // If no changes, close modal
       if (Object.keys(updateData).length === 0) {
         closeUpdateModal();
         return;
       }
 
-      console.log("📝 Updating local order with data:", updateData);
+      console.log("Updating order with data:", updateData);
       
-      // 1. Update local database first
       const result = await dispatch(updateCommande({ 
         id: selectedOrder.id, 
         ...updateData 
       })).unwrap();
 
-      console.log("✅ Local update successful:", result);
+      console.log("Update successful:", result);
       
-      // 2. Try to update Welivexpress (but don't fail if it doesn't work)
-      try {
-        // Only send relevant fields to Welivexpress
-        const welivexpressData = {
-          parcel_code: selectedOrder.parcel_code,
-          parcel_receiver: updateData.parcel_receiver || selectedOrder.parcel_receiver,
-          parcel_phone: updateData.parcel_phone || selectedOrder.parcel_phone,
-          parcel_city: updateData.parcel_city || selectedOrder.parcel_city,
-          parcel_price: updateData.parcel_price || selectedOrder.parcel_price,
-          parcel_address: updateData.parcel_address || selectedOrder.parcel_address,
-        };
-        
-        await updateWelivexpressParcel(welivexpressData);
-        console.log("✅ Welivexpress update successful");
-        
-      } catch (welivexpressError) {
-        // Log the error but don't fail the overall operation
-        console.warn('⚠️ Welivexpress update failed but local update succeeded:', welivexpressError.message);
-        setShowWelivexpressWarning(true);
-      }
-      
-      // 3. Refresh the orders list
       await dispatch(fetchCommandes());
-      
-      // 4. Close modal
       closeUpdateModal();
       
     } catch (error) {
-      console.error("❌ Update failed:", error);
+      console.error("Update failed:", error);
       setUpdateError(
         error?.message || 
         "Erreur lors de la mise à jour. Veuillez réessayer."
@@ -775,15 +685,6 @@ export default function AdminOrders() {
           Nouvelle commande
         </button>
       </div>
-
-      {/* Welivexpress Warning */}
-      {showWelivexpressWarning && (
-        <div className="welivexpress-warning">
-          <span>⚠️</span>
-          <span>Commande mise à jour localement mais la synchronisation avec Welivexpress a échoué</span>
-          <button onClick={() => setShowWelivexpressWarning(false)}>✕</button>
-        </div>
-      )}
 
       {/* Stats Cards */}
       <div className="orders-stats-grid">
@@ -1338,7 +1239,7 @@ export default function AdminOrders() {
         </div>
       )}
 
-      {/* UPDATE MODAL */}
+      {/* UPDATE MODAL - FIXED TO SHOW EXISTING VALUES */}
       {showUpdateModal && selectedOrder && (
         <div className="modal-overlay" onClick={closeUpdateModal}>
           <div className="modal-content update-order-modal" onClick={e => e.stopPropagation()}>

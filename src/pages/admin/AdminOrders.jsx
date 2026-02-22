@@ -16,6 +16,25 @@ import {
 } from "../../store/store";
 import "../../css/AdminOrders.css";
 
+// Status labels and colors - DEFINED AT THE TOP
+const statusLabels = {
+  new: "Nouvelle",
+  confirmed: "Confirmée",
+  shipped: "Expédiée",
+  delivered: "Livrée",
+  cancelled: "Annulée",
+  returned: "Retournée",
+};
+
+const statusColors = {
+  new: "#666",
+  confirmed: "#007bff",
+  shipped: "#ffc107",
+  delivered: "#28a745",
+  cancelled: "#dc3545",
+  returned: "#6f42c1",
+};
+
 // City Autocomplete Component
 const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
   const [query, setQuery] = useState(value || "");

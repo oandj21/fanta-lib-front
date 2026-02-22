@@ -608,7 +608,7 @@ export default function AdminBooks() {
                             className="book-thumb"
                             onError={(e) => {
                               e.target.onerror = null;
-                              e.target.src = 'https://via.placeholder.com/40x52?text=No+Image';
+                              e.target.src = 'https://dummyimage.com/40x52/cccccc/000000&text=No+Image';
                             }}
                           />
                         ) : (
@@ -822,7 +822,7 @@ export default function AdminBooks() {
                                 alt={`${editing.titre} - ${index + 1}`}
                                 onError={(e) => {
                                   e.target.onerror = null;
-                                  e.target.src = 'https://via.placeholder.com/100x150?text=Image+Error';
+                                  e.target.src = 'https://dummyimage.com/40x52/cccccc/000000&text=No+Image';
                                 }}
                               />
                               <button 

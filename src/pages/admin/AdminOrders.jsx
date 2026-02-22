@@ -460,54 +460,100 @@ export default function AdminOrders() {
   };
 
   const handleUpdateSubmit = async (e) => {
-    e.preventDefault();
-    if (!selectedOrder) return;
+  e.preventDefault();
+  if (!selectedOrder) return;
 
-    setUpdateLoading(true);
-    setUpdateError(null);
+  setUpdateLoading(true);
+  setUpdateError(null);
 
-    try {
-      // Filter out empty values to only send changed fields
-      const updateData = {};
-      Object.keys(formData).forEach(key => {
-        if (formData[key] !== selectedOrder[key] && formData[key] !== "") {
-          updateData[key] = formData[key];
-        }
-      });
+  try {
+    // Prepare the data for the API with proper type handling
+    const updatePayload = {};
 
-      // Always include status if it's changed
-      if (formData.statut !== selectedOrder.statut) {
-        updateData.statut = formData.statut;
-      }
-
-      // If no changes, close modal
-      if (Object.keys(updateData).length === 0) {
-        closeUpdateModal();
-        return;
-      }
-
-      console.log("Updating order with data:", updateData);
+    // Helper function to safely compare and add fields
+    const addIfChanged = (fieldName, value, originalValue, transformFn = (v) => v) => {
+      // Handle null/undefined/empty string cases
+      const processedValue = value === "" || value === null || value === undefined ? null : value;
+      const processedOriginal = originalValue === "" || originalValue === null || originalValue === undefined ? null : originalValue;
       
-      const result = await dispatch(updateCommande({ 
-        id: selectedOrder.id, 
-        ...updateData 
-      })).unwrap();
+      // Compare and add if different
+      if (JSON.stringify(processedValue) !== JSON.stringify(processedOriginal)) {
+        updatePayload[fieldName] = transformFn(processedValue);
+      }
+    };
 
-      console.log("Update successful:", result);
-      
-      await dispatch(fetchCommandes());
+    // String fields - ensure they're strings or null
+    addIfChanged('parcel_receiver', formData.parcel_receiver, selectedOrder.parcel_receiver, v => v === null ? null : String(v));
+    addIfChanged('parcel_phone', formData.parcel_phone, selectedOrder.parcel_phone, v => v === null ? null : String(v));
+    addIfChanged('parcel_city', formData.parcel_city, selectedOrder.parcel_city, v => v === null ? null : String(v));
+    addIfChanged('parcel_address', formData.parcel_address, selectedOrder.parcel_address, v => v === null ? null : String(v));
+    addIfChanged('parcel_note', formData.parcel_note, selectedOrder.parcel_note, v => v === null ? null : String(v));
+    addIfChanged('parcel_livreur_sent', formData.parcel_livreur_sent, selectedOrder.parcel_livreur_sent, v => v === null ? null : String(v));
+    addIfChanged('parcel_livreurname_sent', formData.parcel_livreurname_sent, selectedOrder.parcel_livreurname_sent, v => v === null ? null : String(v));
+    addIfChanged('statut', formData.statut, selectedOrder.statut, v => v === null ? null : String(v));
+
+    // Numeric fields - ensure they're numbers or null
+    addIfChanged('parcel_price', formData.parcel_price, selectedOrder.parcel_price, v => v === null ? null : parseFloat(v) || 0);
+    addIfChanged('frais_livraison', formData.frais_livraison, selectedOrder.frais_livraison, v => v === null ? null : parseFloat(v) || 0);
+    addIfChanged('frais_packaging', formData.frais_packaging, selectedOrder.frais_packaging, v => v === null ? null : parseFloat(v) || 0);
+
+    // Boolean/Integer field - ensure it's 0 or 1
+    addIfChanged('parcel_open', formData.parcel_open, selectedOrder.parcel_open, v => v ? 1 : 0);
+
+    // If no changes were detected, close the modal
+    if (Object.keys(updatePayload).length === 0) {
+      console.log("No changes detected, closing modal.");
       closeUpdateModal();
-      
-    } catch (error) {
-      console.error("Update failed:", error);
-      setUpdateError(
-        error?.message || 
-        "Erreur lors de la mise à jour. Veuillez réessayer."
-      );
-    } finally {
-      setUpdateLoading(false);
+      return;
     }
-  };
+
+    console.log("📤 Sending update payload to backend:", updatePayload);
+    
+    const result = await dispatch(updateCommande({ 
+      id: selectedOrder.id, 
+      ...updatePayload 
+    })).unwrap();
+
+    console.log("✅ Update successful. Full response:", result);
+    
+    // Show detailed response to user
+    let message = "Mise à jour réussie!";
+    if (result.fields_sent_to_welivexpress && result.fields_sent_to_welivexpress.length > 0) {
+      message = `Mise à jour réussie! Champs envoyés à Welivexpress: ${result.fields_sent_to_welivexpress.join(', ')}`;
+    } else {
+      message = "Mise à jour locale réussie (aucun champ envoyé à Welivexpress)";
+    }
+    
+    // Check if the backend reported any issues with the Welivexpress update
+    if (result.welivexpress_response) {
+        console.log("Welivexpress response:", result.welivexpress_response);
+        if (result.welivexpress_response.success === false) {
+            alert(`Mise à jour locale OK, mais Welivexpress a répondu: ${result.welivexpress_response.message || 'Erreur'}`);
+        } else {
+            alert(message);
+        }
+    }
+    
+    await dispatch(fetchCommandes());
+    closeUpdateModal();
+    
+  } catch (error) {
+    console.error("❌ Update process failed:", error);
+    
+    // Log the full error details
+    if (error.response) {
+      console.error("Error response data:", error.response.data);
+      console.error("Error response status:", error.response.status);
+    }
+    
+    const errorMessage = error?.message || 
+                         error?.data?.message || 
+                         "Erreur lors de la mise à jour. Veuillez réessayer.";
+    setUpdateError(errorMessage);
+  } finally {
+    setUpdateLoading(false);
+  }
+};
 
   const handleAddSubmit = async (e) => {
     e.preventDefault();

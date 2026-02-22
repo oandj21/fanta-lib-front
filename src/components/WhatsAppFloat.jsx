@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
-import { useCart } from "../contexts/CartContext"; // Adjust the import path as needed
+import { useState } from "react";
+import { useCart } from "../contexts/CartContext"; // Adjust this path!
 import "../css/WhatsAppFloat.css";
 
 const WHATSAPP_NUMBER = "212625854078";
 
 export default function WhatsAppFloat() {
-  const { items, totalCount, getWhatsAppMessage } = useCart();
+  const { totalCount, getWhatsAppMessage } = useCart();
   const [isHovered, setIsHovered] = useState(false);
 
   const handleClick = () => {

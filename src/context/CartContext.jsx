@@ -1,26 +1,9 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState } from "react";
 
 const CartContext = createContext(null);
 
 export function CartProvider({ children }) {
   const [items, setItems] = useState([]);
-
-  // Load cart from localStorage on initial mount
-  useEffect(() => {
-    const savedCart = localStorage.getItem("cart");
-    if (savedCart) {
-      try {
-        setItems(JSON.parse(savedCart));
-      } catch (e) {
-        console.error("Failed to parse cart from localStorage", e);
-      }
-    }
-  }, []);
-
-  // Save to localStorage whenever cart changes
-  useEffect(() => {
-    localStorage.setItem("cart", JSON.stringify(items));
-  }, [items]);
 
   const addToCart = (book) => {
     setItems((prev) => {
@@ -38,49 +21,21 @@ export function CartProvider({ children }) {
     setItems((prev) => prev.filter((i) => i.book.id !== bookId));
   };
 
-  const updateQuantity = (bookId, quantity) => {
-    if (quantity <= 0) {
-      removeFromCart(bookId);
-      return;
-    }
-    setItems((prev) =>
-      prev.map((i) =>
-        i.book.id === bookId ? { ...i, quantity } : i
-      )
-    );
-  };
-
   const clearCart = () => setItems([]);
 
   const totalCount = items.reduce((sum, i) => sum + i.quantity, 0);
-  const totalPrice = items.reduce((sum, i) => sum + (i.book.prix || i.book.price || 0) * i.quantity, 0);
 
   const getWhatsAppMessage = () => {
-    if (items.length === 0) {
-      return "Bonjour Fantasia, je souhaite commander des livres.";
-    }
-    
-    const lines = items.map((i) => {
-      const title = i.book.titre || i.book.title || "Titre inconnu";
-      const author = i.book.auteur || i.book.author || "Auteur inconnu";
-      const price = i.book.prix || i.book.price || 0;
-      return `• ${title} (${author}) x${i.quantity} — ${(price * i.quantity).toFixed(2)} DH`;
-    });
-    
-    return `Bonjour Fantasia 📚\n\nJe souhaite commander :\n\n${lines.join("\n")}\n\n💰 Total : ${totalPrice.toFixed(2)} DH\n\nMerci de me confirmer la disponibilité et les modalités de livraison.`;
+    if (items.length === 0) return "Bonjour Fantasia, je souhaite commander des livres.";
+    const lines = items.map(
+      (i) => `• ${i.book.title} (${i.book.author}) x${i.quantity} — ${(i.book.price * i.quantity).toFixed(2)} DH`
+    );
+    const total = items.reduce((sum, i) => sum + i.book.price * i.quantity, 0);
+    return `Bonjour Fantasia 📚\n\nJe souhaite commander :\n\n${lines.join("\n")}\n\n💰 Total : ${total.toFixed(2)} DH\n\nMerci !`;
   };
 
   return (
-    <CartContext.Provider value={{ 
-      items, 
-      addToCart, 
-      removeFromCart, 
-      updateQuantity,
-      clearCart, 
-      totalCount, 
-      totalPrice,
-      getWhatsAppMessage 
-    }}>
+    <CartContext.Provider value={{ items, addToCart, removeFromCart, clearCart, totalCount, getWhatsAppMessage }}>
       {children}
     </CartContext.Provider>
   );

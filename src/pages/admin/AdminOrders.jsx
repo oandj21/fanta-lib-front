@@ -456,7 +456,8 @@ export default function AdminOrders() {
   };
 
   // FIXED: handleUpdateSubmit with proper change detection
-  const handleUpdateSubmit = async (e) => {
+ // FIXED: handleUpdateSubmit with proper field separation
+const handleUpdateSubmit = async (e) => {
   e.preventDefault();
   if (!selectedOrder) return;
 
@@ -486,7 +487,7 @@ export default function AdminOrders() {
       }
     };
 
-    // List of Welivexpress fields that should trigger an external update
+    // ✅ CORRECTED: Only fields that Welivexpress accepts
     const welivexpressFields = [
       'parcel_receiver',
       'parcel_phone',
@@ -494,16 +495,17 @@ export default function AdminOrders() {
       'parcel_price',
       'parcel_address',
       'parcel_note',
-      'parcel_open',
-      'parcel_livreur_sent',
-      'parcel_livreurname_sent'
+      'parcel_open'
+      // ❌ REMOVED: 'parcel_livreur_sent' and 'parcel_livreurname_sent' - these are local only
     ];
 
-    // List of local-only fields
+    // List of local-only fields (including livreur fields)
     const localFields = [
       'frais_livraison',
       'frais_packaging',
-      'statut'
+      'statut',
+      'parcel_livreur_sent',
+      'parcel_livreurname_sent'
     ];
 
     // Check ALL fields
@@ -537,7 +539,7 @@ export default function AdminOrders() {
             updatePayload[fieldName] = normalizedFormValue === "" ? "" : normalizedFormValue;
           }
         } else {
-          // Local-only fields
+          // Local-only fields (including livreur fields)
           updatePayload[fieldName] = normalizedFormValue;
         }
       }
@@ -581,7 +583,8 @@ export default function AdminOrders() {
         console.log("Welivexpress response:", result.welivexpress_response);
         if (result.welivexpress_response.error) {
             console.warn("Welivexpress error:", result.welivexpress_response.error);
-            // Don't show alert to user since local update succeeded
+            // Show alert if Welivexpress update failed
+            alert(`⚠️ Attention: La mise à jour locale a réussi, mais l'envoi à Welivexpress a échoué: ${result.welivexpress_response.error}`);
         }
     }
     

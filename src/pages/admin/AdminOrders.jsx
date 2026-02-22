@@ -256,7 +256,7 @@ export default function AdminOrders() {
   const [updateError, setUpdateError] = useState(null);
   const [addError, setAddError] = useState(null);
   
-  // Form state for update - WITH ALL FIELDS
+  // Form state for update - REMOVED the problematic fields
   const [formData, setFormData] = useState({
     parcel_receiver: "",
     parcel_phone: "",
@@ -267,12 +267,11 @@ export default function AdminOrders() {
     frais_packaging: "",
     parcel_note: "",
     parcel_open: 0,
-    parcel_livreur_sent: "",
-    parcel_livreurname_sent: "",
+    // REMOVED: parcel_livreur_sent and parcel_livreurname_sent
     statut: "new"
   });
 
-  // Form state for new order
+  // Form state for new order - KEEP all fields (they work for creation)
   const [newOrderData, setNewOrderData] = useState({
     parcel_code: "",
     parcel_receiver: "",
@@ -302,7 +301,7 @@ export default function AdminOrders() {
     setCurrentPage(1);
   }, [searchTerm, statusFilter]);
 
-  // Update form data when selected order changes
+  // Update form data when selected order changes - REMOVED livreur fields
   useEffect(() => {
     if (selectedOrder) {
       console.log("Setting update form data with:", selectedOrder);
@@ -316,8 +315,7 @@ export default function AdminOrders() {
         frais_packaging: selectedOrder.frais_packaging?.toString() || "",
         parcel_note: selectedOrder.parcel_note || "",
         parcel_open: selectedOrder.parcel_open ? 1 : 0,
-        parcel_livreur_sent: selectedOrder.parcel_livreur_sent || "",
-        parcel_livreurname_sent: selectedOrder.parcel_livreurname_sent || "",
+        // REMOVED: parcel_livreur_sent and parcel_livreurname_sent
         statut: selectedOrder.statut || "new"
       });
     }
@@ -372,8 +370,6 @@ export default function AdminOrders() {
       frais_packaging: "",
       parcel_note: "",
       parcel_open: 0,
-      parcel_livreur_sent: "",
-      parcel_livreurname_sent: "",
       statut: "new"
     });
     setUpdateError(null);
@@ -455,156 +451,137 @@ export default function AdminOrders() {
     }));
   };
 
-  // FIXED: handleUpdateSubmit with proper change detection
+  // UPDATED: handleUpdateSubmit with only working fields
   const handleUpdateSubmit = async (e) => {
-  e.preventDefault();
-  if (!selectedOrder) return;
+    e.preventDefault();
+    if (!selectedOrder) return;
 
-  setUpdateLoading(true);
-  setUpdateError(null);
+    setUpdateLoading(true);
+    setUpdateError(null);
 
-  try {
-    // Log the original and new values for debugging
-    console.log("========== UPDATE DEBUG ==========");
-    console.log("Selected Order ID:", selectedOrder.id);
-    console.log("Selected Order Data:", selectedOrder);
-    console.log("Form Data:", formData);
+    try {
+      console.log("========== UPDATE DEBUG ==========");
+      console.log("Selected Order ID:", selectedOrder.id);
+      console.log("Selected Order Data:", selectedOrder);
+      console.log("Form Data:", formData);
 
-    const updatePayload = {};
+      const updatePayload = {};
 
-    // Helper function to normalize values for comparison
-    const normalizeValue = (value, fieldName) => {
-      if (fieldName.includes('price') || fieldName.includes('frais_')) {
-        // Numeric fields
-        return value === "" || value === null || value === undefined ? 0 : parseFloat(value);
-      } else if (fieldName === 'parcel_open') {
-        // Boolean/Integer field
-        return value ? 1 : 0;
-      } else {
-        // String fields
-        return value === "" || value === null || value === undefined ? "" : String(value).trim();
-      }
-    };
-
-    // List of Welivexpress fields that should trigger an external update
-    const welivexpressFields = [
-      'parcel_receiver',
-      'parcel_phone',
-      'parcel_city',
-      'parcel_price',
-      'parcel_address',
-      'parcel_note',
-      'parcel_open',
-      'parcel_livreur_sent',
-      'parcel_livreurname_sent'
-    ];
-
-    // List of local-only fields
-    const localFields = [
-      'frais_livraison',
-      'frais_packaging',
-      'statut'
-    ];
-
-    // Check ALL fields
-    const allFields = [...welivexpressFields, ...localFields];
-    
-    allFields.forEach(fieldName => {
-      const formValue = formData[fieldName];
-      const originalValue = selectedOrder[fieldName];
-      
-      const normalizedFormValue = normalizeValue(formValue, fieldName);
-      const normalizedOriginalValue = normalizeValue(originalValue, fieldName);
-      
-      console.log(`Comparing ${fieldName}:`, {
-        formValue,
-        originalValue,
-        normalizedFormValue,
-        normalizedOriginalValue,
-        isDifferent: normalizedFormValue !== normalizedOriginalValue
-      });
-      
-      if (normalizedFormValue !== normalizedOriginalValue) {
-        // Add to payload with appropriate formatting
-        if (welivexpressFields.includes(fieldName)) {
-          // For Welivexpress fields
-          if (fieldName === 'parcel_price') {
-            updatePayload[fieldName] = normalizedFormValue;
-          } else if (fieldName === 'parcel_open') {
-            updatePayload[fieldName] = normalizedFormValue;
-          } else {
-            // String fields - send empty string if empty, not null
-            updatePayload[fieldName] = normalizedFormValue === "" ? "" : normalizedFormValue;
-          }
+      // Helper function to normalize values for comparison
+      const normalizeValue = (value, fieldName) => {
+        if (fieldName.includes('price') || fieldName.includes('frais_')) {
+          return value === "" || value === null || value === undefined ? 0 : parseFloat(value);
+        } else if (fieldName === 'parcel_open') {
+          return value ? 1 : 0;
         } else {
-          // Local-only fields
-          updatePayload[fieldName] = normalizedFormValue;
+          return value === "" || value === null || value === undefined ? "" : String(value).trim();
         }
+      };
+
+      // List of fields that work with Welivexpress (removed livreur fields)
+      const welivexpressFields = [
+        'parcel_receiver',
+        'parcel_phone',
+        'parcel_city',
+        'parcel_price',
+        'parcel_address',
+        'parcel_note',
+        'parcel_open'
+      ];
+
+      // List of local-only fields
+      const localFields = [
+        'frais_livraison',
+        'frais_packaging',
+        'statut'
+      ];
+
+      // Check ALL fields
+      const allFields = [...welivexpressFields, ...localFields];
+      
+      allFields.forEach(fieldName => {
+        const formValue = formData[fieldName];
+        const originalValue = selectedOrder[fieldName];
+        
+        const normalizedFormValue = normalizeValue(formValue, fieldName);
+        const normalizedOriginalValue = normalizeValue(originalValue, fieldName);
+        
+        console.log(`Comparing ${fieldName}:`, {
+          formValue,
+          originalValue,
+          normalizedFormValue,
+          normalizedOriginalValue,
+          isDifferent: normalizedFormValue !== normalizedOriginalValue
+        });
+        
+        if (normalizedFormValue !== normalizedOriginalValue) {
+          if (welivexpressFields.includes(fieldName)) {
+            if (fieldName === 'parcel_price') {
+              updatePayload[fieldName] = normalizedFormValue;
+            } else if (fieldName === 'parcel_open') {
+              updatePayload[fieldName] = normalizedFormValue;
+            } else {
+              updatePayload[fieldName] = normalizedFormValue === "" ? "" : normalizedFormValue;
+            }
+          } else {
+            updatePayload[fieldName] = normalizedFormValue;
+          }
+        }
+      });
+
+      console.log("📦 Final updatePayload:", updatePayload);
+      
+      const welivexpressChanges = Object.keys(updatePayload).filter(key => welivexpressFields.includes(key));
+      const localChanges = Object.keys(updatePayload).filter(key => localFields.includes(key));
+      
+      console.log("Changes for Welivexpress:", welivexpressChanges);
+      console.log("Local-only changes:", localChanges);
+
+      if (Object.keys(updatePayload).length === 0) {
+        console.log("No changes detected, closing modal.");
+        alert("Aucune modification détectée");
+        closeUpdateModal();
+        return;
       }
-    });
 
-    console.log("📦 Final updatePayload:", updatePayload);
-    
-    // Separate Welivexpress fields from local fields for logging
-    const welivexpressChanges = Object.keys(updatePayload).filter(key => welivexpressFields.includes(key));
-    const localChanges = Object.keys(updatePayload).filter(key => localFields.includes(key));
-    
-    console.log("Changes for Welivexpress:", welivexpressChanges);
-    console.log("Local-only changes:", localChanges);
+      console.log("📤 Sending update payload to backend:", updatePayload);
+      
+      const result = await dispatch(updateCommande({ 
+        id: selectedOrder.id, 
+        ...updatePayload 
+      })).unwrap();
 
-    // If no changes were detected, close the modal
-    if (Object.keys(updatePayload).length === 0) {
-      console.log("No changes detected, closing modal.");
-      alert("Aucune modification détectée");
-      closeUpdateModal();
-      return;
-    }
-
-    console.log("📤 Sending update payload to backend:", updatePayload);
-    
-    const result = await dispatch(updateCommande({ 
-      id: selectedOrder.id, 
-      ...updatePayload 
-    })).unwrap();
-
-    console.log("✅ Update successful. Full response:", result);
-    
-    // Show appropriate message based on what was updated
-    if (welivexpressChanges.length > 0) {
-      alert(`Mise à jour réussie! Champs envoyés à Welivexpress: ${welivexpressChanges.join(', ')}`);
-    } else {
-      alert(`Mise à jour locale réussie (champs modifiés: ${localChanges.join(', ')})`);
-    }
-    
-    // Check if the backend reported any issues with the Welivexpress update
-    if (result.welivexpress_response) {
+      console.log("✅ Update successful. Full response:", result);
+      
+      if (welivexpressChanges.length > 0) {
+        alert(`Mise à jour réussie! Champs envoyés à Welivexpress: ${welivexpressChanges.join(', ')}`);
+      } else {
+        alert(`Mise à jour locale réussie (champs modifiés: ${localChanges.join(', ')})`);
+      }
+      
+      if (result.welivexpress_response) {
         console.log("Welivexpress response:", result.welivexpress_response);
-        if (result.welivexpress_response.error) {
-            console.warn("Welivexpress error:", result.welivexpress_response.error);
-            // Don't show alert to user since local update succeeded
-        }
+      }
+      
+      await dispatch(fetchCommandes());
+      closeUpdateModal();
+      
+    } catch (error) {
+      console.error("❌ Update process failed:", error);
+      
+      if (error.response) {
+        console.error("Error response data:", error.response.data);
+        console.error("Error response status:", error.response.status);
+      }
+      
+      const errorMessage = error?.message || 
+                           error?.data?.message || 
+                           "Erreur lors de la mise à jour. Veuillez réessayer.";
+      setUpdateError(errorMessage);
+    } finally {
+      setUpdateLoading(false);
     }
-    
-    await dispatch(fetchCommandes());
-    closeUpdateModal();
-    
-  } catch (error) {
-    console.error("❌ Update process failed:", error);
-    
-    // Log the full error details
-    if (error.response) {
-      console.error("Error response data:", error.response.data);
-      console.error("Error response status:", error.response.status);
-    }
-    
-    const errorMessage = error?.message || 
-                         error?.data?.message || 
-                         "Erreur lors de la mise à jour. Veuillez réessayer.";
-    setUpdateError(errorMessage);
-  } finally {
-    setUpdateLoading(false);
-  }
-};
+  };
 
   const handleAddSubmit = async (e) => {
     e.preventDefault();
@@ -983,7 +960,7 @@ export default function AdminOrders() {
         </>
       )}
 
-      {/* ADD MODAL */}
+      {/* ADD MODAL - KEEP ALL FIELDS (they work for creation) */}
       {showAddModal && (
         <div className="modal-overlay" onClick={closeAddModal}>
           <div className="modal-content add-order-modal" onClick={e => e.stopPropagation()}>
@@ -1336,7 +1313,7 @@ export default function AdminOrders() {
         </div>
       )}
 
-      {/* UPDATE MODAL */}
+      {/* UPDATE MODAL - REMOVED the problematic livreur fields */}
       {showUpdateModal && selectedOrder && (
         <div className="modal-overlay" onClick={closeUpdateModal}>
           <div className="modal-content update-order-modal" onClick={e => e.stopPropagation()}>
@@ -1489,6 +1466,20 @@ export default function AdminOrders() {
 
                   <div className="form-row" style={{ marginTop: '1rem' }}>
                     <div className="form-group">
+                      <label htmlFor="parcel_note">
+                        Note
+                      </label>
+                      <textarea
+                        id="parcel_note"
+                        name="parcel_note"
+                        value={formData.parcel_note}
+                        onChange={handleInputChange}
+                        placeholder="Note ou commentaire"
+                        rows="2"
+                      />
+                    </div>
+
+                    <div className="form-group">
                       <label htmlFor="statut">
                         Statut
                       </label>
@@ -1504,79 +1495,23 @@ export default function AdminOrders() {
                         ))}
                       </select>
                     </div>
-                  </div>
-                </div>
 
-                <div className="form-section">
-                  <h4>
-                    <Truck size={16} />
-                    Informations livreur
-                  </h4>
-                  
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label htmlFor="parcel_livreur_sent">
-                        ID Livreur
-                      </label>
+                    <div className="form-checkbox" style={{ marginTop: '1.5rem' }}>
                       <input
-                        type="text"
-                        id="parcel_livreur_sent"
-                        name="parcel_livreur_sent"
-                        value={formData.parcel_livreur_sent}
+                        type="checkbox"
+                        id="parcel_open"
+                        name="parcel_open"
+                        checked={formData.parcel_open === 1}
                         onChange={handleInputChange}
-                        placeholder="ID du livreur"
                       />
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="parcel_livreurname_sent">
-                        Nom du livreur
+                      <label htmlFor="parcel_open">
+                        Colis ouvert / vérifié
                       </label>
-                      <input
-                        type="text"
-                        id="parcel_livreurname_sent"
-                        name="parcel_livreurname_sent"
-                        value={formData.parcel_livreurname_sent}
-                        onChange={handleInputChange}
-                        placeholder="Nom du livreur"
-                      />
                     </div>
                   </div>
                 </div>
 
-                <div className="form-section">
-                  <h4>
-                    <FileText size={16} />
-                    Informations supplémentaires
-                  </h4>
-                  
-                  <div className="form-group full-width">
-                    <label htmlFor="parcel_note">
-                      Note
-                    </label>
-                    <textarea
-                      id="parcel_note"
-                      name="parcel_note"
-                      value={formData.parcel_note}
-                      onChange={handleInputChange}
-                      placeholder="Notes ou instructions spéciales"
-                      rows="3"
-                    />
-                  </div>
-
-                  <div className="form-checkbox">
-                    <input
-                      type="checkbox"
-                      id="parcel_open"
-                      name="parcel_open"
-                      checked={formData.parcel_open === 1}
-                      onChange={handleInputChange}
-                    />
-                    <label htmlFor="parcel_open">
-                      Colis ouvert / vérifié
-                    </label>
-                  </div>
-                </div>
+                {/* REMOVED: The entire livreur section from update modal */}
               </form>
             </div>
 

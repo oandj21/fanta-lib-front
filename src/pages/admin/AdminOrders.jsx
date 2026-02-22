@@ -57,7 +57,6 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
       setLoading(true);
       setError(null);
       
-      // Get token from localStorage
       const token = localStorage.getItem("token");
       
       const response = await axios.get(
@@ -72,7 +71,6 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
       
       console.log("Cities API response:", response.data);
       
-      // Handle different response structures
       let citiesData = [];
       if (Array.isArray(response.data)) {
         citiesData = response.data;
@@ -85,7 +83,6 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
       // Transform data to include delivery fees if not present
       citiesData = citiesData.map(city => {
         if (typeof city === 'string') {
-          // If city is just a string, add default delivery fee based on city name
           return {
             name: city,
             delivery_fee: getDefaultDeliveryFee(city)
@@ -163,7 +160,7 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
           const cityName = city.name || city.city || city.label || '';
           return cityName.toLowerCase().includes(query.toLowerCase());
         })
-        .slice(0, 10); // Limit to 10 suggestions
+        .slice(0, 10);
       setSuggestions(filtered);
       setShowSuggestions(true);
     } else {
@@ -259,15 +256,15 @@ export default function AdminOrders() {
   const [updateError, setUpdateError] = useState(null);
   const [addError, setAddError] = useState(null);
   
-  // Form state for update
+  // Form state for update - WITH ALL FIELDS
   const [formData, setFormData] = useState({
     parcel_receiver: "",
     parcel_phone: "",
     parcel_city: "",
     parcel_address: "",
     parcel_price: "",
-    frais_livraison: 0,
-    frais_packaging: 0,
+    frais_livraison: "",
+    frais_packaging: "",
     parcel_note: "",
     parcel_open: 0,
     parcel_livreur_sent: "",
@@ -305,7 +302,7 @@ export default function AdminOrders() {
     setCurrentPage(1);
   }, [searchTerm, statusFilter]);
 
-  // Update form data when selected order changes - FIXED TO INCLUDE ALL FIELDS
+  // Update form data when selected order changes - FIXED TO HANDLE ALL FIELDS
   useEffect(() => {
     if (selectedOrder) {
       console.log("Setting update form data with:", selectedOrder);
@@ -314,11 +311,11 @@ export default function AdminOrders() {
         parcel_phone: selectedOrder.parcel_phone || "",
         parcel_city: selectedOrder.parcel_city || "",
         parcel_address: selectedOrder.parcel_address || "",
-        parcel_price: selectedOrder.parcel_price || "",
-        frais_livraison: selectedOrder.frais_livraison || 0,
-        frais_packaging: selectedOrder.frais_packaging || 0,
+        parcel_price: selectedOrder.parcel_price?.toString() || "",
+        frais_livraison: selectedOrder.frais_livraison?.toString() || "",
+        frais_packaging: selectedOrder.frais_packaging?.toString() || "",
         parcel_note: selectedOrder.parcel_note || "",
-        parcel_open: selectedOrder.parcel_open || 0,
+        parcel_open: selectedOrder.parcel_open ? 1 : 0,
         parcel_livreur_sent: selectedOrder.parcel_livreur_sent || "",
         parcel_livreurname_sent: selectedOrder.parcel_livreurname_sent || "",
         statut: selectedOrder.statut || "new"
@@ -333,7 +330,6 @@ export default function AdminOrders() {
     const packaging = parseFloat(newOrderData.frais_packaging) || 0;
     
     const total = price + delivery + packaging;
-    // Profit calculation - you can adjust this formula
     const profit = price - (delivery + packaging);
     
     setNewOrderData(prev => ({
@@ -372,8 +368,8 @@ export default function AdminOrders() {
       parcel_city: "",
       parcel_address: "",
       parcel_price: "",
-      frais_livraison: 0,
-      frais_packaging: 0,
+      frais_livraison: "",
+      frais_packaging: "",
       parcel_note: "",
       parcel_open: 0,
       parcel_livreur_sent: "",
@@ -445,11 +441,11 @@ export default function AdminOrders() {
     setFormData(prev => ({
       ...prev,
       parcel_city: city,
-      frais_livraison: deliveryFee || prev.frais_livraison
+      frais_livraison: deliveryFee?.toString() || prev.frais_livraison
     }));
   };
 
-  // Handle city selection for new order form - WITH AUTO DELIVERY FEE
+  // Handle city selection for new order form
   const handleNewCitySelect = (city, deliveryFee) => {
     console.log("City selected:", city, "with fee:", deliveryFee);
     setNewOrderData(prev => ({
@@ -459,111 +455,85 @@ export default function AdminOrders() {
     }));
   };
 
-  // In your AdminOrders.jsx - Replace your handleUpdateSubmit with this:
+  // FIXED: handleUpdateSubmit with proper type handling
+  const handleUpdateSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedOrder) return;
 
-const handleUpdateSubmit = async (e) => {
-  e.preventDefault();
-  if (!selectedOrder) return;
+    setUpdateLoading(true);
+    setUpdateError(null);
 
-  setUpdateLoading(true);
-  setUpdateError(null);
+    try {
+      // Prepare the data for the API with proper type handling
+      const updatePayload = {};
 
-  try {
-    // --- Prepare the data for the API ---
-    // Map the formData state to the exact fields Welivexpress expects.
-    // This ensures your backend receives the correctly named fields.
-    const updatePayload = {};
-
-    // Only include fields that have changed and map them to API field names
-    if (formData.parcel_receiver !== selectedOrder.parcel_receiver) {
-      updatePayload.parcel_receiver = formData.parcel_receiver;
-    }
-    if (formData.parcel_phone !== selectedOrder.parcel_phone) {
-      updatePayload.parcel_phone = formData.parcel_phone;
-    }
-    if (formData.parcel_city !== selectedOrder.parcel_city) {
-      updatePayload.parcel_city = formData.parcel_city; // Can be city name or ID
-    }
-    if (parseFloat(formData.parcel_price) !== parseFloat(selectedOrder.parcel_price)) {
-      updatePayload.parcel_price = parseFloat(formData.parcel_price) || 0;
-    }
-    if (formData.parcel_address !== selectedOrder.parcel_address) {
-      updatePayload.parcel_address = formData.parcel_address;
-    }
-    if (formData.parcel_note !== selectedOrder.parcel_note) {
-      updatePayload.parcel_note = formData.parcel_note;
-    }
-    // Map 'parcel_open' (checkbox) to 'parcel_open' (0 or 1)
-    if (parseInt(formData.parcel_open) !== parseInt(selectedOrder.parcel_open)) {
-      updatePayload.parcel_open = formData.parcel_open ? 1 : 0;
-    }
-    if (formData.parcel_livreur_sent !== selectedOrder.parcel_livreur_sent) {
-      updatePayload.parcel_livreur_sent = formData.parcel_livreur_sent;
-    }
-    if (formData.parcel_livreurname_sent !== selectedOrder.parcel_livreurname_sent) {
-      updatePayload.parcel_livreurname_sent = formData.parcel_livreurname_sent;
-    }
-    // Map 'statut' - this might be for your internal status, not for Welivexpress.
-    // Welivexpress likely manages its own status. Include it if your backend uses it.
-    if (formData.statut !== selectedOrder.statut) {
-      updatePayload.statut = formData.statut;
-    }
-    
-    // IMPORTANT: Also include fields that might be needed for your local DB update
-    // but are NOT sent to Welivexpress. Your backend controller will handle the separation.
-    // For example, 'frais_livraison' and 'frais_packaging' are likely for your local DB only.
-    if (parseFloat(formData.frais_livraison) !== parseFloat(selectedOrder.frais_livraison)) {
-      updatePayload.frais_livraison = parseFloat(formData.frais_livraison) || 0;
-    }
-    if (parseFloat(formData.frais_packaging) !== parseFloat(selectedOrder.frais_packaging)) {
-      updatePayload.frais_packaging = parseFloat(formData.frais_packaging) || 0;
-    }
-
-    // If no changes were detected, close the modal
-    if (Object.keys(updatePayload).length === 0) {
-      console.log("No changes detected, closing modal.");
-      closeUpdateModal();
-      return;
-    }
-
-    console.log("📤 Sending update payload to backend:", updatePayload);
-    
-    // Dispatch the update action. Your backend controller will:
-    // 1. Update the local database with all fields in updatePayload.
-    // 2. Send a PUT request to Welivexpress with the relevant fields.
-    const result = await dispatch(updateCommande({ 
-      id: selectedOrder.id, 
-      ...updatePayload 
-    })).unwrap();
-
-    console.log("✅ Update successful. Full response:", result);
-    
-    // Check if the backend reported any issues with the Welivexpress update
-    if (result.welivexpress_response) {
-        console.log("Welivexpress response:", result.welivexpress_response);
-        if (result.welivexpress_response.success === false) {
-            // Optionally show a warning to the user
-            setUpdateError(`Mise à jour locale OK, mais Welivexpress a répondu: ${result.welivexpress_response.message || 'Erreur'}`);
-            // Keep modal open? Or close? Your choice.
-            // return; 
+      // Helper function to safely compare and add fields
+      const addIfChanged = (fieldName, value, originalValue, transformFn = (v) => v) => {
+        // Handle null/undefined/empty string cases
+        const processedValue = value === "" || value === null || value === undefined ? null : value;
+        const processedOriginal = originalValue === "" || originalValue === null || originalValue === undefined ? null : originalValue;
+        
+        // Compare and add if different
+        if (JSON.stringify(processedValue) !== JSON.stringify(processedOriginal)) {
+          updatePayload[fieldName] = transformFn(processedValue);
         }
+      };
+
+      // String fields - ensure they're strings or null
+      addIfChanged('parcel_receiver', formData.parcel_receiver, selectedOrder.parcel_receiver, v => v === null ? null : String(v));
+      addIfChanged('parcel_phone', formData.parcel_phone, selectedOrder.parcel_phone, v => v === null ? null : String(v));
+      addIfChanged('parcel_city', formData.parcel_city, selectedOrder.parcel_city, v => v === null ? null : String(v));
+      addIfChanged('parcel_address', formData.parcel_address, selectedOrder.parcel_address, v => v === null ? null : String(v));
+      addIfChanged('parcel_note', formData.parcel_note, selectedOrder.parcel_note, v => v === null ? null : String(v));
+      addIfChanged('parcel_livreur_sent', formData.parcel_livreur_sent, selectedOrder.parcel_livreur_sent, v => v === null ? null : String(v));
+      addIfChanged('parcel_livreurname_sent', formData.parcel_livreurname_sent, selectedOrder.parcel_livreurname_sent, v => v === null ? null : String(v));
+      addIfChanged('statut', formData.statut, selectedOrder.statut, v => v === null ? null : String(v));
+
+      // Numeric fields - ensure they're numbers or null
+      addIfChanged('parcel_price', formData.parcel_price, selectedOrder.parcel_price, v => v === null ? null : parseFloat(v) || 0);
+      addIfChanged('frais_livraison', formData.frais_livraison, selectedOrder.frais_livraison, v => v === null ? null : parseFloat(v) || 0);
+      addIfChanged('frais_packaging', formData.frais_packaging, selectedOrder.frais_packaging, v => v === null ? null : parseFloat(v) || 0);
+
+      // Boolean/Integer field - ensure it's 0 or 1
+      addIfChanged('parcel_open', formData.parcel_open, selectedOrder.parcel_open, v => v ? 1 : 0);
+
+      // If no changes were detected, close the modal
+      if (Object.keys(updatePayload).length === 0) {
+        console.log("No changes detected, closing modal.");
+        closeUpdateModal();
+        return;
+      }
+
+      console.log("📤 Sending update payload to backend:", updatePayload);
+      
+      const result = await dispatch(updateCommande({ 
+        id: selectedOrder.id, 
+        ...updatePayload 
+      })).unwrap();
+
+      console.log("✅ Update successful. Full response:", result);
+      
+      // Check if the backend reported any issues with the Welivexpress update
+      if (result.welivexpress_response) {
+          console.log("Welivexpress response:", result.welivexpress_response);
+          if (result.welivexpress_response.success === false) {
+              setUpdateError(`Mise à jour locale OK, mais Welivexpress a répondu: ${result.welivexpress_response.message || 'Erreur'}`);
+          }
+      }
+      
+      await dispatch(fetchCommandes());
+      closeUpdateModal();
+      
+    } catch (error) {
+      console.error("❌ Update process failed:", error);
+      const errorMessage = error?.message || 
+                           error?.data?.message || 
+                           "Erreur lors de la mise à jour. Veuillez réessayer.";
+      setUpdateError(errorMessage);
+    } finally {
+      setUpdateLoading(false);
     }
-    
-    // Refresh the orders list to show updated data
-    await dispatch(fetchCommandes());
-    closeUpdateModal();
-    
-  } catch (error) {
-    console.error("❌ Update process failed:", error);
-    // The error from the API might contain details
-    const errorMessage = error?.message || 
-                         error?.data?.message || 
-                         "Erreur lors de la mise à jour. Veuillez réessayer.";
-    setUpdateError(errorMessage);
-  } finally {
-    setUpdateLoading(false);
-  }
-};
+  };
 
   const handleAddSubmit = async (e) => {
     e.preventDefault();
@@ -1295,7 +1265,7 @@ const handleUpdateSubmit = async (e) => {
         </div>
       )}
 
-      {/* UPDATE MODAL - FIXED TO SHOW EXISTING VALUES */}
+      {/* UPDATE MODAL - FIXED WITH ALL FIELDS */}
       {showUpdateModal && selectedOrder && (
         <div className="modal-overlay" onClick={closeUpdateModal}>
           <div className="modal-content update-order-modal" onClick={e => e.stopPropagation()}>
@@ -1444,7 +1414,9 @@ const handleUpdateSubmit = async (e) => {
                         step="0.01"
                       />
                     </div>
+                  </div>
 
+                  <div className="form-row" style={{ marginTop: '1rem' }}>
                     <div className="form-group">
                       <label htmlFor="statut">
                         Statut

@@ -283,27 +283,13 @@ export const createCommande = createAsyncThunk(
   }
 );
 
-// In your store.jsx - Corrected updateCommande action
-
 export const updateCommande = createAsyncThunk(
   "commandes/update",
   async ({ id, ...data }, thunkAPI) => {
     try {
-      // Important: The backend controller expects the parcel_code
-      // to be sent in the request body for the Welivexpress API.
-      // Your CommandeController@update method already does this:
-      // It uses $commande->parcel_code from the database.
-      
-      console.log("📦 Sending update to backend for local DB & Welivexpress:", { id, ...data });
-      
-      // Send the update to your backend. Your controller will handle
-      // updating the local database AND forwarding the relevant fields to Welivexpress.
       const response = await api.put(`/commandes/${id}`, data);
-      
-      console.log("✅ Update API response from backend:", response.data);
-      return response.data; // This should contain the updated commande and welivexpress_response
+      return response.data;
     } catch (error) {
-      console.error("❌ Update API error:", error);
       return handleApiError(error, thunkAPI);
     }
   }

@@ -1118,3 +1118,78 @@
     justify-content: center;
   }
 }
+/* Add to AdminOrders.css */
+
+/* Add Order Button */
+.btn-add-order {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1.5rem;
+  font-family: 'Lato', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+  box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);
+  white-space: nowrap;
+}
+
+.btn-add-order:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3);
+}
+
+.btn-add-order svg {
+  stroke-width: 2.5;
+}
+
+/* Required field indicator */
+.required {
+  color: #ef4444;
+  margin-left: 0.25rem;
+  font-size: 1rem;
+}
+
+.field-hint {
+  display: block;
+  font-size: 0.75rem;
+  color: #6b5752;
+  margin-top: 0.25rem;
+  font-style: italic;
+}
+
+/* Readonly input */
+.readonly-input {
+  background-color: #f8f4f0 !important;
+  cursor: not-allowed;
+  color: #6b5752 !important;
+}
+
+/* Adjust header layout */
+.orders-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .orders-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .btn-add-order {
+    width: 100%;
+    justify-content: center;
+  }
+}

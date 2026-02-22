@@ -16,7 +16,7 @@ import {
 } from "../../store/store";
 import "../../css/AdminOrders.css";
 
-// Status labels and colors - DEFINED AT THE TOP
+// Status labels and colors
 const statusLabels = {
   new: "Nouvelle",
   confirmed: "Confirmée",
@@ -147,7 +147,6 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
           onChange={handleInputChange}
           onFocus={() => query.length >= 1 && setSuggestions.length > 0 && setShowSuggestions(true)}
           onBlur={() => {
-            // Delay hiding to allow click on suggestions
             setTimeout(() => setShowSuggestions(false), 200);
           }}
           placeholder="Tapez pour rechercher une ville..."
@@ -219,7 +218,7 @@ export default function AdminOrders() {
     statut: "new"
   });
 
-  // Form state for new order
+  // Form state for new order - WITH ALL REQUIRED FIELDS
   const [newOrderData, setNewOrderData] = useState({
     parcel_code: "",
     parcel_receiver: "",
@@ -227,11 +226,16 @@ export default function AdminOrders() {
     parcel_city: "",
     parcel_address: "",
     parcel_price: "",
+    frais_livraison: 0,
+    frais_packaging: 0,
+    total: 0,
+    profit: 0,
     parcel_note: "",
     parcel_open: 0,
     parcel_livreur_sent: "",
     parcel_livreurname_sent: "",
     statut: "new",
+    livres: [],
     date: new Date().toISOString().split('T')[0]
   });
 
@@ -261,6 +265,23 @@ export default function AdminOrders() {
       });
     }
   }, [selectedOrder]);
+
+  // Calculate total and profit when relevant fields change
+  useEffect(() => {
+    const price = parseFloat(newOrderData.parcel_price) || 0;
+    const delivery = parseFloat(newOrderData.frais_livraison) || 0;
+    const packaging = parseFloat(newOrderData.frais_packaging) || 0;
+    
+    const total = price + delivery + packaging;
+    // Profit calculation - you can adjust this formula based on your business logic
+    const profit = price - (delivery + packaging);
+    
+    setNewOrderData(prev => ({
+      ...prev,
+      total: total,
+      profit: profit
+    }));
+  }, [newOrderData.parcel_price, newOrderData.frais_livraison, newOrderData.frais_packaging]);
 
   const handleDelete = (id) => {
     if (window.confirm("Êtes-vous sûr de vouloir supprimer cette commande ?")) {
@@ -307,7 +328,11 @@ export default function AdminOrders() {
     setNewOrderData({
       ...newOrderData,
       parcel_code: newParcelCode,
-      date: new Date().toISOString().split('T')[0]
+      date: new Date().toISOString().split('T')[0],
+      frais_livraison: 0,
+      frais_packaging: 0,
+      total: 0,
+      profit: 0
     });
     setAddError(null);
     setShowAddModal(true);
@@ -323,11 +348,16 @@ export default function AdminOrders() {
       parcel_city: "",
       parcel_address: "",
       parcel_price: "",
+      frais_livraison: 0,
+      frais_packaging: 0,
+      total: 0,
+      profit: 0,
       parcel_note: "",
       parcel_open: 0,
       parcel_livreur_sent: "",
       parcel_livreurname_sent: "",
       statut: "new",
+      livres: [],
       date: new Date().toISOString().split('T')[0]
     });
     setAddError(null);
@@ -427,14 +457,26 @@ export default function AdminOrders() {
       return;
     }
 
+    // Ensure all numeric fields are properly parsed
+    const orderToCreate = {
+      ...newOrderData,
+      parcel_price: parseFloat(newOrderData.parcel_price) || 0,
+      frais_livraison: parseFloat(newOrderData.frais_livraison) || 0,
+      frais_packaging: parseFloat(newOrderData.frais_packaging) || 0,
+      total: parseFloat(newOrderData.total) || 0,
+      profit: parseFloat(newOrderData.profit) || 0,
+      parcel_open: newOrderData.parcel_open ? 1 : 0,
+      livres: newOrderData.livres || []
+    };
+
     setAddLoading(true);
     setAddError(null);
 
     try {
-      console.log("Creating new order with data:", newOrderData);
+      console.log("Creating new order with data:", orderToCreate);
       
       // Dispatch create action
-      const result = await dispatch(createCommande(newOrderData)).unwrap();
+      const result = await dispatch(createCommande(orderToCreate)).unwrap();
 
       console.log("Create successful:", result);
       
@@ -721,6 +763,8 @@ export default function AdminOrders() {
                   <th>Ville</th>
                   <th>Adresse</th>
                   <th>Prix</th>
+                  <th>Frais</th>
+                  <th>Total</th>
                   <th>Statut</th>
                   <th>Livreur</th>
                   <th>Date</th>
@@ -742,6 +786,8 @@ export default function AdminOrders() {
                         : "-"}
                     </td>
                     <td className="order-price">{order.parcel_price ? `${order.parcel_price} MAD` : "-"}</td>
+                    <td>{(order.frais_livraison || 0) + (order.frais_packaging || 0)} MAD</td>
+                    <td className="order-total">{order.total ? `${order.total} MAD` : "-"}</td>
                     <td>
                       <span 
                         className="status-badge"
@@ -795,7 +841,7 @@ export default function AdminOrders() {
         </>
       )}
 
-      {/* ADD MODAL with City Autocomplete */}
+      {/* ADD MODAL with all fields */}
       {showAddModal && (
         <div className="modal-overlay" onClick={closeAddModal}>
           <div className="modal-content add-order-modal" onClick={e => e.stopPropagation()}>
@@ -940,7 +986,7 @@ export default function AdminOrders() {
                   <div className="form-row">
                     <div className="form-group">
                       <label htmlFor="parcel_price">
-                        Prix (MAD)
+                        Prix du colis (MAD)
                       </label>
                       <input
                         type="number"
@@ -953,6 +999,70 @@ export default function AdminOrders() {
                         step="0.01"
                         required
                       />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="frais_livraison">
+                        Frais de livraison (MAD)
+                      </label>
+                      <input
+                        type="number"
+                        id="frais_livraison"
+                        name="frais_livraison"
+                        value={newOrderData.frais_livraison}
+                        onChange={handleNewOrderChange}
+                        placeholder="0.00"
+                        min="0"
+                        step="0.01"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="frais_packaging">
+                        Frais de packaging (MAD)
+                      </label>
+                      <input
+                        type="number"
+                        id="frais_packaging"
+                        name="frais_packaging"
+                        value={newOrderData.frais_packaging}
+                        onChange={handleNewOrderChange}
+                        placeholder="0.00"
+                        min="0"
+                        step="0.01"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-row" style={{ marginTop: '1rem' }}>
+                    <div className="form-group">
+                      <label htmlFor="total">
+                        Total (MAD)
+                      </label>
+                      <input
+                        type="number"
+                        id="total"
+                        name="total"
+                        value={newOrderData.total}
+                        readOnly
+                        className="readonly-input"
+                      />
+                      <small className="field-hint">Calculé automatiquement</small>
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="profit">
+                        Profit (MAD)
+                      </label>
+                      <input
+                        type="number"
+                        id="profit"
+                        name="profit"
+                        value={newOrderData.profit}
+                        readOnly
+                        className="readonly-input"
+                      />
+                      <small className="field-hint">Calculé automatiquement</small>
                     </div>
 
                     <div className="form-group">
@@ -1079,12 +1189,12 @@ export default function AdminOrders() {
         </div>
       )}
 
-      {/* UPDATE MODAL with City Autocomplete */}
+      {/* UPDATE MODAL */}
       {showUpdateModal && selectedOrder && (
         <div className="modal-overlay" onClick={closeUpdateModal}>
           <div className="modal-content update-order-modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Modifier la commande</h3>
+              <h3>Modifier la commande #{selectedOrder.parcel_code}</h3>
               <button onClick={closeUpdateModal} className="modal-close">
                 <X size={20} />
               </button>

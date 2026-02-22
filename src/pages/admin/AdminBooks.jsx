@@ -603,7 +603,7 @@ export default function AdminBooks() {
                       <td>
                         {bookImages.length > 0 ? (
                           <img 
-                            src={`https://fanta-lib-back-production.up.railway.app/storage/${bookImages[0]}`} 
+                            src={`https://fanta-lib-back-production.up.railway.app/api/storage/${bookImages[0]}`} 
                             alt={book.titre} 
                             className="book-thumb"
                             onError={(e) => {

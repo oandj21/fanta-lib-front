@@ -67,8 +67,21 @@ Merci de me confirmer la disponibilité et les modalités de livraison.`;
   };
 
   const handleClick = () => {
+    // Get the message first
     const message = encodeURIComponent(getWhatsAppMessage());
+    
+    // Open WhatsApp
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${message}`, "_blank");
+    
+    // Clear the cart after redirecting to WhatsApp
+    localStorage.removeItem('cart');
+    
+    // Update cart count
+    setCartCount(0);
+    
+    // Dispatch custom event to notify other components
+    window.dispatchEvent(new Event('cartUpdated'));
+    window.dispatchEvent(new Event('storage'));
   };
 
   return (

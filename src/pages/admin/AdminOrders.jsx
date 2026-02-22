@@ -457,153 +457,154 @@ export default function AdminOrders() {
 
   // FIXED: handleUpdateSubmit with proper change detection
   const handleUpdateSubmit = async (e) => {
-    e.preventDefault();
-    if (!selectedOrder) return;
+  e.preventDefault();
+  if (!selectedOrder) return;
 
-    setUpdateLoading(true);
-    setUpdateError(null);
+  setUpdateLoading(true);
+  setUpdateError(null);
 
-    try {
-      // Log the original and new values for debugging
-      console.log("========== UPDATE DEBUG ==========");
-      console.log("Selected Order ID:", selectedOrder.id);
-      console.log("Selected Order Data:", selectedOrder);
-      console.log("Form Data:", formData);
+  try {
+    // Log the original and new values for debugging
+    console.log("========== UPDATE DEBUG ==========");
+    console.log("Selected Order ID:", selectedOrder.id);
+    console.log("Selected Order Data:", selectedOrder);
+    console.log("Form Data:", formData);
 
-      const updatePayload = {};
+    const updatePayload = {};
 
-      // Helper function to normalize values for comparison
-      const normalizeValue = (value, fieldName) => {
-        if (fieldName.includes('price') || fieldName.includes('frais_')) {
-          // Numeric fields
-          return value === "" || value === null || value === undefined ? 0 : parseFloat(value);
-        } else if (fieldName === 'parcel_open') {
-          // Boolean/Integer field
-          return value ? 1 : 0;
-        } else {
-          // String fields
-          return value === "" || value === null || value === undefined ? "" : String(value).trim();
-        }
-      };
-
-      // List of Welivexpress fields that should trigger an external update
-      const welivexpressFields = [
-        'parcel_receiver',
-        'parcel_phone',
-        'parcel_city',
-        'parcel_price',
-        'parcel_address',
-        'parcel_note',
-        'parcel_open',
-        'parcel_livreur_sent',
-        'parcel_livreurname_sent'
-      ];
-
-      // List of local-only fields
-      const localFields = [
-        'frais_livraison',
-        'frais_packaging',
-        'statut'
-      ];
-
-      // Check ALL fields
-      const allFields = [...welivexpressFields, ...localFields];
-      
-      allFields.forEach(fieldName => {
-        const formValue = formData[fieldName];
-        const originalValue = selectedOrder[fieldName];
-        
-        const normalizedFormValue = normalizeValue(formValue, fieldName);
-        const normalizedOriginalValue = normalizeValue(originalValue, fieldName);
-        
-        console.log(`Comparing ${fieldName}:`, {
-          formValue,
-          originalValue,
-          normalizedFormValue,
-          normalizedOriginalValue,
-          isDifferent: normalizedFormValue !== normalizedOriginalValue
-        });
-        
-        if (normalizedFormValue !== normalizedOriginalValue) {
-          // Add to payload with appropriate formatting
-          if (welivexpressFields.includes(fieldName)) {
-            // For Welivexpress fields, send null for empty strings, otherwise send the value
-            if (fieldName === 'parcel_price') {
-              updatePayload[fieldName] = normalizedFormValue;
-            } else if (fieldName === 'parcel_open') {
-              updatePayload[fieldName] = normalizedFormValue;
-            } else {
-              // String fields - send null if empty, otherwise send the string
-              updatePayload[fieldName] = normalizedFormValue === "" ? null : normalizedFormValue;
-            }
-          } else {
-            // Local-only fields
-            updatePayload[fieldName] = normalizedFormValue;
-          }
-        }
-      });
-
-      console.log("📦 Final updatePayload:", updatePayload);
-      
-      // Separate Welivexpress fields from local fields for logging
-      const welivexpressChanges = Object.keys(updatePayload).filter(key => welivexpressFields.includes(key));
-      const localChanges = Object.keys(updatePayload).filter(key => localFields.includes(key));
-      
-      console.log("Changes for Welivexpress:", welivexpressChanges);
-      console.log("Local-only changes:", localChanges);
-
-      // If no changes were detected, close the modal
-      if (Object.keys(updatePayload).length === 0) {
-        console.log("No changes detected, closing modal.");
-        alert("Aucune modification détectée");
-        closeUpdateModal();
-        return;
-      }
-
-      console.log("📤 Sending update payload to backend:", updatePayload);
-      
-      const result = await dispatch(updateCommande({ 
-        id: selectedOrder.id, 
-        ...updatePayload 
-      })).unwrap();
-
-      console.log("✅ Update successful. Full response:", result);
-      
-      // Show appropriate message based on what was updated
-      if (welivexpressChanges.length > 0) {
-        alert(`Mise à jour réussie! Champs envoyés à Welivexpress: ${welivexpressChanges.join(', ')}`);
+    // Helper function to normalize values for comparison
+    const normalizeValue = (value, fieldName) => {
+      if (fieldName.includes('price') || fieldName.includes('frais_')) {
+        // Numeric fields
+        return value === "" || value === null || value === undefined ? 0 : parseFloat(value);
+      } else if (fieldName === 'parcel_open') {
+        // Boolean/Integer field
+        return value ? 1 : 0;
       } else {
-        alert(`Mise à jour locale réussie (champs modifiés: ${localChanges.join(', ')})`);
+        // String fields
+        return value === "" || value === null || value === undefined ? "" : String(value).trim();
       }
+    };
+
+    // List of Welivexpress fields that should trigger an external update
+    const welivexpressFields = [
+      'parcel_receiver',
+      'parcel_phone',
+      'parcel_city',
+      'parcel_price',
+      'parcel_address',
+      'parcel_note',
+      'parcel_open',
+      'parcel_livreur_sent',
+      'parcel_livreurname_sent'
+    ];
+
+    // List of local-only fields
+    const localFields = [
+      'frais_livraison',
+      'frais_packaging',
+      'statut'
+    ];
+
+    // Check ALL fields
+    const allFields = [...welivexpressFields, ...localFields];
+    
+    allFields.forEach(fieldName => {
+      const formValue = formData[fieldName];
+      const originalValue = selectedOrder[fieldName];
       
-      // Check if the backend reported any issues with the Welivexpress update
-      if (result.welivexpress_response) {
-          console.log("Welivexpress response:", result.welivexpress_response);
-          if (result.welivexpress_response.success === false) {
-              alert(`Attention: Mise à jour locale OK, mais Welivexpress a répondu: ${result.welivexpress_response.message || 'Erreur'}`);
+      const normalizedFormValue = normalizeValue(formValue, fieldName);
+      const normalizedOriginalValue = normalizeValue(originalValue, fieldName);
+      
+      console.log(`Comparing ${fieldName}:`, {
+        formValue,
+        originalValue,
+        normalizedFormValue,
+        normalizedOriginalValue,
+        isDifferent: normalizedFormValue !== normalizedOriginalValue
+      });
+      
+      if (normalizedFormValue !== normalizedOriginalValue) {
+        // Add to payload with appropriate formatting
+        if (welivexpressFields.includes(fieldName)) {
+          // For Welivexpress fields
+          if (fieldName === 'parcel_price') {
+            updatePayload[fieldName] = normalizedFormValue;
+          } else if (fieldName === 'parcel_open') {
+            updatePayload[fieldName] = normalizedFormValue;
+          } else {
+            // String fields - send empty string if empty, not null
+            updatePayload[fieldName] = normalizedFormValue === "" ? "" : normalizedFormValue;
           }
+        } else {
+          // Local-only fields
+          updatePayload[fieldName] = normalizedFormValue;
+        }
       }
-      
-      await dispatch(fetchCommandes());
+    });
+
+    console.log("📦 Final updatePayload:", updatePayload);
+    
+    // Separate Welivexpress fields from local fields for logging
+    const welivexpressChanges = Object.keys(updatePayload).filter(key => welivexpressFields.includes(key));
+    const localChanges = Object.keys(updatePayload).filter(key => localFields.includes(key));
+    
+    console.log("Changes for Welivexpress:", welivexpressChanges);
+    console.log("Local-only changes:", localChanges);
+
+    // If no changes were detected, close the modal
+    if (Object.keys(updatePayload).length === 0) {
+      console.log("No changes detected, closing modal.");
+      alert("Aucune modification détectée");
       closeUpdateModal();
-      
-    } catch (error) {
-      console.error("❌ Update process failed:", error);
-      
-      // Log the full error details
-      if (error.response) {
-        console.error("Error response data:", error.response.data);
-        console.error("Error response status:", error.response.status);
-      }
-      
-      const errorMessage = error?.message || 
-                           error?.data?.message || 
-                           "Erreur lors de la mise à jour. Veuillez réessayer.";
-      setUpdateError(errorMessage);
-    } finally {
-      setUpdateLoading(false);
+      return;
     }
-  };
+
+    console.log("📤 Sending update payload to backend:", updatePayload);
+    
+    const result = await dispatch(updateCommande({ 
+      id: selectedOrder.id, 
+      ...updatePayload 
+    })).unwrap();
+
+    console.log("✅ Update successful. Full response:", result);
+    
+    // Show appropriate message based on what was updated
+    if (welivexpressChanges.length > 0) {
+      alert(`Mise à jour réussie! Champs envoyés à Welivexpress: ${welivexpressChanges.join(', ')}`);
+    } else {
+      alert(`Mise à jour locale réussie (champs modifiés: ${localChanges.join(', ')})`);
+    }
+    
+    // Check if the backend reported any issues with the Welivexpress update
+    if (result.welivexpress_response) {
+        console.log("Welivexpress response:", result.welivexpress_response);
+        if (result.welivexpress_response.error) {
+            console.warn("Welivexpress error:", result.welivexpress_response.error);
+            // Don't show alert to user since local update succeeded
+        }
+    }
+    
+    await dispatch(fetchCommandes());
+    closeUpdateModal();
+    
+  } catch (error) {
+    console.error("❌ Update process failed:", error);
+    
+    // Log the full error details
+    if (error.response) {
+      console.error("Error response data:", error.response.data);
+      console.error("Error response status:", error.response.status);
+    }
+    
+    const errorMessage = error?.message || 
+                         error?.data?.message || 
+                         "Erreur lors de la mise à jour. Veuillez réessayer.";
+    setUpdateError(errorMessage);
+  } finally {
+    setUpdateLoading(false);
+  }
+};
 
   const handleAddSubmit = async (e) => {
     e.preventDefault();

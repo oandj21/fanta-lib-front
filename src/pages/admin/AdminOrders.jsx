@@ -14,7 +14,7 @@ import {
   markCommandeAsDelivered,
   createCommande
 } from "../../store/store";
-import { fetchLivres } from "../../store/livreSlice";
+import { fetchLivres } from "../../store/store";
 import "../../css/AdminOrders.css";
 
 // Status labels and colors (keep only for existing orders display)

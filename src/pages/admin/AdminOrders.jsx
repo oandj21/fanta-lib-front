@@ -44,11 +44,13 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
   const [cities, setCities] = useState([]);
   const [error, setError] = useState(null);
 
+  // Fetch cities from Welivexpress API
   const fetchCities = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       
+      // Get token from localStorage
       const token = localStorage.getItem("token");
       
       const response = await axios.get(
@@ -63,6 +65,7 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
       
       console.log("Cities API response:", response.data);
       
+      // Handle different response structures
       let citiesData = [];
       if (Array.isArray(response.data)) {
         citiesData = response.data;
@@ -76,20 +79,35 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
     } catch (err) {
       console.error("Error fetching cities:", err);
       setError("Impossible de charger les villes");
+      // Fallback cities in case API fails
       setCities([
-        "Casablanca", "Rabat", "Fès", "Marrakech", "Agadir", "Tanger",
-        "Meknès", "Oujda", "Kénitra", "Tétouan", "Safi", "Mohammédia",
-        "El Jadida", "Béni Mellal", "Nador"
+        "Casablanca",
+        "Rabat",
+        "Fès",
+        "Marrakech",
+        "Agadir",
+        "Tanger",
+        "Meknès",
+        "Oujda",
+        "Kénitra",
+        "Tétouan",
+        "Safi",
+        "Mohammédia",
+        "El Jadida",
+        "Béni Mellal",
+        "Nador"
       ]);
     } finally {
       setLoading(false);
     }
   }, []);
 
+  // Load cities on component mount
   useEffect(() => {
     fetchCities();
   }, [fetchCities]);
 
+  // Filter cities based on query
   useEffect(() => {
     if (query.length >= 1) {
       const filtered = cities
@@ -97,7 +115,7 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
           const cityName = typeof city === 'string' ? city : city.name || city.city || city.label || '';
           return cityName.toLowerCase().includes(query.toLowerCase());
         })
-        .slice(0, 10);
+        .slice(0, 10); // Limit to 10 suggestions
       setSuggestions(filtered);
       setShowSuggestions(true);
     } else {
@@ -192,24 +210,22 @@ export default function AdminOrders() {
     parcel_phone: "",
     parcel_city: "",
     parcel_address: "",
-    parcel_price: "", // This is now the TOTAL
+    parcel_price: "",
     parcel_note: "",
     parcel_open: 0,
     parcel_livreur_sent: "",
     parcel_livreurname_sent: "",
-    statut: "new",
-    frais_livraison: 0,
-    frais_packaging: 0
+    statut: "new"
   });
 
-  // Form state for new order - parcel_price will store the TOTAL
+  // Form state for new order - WITH ALL REQUIRED FIELDS
   const [newOrderData, setNewOrderData] = useState({
     parcel_code: "",
     parcel_receiver: "",
     parcel_phone: "",
     parcel_city: "",
     parcel_address: "",
-    parcel_price: "", // This will store the TOTAL after calculation
+    parcel_price: "",
     frais_livraison: 0,
     frais_packaging: 0,
     total: 0,
@@ -223,17 +239,16 @@ export default function AdminOrders() {
     date: new Date().toISOString().split('T')[0]
   });
 
-  // Base price input (separate from parcel_price for calculation)
-  const [basePrice, setBasePrice] = useState("");
-
   useEffect(() => {
     dispatch(fetchCommandes());
   }, [dispatch]);
 
+  // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, statusFilter]);
 
+  // Update form data when selected order changes
   useEffect(() => {
     if (selectedOrder) {
       setFormData({
@@ -246,32 +261,27 @@ export default function AdminOrders() {
         parcel_open: selectedOrder.parcel_open || 0,
         parcel_livreur_sent: selectedOrder.parcel_livreur_sent || "",
         parcel_livreurname_sent: selectedOrder.parcel_livreurname_sent || "",
-        statut: selectedOrder.statut || "new",
-        frais_livraison: selectedOrder.frais_livraison || 0,
-        frais_packaging: selectedOrder.frais_packaging || 0
+        statut: selectedOrder.statut || "new"
       });
     }
   }, [selectedOrder]);
 
-  // Calculate total and update parcel_price when base price or fees change
+  // Calculate total and profit when relevant fields change
   useEffect(() => {
-    const base = parseFloat(basePrice) || 0;
+    const price = parseFloat(newOrderData.parcel_price) || 0;
     const delivery = parseFloat(newOrderData.frais_livraison) || 0;
     const packaging = parseFloat(newOrderData.frais_packaging) || 0;
     
-    // Total including all fees - this becomes parcel_price
-    const totalWithFees = base + delivery + packaging;
-    
-    // Profit calculation (adjust based on your business logic)
-    const profit = base - (delivery + packaging);
+    const total = price + delivery + packaging;
+    // Profit calculation - you can adjust this formula based on your business logic
+    const profit = price - (delivery + packaging);
     
     setNewOrderData(prev => ({
       ...prev,
-      parcel_price: totalWithFees, // parcel_price stores the TOTAL
-      total: totalWithFees,
+      total: total,
       profit: profit
     }));
-  }, [basePrice, newOrderData.frais_livraison, newOrderData.frais_packaging]);
+  }, [newOrderData.parcel_price, newOrderData.frais_livraison, newOrderData.frais_packaging]);
 
   const handleDelete = (id) => {
     if (window.confirm("Êtes-vous sûr de vouloir supprimer cette commande ?")) {
@@ -285,12 +295,14 @@ export default function AdminOrders() {
     }
   };
 
+  // Open update modal
   const openUpdateModal = (order) => {
     setSelectedOrder(order);
     setUpdateError(null);
     setShowUpdateModal(true);
   };
 
+  // Close update modal
   const closeUpdateModal = () => {
     setShowUpdateModal(false);
     setSelectedOrder(null);
@@ -304,42 +316,31 @@ export default function AdminOrders() {
       parcel_open: 0,
       parcel_livreur_sent: "",
       parcel_livreurname_sent: "",
-      statut: "new",
-      frais_livraison: 0,
-      frais_packaging: 0
+      statut: "new"
     });
     setUpdateError(null);
   };
 
+  // Open add modal
   const openAddModal = () => {
+    // Generate a unique parcel code
     const newParcelCode = `CMD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-    setBasePrice("");
     setNewOrderData({
+      ...newOrderData,
       parcel_code: newParcelCode,
-      parcel_receiver: "",
-      parcel_phone: "",
-      parcel_city: "",
-      parcel_address: "",
-      parcel_price: "",
+      date: new Date().toISOString().split('T')[0],
       frais_livraison: 0,
       frais_packaging: 0,
       total: 0,
-      profit: 0,
-      parcel_note: "",
-      parcel_open: 0,
-      parcel_livreur_sent: "",
-      parcel_livreurname_sent: "",
-      statut: "new",
-      livres: [],
-      date: new Date().toISOString().split('T')[0]
+      profit: 0
     });
     setAddError(null);
     setShowAddModal(true);
   };
 
+  // Close add modal
   const closeAddModal = () => {
     setShowAddModal(false);
-    setBasePrice("");
     setNewOrderData({
       parcel_code: "",
       parcel_receiver: "",
@@ -366,29 +367,19 @@ export default function AdminOrders() {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? (checked ? 1 : 0) : 
-              (name === 'frais_livraison' || name === 'frais_packaging') ? parseFloat(value) || 0 : value
+      [name]: type === 'checkbox' ? (checked ? 1 : 0) : value
     }));
   };
 
   const handleNewOrderChange = (e) => {
     const { name, value, type, checked } = e.target;
-    if (name === 'frais_livraison' || name === 'frais_packaging') {
-      setNewOrderData(prev => ({
-        ...prev,
-        [name]: parseFloat(value) || 0
-      }));
-    } else if (name === 'parcel_price') {
-      // This is the base price input
-      setBasePrice(value);
-    } else {
-      setNewOrderData(prev => ({
-        ...prev,
-        [name]: type === 'checkbox' ? (checked ? 1 : 0) : value
-      }));
-    }
+    setNewOrderData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? (checked ? 1 : 0) : value
+    }));
   };
 
+  // Handle city selection for update form
   const handleCitySelect = (city) => {
     setFormData(prev => ({
       ...prev,
@@ -396,6 +387,7 @@ export default function AdminOrders() {
     }));
   };
 
+  // Handle city selection for new order form
   const handleNewCitySelect = (city) => {
     setNewOrderData(prev => ({
       ...prev,
@@ -411,6 +403,7 @@ export default function AdminOrders() {
     setUpdateError(null);
 
     try {
+      // Filter out empty values to only send changed fields
       const updateData = {};
       Object.keys(formData).forEach(key => {
         if (formData[key] !== selectedOrder[key] && formData[key] !== "") {
@@ -418,10 +411,12 @@ export default function AdminOrders() {
         }
       });
 
+      // Always include status if it's changed
       if (formData.statut !== selectedOrder.statut) {
         updateData.statut = formData.statut;
       }
 
+      // If no changes, close modal
       if (Object.keys(updateData).length === 0) {
         closeUpdateModal();
         return;
@@ -429,6 +424,7 @@ export default function AdminOrders() {
 
       console.log("Updating order with data:", updateData);
       
+      // Dispatch update action
       const result = await dispatch(updateCommande({ 
         id: selectedOrder.id, 
         ...updateData 
@@ -436,6 +432,7 @@ export default function AdminOrders() {
 
       console.log("Update successful:", result);
       
+      // Refresh orders list
       await dispatch(fetchCommandes());
       
       closeUpdateModal();
@@ -454,14 +451,16 @@ export default function AdminOrders() {
   const handleAddSubmit = async (e) => {
     e.preventDefault();
     
-    if (!newOrderData.parcel_receiver || !newOrderData.parcel_city || !basePrice) {
+    // Validate required fields
+    if (!newOrderData.parcel_receiver || !newOrderData.parcel_city || !newOrderData.parcel_price) {
       setAddError("Veuillez remplir tous les champs obligatoires (client, ville, prix)");
       return;
     }
 
+    // Ensure all numeric fields are properly parsed
     const orderToCreate = {
       ...newOrderData,
-      parcel_price: parseFloat(newOrderData.parcel_price) || 0, // This is the TOTAL
+      parcel_price: parseFloat(newOrderData.parcel_price) || 0,
       frais_livraison: parseFloat(newOrderData.frais_livraison) || 0,
       frais_packaging: parseFloat(newOrderData.frais_packaging) || 0,
       total: parseFloat(newOrderData.total) || 0,
@@ -476,10 +475,12 @@ export default function AdminOrders() {
     try {
       console.log("Creating new order with data:", orderToCreate);
       
+      // Dispatch create action
       const result = await dispatch(createCommande(orderToCreate)).unwrap();
 
       console.log("Create successful:", result);
       
+      // Refresh orders list
       await dispatch(fetchCommandes());
       
       closeAddModal();
@@ -495,28 +496,34 @@ export default function AdminOrders() {
     }
   };
 
+  // Filter and search orders
   const filteredOrders = useMemo(() => {
     return orderList.filter(order => {
+      // Search filter
       const matchesSearch = searchTerm === "" || 
         order.parcel_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.parcel_receiver?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.parcel_city?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.parcel_phone?.toLowerCase().includes(searchTerm.toLowerCase());
       
+      // Status filter
       const matchesStatus = statusFilter === "all" || order.statut === statusFilter;
       
       return matchesSearch && matchesStatus;
     }).sort((a, b) => {
+      // Sort by date (most recent first)
       return new Date(b.date || 0) - new Date(a.date || 0);
     });
   }, [orderList, searchTerm, statusFilter]);
 
+  // Get current page orders
   const currentOrders = useMemo(() => {
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     return filteredOrders.slice(indexOfFirstItem, indexOfLastItem);
   }, [filteredOrders, currentPage, itemsPerPage]);
 
+  // Calculate total pages
   const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
 
   const stats = {
@@ -539,6 +546,7 @@ export default function AdminOrders() {
     document.querySelector('.table-wrapper')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
+  // Pagination component
   const Pagination = () => {
     if (totalPages <= 1) return null;
 
@@ -566,6 +574,7 @@ export default function AdminOrders() {
             onClick={() => paginate(currentPage - 1)}
             disabled={currentPage === 1}
             className="pagination-btn"
+            aria-label="Page précédente"
           >
             &lsaquo;
           </button>
@@ -598,6 +607,7 @@ export default function AdminOrders() {
             onClick={() => paginate(currentPage + 1)}
             disabled={currentPage === totalPages}
             className="pagination-btn"
+            aria-label="Page suivante"
           >
             &rsaquo;
           </button>
@@ -623,6 +633,7 @@ export default function AdminOrders() {
           </p>
         </div>
         
+        {/* ADD BUTTON */}
         <button onClick={openAddModal} className="btn-add-order">
           <Plus size={20} />
           Nouvelle commande
@@ -751,7 +762,7 @@ export default function AdminOrders() {
                   <th>Téléphone</th>
                   <th>Ville</th>
                   <th>Adresse</th>
-                  <th>Prix Total</th>
+                  <th>Prix</th>
                   <th>Frais</th>
                   <th>Total</th>
                   <th>Statut</th>
@@ -825,11 +836,12 @@ export default function AdminOrders() {
             </table>
           </div>
           
+          {/* Pagination */}
           <Pagination />
         </>
       )}
 
-      {/* ADD MODAL */}
+      {/* ADD MODAL with all fields */}
       {showAddModal && (
         <div className="modal-overlay" onClick={closeAddModal}>
           <div className="modal-content add-order-modal" onClick={e => e.stopPropagation()}>
@@ -968,26 +980,25 @@ export default function AdminOrders() {
                 <div className="form-section">
                   <h4>
                     <DollarSign size={16} />
-                    Informations financières
+                    Informations financières <span className="required">*</span>
                   </h4>
                   
                   <div className="form-row">
                     <div className="form-group">
                       <label htmlFor="parcel_price">
-                        Prix de base (MAD) <span className="required">*</span>
+                        Prix du colis (MAD)
                       </label>
                       <input
                         type="number"
                         id="parcel_price"
                         name="parcel_price"
-                        value={basePrice}
+                        value={newOrderData.parcel_price}
                         onChange={handleNewOrderChange}
-                        placeholder="Prix du livre"
+                        placeholder="0.00"
                         min="0"
                         step="0.01"
                         required
                       />
-                      <small className="field-hint">Prix du livre sans frais</small>
                     </div>
 
                     <div className="form-group">
@@ -1023,24 +1034,25 @@ export default function AdminOrders() {
                     </div>
                   </div>
 
-                  <div className="form-row" style={{ marginTop: '1rem', background: '#e8f4fd', padding: '1rem', borderRadius: '4px' }}>
+                  <div className="form-row" style={{ marginTop: '1rem' }}>
                     <div className="form-group">
-                      <label htmlFor="total_display">
-                        <strong>Total à encaisser (MAD)</strong>
+                      <label htmlFor="total">
+                        Total (MAD)
                       </label>
                       <input
                         type="number"
-                        id="total_display"
-                        value={newOrderData.parcel_price}
+                        id="total"
+                        name="total"
+                        value={newOrderData.total}
                         readOnly
-                        className="readonly-input total-display"
+                        className="readonly-input"
                       />
-                      <small className="field-hint">Ce montant sera envoyé à Welivexpress</small>
+                      <small className="field-hint">Calculé automatiquement</small>
                     </div>
 
                     <div className="form-group">
                       <label htmlFor="profit">
-                        Profit estimé (MAD)
+                        Profit (MAD)
                       </label>
                       <input
                         type="number"
@@ -1050,6 +1062,7 @@ export default function AdminOrders() {
                         readOnly
                         className="readonly-input"
                       />
+                      <small className="field-hint">Calculé automatiquement</small>
                     </div>
 
                     <div className="form-group">
@@ -1280,45 +1293,13 @@ export default function AdminOrders() {
                   <div className="form-row">
                     <div className="form-group">
                       <label htmlFor="parcel_price">
-                        Prix total (MAD)
+                        Prix (MAD)
                       </label>
                       <input
                         type="number"
                         id="parcel_price"
                         name="parcel_price"
                         value={formData.parcel_price}
-                        onChange={handleInputChange}
-                        placeholder="0.00"
-                        min="0"
-                        step="0.01"
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="frais_livraison">
-                        Frais de livraison
-                      </label>
-                      <input
-                        type="number"
-                        id="frais_livraison"
-                        name="frais_livraison"
-                        value={formData.frais_livraison}
-                        onChange={handleInputChange}
-                        placeholder="0.00"
-                        min="0"
-                        step="0.01"
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="frais_packaging">
-                        Frais de packaging
-                      </label>
-                      <input
-                        type="number"
-                        id="frais_packaging"
-                        name="frais_packaging"
-                        value={formData.frais_packaging}
                         onChange={handleInputChange}
                         placeholder="0.00"
                         min="0"

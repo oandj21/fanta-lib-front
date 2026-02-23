@@ -1,22 +1,19 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { 
   Pencil, Trash2, Check, Search, XCircle, Filter, 
   X, Save, MapPin, Phone, User, Package, DollarSign,
-  Map, FileText, Truck, UserCircle, Building, Plus,
-  Loader, ChevronDown
+  Map, FileText, Truck, UserCircle, Building, Plus
 } from "lucide-react";
-import axios from "axios";
 import { 
   fetchCommandes, 
   updateCommande, 
   deleteCommande, 
   markCommandeAsDelivered,
-  createCommande
+  createCommande  // Add this import
 } from "../../store/store";
 import "../../css/AdminOrders.css";
 
-// Status labels and colors
 const statusLabels = {
   new: "Nouvelle",
   confirmed: "Confirmée",
@@ -35,205 +32,6 @@ const statusColors = {
   returned: "#6f42c1",
 };
 
-// City Autocomplete Component with delivery fees
-const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
-  const [query, setQuery] = useState(value || "");
-  const [suggestions, setSuggestions] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [cities, setCities] = useState([]);
-  const [error, setError] = useState(null);
-
-  // Update query when value prop changes (for update form)
-  useEffect(() => {
-    if (value !== query) {
-      setQuery(value || "");
-    }
-  }, [value]);
-
-  // Fetch cities from Welivexpress API
-  const fetchCities = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const token = localStorage.getItem("token");
-      
-      const response = await axios.get(
-        "https://fanta-lib-back-production.up.railway.app/api/welivexpress/listcities",
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json'
-          }
-        }
-      );
-      
-      console.log("Cities API response:", response.data);
-      
-      let citiesData = [];
-      if (Array.isArray(response.data)) {
-        citiesData = response.data;
-      } else if (response.data.data && Array.isArray(response.data.data)) {
-        citiesData = response.data.data;
-      } else if (response.data.cities && Array.isArray(response.data.cities)) {
-        citiesData = response.data.cities;
-      }
-      
-      // Transform data to include delivery fees if not present
-      citiesData = citiesData.map(city => {
-        if (typeof city === 'string') {
-          return {
-            name: city,
-            delivery_fee: getDefaultDeliveryFee(city)
-          };
-        }
-        return city;
-      });
-      
-      setCities(citiesData);
-    } catch (err) {
-      console.error("Error fetching cities:", err);
-      setError("Impossible de charger les villes");
-      // Fallback cities with delivery fees
-      setCities([
-        { name: "Casablanca", delivery_fee: 25 },
-        { name: "Rabat", delivery_fee: 30 },
-        { name: "Fès", delivery_fee: 35 },
-        { name: "Marrakech", delivery_fee: 40 },
-        { name: "Agadir", delivery_fee: 45 },
-        { name: "Tanger", delivery_fee: 35 },
-        { name: "Meknès", delivery_fee: 35 },
-        { name: "Oujda", delivery_fee: 45 },
-        { name: "Kénitra", delivery_fee: 30 },
-        { name: "Tétouan", delivery_fee: 35 },
-        { name: "Safi", delivery_fee: 35 },
-        { name: "Mohammédia", delivery_fee: 25 },
-        { name: "El Jadida", delivery_fee: 30 },
-        { name: "Béni Mellal", delivery_fee: 35 },
-        { name: "Nador", delivery_fee: 45 }
-      ]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // Helper function to get default delivery fee based on city name
-  const getDefaultDeliveryFee = (cityName) => {
-    const cityFees = {
-      'casablanca': 25,
-      'rabat': 30,
-      'fès': 35,
-      'marrakech': 40,
-      'agadir': 45,
-      'tanger': 35,
-      'meknès': 35,
-      'oujda': 45,
-      'kénitra': 30,
-      'tétouan': 35,
-      'safi': 35,
-      'mohammédia': 25,
-      'el jadida': 30,
-      'béni mellal': 35,
-      'nador': 45
-    };
-    
-    const lowerCity = cityName.toLowerCase();
-    for (const [key, fee] of Object.entries(cityFees)) {
-      if (lowerCity.includes(key)) {
-        return fee;
-      }
-    }
-    return 30;
-  };
-
-  // Load cities on component mount
-  useEffect(() => {
-    fetchCities();
-  }, [fetchCities]);
-
-  // Filter cities based on query
-  useEffect(() => {
-    if (query.length >= 1) {
-      const filtered = cities
-        .filter(city => {
-          const cityName = city.name || city.city || city.label || '';
-          return cityName.toLowerCase().includes(query.toLowerCase());
-        })
-        .slice(0, 10);
-      setSuggestions(filtered);
-      setShowSuggestions(true);
-    } else {
-      setSuggestions([]);
-      setShowSuggestions(false);
-    }
-  }, [query, cities]);
-
-  const handleInputChange = (e) => {
-    const newValue = e.target.value;
-    setQuery(newValue);
-    onChange(newValue);
-  };
-
-  const handleSelectCity = (city) => {
-    const cityName = city.name || city.city || city.label || city;
-    const deliveryFee = city.delivery_fee || city.frais_livraison || getDefaultDeliveryFee(cityName);
-    
-    setQuery(cityName);
-    onChange(cityName);
-    if (onSelect) onSelect(cityName, deliveryFee);
-    setShowSuggestions(false);
-  };
-
-  return (
-    <div className="city-autocomplete">
-      <div className="autocomplete-input-wrapper">
-        <input
-          type="text"
-          value={query}
-          onChange={handleInputChange}
-          onFocus={() => query.length >= 1 && suggestions.length > 0 && setShowSuggestions(true)}
-          onBlur={() => {
-            setTimeout(() => setShowSuggestions(false), 200);
-          }}
-          placeholder="Tapez pour rechercher une ville..."
-          className="city-input"
-          disabled={disabled}
-        />
-        {loading && <Loader size={16} className="autocomplete-spinner" />}
-        {!loading && suggestions.length > 0 && (
-          <ChevronDown size={16} className="autocomplete-arrow" />
-        )}
-      </div>
-      
-      {showSuggestions && suggestions.length > 0 && (
-        <ul className="suggestions-list">
-          {suggestions.map((city, index) => {
-            const cityName = city.name || city.city || city.label || city;
-            const deliveryFee = city.delivery_fee || city.frais_livraison || getDefaultDeliveryFee(cityName);
-            
-            return (
-              <li
-                key={index}
-                onMouseDown={() => handleSelectCity(city)}
-                className="suggestion-item"
-              >
-                <MapPin size={14} />
-                <span className="city-name">{cityName}</span>
-                {deliveryFee > 0 && (
-                  <span className="delivery-fee-badge">{deliveryFee} MAD</span>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      )}
-      
-      {error && <div className="city-error">{error}</div>}
-    </div>
-  );
-};
-
 export default function AdminOrders() {
   const dispatch = useDispatch();
   const { list: orderList = [], loading } = useSelector((state) => state.commandes);
@@ -249,22 +47,20 @@ export default function AdminOrders() {
   
   // Modal states
   const [showUpdateModal, setShowUpdateModal] = useState(false);
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);  // Add this
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [updateLoading, setUpdateLoading] = useState(false);
-  const [addLoading, setAddLoading] = useState(false);
+  const [addLoading, setAddLoading] = useState(false);  // Add this
   const [updateError, setUpdateError] = useState(null);
-  const [addError, setAddError] = useState(null);
+  const [addError, setAddError] = useState(null);  // Add this
   
-  // Form state for update - WITH ALL FIELDS
+  // Form state for update
   const [formData, setFormData] = useState({
     parcel_receiver: "",
     parcel_phone: "",
     parcel_city: "",
     parcel_address: "",
     parcel_price: "",
-    frais_livraison: "",
-    frais_packaging: "",
     parcel_note: "",
     parcel_open: 0,
     parcel_livreur_sent: "",
@@ -280,17 +76,12 @@ export default function AdminOrders() {
     parcel_city: "",
     parcel_address: "",
     parcel_price: "",
-    frais_livraison: 0,
-    frais_packaging: 0,
-    total: 0,
-    profit: 0,
     parcel_note: "",
     parcel_open: 0,
     parcel_livreur_sent: "",
     parcel_livreurname_sent: "",
     statut: "new",
-    livres: [],
-    date: new Date().toISOString().split('T')[0]
+    date: new Date().toISOString().split('T')[0] // Today's date
   });
 
   useEffect(() => {
@@ -305,39 +96,20 @@ export default function AdminOrders() {
   // Update form data when selected order changes
   useEffect(() => {
     if (selectedOrder) {
-      console.log("Setting update form data with:", selectedOrder);
       setFormData({
         parcel_receiver: selectedOrder.parcel_receiver || "",
         parcel_phone: selectedOrder.parcel_phone || "",
         parcel_city: selectedOrder.parcel_city || "",
         parcel_address: selectedOrder.parcel_address || "",
-        parcel_price: selectedOrder.parcel_price?.toString() || "",
-        frais_livraison: selectedOrder.frais_livraison?.toString() || "",
-        frais_packaging: selectedOrder.frais_packaging?.toString() || "",
+        parcel_price: selectedOrder.parcel_price || "",
         parcel_note: selectedOrder.parcel_note || "",
-        parcel_open: selectedOrder.parcel_open ? 1 : 0,
+        parcel_open: selectedOrder.parcel_open || 0,
         parcel_livreur_sent: selectedOrder.parcel_livreur_sent || "",
         parcel_livreurname_sent: selectedOrder.parcel_livreurname_sent || "",
         statut: selectedOrder.statut || "new"
       });
     }
   }, [selectedOrder]);
-
-  // Calculate total and profit when relevant fields change
-  useEffect(() => {
-    const price = parseFloat(newOrderData.parcel_price) || 0;
-    const delivery = parseFloat(newOrderData.frais_livraison) || 0;
-    const packaging = parseFloat(newOrderData.frais_packaging) || 0;
-    
-    const total = price + delivery + packaging;
-    const profit = price - (delivery + packaging);
-    
-    setNewOrderData(prev => ({
-      ...prev,
-      total: parseFloat(total.toFixed(2)),
-      profit: parseFloat(profit.toFixed(2))
-    }));
-  }, [newOrderData.parcel_price, newOrderData.frais_livraison, newOrderData.frais_packaging]);
 
   const handleDelete = (id) => {
     if (window.confirm("Êtes-vous sûr de vouloir supprimer cette commande ?")) {
@@ -368,8 +140,6 @@ export default function AdminOrders() {
       parcel_city: "",
       parcel_address: "",
       parcel_price: "",
-      frais_livraison: "",
-      frais_packaging: "",
       parcel_note: "",
       parcel_open: 0,
       parcel_livreur_sent: "",
@@ -381,15 +151,12 @@ export default function AdminOrders() {
 
   // Open add modal
   const openAddModal = () => {
+    // Generate a unique parcel code
     const newParcelCode = `CMD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     setNewOrderData({
       ...newOrderData,
       parcel_code: newParcelCode,
-      date: new Date().toISOString().split('T')[0],
-      frais_livraison: 0,
-      frais_packaging: 0,
-      total: 0,
-      profit: 0
+      date: new Date().toISOString().split('T')[0]
     });
     setAddError(null);
     setShowAddModal(true);
@@ -405,16 +172,11 @@ export default function AdminOrders() {
       parcel_city: "",
       parcel_address: "",
       parcel_price: "",
-      frais_livraison: 0,
-      frais_packaging: 0,
-      total: 0,
-      profit: 0,
       parcel_note: "",
       parcel_open: 0,
       parcel_livreur_sent: "",
       parcel_livreurname_sent: "",
       statut: "new",
-      livres: [],
       date: new Date().toISOString().split('T')[0]
     });
     setAddError(null);
@@ -436,205 +198,82 @@ export default function AdminOrders() {
     }));
   };
 
-  // Handle city selection for update form
-  const handleCitySelect = (city, deliveryFee) => {
-    setFormData(prev => ({
-      ...prev,
-      parcel_city: city,
-      frais_livraison: deliveryFee?.toString() || prev.frais_livraison
-    }));
-  };
-
-  // Handle city selection for new order form
-  const handleNewCitySelect = (city, deliveryFee) => {
-    console.log("City selected:", city, "with fee:", deliveryFee);
-    setNewOrderData(prev => ({
-      ...prev,
-      parcel_city: city,
-      frais_livraison: deliveryFee || 0
-    }));
-  };
-
-  // FIXED: handleUpdateSubmit with proper change detection
   const handleUpdateSubmit = async (e) => {
-  e.preventDefault();
-  if (!selectedOrder) return;
+    e.preventDefault();
+    if (!selectedOrder) return;
 
-  setUpdateLoading(true);
-  setUpdateError(null);
+    setUpdateLoading(true);
+    setUpdateError(null);
 
-  try {
-    // Log the original and new values for debugging
-    console.log("========== UPDATE DEBUG ==========");
-    console.log("Selected Order ID:", selectedOrder.id);
-    console.log("Selected Order Data:", selectedOrder);
-    console.log("Form Data:", formData);
-
-    const updatePayload = {};
-
-    // Helper function to normalize values for comparison
-    const normalizeValue = (value, fieldName) => {
-      if (fieldName.includes('price') || fieldName.includes('frais_')) {
-        // Numeric fields
-        return value === "" || value === null || value === undefined ? 0 : parseFloat(value);
-      } else if (fieldName === 'parcel_open') {
-        // Boolean/Integer field
-        return value ? 1 : 0;
-      } else {
-        // String fields
-        return value === "" || value === null || value === undefined ? "" : String(value).trim();
-      }
-    };
-
-    // List of Welivexpress fields that should trigger an external update
-    const welivexpressFields = [
-      'parcel_receiver',
-      'parcel_phone',
-      'parcel_city',
-      'parcel_price',
-      'parcel_address',
-      'parcel_note',
-      'parcel_open',
-      'parcel_livreur_sent',
-      'parcel_livreurname_sent'
-    ];
-
-    // List of local-only fields
-    const localFields = [
-      'frais_livraison',
-      'frais_packaging',
-      'statut'
-    ];
-
-    // Check ALL fields
-    const allFields = [...welivexpressFields, ...localFields];
-    
-    allFields.forEach(fieldName => {
-      const formValue = formData[fieldName];
-      const originalValue = selectedOrder[fieldName];
-      
-      const normalizedFormValue = normalizeValue(formValue, fieldName);
-      const normalizedOriginalValue = normalizeValue(originalValue, fieldName);
-      
-      console.log(`Comparing ${fieldName}:`, {
-        formValue,
-        originalValue,
-        normalizedFormValue,
-        normalizedOriginalValue,
-        isDifferent: normalizedFormValue !== normalizedOriginalValue
+    try {
+      // Filter out empty values to only send changed fields
+      const updateData = {};
+      Object.keys(formData).forEach(key => {
+        if (formData[key] !== selectedOrder[key] && formData[key] !== "") {
+          updateData[key] = formData[key];
+        }
       });
-      
-      if (normalizedFormValue !== normalizedOriginalValue) {
-        // Add to payload with appropriate formatting
-        if (welivexpressFields.includes(fieldName)) {
-          // For Welivexpress fields
-          if (fieldName === 'parcel_price') {
-            updatePayload[fieldName] = normalizedFormValue;
-          } else if (fieldName === 'parcel_open') {
-            updatePayload[fieldName] = normalizedFormValue;
-          } else {
-            // String fields - send empty string if empty, not null
-            updatePayload[fieldName] = normalizedFormValue === "" ? "" : normalizedFormValue;
-          }
-        } else {
-          // Local-only fields
-          updatePayload[fieldName] = normalizedFormValue;
-        }
+
+      // Always include status if it's changed
+      if (formData.statut !== selectedOrder.statut) {
+        updateData.statut = formData.statut;
       }
-    });
 
-    console.log("📦 Final updatePayload:", updatePayload);
-    
-    // Separate Welivexpress fields from local fields for logging
-    const welivexpressChanges = Object.keys(updatePayload).filter(key => welivexpressFields.includes(key));
-    const localChanges = Object.keys(updatePayload).filter(key => localFields.includes(key));
-    
-    console.log("Changes for Welivexpress:", welivexpressChanges);
-    console.log("Local-only changes:", localChanges);
+      // If no changes, close modal
+      if (Object.keys(updateData).length === 0) {
+        closeUpdateModal();
+        return;
+      }
 
-    // If no changes were detected, close the modal
-    if (Object.keys(updatePayload).length === 0) {
-      console.log("No changes detected, closing modal.");
-      alert("Aucune modification détectée");
+      console.log("Updating order with data:", updateData);
+      
+      // Dispatch update action
+      const result = await dispatch(updateCommande({ 
+        id: selectedOrder.id, 
+        ...updateData 
+      })).unwrap();
+
+      console.log("Update successful:", result);
+      
+      // Refresh orders list
+      await dispatch(fetchCommandes());
+      
       closeUpdateModal();
-      return;
+      
+    } catch (error) {
+      console.error("Update failed:", error);
+      setUpdateError(
+        error?.message || 
+        "Erreur lors de la mise à jour. Veuillez réessayer."
+      );
+    } finally {
+      setUpdateLoading(false);
     }
-
-    console.log("📤 Sending update payload to backend:", updatePayload);
-    
-    const result = await dispatch(updateCommande({ 
-      id: selectedOrder.id, 
-      ...updatePayload 
-    })).unwrap();
-
-    console.log("✅ Update successful. Full response:", result);
-    
-    // Show appropriate message based on what was updated
-    if (welivexpressChanges.length > 0) {
-      alert(`Mise à jour réussie! Champs envoyés à Welivexpress: ${welivexpressChanges.join(', ')}`);
-    } else {
-      alert(`Mise à jour locale réussie (champs modifiés: ${localChanges.join(', ')})`);
-    }
-    
-    // Check if the backend reported any issues with the Welivexpress update
-    if (result.welivexpress_response) {
-        console.log("Welivexpress response:", result.welivexpress_response);
-        if (result.welivexpress_response.error) {
-            console.warn("Welivexpress error:", result.welivexpress_response.error);
-            // Don't show alert to user since local update succeeded
-        }
-    }
-    
-    await dispatch(fetchCommandes());
-    closeUpdateModal();
-    
-  } catch (error) {
-    console.error("❌ Update process failed:", error);
-    
-    // Log the full error details
-    if (error.response) {
-      console.error("Error response data:", error.response.data);
-      console.error("Error response status:", error.response.status);
-    }
-    
-    const errorMessage = error?.message || 
-                         error?.data?.message || 
-                         "Erreur lors de la mise à jour. Veuillez réessayer.";
-    setUpdateError(errorMessage);
-  } finally {
-    setUpdateLoading(false);
-  }
-};
+  };
 
   const handleAddSubmit = async (e) => {
     e.preventDefault();
     
+    // Validate required fields
     if (!newOrderData.parcel_receiver || !newOrderData.parcel_city || !newOrderData.parcel_price) {
       setAddError("Veuillez remplir tous les champs obligatoires (client, ville, prix)");
       return;
     }
 
-    const orderToCreate = {
-      ...newOrderData,
-      parcel_price: parseFloat(newOrderData.parcel_price) || 0,
-      frais_livraison: parseFloat(newOrderData.frais_livraison) || 0,
-      frais_packaging: parseFloat(newOrderData.frais_packaging) || 0,
-      total: parseFloat(newOrderData.total) || 0,
-      profit: parseFloat(newOrderData.profit) || 0,
-      parcel_open: newOrderData.parcel_open ? 1 : 0,
-      livres: newOrderData.livres || []
-    };
-
     setAddLoading(true);
     setAddError(null);
 
     try {
-      console.log("Creating new order with data:", orderToCreate);
+      console.log("Creating new order with data:", newOrderData);
       
-      const result = await dispatch(createCommande(orderToCreate)).unwrap();
+      // Dispatch create action
+      const result = await dispatch(createCommande(newOrderData)).unwrap();
+
       console.log("Create successful:", result);
       
+      // Refresh orders list
       await dispatch(fetchCommandes());
+      
       closeAddModal();
       
     } catch (error) {
@@ -651,26 +290,31 @@ export default function AdminOrders() {
   // Filter and search orders
   const filteredOrders = useMemo(() => {
     return orderList.filter(order => {
+      // Search filter
       const matchesSearch = searchTerm === "" || 
         order.parcel_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.parcel_receiver?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.parcel_city?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.parcel_phone?.toLowerCase().includes(searchTerm.toLowerCase());
       
+      // Status filter
       const matchesStatus = statusFilter === "all" || order.statut === statusFilter;
       
       return matchesSearch && matchesStatus;
     }).sort((a, b) => {
+      // Sort by date (most recent first)
       return new Date(b.date || 0) - new Date(a.date || 0);
     });
   }, [orderList, searchTerm, statusFilter]);
 
+  // Get current page orders
   const currentOrders = useMemo(() => {
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     return filteredOrders.slice(indexOfFirstItem, indexOfLastItem);
   }, [filteredOrders, currentPage, itemsPerPage]);
 
+  // Calculate total pages
   const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
 
   const stats = {
@@ -693,6 +337,7 @@ export default function AdminOrders() {
     document.querySelector('.table-wrapper')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
+  // Pagination component
   const Pagination = () => {
     if (totalPages <= 1) return null;
 
@@ -720,6 +365,7 @@ export default function AdminOrders() {
             onClick={() => paginate(currentPage - 1)}
             disabled={currentPage === 1}
             className="pagination-btn"
+            aria-label="Page précédente"
           >
             &lsaquo;
           </button>
@@ -752,6 +398,7 @@ export default function AdminOrders() {
             onClick={() => paginate(currentPage + 1)}
             disabled={currentPage === totalPages}
             className="pagination-btn"
+            aria-label="Page suivante"
           >
             &rsaquo;
           </button>
@@ -777,6 +424,7 @@ export default function AdminOrders() {
           </p>
         </div>
         
+        {/* ADD BUTTON - Here it is! */}
         <button onClick={openAddModal} className="btn-add-order">
           <Plus size={20} />
           Nouvelle commande
@@ -906,8 +554,6 @@ export default function AdminOrders() {
                   <th>Ville</th>
                   <th>Adresse</th>
                   <th>Prix</th>
-                  <th>Frais</th>
-                  <th>Total</th>
                   <th>Statut</th>
                   <th>Livreur</th>
                   <th>Date</th>
@@ -929,8 +575,6 @@ export default function AdminOrders() {
                         : "-"}
                     </td>
                     <td className="order-price">{order.parcel_price ? `${order.parcel_price} MAD` : "-"}</td>
-                    <td>{(order.frais_livraison || 0) + (order.frais_packaging || 0)} MAD</td>
-                    <td className="order-total">{order.total ? `${order.total} MAD` : "-"}</td>
                     <td>
                       <span 
                         className="status-badge"
@@ -979,6 +623,7 @@ export default function AdminOrders() {
             </table>
           </div>
           
+          {/* Pagination */}
           <Pagination />
         </>
       )}
@@ -1095,12 +740,15 @@ export default function AdminOrders() {
                         <Building size={14} />
                         Ville
                       </label>
-                      <CityAutocomplete
+                      <input
+                        type="text"
+                        id="parcel_city"
+                        name="parcel_city"
                         value={newOrderData.parcel_city}
-                        onChange={(value) => setNewOrderData(prev => ({ ...prev, parcel_city: value }))}
-                        onSelect={handleNewCitySelect}
+                        onChange={handleNewOrderChange}
+                        placeholder="Ville"
+                        required
                       />
-                      <small className="field-hint">La sélection d'une ville mettra à jour les frais de livraison</small>
                     </div>
 
                     <div className="form-group full-width">
@@ -1129,7 +777,7 @@ export default function AdminOrders() {
                   <div className="form-row">
                     <div className="form-group">
                       <label htmlFor="parcel_price">
-                        Prix du colis (MAD)
+                        Prix (MAD)
                       </label>
                       <input
                         type="number"
@@ -1142,74 +790,6 @@ export default function AdminOrders() {
                         step="0.01"
                         required
                       />
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="frais_livraison">
-                        Frais de livraison (MAD)
-                      </label>
-                      <input
-                        type="number"
-                        id="frais_livraison"
-                        name="frais_livraison"
-                        value={newOrderData.frais_livraison}
-                        onChange={handleNewOrderChange}
-                        placeholder="0.00"
-                        min="0"
-                        step="0.01"
-                        className={newOrderData.frais_livraison > 0 ? "auto-filled" : ""}
-                      />
-                      {newOrderData.frais_livraison > 0 && (
-                        <small className="field-hint success">Frais automatiques appliqués</small>
-                      )}
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="frais_packaging">
-                        Frais de packaging (MAD)
-                      </label>
-                      <input
-                        type="number"
-                        id="frais_packaging"
-                        name="frais_packaging"
-                        value={newOrderData.frais_packaging}
-                        onChange={handleNewOrderChange}
-                        placeholder="0.00"
-                        min="0"
-                        step="0.01"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="form-row" style={{ marginTop: '1rem' }}>
-                    <div className="form-group">
-                      <label htmlFor="total">
-                        Total (MAD)
-                      </label>
-                      <input
-                        type="number"
-                        id="total"
-                        name="total"
-                        value={newOrderData.total}
-                        readOnly
-                        className="readonly-input total-field"
-                      />
-                      <small className="field-hint">Calculé automatiquement</small>
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="profit">
-                        Profit (MAD)
-                      </label>
-                      <input
-                        type="number"
-                        id="profit"
-                        name="profit"
-                        value={newOrderData.profit}
-                        readOnly
-                        className={`readonly-input ${newOrderData.profit >= 0 ? 'profit-positive' : 'profit-negative'}`}
-                      />
-                      <small className="field-hint">Calculé automatiquement</small>
                     </div>
 
                     <div className="form-group">
@@ -1336,12 +916,12 @@ export default function AdminOrders() {
         </div>
       )}
 
-      {/* UPDATE MODAL */}
+      {/* UPDATE MODAL (same as before) */}
       {showUpdateModal && selectedOrder && (
         <div className="modal-overlay" onClick={closeUpdateModal}>
           <div className="modal-content update-order-modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Modifier la commande #{selectedOrder.parcel_code}</h3>
+              <h3>Modifier la commande</h3>
               <button onClick={closeUpdateModal} className="modal-close">
                 <X size={20} />
               </button>
@@ -1407,10 +987,13 @@ export default function AdminOrders() {
                         <Building size={14} />
                         Ville
                       </label>
-                      <CityAutocomplete
+                      <input
+                        type="text"
+                        id="parcel_city"
+                        name="parcel_city"
                         value={formData.parcel_city}
-                        onChange={(value) => setFormData(prev => ({ ...prev, parcel_city: value }))}
-                        onSelect={handleCitySelect}
+                        onChange={handleInputChange}
+                        placeholder="Ville"
                       />
                     </div>
 
@@ -1454,40 +1037,6 @@ export default function AdminOrders() {
                       />
                     </div>
 
-                    <div className="form-group">
-                      <label htmlFor="frais_livraison">
-                        Frais de livraison (MAD)
-                      </label>
-                      <input
-                        type="number"
-                        id="frais_livraison"
-                        name="frais_livraison"
-                        value={formData.frais_livraison}
-                        onChange={handleInputChange}
-                        placeholder="0.00"
-                        min="0"
-                        step="0.01"
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="frais_packaging">
-                        Frais de packaging (MAD)
-                      </label>
-                      <input
-                        type="number"
-                        id="frais_packaging"
-                        name="frais_packaging"
-                        value={formData.frais_packaging}
-                        onChange={handleInputChange}
-                        placeholder="0.00"
-                        min="0"
-                        step="0.01"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="form-row" style={{ marginTop: '1rem' }}>
                     <div className="form-group">
                       <label htmlFor="statut">
                         Statut

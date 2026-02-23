@@ -4,7 +4,7 @@ import {
   Pencil, Trash2, Check, Search, XCircle, Filter, 
   X, Save, MapPin, Phone, User, Package, DollarSign,
   Map, FileText, Truck, UserCircle, Building, Plus,
-  Loader, ChevronDown
+  Loader, ChevronDown, BookOpen, Minus, Plus as PlusIcon
 } from "lucide-react";
 import axios from "axios";
 import { 
@@ -12,7 +12,8 @@ import {
   updateCommande, 
   deleteCommande, 
   markCommandeAsDelivered,
-  createCommande
+  createCommande,
+  fetchLivres
 } from "../../store/store";
 import "../../css/AdminOrders.css";
 
@@ -50,7 +51,6 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
       setLoading(true);
       setError(null);
       
-      // Get token from localStorage
       const token = localStorage.getItem("token");
       
       const response = await axios.get(
@@ -65,7 +65,6 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
       
       console.log("Cities API response:", response.data);
       
-      // Handle different response structures
       let citiesData = [];
       if (Array.isArray(response.data)) {
         citiesData = response.data;
@@ -79,35 +78,21 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
     } catch (err) {
       console.error("Error fetching cities:", err);
       setError("Impossible de charger les villes");
-      // Fallback cities in case API fails
+      // Fallback cities
       setCities([
-        "Casablanca",
-        "Rabat",
-        "Fès",
-        "Marrakech",
-        "Agadir",
-        "Tanger",
-        "Meknès",
-        "Oujda",
-        "Kénitra",
-        "Tétouan",
-        "Safi",
-        "Mohammédia",
-        "El Jadida",
-        "Béni Mellal",
-        "Nador"
+        "Casablanca", "Rabat", "Fès", "Marrakech", "Agadir", "Tanger",
+        "Meknès", "Oujda", "Kénitra", "Tétouan", "Safi", "Mohammédia",
+        "El Jadida", "Béni Mellal", "Nador"
       ]);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // Load cities on component mount
   useEffect(() => {
     fetchCities();
   }, [fetchCities]);
 
-  // Filter cities based on query
   useEffect(() => {
     if (query.length >= 1) {
       const filtered = cities
@@ -115,7 +100,7 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
           const cityName = typeof city === 'string' ? city : city.name || city.city || city.label || '';
           return cityName.toLowerCase().includes(query.toLowerCase());
         })
-        .slice(0, 10); // Limit to 10 suggestions
+        .slice(0, 10);
       setSuggestions(filtered);
       setShowSuggestions(true);
     } else {
@@ -146,9 +131,7 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
           value={query}
           onChange={handleInputChange}
           onFocus={() => query.length >= 1 && setSuggestions.length > 0 && setShowSuggestions(true)}
-          onBlur={() => {
-            setTimeout(() => setShowSuggestions(false), 200);
-          }}
+          onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
           placeholder="Tapez pour rechercher une ville..."
           className="city-input"
           disabled={disabled}
@@ -178,6 +161,168 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
       )}
       
       {error && <div className="city-error">{error}</div>}
+    </div>
+  );
+};
+
+// Book Selection Component
+const BookSelector = ({ selectedBooks, onBooksChange }) => {
+  const dispatch = useDispatch();
+  const { list: booksList = [], loading: booksLoading } = useSelector((state) => state.livres);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  useEffect(() => {
+    dispatch(fetchLivres());
+  }, [dispatch]);
+
+  const filteredBooks = useMemo(() => {
+    return booksList.filter(book => 
+      book.titre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      book.auteur?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      book.isbn?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [booksList, searchTerm]);
+
+  const addBook = (book) => {
+    const existingBook = selectedBooks.find(b => b.id === book.id);
+    if (existingBook) {
+      onBooksChange(
+        selectedBooks.map(b => 
+          b.id === book.id 
+            ? { ...b, quantity: b.quantity + 1, total: (b.quantity + 1) * b.prix_achat }
+            : b
+        )
+      );
+    } else {
+      onBooksChange([
+        ...selectedBooks,
+        {
+          id: book.id,
+          titre: book.titre,
+          auteur: book.auteur,
+          prix_achat: book.prix_achat,
+          quantity: 1,
+          total: book.prix_achat
+        }
+      ]);
+    }
+    setSearchTerm("");
+    setShowDropdown(false);
+  };
+
+  const updateQuantity = (bookId, newQuantity) => {
+    if (newQuantity < 1) {
+      removeBook(bookId);
+      return;
+    }
+    onBooksChange(
+      selectedBooks.map(b => 
+        b.id === bookId 
+          ? { ...b, quantity: newQuantity, total: newQuantity * b.prix_achat }
+          : b
+      )
+    );
+  };
+
+  const removeBook = (bookId) => {
+    onBooksChange(selectedBooks.filter(b => b.id !== bookId));
+  };
+
+  const calculateSubtotal = () => {
+    return selectedBooks.reduce((sum, book) => sum + book.total, 0);
+  };
+
+  return (
+    <div className="book-selector">
+      <div className="book-search-container">
+        <div className="book-search-input-wrapper">
+          <BookOpen size={16} className="book-search-icon" />
+          <input
+            type="text"
+            placeholder="Rechercher un livre par titre, auteur ou ISBN..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onFocus={() => setShowDropdown(true)}
+            className="book-search-input"
+          />
+          {booksLoading && <Loader size={16} className="book-search-spinner" />}
+        </div>
+        
+        {showDropdown && searchTerm && (
+          <div className="book-dropdown">
+            {filteredBooks.length > 0 ? (
+              filteredBooks.map(book => (
+                <div
+                  key={book.id}
+                  className="book-dropdown-item"
+                  onClick={() => addBook(book)}
+                >
+                  <div className="book-dropdown-info">
+                    <span className="book-dropdown-title">{book.titre}</span>
+                    <span className="book-dropdown-author">{book.auteur}</span>
+                  </div>
+                  <span className="book-dropdown-price">{book.prix_achat} MAD</span>
+                </div>
+              ))
+            ) : (
+              <div className="book-dropdown-empty">Aucun livre trouvé</div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {selectedBooks.length > 0 && (
+        <div className="selected-books">
+          <h5>Livres sélectionnés</h5>
+          <div className="selected-books-list">
+            {selectedBooks.map(book => (
+              <div key={book.id} className="selected-book-item">
+                <div className="selected-book-info">
+                  <span className="selected-book-title">{book.titre}</span>
+                  <span className="selected-book-author">{book.auteur}</span>
+                  <span className="selected-book-price">{book.prix_achat} MAD</span>
+                </div>
+                
+                <div className="selected-book-actions">
+                  <div className="quantity-control">
+                    <button
+                      type="button"
+                      onClick={() => updateQuantity(book.id, book.quantity - 1)}
+                      className="quantity-btn"
+                      disabled={book.quantity <= 1}
+                    >
+                      <Minus size={14} />
+                    </button>
+                    <span className="quantity-value">{book.quantity}</span>
+                    <button
+                      type="button"
+                      onClick={() => updateQuantity(book.id, book.quantity + 1)}
+                      className="quantity-btn"
+                    >
+                      <PlusIcon size={14} />
+                    </button>
+                  </div>
+                  <span className="selected-book-total">{book.total} MAD</span>
+                  <button
+                    type="button"
+                    onClick={() => removeBook(book.id)}
+                    className="remove-book-btn"
+                    title="Retirer"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <div className="selected-books-summary">
+            <span>Total livres:</span>
+            <span>{calculateSubtotal()} MAD</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -218,14 +363,14 @@ export default function AdminOrders() {
     statut: "new"
   });
 
-  // Form state for new order - WITH ALL REQUIRED FIELDS
+  // Form state for new order - WITH BOOKS ARRAY
   const [newOrderData, setNewOrderData] = useState({
     parcel_code: "",
     parcel_receiver: "",
     parcel_phone: "",
     parcel_city: "",
     parcel_address: "",
-    parcel_price: "",
+    parcel_price: "", // This will be set to total for Welivexpress
     frais_livraison: 0,
     frais_packaging: 0,
     total: 0,
@@ -235,7 +380,7 @@ export default function AdminOrders() {
     parcel_livreur_sent: "",
     parcel_livreurname_sent: "",
     statut: "new",
-    livres: [],
+    livres: [], // Array of books with quantities
     date: new Date().toISOString().split('T')[0]
   });
 
@@ -268,20 +413,30 @@ export default function AdminOrders() {
 
   // Calculate total and profit when relevant fields change
   useEffect(() => {
-    const price = parseFloat(newOrderData.parcel_price) || 0;
+    // Calculate books subtotal
+    const booksSubtotal = (newOrderData.livres || []).reduce(
+      (sum, book) => sum + (book.prix_achat * book.quantity), 0
+    );
+    
     const delivery = parseFloat(newOrderData.frais_livraison) || 0;
     const packaging = parseFloat(newOrderData.frais_packaging) || 0;
     
-    const total = price + delivery + packaging;
-    // Profit calculation - you can adjust this formula based on your business logic
-    const profit = price - (delivery + packaging);
+    const total = booksSubtotal + delivery + packaging;
+    // Profit calculation (adjust formula as needed)
+    const profit = booksSubtotal - (delivery + packaging);
     
     setNewOrderData(prev => ({
       ...prev,
       total: total,
-      profit: profit
+      profit: profit,
+      // Set parcel_price to total for Welivexpress
+      parcel_price: total
     }));
-  }, [newOrderData.parcel_price, newOrderData.frais_livraison, newOrderData.frais_packaging]);
+  }, [
+    newOrderData.livres, 
+    newOrderData.frais_livraison, 
+    newOrderData.frais_packaging
+  ]);
 
   const handleDelete = (id) => {
     if (window.confirm("Êtes-vous sûr de vouloir supprimer cette commande ?")) {
@@ -323,16 +478,25 @@ export default function AdminOrders() {
 
   // Open add modal
   const openAddModal = () => {
-    // Generate a unique parcel code
     const newParcelCode = `CMD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     setNewOrderData({
-      ...newOrderData,
       parcel_code: newParcelCode,
-      date: new Date().toISOString().split('T')[0],
+      parcel_receiver: "",
+      parcel_phone: "",
+      parcel_city: "",
+      parcel_address: "",
+      parcel_price: 0,
       frais_livraison: 0,
       frais_packaging: 0,
       total: 0,
-      profit: 0
+      profit: 0,
+      parcel_note: "",
+      parcel_open: 0,
+      parcel_livreur_sent: "",
+      parcel_livreurname_sent: "",
+      statut: "new",
+      livres: [],
+      date: new Date().toISOString().split('T')[0]
     });
     setAddError(null);
     setShowAddModal(true);
@@ -347,7 +511,7 @@ export default function AdminOrders() {
       parcel_phone: "",
       parcel_city: "",
       parcel_address: "",
-      parcel_price: "",
+      parcel_price: 0,
       frais_livraison: 0,
       frais_packaging: 0,
       total: 0,
@@ -379,6 +543,14 @@ export default function AdminOrders() {
     }));
   };
 
+  // Handle books change
+  const handleBooksChange = (books) => {
+    setNewOrderData(prev => ({
+      ...prev,
+      livres: books
+    }));
+  };
+
   // Handle city selection for update form
   const handleCitySelect = (city) => {
     setFormData(prev => ({
@@ -403,7 +575,6 @@ export default function AdminOrders() {
     setUpdateError(null);
 
     try {
-      // Filter out empty values to only send changed fields
       const updateData = {};
       Object.keys(formData).forEach(key => {
         if (formData[key] !== selectedOrder[key] && formData[key] !== "") {
@@ -411,12 +582,10 @@ export default function AdminOrders() {
         }
       });
 
-      // Always include status if it's changed
       if (formData.statut !== selectedOrder.statut) {
         updateData.statut = formData.statut;
       }
 
-      // If no changes, close modal
       if (Object.keys(updateData).length === 0) {
         closeUpdateModal();
         return;
@@ -424,7 +593,6 @@ export default function AdminOrders() {
 
       console.log("Updating order with data:", updateData);
       
-      // Dispatch update action
       const result = await dispatch(updateCommande({ 
         id: selectedOrder.id, 
         ...updateData 
@@ -432,9 +600,7 @@ export default function AdminOrders() {
 
       console.log("Update successful:", result);
       
-      // Refresh orders list
       await dispatch(fetchCommandes());
-      
       closeUpdateModal();
       
     } catch (error) {
@@ -452,21 +618,31 @@ export default function AdminOrders() {
     e.preventDefault();
     
     // Validate required fields
-    if (!newOrderData.parcel_receiver || !newOrderData.parcel_city || !newOrderData.parcel_price) {
-      setAddError("Veuillez remplir tous les champs obligatoires (client, ville, prix)");
+    if (!newOrderData.parcel_receiver || !newOrderData.parcel_city) {
+      setAddError("Veuillez remplir tous les champs obligatoires (client, ville)");
       return;
     }
 
-    // Ensure all numeric fields are properly parsed
+    if (newOrderData.livres.length === 0) {
+      setAddError("Veuillez sélectionner au moins un livre");
+      return;
+    }
+
+    // Prepare order data for database
     const orderToCreate = {
       ...newOrderData,
-      parcel_price: parseFloat(newOrderData.parcel_price) || 0,
+      parcel_price: parseFloat(newOrderData.parcel_price) || 0, // This is the total
       frais_livraison: parseFloat(newOrderData.frais_livraison) || 0,
       frais_packaging: parseFloat(newOrderData.frais_packaging) || 0,
       total: parseFloat(newOrderData.total) || 0,
       profit: parseFloat(newOrderData.profit) || 0,
       parcel_open: newOrderData.parcel_open ? 1 : 0,
-      livres: newOrderData.livres || []
+      livres: newOrderData.livres.map(book => ({
+        id: book.id,
+        titre: book.titre,
+        quantity: book.quantity,
+        price: book.prix_achat
+      }))
     };
 
     setAddLoading(true);
@@ -475,14 +651,11 @@ export default function AdminOrders() {
     try {
       console.log("Creating new order with data:", orderToCreate);
       
-      // Dispatch create action
       const result = await dispatch(createCommande(orderToCreate)).unwrap();
 
       console.log("Create successful:", result);
       
-      // Refresh orders list
       await dispatch(fetchCommandes());
-      
       closeAddModal();
       
     } catch (error) {
@@ -499,19 +672,16 @@ export default function AdminOrders() {
   // Filter and search orders
   const filteredOrders = useMemo(() => {
     return orderList.filter(order => {
-      // Search filter
       const matchesSearch = searchTerm === "" || 
         order.parcel_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.parcel_receiver?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.parcel_city?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.parcel_phone?.toLowerCase().includes(searchTerm.toLowerCase());
       
-      // Status filter
       const matchesStatus = statusFilter === "all" || order.statut === statusFilter;
       
       return matchesSearch && matchesStatus;
     }).sort((a, b) => {
-      // Sort by date (most recent first)
       return new Date(b.date || 0) - new Date(a.date || 0);
     });
   }, [orderList, searchTerm, statusFilter]);
@@ -523,7 +693,6 @@ export default function AdminOrders() {
     return filteredOrders.slice(indexOfFirstItem, indexOfLastItem);
   }, [filteredOrders, currentPage, itemsPerPage]);
 
-  // Calculate total pages
   const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
 
   const stats = {
@@ -633,7 +802,6 @@ export default function AdminOrders() {
           </p>
         </div>
         
-        {/* ADD BUTTON */}
         <button onClick={openAddModal} className="btn-add-order">
           <Plus size={20} />
           Nouvelle commande
@@ -762,6 +930,7 @@ export default function AdminOrders() {
                   <th>Téléphone</th>
                   <th>Ville</th>
                   <th>Adresse</th>
+                  <th>Livres</th>
                   <th>Prix</th>
                   <th>Frais</th>
                   <th>Total</th>
@@ -772,76 +941,88 @@ export default function AdminOrders() {
                 </tr>
               </thead>
               <tbody>
-                {currentOrders.map((order) => (
-                  <tr key={order.id}>
-                    <td className="order-code">{order.parcel_code || "-"}</td>
-                    <td className="order-client">{order.parcel_receiver || "-"}</td>
-                    <td>{order.parcel_phone || "-"}</td>
-                    <td>{order.parcel_city || "-"}</td>
-                    <td className="order-address" title={order.parcel_address}>
-                      {order.parcel_address ? 
-                        (order.parcel_address.length > 30 ? 
-                          order.parcel_address.substring(0, 30) + "..." : 
-                          order.parcel_address) 
-                        : "-"}
-                    </td>
-                    <td className="order-price">{order.parcel_price ? `${order.parcel_price} MAD` : "-"}</td>
-                    <td>{(order.frais_livraison || 0) + (order.frais_packaging || 0)} MAD</td>
-                    <td className="order-total">{order.total ? `${order.total} MAD` : "-"}</td>
-                    <td>
-                      <span 
-                        className="status-badge"
-                        style={{ 
-                          backgroundColor: `${statusColors[order.statut] || "#666"}20`,
-                          color: statusColors[order.statut] || "#666",
-                          border: `1px solid ${(statusColors[order.statut] || "#666")}40`
-                        }}
-                      >
-                        {statusLabels[order.statut] || order.statut || "Nouvelle"}
-                      </span>
-                    </td>
-                    <td>
-                      {order.parcel_livreurname_sent || order.parcel_livreur_sent || "-"}
-                    </td>
-                    <td>{order.date ? new Date(order.date).toLocaleDateString('fr-FR') : "-"}</td>
-                    <td>
-                      <div className="action-buttons">
-                        <button
-                          onClick={() => openUpdateModal(order)}
-                          className="btn-icon edit"
-                          title="Modifier la commande"
+                {currentOrders.map((order) => {
+                  const livresCount = order.livres ? 
+                    (Array.isArray(order.livres) ? 
+                      order.livres.reduce((sum, book) => sum + (book.quantity || 1), 0) : 0) : 0;
+                  
+                  return (
+                    <tr key={order.id}>
+                      <td className="order-code">{order.parcel_code || "-"}</td>
+                      <td className="order-client">{order.parcel_receiver || "-"}</td>
+                      <td>{order.parcel_phone || "-"}</td>
+                      <td>{order.parcel_city || "-"}</td>
+                      <td className="order-address" title={order.parcel_address}>
+                        {order.parcel_address ? 
+                          (order.parcel_address.length > 30 ? 
+                            order.parcel_address.substring(0, 30) + "..." : 
+                            order.parcel_address) 
+                          : "-"}
+                      </td>
+                      <td>
+                        {livresCount > 0 ? (
+                          <span className="livres-count-badge">
+                            {livresCount} livre{livresCount > 1 ? 's' : ''}
+                          </span>
+                        ) : "-"}
+                      </td>
+                      <td className="order-price">{order.parcel_price ? `${order.parcel_price} MAD` : "-"}</td>
+                      <td>{(order.frais_livraison || 0) + (order.frais_packaging || 0)} MAD</td>
+                      <td className="order-total">{order.total ? `${order.total} MAD` : "-"}</td>
+                      <td>
+                        <span 
+                          className="status-badge"
+                          style={{ 
+                            backgroundColor: `${statusColors[order.statut] || "#666"}20`,
+                            color: statusColors[order.statut] || "#666",
+                            border: `1px solid ${(statusColors[order.statut] || "#666")}40`
+                          }}
                         >
-                          <Pencil size={16} />
-                        </button>
-                        <button
-                          onClick={() => markDelivered(order.id)}
-                          className="btn-icon success"
-                          title="Marquer livrée"
-                          disabled={order.statut === "delivered"}
-                        >
-                          <Check size={16} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(order.id)}
-                          className="btn-icon delete"
-                          title="Supprimer"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                          {statusLabels[order.statut] || order.statut || "Nouvelle"}
+                        </span>
+                      </td>
+                      <td>
+                        {order.parcel_livreurname_sent || order.parcel_livreur_sent || "-"}
+                      </td>
+                      <td>{order.date ? new Date(order.date).toLocaleDateString('fr-FR') : "-"}</td>
+                      <td>
+                        <div className="action-buttons">
+                          <button
+                            onClick={() => openUpdateModal(order)}
+                            className="btn-icon edit"
+                            title="Modifier la commande"
+                          >
+                            <Pencil size={16} />
+                          </button>
+                          <button
+                            onClick={() => markDelivered(order.id)}
+                            className="btn-icon success"
+                            title="Marquer livrée"
+                            disabled={order.statut === "delivered"}
+                          >
+                            <Check size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(order.id)}
+                            className="btn-icon delete"
+                            title="Supprimer"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
           
-          {/* Pagination */}
           <Pagination />
         </>
       )}
 
-      {/* ADD MODAL with all fields */}
+      {/* ADD MODAL with Book Selection */}
       {showAddModal && (
         <div className="modal-overlay" onClick={closeAddModal}>
           <div className="modal-content add-order-modal" onClick={e => e.stopPropagation()}>
@@ -979,28 +1160,23 @@ export default function AdminOrders() {
 
                 <div className="form-section">
                   <h4>
+                    <BookOpen size={16} />
+                    Livres commandés <span className="required">*</span>
+                  </h4>
+                  
+                  <BookSelector 
+                    selectedBooks={newOrderData.livres}
+                    onBooksChange={handleBooksChange}
+                  />
+                </div>
+
+                <div className="form-section">
+                  <h4>
                     <DollarSign size={16} />
-                    Informations financières <span className="required">*</span>
+                    Informations financières
                   </h4>
                   
                   <div className="form-row">
-                    <div className="form-group">
-                      <label htmlFor="parcel_price">
-                        Prix du colis (MAD)
-                      </label>
-                      <input
-                        type="number"
-                        id="parcel_price"
-                        name="parcel_price"
-                        value={newOrderData.parcel_price}
-                        onChange={handleNewOrderChange}
-                        placeholder="0.00"
-                        min="0"
-                        step="0.01"
-                        required
-                      />
-                    </div>
-
                     <div className="form-group">
                       <label htmlFor="frais_livraison">
                         Frais de livraison (MAD)
@@ -1047,7 +1223,7 @@ export default function AdminOrders() {
                         readOnly
                         className="readonly-input"
                       />
-                      <small className="field-hint">Calculé automatiquement</small>
+                      <small className="field-hint">Calculé automatiquement (livres + frais)</small>
                     </div>
 
                     <div className="form-group">
@@ -1081,6 +1257,13 @@ export default function AdminOrders() {
                         ))}
                       </select>
                     </div>
+                  </div>
+
+                  {/* Hidden field showing that parcel_price (for Welivexpress) = total */}
+                  <div className="form-info">
+                    <small>
+                      <strong>Note:</strong> Le prix du colis envoyé à Welivexpress sera le total: {newOrderData.total} MAD
+                    </small>
                   </div>
                 </div>
 

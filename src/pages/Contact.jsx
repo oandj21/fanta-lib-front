@@ -36,7 +36,7 @@ export default function Contact() {
     };
   }, [dispatch]);
 
-  const whatsappLink = `https://wa.me/212625854078?text=${encodeURIComponent("Bonjour Fantasia 📚, j'ai une question :")}`;
+  const whatsappLink = `https://wa.me/212625854078?text=${encodeURIComponent("مرحباً فانتازيا 📚، لدي سؤال:")}`;
 
   const handleChange = (e) => {
     const { id, value } = e.target;
@@ -61,7 +61,7 @@ export default function Contact() {
     if (!formData.nom_complet.trim() || !formData.email.trim() || !formData.message.trim()) {
       setSubmitStatus({
         success: false,
-        message: "Veuillez remplir tous les champs"
+        message: "الرجاء ملء جميع الحقول"
       });
       return;
     }
@@ -71,7 +71,7 @@ export default function Contact() {
     if (!emailRegex.test(formData.email)) {
       setSubmitStatus({
         success: false,
-        message: "Veuillez entrer une adresse email valide"
+        message: "الرجاء إدخال بريد إلكتروني صحيح"
       });
       return;
     }
@@ -84,7 +84,7 @@ export default function Contact() {
       if (result.success || result.data) {
         setSubmitStatus({
           success: true,
-          message: "Message envoyé avec succès ! Nous vous répondrons dans les plus brefs délais."
+          message: "تم إرسال الرسالة بنجاح! سنرد عليك في أقرب وقت."
         });
         
         // Reset form
@@ -101,10 +101,10 @@ export default function Contact() {
       }
     } catch (err) {
       // Handle error (error is already in Redux state)
-      console.error("Failed to send message:", err);
+      console.error("فشل إرسال الرسالة:", err);
       setSubmitStatus({
         success: false,
-        message: err?.message || "Une erreur est survenue lors de l'envoi du message"
+        message: err?.message || "حدث خطأ أثناء إرسال الرسالة"
       });
     }
   };
@@ -114,21 +114,21 @@ export default function Contact() {
       <Header />
 
       <section className="page-hero">
-        <h1>Nous Contacter</h1>
-        <p>Nous sommes là pour vous aider</p>
+        <h1>اتصل بنا</h1>
+        <p>نحن هنا لمساعدتك</p>
       </section>
 
       <section className="contact-content">
         <div className="contact-grid">
           <div className="contact-info">
-            <h2>Nos coordonnées</h2>
+            <h2>معلومات الاتصال</h2>
             <div className="info-items">
               <div className="info-item">
                 <div className="info-icon">
                   <Mail />
                 </div>
                 <div className="info-content">
-                  <p>Email</p>
+                  <p>البريد الإلكتروني</p>
                   <a href="mailto:contact@fantasia.fr">contact@fantasia.fr</a>
                 </div>
               </div>
@@ -138,7 +138,7 @@ export default function Contact() {
                   <Phone />
                 </div>
                 <div className="info-content">
-                  <p>Téléphone</p>
+                  <p>الهاتف</p>
                   <a href="tel:+212625854078">+212 625 854 078</a>
                 </div>
               </div>
@@ -148,8 +148,8 @@ export default function Contact() {
                   <MapPin />
                 </div>
                 <div className="info-content">
-                  <p>Adresse</p>
-                  <p>12 Rue des Livres, Casablanca, Maroc</p>
+                  <p>العنوان</p>
+                  <p>12 شارع الكتب، الدار البيضاء، المغرب</p>
                 </div>
               </div>
 
@@ -161,15 +161,15 @@ export default function Contact() {
               >
                 <MessageCircle />
                 <div>
-                  <p>Écrire sur WhatsApp</p>
-                  <p>Réponse rapide garantie</p>
+                  <p>تواصل عبر واتساب</p>
+                  <p>رد سريع مضمون</p>
                 </div>
               </a>
             </div>
           </div>
 
           <div className="contact-form-card">
-            <h2>Envoyer un message</h2>
+            <h2>أرسل رسالة</h2>
             
             {/* Status Message */}
             {submitStatus.message && (
@@ -187,48 +187,48 @@ export default function Contact() {
             {error && !submitStatus.message && (
               <div className="status-message error">
                 <AlertCircle size={20} />
-                <span>{typeof error === 'string' ? error : error?.message || "Une erreur est survenue"}</span>
+                <span>{typeof error === 'string' ? error : error?.message || "حدث خطأ"}</span>
               </div>
             )}
 
             <form className="contact-form" onSubmit={handleSubmit}>
               <div className="form-group">
-                <label htmlFor="nom_complet">Nom complet</label>
+                <label htmlFor="nom_complet">الاسم الكامل</label>
                 <input 
                   type="text" 
                   id="nom_complet"
                   name="nom_complet"
                   value={formData.nom_complet}
                   onChange={handleChange}
-                  placeholder="Votre nom"
+                  placeholder="اسمك"
                   disabled={loading}
                   required
                 />
               </div>
               
               <div className="form-group">
-                <label htmlFor="email">Email</label>
+                <label htmlFor="email">البريد الإلكتروني</label>
                 <input 
                   type="email" 
                   id="email"
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  placeholder="votre@email.com"
+                  placeholder="بريدك@example.com"
                   disabled={loading}
                   required
                 />
               </div>
               
               <div className="form-group">
-                <label htmlFor="message">Message</label>
+                <label htmlFor="message">الرسالة</label>
                 <textarea 
                   id="message"
                   name="message"
                   rows={5}
                   value={formData.message}
                   onChange={handleChange}
-                  placeholder="Votre message..."
+                  placeholder="رسالتك..."
                   disabled={loading}
                   required
                 />
@@ -242,10 +242,10 @@ export default function Contact() {
                 {loading ? (
                   <>
                     <span className="spinner"></span>
-                    Envoi en cours...
+                    جاري الإرسال...
                   </>
                 ) : (
-                  "Envoyer le message"
+                  "إرسال الرسالة"
                 )}
               </button>
             </form>

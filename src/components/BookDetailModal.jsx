@@ -44,7 +44,7 @@ export default function BookDetailModal({ book, onClose }) {
           return `https://fanta-lib-back-production.up.railway.app/storage/${parsed[0]}`;
         }
       } catch (e) {
-        console.error('Error parsing images:', e);
+        console.error('خطأ في تحليل الصور:', e);
       }
     }
     
@@ -67,32 +67,32 @@ export default function BookDetailModal({ book, onClose }) {
             <div className="book-detail-cover">
               <img 
                 src={getImageUrl(book.images)} 
-                alt={book.titre || "Book cover"}
+                alt={book.titre || "غلاف الكتاب"}
                 onError={(e) => {
                   e.target.onerror = null;
                   e.target.src = 'https://via.placeholder.com/300x400?text=Image+Error';
                 }}
               />
               <span className={`status-badge ${book.status}`}>
-                {book.status === "available" ? "Disponible" : "Rupture"}
+                {book.status === "available" ? "متوفر" : "غير متوفر"}
               </span>
             </div>
 
             <div className="book-detail-info">
-              <p className="book-genre">{book.categorie || "Non catégorisé"}</p>
-              <h2 className="book-title">{book.titre || "Titre inconnu"}</h2>
-              <p className="book-author">par {book.auteur || "Auteur inconnu"}</p>
+              <p className="book-genre">{book.categorie || "غير مصنف"}</p>
+              <h2 className="book-title">{book.titre || "عنوان غير معروف"}</h2>
+              <p className="book-author">بقلم {book.auteur || "مؤلف غير معروف"}</p>
 
               {book.status === "available" && (
                 <p className="stock-info">
-                  📦 En stock
+                  📦 متوفر في المخزون
                 </p>
               )}
 
               <div className="book-description">
-                <h3>Description</h3>
+                <h3>الوصف</h3>
                 <p>
-                  {book.description || `Découvrez "${book.titre || 'ce livre'}" de ${book.auteur || 'notre auteur'}, un livre captivant dans la catégorie ${book.categorie || 'générale'}.`}
+                  {book.description || `اكتشف "${book.titre || 'هذا الكتاب'}" من تأليف ${book.auteur || 'مؤلفنا'}`}
                 </p>
               </div>
 
@@ -105,12 +105,12 @@ export default function BookDetailModal({ book, onClose }) {
                   {added ? (
                     <>
                       <Check size={18} className="btn-icon" />
-                      Ajouté au panier !
+                      تمت الإضافة إلى السلة!
                     </>
                   ) : (
                     <>
                       <ShoppingCart size={18} className="btn-icon" />
-                      Ajouter au panier
+                      أضف إلى السلة
                     </>
                   )}
                 </button>

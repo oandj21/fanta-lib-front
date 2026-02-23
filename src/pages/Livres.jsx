@@ -16,14 +16,14 @@ export default function Livres() {
   const [selectedBook, setSelectedBook] = useState(null);
   
   const [search, setSearch] = useState("");
-  const [genre, setGenre] = useState("Tous");
+  const [genre, setGenre] = useState("الكل");
 
   useEffect(() => {
     dispatch(fetchLivres());
   }, [dispatch]);
 
   // Get unique genres from books, filtering out empty/null values
-  const genres = ["Tous", ...Array.from(new Set(
+  const genres = ["الكل", ...Array.from(new Set(
     books
       .map((b) => b.categorie)
       .filter(cat => cat && cat.trim() !== "")
@@ -38,7 +38,7 @@ export default function Livres() {
       title.toLowerCase().includes(search.toLowerCase()) ||
       author.toLowerCase().includes(search.toLowerCase());
 
-    const matchGenre = genre === "Tous" || category === genre;
+    const matchGenre = genre === "الكل" || category === genre;
     return matchSearch && matchGenre;
   });
 
@@ -57,16 +57,16 @@ export default function Livres() {
       <section className="page-hero">
         <div className="page-hero-content">
           <BookOpen />
-          <h1>Notre Catalogue</h1>
+          <h1>كتالوجنا</h1>
         </div>
-        <p>Découvrez toute notre collection de livres soigneusement sélectionnés</p>
+        <p>اكتشف مجموعتنا الكاملة من الكتب المختارة بعناية</p>
       </section>
 
       <section className="filters-section">
         <div className="filters-container">
           <input
             type="text"
-            placeholder="Rechercher un livre ou un auteur..."
+            placeholder="ابحث عن كتاب أو مؤلف..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="search-input"
@@ -89,17 +89,17 @@ export default function Livres() {
         {loading ? (
           <div className="loading-container">
             <div className="loading-spinner"></div>
-            <p className="loading-text">Chargement des livres...</p>
+            <p className="loading-text">جاري تحميل الكتب...</p>
           </div>
         ) : (
           <>
             <p className="results-count">
-              {filtered.length} livre{filtered.length > 1 ? "s" : ""} trouvé{filtered.length > 1 ? "s" : ""}
+              {filtered.length} كتاب تم العثور {filtered.length > 1 ? "عليهم" : "عليه"}
             </p>
             {filtered.length === 0 ? (
               <div className="empty-state">
                 <BookOpen />
-                <p>Aucun livre trouvé</p>
+                <p>لم يتم العثور على كتب</p>
               </div>
             ) : (
               <div className="books-grid">

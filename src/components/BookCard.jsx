@@ -18,7 +18,7 @@ export default function BookCard({ book }) {
           return `https://fanta-lib-back-production.up.railway.app/storage/${parsed[0]}`;
         }
       } catch (e) {
-        console.error('Error parsing images:', e);
+        console.error('خطأ في تحليل الصور:', e);
       }
     }
     
@@ -56,7 +56,7 @@ export default function BookCard({ book }) {
   const handleDetailsClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log("Opening details for book:", book);
+    console.log("فتح التفاصيل للكتاب:", book);
     setShowDetail(true);
   };
 
@@ -66,38 +66,38 @@ export default function BookCard({ book }) {
         <div className="book-cover">
           <img 
             src={getImageUrl(book.images)} 
-            alt={book.titre || "Book cover"} 
+            alt={book.titre || "غلاف الكتاب"} 
             onError={(e) => {
               e.target.onerror = null;
               e.target.src = 'https://via.placeholder.com/300x400?text=Image+Error';
             }}
           />
           <span className={`status-badge ${book.status}`}>
-            {book.status === "available" ? "Disponible" : "Rupture"}
+            {book.status === "available" ? "متوفر" : "غير متوفر"}
           </span>
         </div>
 
         <div className="book-info">
-          <p className="book-genre">{book.categorie || "Non catégorisé"}</p>
-          <h3 className="book-title">{book.titre || "Titre inconnu"}</h3>
-          <p className="book-author">{book.auteur || "Auteur inconnu"}</p>
+          <p className="book-genre">{book.categorie || "غير مصنف"}</p>
+          <h3 className="book-title">{book.titre || "عنوان غير معروف"}</h3>
+          <p className="book-author">{book.auteur || "مؤلف غير معروف"}</p>
 
           <div className="book-footer">
             <button 
               onClick={handleDetailsClick}
               className="btn-details"
-              title="Voir détails"
+              title="عرض التفاصيل"
               type="button"
             >
               <Eye size={18} />
-              <span>Détails</span>
+              <span>التفاصيل</span>
             </button>
 
             <button
               onClick={handleAdd}
               disabled={book.status !== "available"}
               className={`btn-cart ${added ? 'added' : ''} ${book.status !== "available" ? 'disabled' : ''}`}
-              title="Ajouter au panier"
+              title="أضف إلى السلة"
               type="button"
             >
               {added ? <Check size={18} /> : <ShoppingCart size={18} />}
@@ -110,7 +110,7 @@ export default function BookCard({ book }) {
         <BookDetailModal 
           book={book} 
           onClose={() => {
-            console.log("Closing modal");
+            console.log("إغلاق النافذة");
             setShowDetail(false);
           }} 
         />

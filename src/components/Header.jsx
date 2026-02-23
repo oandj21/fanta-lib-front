@@ -26,9 +26,9 @@ export default function Header() {
   const { totalCount } = cartData;
 
   const navLinks = [
-    { to: "/", label: "Accueil" },
-    { to: "/livres", label: "Livres" },
-    { to: "/contact", label: "Contact" },
+    { to: "/", label: "الرئيسية" },
+    { to: "/livres", label: "الكتب" },
+    { to: "/contact", label: "اتصل بنا" },
   ];
 
   // Also get cart count from localStorage as backup
@@ -85,7 +85,7 @@ export default function Header() {
       <div className="header-container">
         <Link to="/" className="logo">
           <BookOpen />
-          <span>Fantasia</span>
+          <span>فانتازيا</span>
         </Link>
 
         <nav className="desktop-nav">
@@ -109,7 +109,7 @@ export default function Header() {
           {/* Secret Admin Link - only shows when "fantasia" is typed */}
           {showAdminLink && (
             <Link to="/login" className="admin-link">
-              Accès Admin
+              دخول المدير
             </Link>
           )}
         </nav>
@@ -124,7 +124,7 @@ export default function Header() {
           <button
             onClick={() => setMenuOpen(!menuOpen)}
             className="menu-button"
-            aria-label="Menu"
+            aria-label="القائمة"
           >
             {menuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
@@ -151,7 +151,7 @@ export default function Header() {
               onClick={() => setMenuOpen(false)}
               className="mobile-admin-link"
             >
-              Accès Admin
+              دخول المدير
             </Link>
           )}
         </div>

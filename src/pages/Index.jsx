@@ -35,23 +35,23 @@ export default function Index() {
       <Header />
 
       <section className="hero-section">
-        <img src={heroImage} alt="Fantasia librairie" className="hero-image" />
+        <img src={heroImage} alt="مكتبة فانتازيا" className="hero-image" />
         <div className="hero-overlay" />
         <div className="hero-content">
-          <p className="hero-tagline">Librairie en ligne</p>
+          <p className="hero-tagline">مكتبة إلكترونية</p>
           <h1 className="hero-title">
-            Bienvenue chez<br />
-            <span>Fantasia</span>
+            مرحباً بكم في<br />
+            <span>فانتازيا</span>
           </h1>
           <p className="hero-description">
-            Découvrez notre collection exclusive de livres
+            اكتشف مجموعتنا الحصرية من الكتب
           </p>
           <div className="hero-buttons">
             <a href="#livres" className="btn-primary">
-              Voir les livres
+              تصفح الكتب
             </a>
             <Link to="/livres" className="btn-secondary">
-              Tout le catalogue →
+              كل الكتب ←
             </Link>
           </div>
         </div>
@@ -59,8 +59,8 @@ export default function Index() {
 
       <section className="carousel-section">
         <div className="section-header">
-          <p className="section-subtitle">Nos best-sellers</p>
-          <h2 className="section-title">Collection en mouvement</h2>
+          <p className="section-subtitle">الأكثر مبيعاً</p>
+          <h2 className="section-title">مجموعة متجددة</h2>
           <div className="section-divider" />
         </div>
         <BookCarousel books={books} onShowDetails={handleShowDetails} />
@@ -68,15 +68,15 @@ export default function Index() {
 
       <section id="livres" className="books-section">
         <div className="section-header">
-          <p className="section-subtitle">Notre collection</p>
-          <h2 className="section-title">Nos Livres</h2>
+          <p className="section-subtitle">مجموعتنا</p>
+          <h2 className="section-title">كتبنا</h2>
           <div className="section-divider" />
         </div>
         
         {loading ? (
           <div className="loading-container">
             <div className="loading-spinner"></div>
-            <p className="loading-text">Chargement des livres...</p>
+            <p className="loading-text">جاري تحميل الكتب...</p>
           </div>
         ) : (
           <div className="books-grid">
@@ -90,20 +90,20 @@ export default function Index() {
         
         <div className="view-all-container">
           <Link to="/livres" className="btn-view-all">
-            Voir tout le catalogue →
+            عرض كل الكتب ←
           </Link>
         </div>
       </section>
 
       <section id="contact" className="contact-section">
-        <h2 className="section-title">Nous Contacter</h2>
+        <h2 className="section-title">اتصل بنا</h2>
         <div className="contact-info">
           <p className="contact-item">📧 contact@fantasia.fr</p>
           <p className="contact-item">📞 +212 625 854 078</p>
-          <p className="contact-item">📍 Casablanca, Maroc</p>
+          <p className="contact-item">📍 الدار البيضاء، المغرب</p>
         </div>
         <Link to="/contact" className="contact-button">
-          Nous écrire →
+          راسلنا ←
         </Link>
       </section>
 
@@ -111,9 +111,9 @@ export default function Index() {
         <div className="footer-content">
           <div className="footer-logo">
             <BookOpen />
-            <span>Fantasia</span>
+            <span>فانتازيا</span>
           </div>
-          <p className="footer-copyright">© 2026 Fantasia — Tous droits réservés</p>
+          <p className="footer-copyright">© 2026 فانتازيا — جميع الحقوق محفوظة</p>
         </div>
       </footer>
 

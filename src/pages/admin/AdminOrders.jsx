@@ -3,8 +3,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { 
   Pencil, Trash2, Check, Search, XCircle, Filter, 
   X, Save, MapPin, Phone, User, Package, DollarSign,
-  Map, FileText, Truck, UserCircle, Building, Plus,
-  Loader, ChevronDown
+  Map, FileText, BookOpen, Loader, ChevronDown,
+  ShoppingBag, Tag, Plus
 } from "lucide-react";
 import axios from "axios";
 import { 
@@ -14,9 +14,10 @@ import {
   markCommandeAsDelivered,
   createCommande
 } from "../../store/store";
+import { fetchLivres } from "../../store/livreSlice";
 import "../../css/AdminOrders.css";
 
-// Status labels and colors
+// Status labels and colors (keep only for existing orders display)
 const statusLabels = {
   new: "Nouvelle",
   confirmed: "Confirmée",
@@ -50,7 +51,6 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
       setLoading(true);
       setError(null);
       
-      // Get token from localStorage
       const token = localStorage.getItem("token");
       
       const response = await axios.get(
@@ -65,7 +65,6 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
       
       console.log("Cities API response:", response.data);
       
-      // Handle different response structures
       let citiesData = [];
       if (Array.isArray(response.data)) {
         citiesData = response.data;
@@ -79,35 +78,21 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
     } catch (err) {
       console.error("Error fetching cities:", err);
       setError("Impossible de charger les villes");
-      // Fallback cities in case API fails
+      // Fallback cities
       setCities([
-        "Casablanca",
-        "Rabat",
-        "Fès",
-        "Marrakech",
-        "Agadir",
-        "Tanger",
-        "Meknès",
-        "Oujda",
-        "Kénitra",
-        "Tétouan",
-        "Safi",
-        "Mohammédia",
-        "El Jadida",
-        "Béni Mellal",
-        "Nador"
+        "Casablanca", "Rabat", "Fès", "Marrakech", "Agadir",
+        "Tanger", "Meknès", "Oujda", "Kénitra", "Tétouan",
+        "Safi", "Mohammédia", "El Jadida", "Béni Mellal", "Nador"
       ]);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // Load cities on component mount
   useEffect(() => {
     fetchCities();
   }, [fetchCities]);
 
-  // Filter cities based on query
   useEffect(() => {
     if (query.length >= 1) {
       const filtered = cities
@@ -115,7 +100,7 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
           const cityName = typeof city === 'string' ? city : city.name || city.city || city.label || '';
           return cityName.toLowerCase().includes(query.toLowerCase());
         })
-        .slice(0, 10); // Limit to 10 suggestions
+        .slice(0, 10);
       setSuggestions(filtered);
       setShowSuggestions(true);
     } else {
@@ -145,10 +130,8 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
           type="text"
           value={query}
           onChange={handleInputChange}
-          onFocus={() => query.length >= 1 && setSuggestions.length > 0 && setShowSuggestions(true)}
-          onBlur={() => {
-            setTimeout(() => setShowSuggestions(false), 200);
-          }}
+          onFocus={() => query.length >= 1 && suggestions.length > 0 && setShowSuggestions(true)}
+          onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
           placeholder="Tapez pour rechercher une ville..."
           className="city-input"
           disabled={disabled}
@@ -178,6 +161,119 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
       )}
       
       {error && <div className="city-error">{error}</div>}
+    </div>
+  );
+};
+
+// Book Selection Component
+const BookSelector = ({ selectedBooks, onBooksChange }) => {
+  const dispatch = useDispatch();
+  const { list: booksList = [], loading: booksLoading } = useSelector((state) => state.livres);
+  
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  useEffect(() => {
+    dispatch(fetchLivres());
+  }, [dispatch]);
+
+  const filteredBooks = useMemo(() => {
+    if (!searchTerm) return booksList;
+    return booksList.filter(book => 
+      book.titre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      book.auteur?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      book.isbn?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [booksList, searchTerm]);
+
+  const addBook = (book) => {
+    const existingBook = selectedBooks.find(b => b.id === book.id);
+    if (existingBook) {
+      onBooksChange(selectedBooks.map(b => 
+        b.id === book.id ? { ...b, quantity: b.quantity + 1 } : b
+      ));
+    } else {
+      onBooksChange([...selectedBooks, { 
+        id: book.id, 
+        titre: book.titre, 
+        prix_achat: book.prix_achat,
+        quantity: 1 
+      }]);
+    }
+    setSearchTerm("");
+    setShowDropdown(false);
+  };
+
+  const removeBook = (bookId) => {
+    onBooksChange(selectedBooks.filter(b => b.id !== bookId));
+  };
+
+  const updateQuantity = (bookId, newQuantity) => {
+    if (newQuantity < 1) {
+      removeBook(bookId);
+    } else {
+      onBooksChange(selectedBooks.map(b => 
+        b.id === bookId ? { ...b, quantity: newQuantity } : b
+      ));
+    }
+  };
+
+  return (
+    <div className="book-selector">
+      <div className="book-search-container">
+        <div className="book-search-input-wrapper">
+          <BookOpen size={18} className="book-search-icon" />
+          <input
+            type="text"
+            placeholder="Rechercher un livre par titre, auteur ou ISBN..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onFocus={() => setShowDropdown(true)}
+            className="book-search-input"
+          />
+          {booksLoading && <Loader size={16} className="book-search-spinner" />}
+        </div>
+
+        {showDropdown && searchTerm && filteredBooks.length > 0 && (
+          <ul className="book-suggestions">
+            {filteredBooks.map(book => (
+              <li key={book.id} onClick={() => addBook(book)} className="book-suggestion-item">
+                <div className="book-suggestion-info">
+                  <span className="book-suggestion-title">{book.titre}</span>
+                  {book.auteur && <span className="book-suggestion-author">par {book.auteur}</span>}
+                </div>
+                <span className="book-suggestion-price">{book.prix_achat} MAD</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {selectedBooks.length > 0 && (
+        <div className="selected-books-list">
+          <h5>Livres sélectionnés</h5>
+          {selectedBooks.map(book => (
+            <div key={book.id} className="selected-book-item">
+              <div className="selected-book-info">
+                <span className="selected-book-title">{book.titre}</span>
+                <span className="selected-book-price">{book.prix_achat} MAD</span>
+              </div>
+              <div className="selected-book-actions">
+                <input
+                  type="number"
+                  min="1"
+                  value={book.quantity}
+                  onChange={(e) => updateQuantity(book.id, parseInt(e.target.value) || 1)}
+                  className="book-quantity-input"
+                />
+                <button onClick={() => removeBook(book.id)} className="btn-remove-book">
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
@@ -213,31 +309,29 @@ export default function AdminOrders() {
     parcel_price: "",
     parcel_note: "",
     parcel_open: 0,
-    parcel_livreur_sent: "",
-    parcel_livreurname_sent: "",
     statut: "new"
   });
 
-  // Form state for new order - WITH ALL REQUIRED FIELDS
+  // Form state for new order - WITHOUT livreur fields and status
   const [newOrderData, setNewOrderData] = useState({
     parcel_code: "",
     parcel_receiver: "",
     parcel_phone: "",
     parcel_city: "",
     parcel_address: "",
-    parcel_price: "",
+    parcel_price: 0,
     frais_livraison: 0,
     frais_packaging: 0,
     total: 0,
     profit: 0,
     parcel_note: "",
     parcel_open: 0,
-    parcel_livreur_sent: "",
-    parcel_livreurname_sent: "",
-    statut: "new",
     livres: [],
     date: new Date().toISOString().split('T')[0]
   });
+
+  // Selected books for the order
+  const [selectedBooks, setSelectedBooks] = useState([]);
 
   useEffect(() => {
     dispatch(fetchCommandes());
@@ -259,29 +353,34 @@ export default function AdminOrders() {
         parcel_price: selectedOrder.parcel_price || "",
         parcel_note: selectedOrder.parcel_note || "",
         parcel_open: selectedOrder.parcel_open || 0,
-        parcel_livreur_sent: selectedOrder.parcel_livreur_sent || "",
-        parcel_livreurname_sent: selectedOrder.parcel_livreurname_sent || "",
         statut: selectedOrder.statut || "new"
       });
     }
   }, [selectedOrder]);
 
-  // Calculate total and profit when relevant fields change
+  // Calculate total based on selected books and additional fees
   useEffect(() => {
-    const price = parseFloat(newOrderData.parcel_price) || 0;
+    const booksTotal = selectedBooks.reduce((sum, book) => 
+      sum + (parseFloat(book.prix_achat) * book.quantity), 0
+    );
     const delivery = parseFloat(newOrderData.frais_livraison) || 0;
     const packaging = parseFloat(newOrderData.frais_packaging) || 0;
     
-    const total = price + delivery + packaging;
-    // Profit calculation - you can adjust this formula based on your business logic
-    const profit = price - (delivery + packaging);
+    const total = booksTotal + delivery + packaging;
+    const profit = booksTotal - (delivery + packaging);
     
     setNewOrderData(prev => ({
       ...prev,
+      parcel_price: booksTotal,
       total: total,
-      profit: profit
+      profit: profit,
+      livres: selectedBooks.map(book => ({
+        id: book.id,
+        quantity: book.quantity,
+        price: book.prix_achat
+      }))
     }));
-  }, [newOrderData.parcel_price, newOrderData.frais_livraison, newOrderData.frais_packaging]);
+  }, [selectedBooks, newOrderData.frais_livraison, newOrderData.frais_packaging]);
 
   const handleDelete = (id) => {
     if (window.confirm("Êtes-vous sûr de vouloir supprimer cette commande ?")) {
@@ -314,8 +413,6 @@ export default function AdminOrders() {
       parcel_price: "",
       parcel_note: "",
       parcel_open: 0,
-      parcel_livreur_sent: "",
-      parcel_livreurname_sent: "",
       statut: "new"
     });
     setUpdateError(null);
@@ -323,16 +420,23 @@ export default function AdminOrders() {
 
   // Open add modal
   const openAddModal = () => {
-    // Generate a unique parcel code
     const newParcelCode = `CMD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    setSelectedBooks([]);
     setNewOrderData({
-      ...newOrderData,
       parcel_code: newParcelCode,
-      date: new Date().toISOString().split('T')[0],
+      parcel_receiver: "",
+      parcel_phone: "",
+      parcel_city: "",
+      parcel_address: "",
+      parcel_price: 0,
       frais_livraison: 0,
       frais_packaging: 0,
       total: 0,
-      profit: 0
+      profit: 0,
+      parcel_note: "",
+      parcel_open: 0,
+      livres: [],
+      date: new Date().toISOString().split('T')[0]
     });
     setAddError(null);
     setShowAddModal(true);
@@ -341,22 +445,20 @@ export default function AdminOrders() {
   // Close add modal
   const closeAddModal = () => {
     setShowAddModal(false);
+    setSelectedBooks([]);
     setNewOrderData({
       parcel_code: "",
       parcel_receiver: "",
       parcel_phone: "",
       parcel_city: "",
       parcel_address: "",
-      parcel_price: "",
+      parcel_price: 0,
       frais_livraison: 0,
       frais_packaging: 0,
       total: 0,
       profit: 0,
       parcel_note: "",
       parcel_open: 0,
-      parcel_livreur_sent: "",
-      parcel_livreurname_sent: "",
-      statut: "new",
       livres: [],
       date: new Date().toISOString().split('T')[0]
     });
@@ -403,7 +505,6 @@ export default function AdminOrders() {
     setUpdateError(null);
 
     try {
-      // Filter out empty values to only send changed fields
       const updateData = {};
       Object.keys(formData).forEach(key => {
         if (formData[key] !== selectedOrder[key] && formData[key] !== "") {
@@ -411,12 +512,10 @@ export default function AdminOrders() {
         }
       });
 
-      // Always include status if it's changed
       if (formData.statut !== selectedOrder.statut) {
         updateData.statut = formData.statut;
       }
 
-      // If no changes, close modal
       if (Object.keys(updateData).length === 0) {
         closeUpdateModal();
         return;
@@ -424,7 +523,6 @@ export default function AdminOrders() {
 
       console.log("Updating order with data:", updateData);
       
-      // Dispatch update action
       const result = await dispatch(updateCommande({ 
         id: selectedOrder.id, 
         ...updateData 
@@ -432,7 +530,6 @@ export default function AdminOrders() {
 
       console.log("Update successful:", result);
       
-      // Refresh orders list
       await dispatch(fetchCommandes());
       
       closeUpdateModal();
@@ -451,13 +548,16 @@ export default function AdminOrders() {
   const handleAddSubmit = async (e) => {
     e.preventDefault();
     
-    // Validate required fields
-    if (!newOrderData.parcel_receiver || !newOrderData.parcel_city || !newOrderData.parcel_price) {
-      setAddError("Veuillez remplir tous les champs obligatoires (client, ville, prix)");
+    if (!newOrderData.parcel_receiver || !newOrderData.parcel_city) {
+      setAddError("Veuillez remplir tous les champs obligatoires (client, ville)");
       return;
     }
 
-    // Ensure all numeric fields are properly parsed
+    if (selectedBooks.length === 0) {
+      setAddError("Veuillez sélectionner au moins un livre");
+      return;
+    }
+
     const orderToCreate = {
       ...newOrderData,
       parcel_price: parseFloat(newOrderData.parcel_price) || 0,
@@ -466,7 +566,8 @@ export default function AdminOrders() {
       total: parseFloat(newOrderData.total) || 0,
       profit: parseFloat(newOrderData.profit) || 0,
       parcel_open: newOrderData.parcel_open ? 1 : 0,
-      livres: newOrderData.livres || []
+      livres: newOrderData.livres,
+      statut: "new" // Default status
     };
 
     setAddLoading(true);
@@ -475,12 +576,10 @@ export default function AdminOrders() {
     try {
       console.log("Creating new order with data:", orderToCreate);
       
-      // Dispatch create action
       const result = await dispatch(createCommande(orderToCreate)).unwrap();
 
       console.log("Create successful:", result);
       
-      // Refresh orders list
       await dispatch(fetchCommandes());
       
       closeAddModal();
@@ -499,19 +598,16 @@ export default function AdminOrders() {
   // Filter and search orders
   const filteredOrders = useMemo(() => {
     return orderList.filter(order => {
-      // Search filter
       const matchesSearch = searchTerm === "" || 
         order.parcel_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.parcel_receiver?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.parcel_city?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.parcel_phone?.toLowerCase().includes(searchTerm.toLowerCase());
       
-      // Status filter
       const matchesStatus = statusFilter === "all" || order.statut === statusFilter;
       
       return matchesSearch && matchesStatus;
     }).sort((a, b) => {
-      // Sort by date (most recent first)
       return new Date(b.date || 0) - new Date(a.date || 0);
     });
   }, [orderList, searchTerm, statusFilter]);
@@ -633,7 +729,6 @@ export default function AdminOrders() {
           </p>
         </div>
         
-        {/* ADD BUTTON */}
         <button onClick={openAddModal} className="btn-add-order">
           <Plus size={20} />
           Nouvelle commande
@@ -766,7 +861,6 @@ export default function AdminOrders() {
                   <th>Frais</th>
                   <th>Total</th>
                   <th>Statut</th>
-                  <th>Livreur</th>
                   <th>Date</th>
                   <th>Actions</th>
                 </tr>
@@ -799,9 +893,6 @@ export default function AdminOrders() {
                       >
                         {statusLabels[order.statut] || order.statut || "Nouvelle"}
                       </span>
-                    </td>
-                    <td>
-                      {order.parcel_livreurname_sent || order.parcel_livreur_sent || "-"}
                     </td>
                     <td>{order.date ? new Date(order.date).toLocaleDateString('fr-FR') : "-"}</td>
                     <td>
@@ -841,7 +932,7 @@ export default function AdminOrders() {
         </>
       )}
 
-      {/* ADD MODAL with all fields */}
+      {/* ADD MODAL - WITHOUT LIVREUR SECTION AND STATUS FIELD */}
       {showAddModal && (
         <div className="modal-overlay" onClick={closeAddModal}>
           <div className="modal-content add-order-modal" onClick={e => e.stopPropagation()}>
@@ -910,7 +1001,7 @@ export default function AdminOrders() {
                   <div className="form-row">
                     <div className="form-group">
                       <label htmlFor="parcel_receiver">
-                        <UserCircle size={14} />
+                        <User size={14} />
                         Nom complet
                       </label>
                       <input
@@ -950,7 +1041,7 @@ export default function AdminOrders() {
                   <div className="form-row">
                     <div className="form-group">
                       <label htmlFor="parcel_city">
-                        <Building size={14} />
+                        <MapPin size={14} />
                         Ville
                       </label>
                       <CityAutocomplete
@@ -979,26 +1070,37 @@ export default function AdminOrders() {
 
                 <div className="form-section">
                   <h4>
+                    <BookOpen size={16} />
+                    Livres commandés <span className="required">*</span>
+                  </h4>
+                  
+                  <BookSelector 
+                    selectedBooks={selectedBooks}
+                    onBooksChange={setSelectedBooks}
+                  />
+                </div>
+
+                <div className="form-section">
+                  <h4>
                     <DollarSign size={16} />
-                    Informations financières <span className="required">*</span>
+                    Informations financières
                   </h4>
                   
                   <div className="form-row">
                     <div className="form-group">
                       <label htmlFor="parcel_price">
-                        Prix du colis (MAD)
+                        <Tag size={14} />
+                        Total livres (MAD)
                       </label>
                       <input
                         type="number"
                         id="parcel_price"
                         name="parcel_price"
                         value={newOrderData.parcel_price}
-                        onChange={handleNewOrderChange}
-                        placeholder="0.00"
-                        min="0"
-                        step="0.01"
-                        required
+                        readOnly
+                        className="readonly-input"
                       />
+                      <small className="field-hint">Calculé automatiquement</small>
                     </div>
 
                     <div className="form-group">
@@ -1034,10 +1136,11 @@ export default function AdminOrders() {
                     </div>
                   </div>
 
-                  <div className="form-row" style={{ marginTop: '1rem' }}>
-                    <div className="form-group">
+                  <div className="form-row totals-row">
+                    <div className="form-group total-box">
                       <label htmlFor="total">
-                        Total (MAD)
+                        <ShoppingBag size={14} />
+                        Total commande (MAD)
                       </label>
                       <input
                         type="number"
@@ -1045,13 +1148,13 @@ export default function AdminOrders() {
                         name="total"
                         value={newOrderData.total}
                         readOnly
-                        className="readonly-input"
+                        className="readonly-input total-input"
                       />
-                      <small className="field-hint">Calculé automatiquement</small>
                     </div>
 
-                    <div className="form-group">
+                    <div className="form-group profit-box">
                       <label htmlFor="profit">
+                        <DollarSign size={14} />
                         Profit (MAD)
                       </label>
                       <input
@@ -1060,62 +1163,7 @@ export default function AdminOrders() {
                         name="profit"
                         value={newOrderData.profit}
                         readOnly
-                        className="readonly-input"
-                      />
-                      <small className="field-hint">Calculé automatiquement</small>
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="statut">
-                        Statut
-                      </label>
-                      <select
-                        id="statut"
-                        name="statut"
-                        value={newOrderData.statut}
-                        onChange={handleNewOrderChange}
-                        className="status-select-modal"
-                      >
-                        {Object.entries(statusLabels).map(([value, label]) => (
-                          <option key={value} value={value}>{label}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="form-section">
-                  <h4>
-                    <Truck size={16} />
-                    Informations livreur
-                  </h4>
-                  
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label htmlFor="parcel_livreur_sent">
-                        ID Livreur
-                      </label>
-                      <input
-                        type="text"
-                        id="parcel_livreur_sent"
-                        name="parcel_livreur_sent"
-                        value={newOrderData.parcel_livreur_sent}
-                        onChange={handleNewOrderChange}
-                        placeholder="ID du livreur"
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="parcel_livreurname_sent">
-                        Nom du livreur
-                      </label>
-                      <input
-                        type="text"
-                        id="parcel_livreurname_sent"
-                        name="parcel_livreurname_sent"
-                        value={newOrderData.parcel_livreurname_sent}
-                        onChange={handleNewOrderChange}
-                        placeholder="Nom du livreur"
+                        className="readonly-input profit-input"
                       />
                     </div>
                   </div>
@@ -1189,7 +1237,7 @@ export default function AdminOrders() {
         </div>
       )}
 
-      {/* UPDATE MODAL */}
+      {/* UPDATE MODAL - Keep as is for editing existing orders */}
       {showUpdateModal && selectedOrder && (
         <div className="modal-overlay" onClick={closeUpdateModal}>
           <div className="modal-content update-order-modal" onClick={e => e.stopPropagation()}>
@@ -1218,7 +1266,7 @@ export default function AdminOrders() {
                   <div className="form-row">
                     <div className="form-group">
                       <label htmlFor="parcel_receiver">
-                        <UserCircle size={14} />
+                        <User size={14} />
                         Nom complet
                       </label>
                       <input
@@ -1257,7 +1305,7 @@ export default function AdminOrders() {
                   <div className="form-row">
                     <div className="form-group">
                       <label htmlFor="parcel_city">
-                        <Building size={14} />
+                        <MapPin size={14} />
                         Ville
                       </label>
                       <CityAutocomplete
@@ -1322,43 +1370,6 @@ export default function AdminOrders() {
                           <option key={value} value={value}>{label}</option>
                         ))}
                       </select>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="form-section">
-                  <h4>
-                    <Truck size={16} />
-                    Informations livreur
-                  </h4>
-                  
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label htmlFor="parcel_livreur_sent">
-                        ID Livreur
-                      </label>
-                      <input
-                        type="text"
-                        id="parcel_livreur_sent"
-                        name="parcel_livreur_sent"
-                        value={formData.parcel_livreur_sent}
-                        onChange={handleInputChange}
-                        placeholder="ID du livreur"
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="parcel_livreurname_sent">
-                        Nom du livreur
-                      </label>
-                      <input
-                        type="text"
-                        id="parcel_livreurname_sent"
-                        name="parcel_livreurname_sent"
-                        value={formData.parcel_livreurname_sent}
-                        onChange={handleInputChange}
-                        placeholder="Nom du livreur"
-                      />
                     </div>
                   </div>
                 </div>

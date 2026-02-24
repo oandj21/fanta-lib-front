@@ -615,59 +615,88 @@ export default function AdminOrders() {
   };
 
   const handleAddSubmit = async (e) => {
-    e.preventDefault();
-    
-    // Validate required fields
-    if (!newOrderData.parcel_receiver || !newOrderData.parcel_city) {
-      setAddError("Veuillez remplir tous les champs obligatoires (client, ville)");
-      return;
-    }
+  e.preventDefault();
+  
+  // Validate required fields
+  if (!newOrderData.parcel_receiver || !newOrderData.parcel_city) {
+    setAddError("Veuillez remplir tous les champs obligatoires (client, ville)");
+    return;
+  }
 
-    if (newOrderData.livres.length === 0) {
-      setAddError("Veuillez sélectionner au moins un livre");
-      return;
-    }
+  if (newOrderData.livres.length === 0) {
+    setAddError("Veuillez sélectionner au moins un livre");
+    return;
+  }
 
-    // Prepare order data for database
-    const orderToCreate = {
-      ...newOrderData,
-      parcel_price: parseFloat(newOrderData.parcel_price) || 0, // This is the total
-      frais_livraison: parseFloat(newOrderData.frais_livraison) || 0,
-      frais_packaging: parseFloat(newOrderData.frais_packaging) || 0,
-      total: parseFloat(newOrderData.total) || 0,
-      profit: parseFloat(newOrderData.profit) || 0,
-      parcel_open: newOrderData.parcel_open ? 1 : 0,
-      livres: newOrderData.livres.map(book => ({
-        id: book.id,
-        titre: book.titre,
-        quantity: book.quantity,
-        price: book.prix_achat
-      }))
-    };
+  // Calculate books subtotal
+  const booksSubtotal = newOrderData.livres.reduce(
+    (sum, book) => sum + (parseFloat(book.prix_achat) * parseInt(book.quantity)), 0
+  );
+  
+  const delivery = parseFloat(newOrderData.frais_livraison) || 0;
+  const packaging = parseFloat(newOrderData.frais_packaging) || 0;
+  const total = booksSubtotal + delivery + packaging;
+  const rawProfit = booksSubtotal - (delivery + packaging);
+  const profit = Math.max(0, rawProfit);
 
-    setAddLoading(true);
-    setAddError(null);
+  // Format livres with all necessary information including titles
+  const formattedLivres = newOrderData.livres.map(book => ({
+    id: book.id,
+    titre: book.titre, // Include the book title
+    auteur: book.auteur, // Include author if needed
+    quantity: parseInt(book.quantity),
+    price: parseFloat(book.prix_achat),
+    total: parseFloat(book.prix_achat) * parseInt(book.quantity)
+  }));
 
-    try {
-      console.log("Creating new order with data:", orderToCreate);
-      
-      const result = await dispatch(createCommande(orderToCreate)).unwrap();
+  // Create a summary of products for the note (optional)
+  const productsSummary = formattedLivres.map(book => 
+    `${book.titre} (x${book.quantity})`
+  ).join(', ');
 
-      console.log("Create successful:", result);
-      
-      await dispatch(fetchCommandes());
-      closeAddModal();
-      
-    } catch (error) {
-      console.error("Create failed:", error);
-      setAddError(
-        error?.message || 
-        "Erreur lors de la création de la commande. Veuillez réessayer."
-      );
-    } finally {
-      setAddLoading(false);
-    }
+  // Prepare order data for database with proper formatting
+  const orderToCreate = {
+    parcel_code: newOrderData.parcel_code,
+    parcel_receiver: newOrderData.parcel_receiver,
+    parcel_phone: newOrderData.parcel_phone || "",
+    parcel_city: newOrderData.parcel_city,
+    parcel_address: newOrderData.parcel_address || "",
+    parcel_price: parseFloat(total.toFixed(2)), // This is the total for Welivexpress
+    frais_livraison: parseFloat(delivery.toFixed(2)),
+    frais_packaging: parseFloat(packaging.toFixed(2)),
+    total: parseFloat(total.toFixed(2)),
+    profit: parseFloat(profit.toFixed(2)),
+    parcel_note: newOrderData.parcel_note 
+      ? `${productsSummary} | ${newOrderData.parcel_note}`
+      : productsSummary,
+    parcel_open: newOrderData.parcel_open ? 1 : 0,
+    parcel_livreur_sent: newOrderData.parcel_livreur_sent || "",
+    parcel_livreurname_sent: newOrderData.parcel_livreurname_sent || "",
+    statut: newOrderData.statut || "new",
+    livres: formattedLivres,
+    date: newOrderData.date
   };
+
+  console.log("Creating new order with data:", orderToCreate);
+
+  setAddLoading(true);
+  setAddError(null);
+
+  try {
+    const result = await dispatch(createCommande(orderToCreate)).unwrap();
+    console.log("Create successful:", result);
+    await dispatch(fetchCommandes());
+    closeAddModal();
+  } catch (error) {
+    console.error("Create failed:", error);
+    setAddError(
+      error?.message || 
+      "Erreur lors de la création de la commande. Veuillez réessayer."
+    );
+  } finally {
+    setAddLoading(false);
+  }
+};
 
   // Filter and search orders
   const filteredOrders = useMemo(() => {

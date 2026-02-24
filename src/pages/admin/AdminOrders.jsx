@@ -639,41 +639,40 @@ export default function AdminOrders() {
   const rawProfit = booksSubtotal - (delivery + packaging);
   const profit = Math.max(0, rawProfit);
 
-  // Format livres with all necessary information including titles
+  // Format livres with all necessary information
   const formattedLivres = newOrderData.livres.map(book => ({
     id: book.id,
-    titre: book.titre, // Include the book title
-    auteur: book.auteur, // Include author if needed
+    titre: book.titre,
+    auteur: book.auteur || '',
     quantity: parseInt(book.quantity),
     price: parseFloat(book.prix_achat),
     total: parseFloat(book.prix_achat) * parseInt(book.quantity)
   }));
 
-  // Create a summary of products for the note (optional)
+  // Create a summary for local reference (optional)
   const productsSummary = formattedLivres.map(book => 
     `${book.titre} (x${book.quantity})`
   ).join(', ');
 
-  // Prepare order data for database with proper formatting
+  // Prepare order data for database
   const orderToCreate = {
     parcel_code: newOrderData.parcel_code,
     parcel_receiver: newOrderData.parcel_receiver,
     parcel_phone: newOrderData.parcel_phone || "",
     parcel_city: newOrderData.parcel_city,
     parcel_address: newOrderData.parcel_address || "",
-    parcel_price: parseFloat(total.toFixed(2)), // This is the total for Welivexpress
+    parcel_price: parseFloat(total.toFixed(2)), // Total for Welivexpress
     frais_livraison: parseFloat(delivery.toFixed(2)),
     frais_packaging: parseFloat(packaging.toFixed(2)),
     total: parseFloat(total.toFixed(2)),
     profit: parseFloat(profit.toFixed(2)),
-    parcel_note: newOrderData.parcel_note 
-      ? `${productsSummary} | ${newOrderData.parcel_note}`
-      : productsSummary,
+    // Keep parcel_note simple - just additional notes, not product info
+    parcel_note: newOrderData.parcel_note || "",
     parcel_open: newOrderData.parcel_open ? 1 : 0,
     parcel_livreur_sent: newOrderData.parcel_livreur_sent || "",
     parcel_livreurname_sent: newOrderData.parcel_livreurname_sent || "",
     statut: newOrderData.statut || "new",
-    livres: formattedLivres,
+    livres: formattedLivres, // The controller will use this for Welivexpress products
     date: newOrderData.date
   };
 

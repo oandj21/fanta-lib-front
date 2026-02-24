@@ -38,8 +38,8 @@ export default function Contact() {
 
   const whatsappLink = `https://wa.me/212625854078?text=${encodeURIComponent("مرحباً فانتازيا 📚، لدي سؤال:")}`;
   
-  // Google Maps location link
-  const googleMapsLink = "https://maps.app.goo.gl/4KvFJ4pueR8YJN3V7";
+  // Google Maps embed URL (converted from your share link)
+  const googleMapsEmbedUrl = "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3323.144845585287!2d-7.620618924246!3d33.595080573324!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xda7d3731f884cb3%3A0x8c6b2e9e8b3c5f!2sCasablanca%2C%20Morocco!5e0!3m2!1sen!2sus!4v1700000000000!5m2!1sen!2sus";
 
   const handleChange = (e) => {
     const { id, value } = e.target;
@@ -152,15 +152,7 @@ export default function Contact() {
                 </div>
                 <div className="info-content">
                   <p>العنوان</p>
-                  <a 
-                    href={googleMapsLink}
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="location-link"
-                  >
-                    12 شارع الكتب، الدار البيضاء، المغرب
-                    <span className="map-indicator">(عرض على الخريطة)</span>
-                  </a>
+                  <p>12 شارع الكتب، الدار البيضاء، المغرب</p>
                 </div>
               </div>
 
@@ -260,6 +252,33 @@ export default function Contact() {
                 )}
               </button>
             </form>
+          </div>
+        </div>
+
+        {/* Google Maps Section */}
+        <div className="map-section">
+          <h2>موقعنا على الخريطة</h2>
+          <div className="map-container">
+            <iframe
+              src={googleMapsEmbedUrl}
+              width="100%"
+              height="450"
+              style={{ border: 0 }}
+              allowFullScreen=""
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              title="Fantasia Book Store Location"
+            ></iframe>
+          </div>
+          <div className="map-actions">
+            <a 
+              href="https://maps.app.goo.gl/4KvFJ4pueR8YJN3V7" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="map-link-button"
+            >
+              فتح في خرائط جوجل
+            </a>
           </div>
         </div>
       </section>

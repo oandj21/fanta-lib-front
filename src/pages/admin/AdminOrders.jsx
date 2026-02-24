@@ -5,7 +5,7 @@ import {
   X, Save, MapPin, Phone, User, Package, DollarSign,
   Map, FileText, Truck, UserCircle, Building, Plus,
   Loader, ChevronDown, BookOpen, Minus, Plus as PlusIcon,
-  Eye
+  Eye, RefreshCw, AlertCircle, CheckCircle, Box, Layers
 } from "lucide-react";
 import axios from "axios";
 import { 
@@ -37,7 +37,7 @@ const statusColors = {
   returned: "#6f42c1",
 };
 
-// City Autocomplete Component
+// City Autocomplete Component with improved API integration
 const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
   const [query, setQuery] = useState(value || "");
   const [suggestions, setSuggestions] = useState([]);
@@ -67,28 +67,60 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
       console.log("Cities API response:", response.data);
       
       let citiesData = [];
-      if (Array.isArray(response.data)) {
-        citiesData = response.data;
-      } else if (response.data.data && Array.isArray(response.data.data)) {
+      
+      // Handle different response formats
+      if (response.data && response.data.data && Array.isArray(response.data.data)) {
+        // Format: { data: [...] }
         citiesData = response.data.data;
-      } else if (response.data.cities && Array.isArray(response.data.cities)) {
-        citiesData = response.data.cities;
+      } else if (Array.isArray(response.data)) {
+        // Format: [...]
+        citiesData = response.data;
+      } else if (response.data && typeof response.data === 'object') {
+        // Try to find any array in the response
+        for (let key in response.data) {
+          if (Array.isArray(response.data[key])) {
+            citiesData = response.data[key];
+            break;
+          }
+        }
+      }
+      
+      // If still no data, use fallback
+      if (citiesData.length === 0) {
+        citiesData = getFallbackCities();
       }
       
       setCities(citiesData);
     } catch (err) {
       console.error("Error fetching cities:", err);
       setError("Impossible de charger les villes");
-      // Fallback cities
-      setCities([
-        "Casablanca", "Rabat", "Fès", "Marrakech", "Agadir", "Tanger",
-        "Meknès", "Oujda", "Kénitra", "Tétouan", "Safi", "Mohammédia",
-        "El Jadida", "Béni Mellal", "Nador"
-      ]);
+      // Fallback cities with IDs
+      setCities(getFallbackCities());
     } finally {
       setLoading(false);
     }
   }, []);
+
+  // Fallback cities with IDs
+  const getFallbackCities = () => {
+    return [
+      { id: "15769", name: "Casablanca" },
+      { id: "15770", name: "Rabat" },
+      { id: "15771", name: "Fès" },
+      { id: "15772", name: "Marrakech" },
+      { id: "15773", name: "Agadir" },
+      { id: "15774", name: "Tanger" },
+      { id: "15775", name: "Meknès" },
+      { id: "15776", name: "Oujda" },
+      { id: "15777", name: "Kénitra" },
+      { id: "15778", name: "Tétouan" },
+      { id: "15779", name: "Safi" },
+      { id: "15780", name: "Mohammédia" },
+      { id: "15781", name: "El Jadida" },
+      { id: "15782", name: "Béni Mellal" },
+      { id: "15783", name: "Nador" }
+    ];
+  };
 
   useEffect(() => {
     fetchCities();
@@ -118,9 +150,11 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
 
   const handleSelectCity = (city) => {
     const cityName = typeof city === 'string' ? city : city.name || city.city || city.label || city;
+    const cityId = typeof city === 'object' && city.id ? city.id : cityName;
+    
     setQuery(cityName);
     onChange(cityName);
-    if (onSelect) onSelect(cityName);
+    if (onSelect) onSelect(cityName, cityId);
     setShowSuggestions(false);
   };
 
@@ -131,7 +165,7 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
           type="text"
           value={query}
           onChange={handleInputChange}
-          onFocus={() => query.length >= 1 && setSuggestions.length > 0 && setShowSuggestions(true)}
+          onFocus={() => query.length >= 1 && suggestions.length > 0 && setShowSuggestions(true)}
           onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
           placeholder="Tapez pour rechercher une ville..."
           className="city-input"
@@ -147,6 +181,7 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
         <ul className="suggestions-list">
           {suggestions.map((city, index) => {
             const cityName = typeof city === 'string' ? city : city.name || city.city || city.label || city;
+            const cityId = typeof city === 'object' && city.id ? city.id : '';
             return (
               <li
                 key={index}
@@ -154,7 +189,8 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
                 className="suggestion-item"
               >
                 <MapPin size={14} />
-                {cityName}
+                <span className="city-name">{cityName}</span>
+                {cityId && <span className="city-id">(ID: {cityId})</span>}
               </li>
             );
           })}
@@ -162,12 +198,15 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
       )}
       
       {error && <div className="city-error">{error}</div>}
+      {!loading && cities.length === 0 && !error && (
+        <div className="city-error">Aucune ville disponible</div>
+      )}
     </div>
   );
 };
 
-// Book Selection Component
-const BookSelector = ({ selectedBooks, onBooksChange }) => {
+// Book Selection Component (improved)
+const BookSelector = ({ selectedBooks, onBooksChange, onProductNameChange, onTotalQuantityChange }) => {
   const dispatch = useDispatch();
   const { list: booksList = [], loading: booksLoading } = useSelector((state) => state.livres);
   const [searchTerm, setSearchTerm] = useState("");
@@ -185,13 +224,40 @@ const BookSelector = ({ selectedBooks, onBooksChange }) => {
     );
   }, [booksList, searchTerm]);
 
+  // Update product name and quantity whenever selected books change
+  useEffect(() => {
+    if (selectedBooks.length > 0) {
+      // Calculate total quantity
+      const totalQty = selectedBooks.reduce((sum, book) => sum + book.quantity, 0);
+      
+      // Generate product name from book titles
+      const productNames = selectedBooks.map(book => book.titre);
+      let productName = productNames.join(' + ');
+      if (productName.length > 50) {
+        productName = productName.substring(0, 50) + '...';
+      }
+      
+      // Call parent callbacks to update the form
+      if (onProductNameChange) onProductNameChange(productName);
+      if (onTotalQuantityChange) onTotalQuantityChange(totalQty);
+    } else {
+      if (onProductNameChange) onProductNameChange('');
+      if (onTotalQuantityChange) onTotalQuantityChange(0);
+    }
+  }, [selectedBooks, onProductNameChange, onTotalQuantityChange]);
+
   const addBook = (book) => {
     const existingBook = selectedBooks.find(b => b.id === book.id);
     if (existingBook) {
       onBooksChange(
         selectedBooks.map(b => 
           b.id === book.id 
-            ? { ...b, quantity: b.quantity + 1, total: (b.quantity + 1) * b.prix_achat }
+            ? { 
+                ...b, 
+                quantity: b.quantity + 1, 
+                total: (b.quantity + 1) * b.prix_achat,
+                price: b.prix_achat
+              }
             : b
         )
       );
@@ -203,6 +269,7 @@ const BookSelector = ({ selectedBooks, onBooksChange }) => {
           titre: book.titre,
           auteur: book.auteur,
           prix_achat: book.prix_achat,
+          price: book.prix_achat,
           quantity: 1,
           total: book.prix_achat
         }
@@ -220,7 +287,12 @@ const BookSelector = ({ selectedBooks, onBooksChange }) => {
     onBooksChange(
       selectedBooks.map(b => 
         b.id === bookId 
-          ? { ...b, quantity: newQuantity, total: newQuantity * b.prix_achat }
+          ? { 
+              ...b, 
+              quantity: newQuantity, 
+              total: newQuantity * b.prix_achat,
+              price: b.prix_achat
+            }
           : b
       )
     );
@@ -327,13 +399,9 @@ const BookSelector = ({ selectedBooks, onBooksChange }) => {
   );
 };
 
-// Order Details Modal Component
+// Order Details Modal Component (enhanced with new fields)
 const OrderDetailsModal = ({ order, onClose }) => {
   if (!order) return null;
-
-  const livresCount = order.livres ? 
-    (Array.isArray(order.livres) ? 
-      order.livres.reduce((sum, book) => sum + (book.quantity || 1), 0) : 0) : 0;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -354,6 +422,14 @@ const OrderDetailsModal = ({ order, onClose }) => {
             <div className="detail-group">
               <label>Téléphone</label>
               <p>{order.parcel_phone || "-"}</p>
+            </div>
+            <div className="detail-group">
+              <label>Produit</label>
+              <p>{order.parcel_prd_name || "-"}</p>
+            </div>
+            <div className="detail-group">
+              <label>Quantité</label>
+              <p>{order.parcel_prd_qty || 0}</p>
             </div>
             <div className="detail-group">
               <label>Ville</label>
@@ -400,9 +476,9 @@ const OrderDetailsModal = ({ order, onClose }) => {
                     <tr key={index}>
                       <td>{book.titre || book.title || "-"}</td>
                       <td>{book.auteur || book.author || "-"}</td>
-                      <td>{book.prix_achat || book.price || 0} MAD</td>
+                      <td>{book.price || book.prix_achat || 0} MAD</td>
                       <td>{book.quantity || 1}</td>
-                      <td>{(book.prix_achat || book.price || 0) * (book.quantity || 1)} MAD</td>
+                      <td>{(book.price || book.prix_achat || 0) * (book.quantity || 1)} MAD</td>
                     </tr>
                   ))}
                 </tbody>
@@ -438,7 +514,7 @@ const OrderDetailsModal = ({ order, onClose }) => {
           {order.parcel_note && (
             <div className="details-note">
               <label>Note:</label>
-              <p>{order.parcel_note}</p>
+              <p style={{ whiteSpace: 'pre-line' }}>{order.parcel_note}</p>
             </div>
           )}
         </div>
@@ -453,6 +529,7 @@ const OrderDetailsModal = ({ order, onClose }) => {
   );
 };
 
+// Main AdminOrders Component
 export default function AdminOrders() {
   const dispatch = useDispatch();
   const { list: orderList = [], loading } = useSelector((state) => state.commandes);
@@ -483,6 +560,8 @@ export default function AdminOrders() {
   const [formData, setFormData] = useState({
     parcel_receiver: "",
     parcel_phone: "",
+    parcel_prd_name: "",
+    parcel_prd_qty: "",
     parcel_city: "",
     parcel_address: "",
     parcel_price: "",
@@ -496,6 +575,8 @@ export default function AdminOrders() {
     parcel_code: "",
     parcel_receiver: "",
     parcel_phone: "",
+    parcel_prd_name: "", // Added new field
+    parcel_prd_qty: 0,   // Added new field
     parcel_city: "",
     parcel_address: "",
     parcel_price: 0,
@@ -525,6 +606,8 @@ export default function AdminOrders() {
       setFormData({
         parcel_receiver: selectedOrder.parcel_receiver || "",
         parcel_phone: selectedOrder.parcel_phone || "",
+        parcel_prd_name: selectedOrder.parcel_prd_name || "",
+        parcel_prd_qty: selectedOrder.parcel_prd_qty || 0,
         parcel_city: selectedOrder.parcel_city || "",
         parcel_address: selectedOrder.parcel_address || "",
         parcel_price: selectedOrder.parcel_price || "",
@@ -628,6 +711,8 @@ export default function AdminOrders() {
     setFormData({
       parcel_receiver: "",
       parcel_phone: "",
+      parcel_prd_name: "",
+      parcel_prd_qty: 0,
       parcel_city: "",
       parcel_address: "",
       parcel_price: "",
@@ -645,6 +730,8 @@ export default function AdminOrders() {
       parcel_code: newParcelCode,
       parcel_receiver: "",
       parcel_phone: "",
+      parcel_prd_name: "",
+      parcel_prd_qty: 0,
       parcel_city: "",
       parcel_address: "",
       parcel_price: 0,
@@ -670,6 +757,8 @@ export default function AdminOrders() {
       parcel_code: "",
       parcel_receiver: "",
       parcel_phone: "",
+      parcel_prd_name: "",
+      parcel_prd_qty: 0,
       parcel_city: "",
       parcel_address: "",
       parcel_price: 0,
@@ -717,8 +806,24 @@ export default function AdminOrders() {
     }));
   };
 
+  // Handle product name update from BookSelector
+  const handleProductNameChange = (name) => {
+    setNewOrderData(prev => ({
+      ...prev,
+      parcel_prd_name: name
+    }));
+  };
+
+  // Handle total quantity update from BookSelector
+  const handleTotalQuantityChange = (qty) => {
+    setNewOrderData(prev => ({
+      ...prev,
+      parcel_prd_qty: qty
+    }));
+  };
+
   // Handle city selection for update form
-  const handleCitySelect = (city) => {
+  const handleCitySelect = (city, cityId) => {
     setFormData(prev => ({
       ...prev,
       parcel_city: city
@@ -726,7 +831,7 @@ export default function AdminOrders() {
   };
 
   // Handle city selection for new order form
-  const handleNewCitySelect = (city) => {
+  const handleNewCitySelect = (city, cityId) => {
     setNewOrderData(prev => ({
       ...prev,
       parcel_city: city
@@ -801,7 +906,7 @@ export default function AdminOrders() {
     const parcelPrice = total + delivery + packaging;
     const profit = total - (delivery + packaging);
 
-    // Format livres with all necessary information
+    // Format livres with all necessary information for API
     const formattedLivres = newOrderData.livres.map(book => ({
       id: book.id,
       titre: book.titre,
@@ -811,11 +916,22 @@ export default function AdminOrders() {
       total: parseFloat(book.prix_achat) * parseInt(book.quantity)
     }));
 
-    // Prepare order data for database
+    // Create detailed note for delivery company
+    const productDetails = newOrderData.livres.map(book => 
+      `${book.titre} - ${book.quantity} ex - ${book.prix_achat * book.quantity} MAD`
+    ).join('\n');
+    
+    const finalNote = newOrderData.parcel_note 
+      ? `${newOrderData.parcel_note}\n\nLivres commandés:\n${productDetails}`
+      : `Livres commandés:\n${productDetails}`;
+
+    // Prepare order data for database and Welivexpress
     const orderToCreate = {
       parcel_code: newOrderData.parcel_code,
       parcel_receiver: newOrderData.parcel_receiver,
       parcel_phone: newOrderData.parcel_phone || "",
+      parcel_prd_name: newOrderData.parcel_prd_name, // Include new field
+      parcel_prd_qty: newOrderData.parcel_prd_qty,   // Include new field
       parcel_city: newOrderData.parcel_city,
       parcel_address: newOrderData.parcel_address || "",
       parcel_price: parseFloat(parcelPrice.toFixed(2)),
@@ -823,7 +939,7 @@ export default function AdminOrders() {
       frais_packaging: parseFloat(packaging.toFixed(2)),
       total: parseFloat(total.toFixed(2)),
       profit: parseFloat(profit.toFixed(2)),
-      parcel_note: newOrderData.parcel_note || "",
+      parcel_note: finalNote,
       parcel_open: newOrderData.parcel_open ? 1 : 0,
       statut: newOrderData.statut || "new",
       livres: formattedLivres,
@@ -838,6 +954,7 @@ export default function AdminOrders() {
     try {
       const result = await dispatch(createCommande(orderToCreate)).unwrap();
       console.log("Create successful:", result);
+      
       await dispatch(fetchCommandes());
       closeAddModal();
     } catch (error) {
@@ -857,6 +974,7 @@ export default function AdminOrders() {
       const matchesSearch = searchTerm === "" || 
         order.parcel_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.parcel_receiver?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.parcel_prd_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.parcel_city?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.parcel_phone?.toLowerCase().includes(searchTerm.toLowerCase());
       
@@ -1042,7 +1160,7 @@ export default function AdminOrders() {
           <Search size={18} className="search-icon" />
           <input
             type="text"
-            placeholder="Rechercher par code, client, ville ou téléphone..."
+            placeholder="Rechercher par code, client, produit, ville ou téléphone..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="search-input"
@@ -1110,6 +1228,8 @@ export default function AdminOrders() {
                   <th>Code</th>
                   <th>Client</th>
                   <th>Téléphone</th>
+                  <th>Produit</th>
+                  <th>Qté</th>
                   <th>Ville</th>
                   <th>Statut</th>
                   <th>Prix colis</th>
@@ -1124,6 +1244,17 @@ export default function AdminOrders() {
                       <td className="order-code">{order.parcel_code || "-"}</td>
                       <td className="order-client">{order.parcel_receiver || "-"}</td>
                       <td>{order.parcel_phone || "-"}</td>
+                      <td className="order-product" title={order.parcel_prd_name}>
+                        {order.parcel_prd_name ? (
+                          <>
+                            <Box size={14} className="product-icon" />
+                            {order.parcel_prd_name.length > 20 
+                              ? order.parcel_prd_name.substring(0, 20) + '...' 
+                              : order.parcel_prd_name}
+                          </>
+                        ) : "-"}
+                      </td>
+                      <td className="order-qty">{order.parcel_prd_qty || 0}</td>
                       <td>{order.parcel_city || "-"}</td>
                       <td>
                         <span 
@@ -1191,7 +1322,7 @@ export default function AdminOrders() {
         />
       )}
 
-      {/* ADD MODAL - Without sections */}
+      {/* ADD MODAL */}
       {showAddModal && (
         <div className="modal-overlay" onClick={closeAddModal}>
           <div className="modal-content add-order-modal" onClick={e => e.stopPropagation()}>
@@ -1238,7 +1369,7 @@ export default function AdminOrders() {
 
                 <div className="form-row">
                   <div className="form-group">
-                    <label>Client</label>
+                    <label>Client <span className="required">*</span></label>
                     <input
                       type="text"
                       name="parcel_receiver"
@@ -1261,9 +1392,49 @@ export default function AdminOrders() {
                   </div>
                 </div>
 
+                {/* New Welivexpress fields */}
                 <div className="form-row">
                   <div className="form-group">
-                    <label>Ville</label>
+                    <label>Nom du produit <span className="required">*</span></label>
+                    <div className="input-with-icon">
+                      <Box size={16} className="input-icon" />
+                      <input
+                        type="text"
+                        name="parcel_prd_name"
+                        value={newOrderData.parcel_prd_name}
+                        onChange={handleNewOrderChange}
+                        placeholder="Nom du produit pour Welivexpress"
+                        required
+                      />
+                    </div>
+                    <small className="field-hint">
+                      Sera automatiquement généré à partir des livres sélectionnés
+                    </small>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Quantité totale <span className="required">*</span></label>
+                    <div className="input-with-icon">
+                      <Layers size={16} className="input-icon" />
+                      <input
+                        type="number"
+                        name="parcel_prd_qty"
+                        value={newOrderData.parcel_prd_qty}
+                        onChange={handleNewOrderChange}
+                        placeholder="Quantité totale"
+                        min="1"
+                        required
+                      />
+                    </div>
+                    <small className="field-hint">
+                      Sera automatiquement calculée à partir des livres sélectionnés
+                    </small>
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Ville <span className="required">*</span></label>
                     <CityAutocomplete
                       value={newOrderData.parcel_city}
                       onChange={(value) => setNewOrderData(prev => ({ ...prev, parcel_city: value }))}
@@ -1284,11 +1455,16 @@ export default function AdminOrders() {
                 </div>
 
                 <div className="form-group full-width">
-                  <label>Livres commandés</label>
+                  <label>Livres commandés <span className="required">*</span></label>
                   <BookSelector 
                     selectedBooks={newOrderData.livres}
                     onBooksChange={handleBooksChange}
+                    onProductNameChange={handleProductNameChange}
+                    onTotalQuantityChange={handleTotalQuantityChange}
                   />
+                  <small className="field-hint">
+                    La sélection des livres mettra automatiquement à jour le nom du produit et la quantité
+                  </small>
                 </div>
 
                 <div className="form-row">
@@ -1344,6 +1520,9 @@ export default function AdminOrders() {
                       step="0.01"
                       className={totalManuallyEdited ? "manual-edit-input" : ""}
                     />
+                    <small className="field-hint">
+                      {totalManuallyEdited ? "Édité manuellement" : "Calculé automatiquement"}
+                    </small>
                   </div>
 
                   <div className="form-group">
@@ -1355,6 +1534,7 @@ export default function AdminOrders() {
                       readOnly
                       className="readonly-input"
                     />
+                    <small className="field-hint">Total + frais (envoyé à Welivexpress)</small>
                   </div>
 
                   <div className="form-group">
@@ -1370,14 +1550,17 @@ export default function AdminOrders() {
                 </div>
 
                 <div className="form-group full-width">
-                  <label>Note</label>
+                  <label>Note supplémentaire</label>
                   <textarea
                     name="parcel_note"
                     value={newOrderData.parcel_note}
                     onChange={handleNewOrderChange}
-                    placeholder="Notes ou instructions spéciales"
+                    placeholder="Instructions spéciales pour la livraison..."
                     rows="2"
                   />
+                  <small className="field-hint">
+                    Sera combinée avec la liste des livres dans la note pour Welivexpress
+                  </small>
                 </div>
 
                 <div className="form-checkbox">
@@ -1416,7 +1599,7 @@ export default function AdminOrders() {
                 ) : (
                   <>
                     <Save size={16} />
-                    Créer
+                    Créer la commande
                   </>
                 )}
               </button>
@@ -1425,7 +1608,7 @@ export default function AdminOrders() {
         </div>
       )}
 
-      {/* UPDATE MODAL - Without sections */}
+      {/* UPDATE MODAL */}
       {showUpdateModal && selectedOrder && (
         <div className="modal-overlay" onClick={closeUpdateModal}>
           <div className="modal-content update-order-modal" onClick={e => e.stopPropagation()}>
@@ -1466,6 +1649,38 @@ export default function AdminOrders() {
                       onChange={handleInputChange}
                       placeholder="Numéro de téléphone"
                     />
+                  </div>
+                </div>
+
+                {/* New Welivexpress fields in update modal */}
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Nom du produit</label>
+                    <div className="input-with-icon">
+                      <Box size={16} className="input-icon" />
+                      <input
+                        type="text"
+                        name="parcel_prd_name"
+                        value={formData.parcel_prd_name}
+                        onChange={handleInputChange}
+                        placeholder="Nom du produit"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Quantité totale</label>
+                    <div className="input-with-icon">
+                      <Layers size={16} className="input-icon" />
+                      <input
+                        type="number"
+                        name="parcel_prd_qty"
+                        value={formData.parcel_prd_qty}
+                        onChange={handleInputChange}
+                        placeholder="Quantité"
+                        min="0"
+                      />
+                    </div>
                   </div>
                 </div>
 

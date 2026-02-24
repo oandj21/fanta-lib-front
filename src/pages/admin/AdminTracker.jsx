@@ -17,8 +17,7 @@ import {
   PackageCheck,
   PackageX,
   PackageSearch,
-  XCircle,
-  PackageSearch 
+  XCircle
 } from "lucide-react";
 import "../../css/AdminTracker.css";
 

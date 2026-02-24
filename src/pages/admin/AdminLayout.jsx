@@ -11,7 +11,8 @@ import {
   Users,
   Mail, 
   User,
-  LogOut 
+  LogOut ,
+  PackageSearch
 } from "lucide-react";
 import { logoutFromSlice, selectAuthUser } from "../../store/store";
 import "../../css/AdminLayout.css";

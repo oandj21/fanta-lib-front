@@ -16,6 +16,7 @@ import {
   FileText,
   PackageCheck,
   PackageX,
+  PackageSearch,
   XCircle
 } from "lucide-react";
 import "../../css/AdminTracker.css";
@@ -64,7 +65,7 @@ export default function AdminTracker() {
           const newHistory = [
             { code: parcelCode.trim(), timestamp: new Date().toISOString() },
             ...prev.filter(item => item.code !== parcelCode.trim())
-          ].slice(0, 10);
+          ].slice(0, 10); // Keep last 10 searches
           return newHistory;
         });
       } else {
@@ -142,7 +143,7 @@ export default function AdminTracker() {
         <form onSubmit={handleTrack} className="tracker-search-form">
           <div className="tracker-search-wrapper">
             <div className="tracker-search-input-container">
-              <Search size={20} className="tracker-search-icon" />
+              <PackageSearch size={20} className="tracker-search-icon" />
               <input
                 type="text"
                 value={parcelCode}
@@ -407,7 +408,7 @@ export default function AdminTracker() {
       {/* Empty State */}
       {!trackingData && !loading && !error && (
         <div className="tracker-empty-state">
-          <Package size={64} />
+          <PackageSearch size={64} />
           <h3>Aucune recherche effectuée</h3>
           <p>
             Entrez le code d'un colis Welivexpress pour suivre son statut

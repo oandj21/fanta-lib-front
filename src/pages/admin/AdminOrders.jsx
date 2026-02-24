@@ -856,13 +856,13 @@ export default function AdminOrders() {
     e.preventDefault();
     
     if (!newOrderData.parcel_receiver || !newOrderData.parcel_city) {
-      setAddError("Veuillez remplir tous les champs obligatoires (client, ville)");
-      return;
+        setAddError("Veuillez remplir tous les champs obligatoires (client, ville)");
+        return;
     }
 
     if (newOrderData.livres.length === 0) {
-      setAddError("Veuillez sélectionner au moins un livre");
-      return;
+        setAddError("Veuillez sélectionner au moins un livre");
+        return;
     }
 
     const delivery = parseFloat(newOrderData.frais_livraison) || 0;
@@ -872,55 +872,61 @@ export default function AdminOrders() {
     const profit = total - (delivery + packaging);
 
     const formattedLivres = newOrderData.livres.map(book => ({
-      id: book.id,
-      titre: book.titre,
-      auteur: book.auteur || '',
-      quantity: parseInt(book.quantity),
-      price: parseFloat(book.prix_achat),
-      total: parseFloat(book.prix_achat) * parseInt(book.quantity)
+        id: book.id,
+        titre: book.titre,
+        auteur: book.auteur || '',
+        quantity: parseInt(book.quantity),
+        price: parseFloat(book.prix_achat),
+        total: parseFloat(book.prix_achat) * parseInt(book.quantity)
     }));
 
-    // IMPORTANT FIX: Only send the user's note to Welivexpress
-    // Do NOT include book details in the note
-    const cleanNote = newOrderData.parcel_note || '';
+    // CRITICAL: Log what we're sending
+    console.log("📤 Sending to backend:", {
+        parcel_prd_name: newOrderData.parcel_prd_name,
+        parcel_prd_qty: newOrderData.parcel_prd_qty,
+        livres: formattedLivres
+    });
 
     const orderToCreate = {
-      parcel_code: newOrderData.parcel_code,
-      parcel_receiver: newOrderData.parcel_receiver,
-      parcel_phone: newOrderData.parcel_phone || "",
-      parcel_prd_name: newOrderData.parcel_prd_name,
-      parcel_prd_qty: newOrderData.parcel_prd_qty,
-      parcel_city: newOrderData.parcel_city,
-      parcel_address: newOrderData.parcel_address || "",
-      parcel_price: parseFloat(parcelPrice.toFixed(2)),
-      frais_livraison: parseFloat(delivery.toFixed(2)),
-      frais_packaging: parseFloat(packaging.toFixed(2)),
-      total: parseFloat(total.toFixed(2)),
-      profit: parseFloat(profit.toFixed(2)),
-      parcel_note: cleanNote, // Only the user's note, no book details
-      parcel_open: newOrderData.parcel_open ? 1 : 0,
-      statut: newOrderData.statut || "new",
-      livres: formattedLivres,
-      date: newOrderData.date
+        parcel_code: newOrderData.parcel_code,
+        parcel_receiver: newOrderData.parcel_receiver,
+        parcel_phone: newOrderData.parcel_phone || "",
+        parcel_prd_name: newOrderData.parcel_prd_name, // This should be "x + v"
+        parcel_prd_qty: newOrderData.parcel_prd_qty,   // This should be 2
+        parcel_city: newOrderData.parcel_city,
+        parcel_address: newOrderData.parcel_address || "",
+        parcel_price: parseFloat(parcelPrice.toFixed(2)),
+        frais_livraison: parseFloat(delivery.toFixed(2)),
+        frais_packaging: parseFloat(packaging.toFixed(2)),
+        total: parseFloat(total.toFixed(2)),
+        profit: parseFloat(profit.toFixed(2)),
+        parcel_note: newOrderData.parcel_note || "",
+        parcel_open: newOrderData.parcel_open ? 1 : 0,
+        statut: newOrderData.statut || "new",
+        livres: formattedLivres,
+        date: newOrderData.date
     };
+
+    console.log("📦 Order to create:", orderToCreate);
 
     setAddLoading(true);
     setAddError(null);
 
     try {
-      const result = await dispatch(createCommande(orderToCreate)).unwrap();
-      await dispatch(fetchCommandes());
-      closeAddModal();
+        const result = await dispatch(createCommande(orderToCreate)).unwrap();
+        console.log("✅ Create successful:", result);
+        await dispatch(fetchCommandes());
+        closeAddModal();
     } catch (error) {
-      console.error("Create failed:", error);
-      setAddError(
-        error?.message || 
-        "Erreur lors de la création de la commande. Veuillez réessayer."
-      );
+        console.error("❌ Create failed:", error);
+        setAddError(
+            error?.message || 
+            "Erreur lors de la création de la commande. Veuillez réessayer."
+        );
     } finally {
-      setAddLoading(false);
+        setAddLoading(false);
     }
-  };
+};
 
   const filteredOrders = useMemo(() => {
     return orderList.filter(order => {

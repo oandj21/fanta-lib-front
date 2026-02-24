@@ -1252,8 +1252,7 @@ export default function AdminOrders() {
                         id="total"
                         name="total"
                         value={newOrderData.total}
-                        readOnly
-                        className="readonly-input"
+                        
                       />
                       <small className="field-hint">Sous-total des livres</small>
                     </div>
@@ -1267,7 +1266,7 @@ export default function AdminOrders() {
                         id="parcel_price"
                         name="parcel_price"
                         value={newOrderData.parcel_price}
-                        readOnly
+                        
                         className="readonly-input"
                       />
                       <small className="field-hint">Total livres + frais</small>

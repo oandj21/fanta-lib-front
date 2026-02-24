@@ -422,7 +422,7 @@ const OrderDetailsModal = ({ order, onClose }) => {
             <div className="detail-group">
               <label>Statut</label>
               <span 
-                className="status-badge"
+                className="status-bad"
                 style={{ 
                   backgroundColor: `${statusColors[order.statut] || "#666"}20`,
                   color: statusColors[order.statut] || "#666",
@@ -1169,7 +1169,7 @@ export default function AdminOrders() {
                       <td>{order.parcel_city || "-"}</td>
                       <td>
                         <span 
-                          className="status-badge"
+                          className="status-bad"
                           style={{ 
                             backgroundColor: `${statusColors[order.statut] || "#666"}20`,
                             color: statusColors[order.statut] || "#666",

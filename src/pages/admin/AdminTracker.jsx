@@ -64,7 +64,7 @@ export default function AdminTracker() {
           const newHistory = [
             { code: parcelCode.trim(), timestamp: new Date().toISOString() },
             ...prev.filter(item => item.code !== parcelCode.trim())
-          ].slice(0, 10); // Keep last 10 searches
+          ].slice(0, 10);
           return newHistory;
         });
       } else {
@@ -142,7 +142,7 @@ export default function AdminTracker() {
         <form onSubmit={handleTrack} className="tracker-search-form">
           <div className="tracker-search-wrapper">
             <div className="tracker-search-input-container">
-              <Package size={20} className="tracker-search-icon" />
+              <Search size={20} className="tracker-search-icon" />
               <input
                 type="text"
                 value={parcelCode}

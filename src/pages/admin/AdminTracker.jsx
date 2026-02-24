@@ -16,7 +16,6 @@ import {
   FileText,
   PackageCheck,
   PackageX,
-  PackageSearch,
   XCircle
 } from "lucide-react";
 import "../../css/AdminTracker.css";
@@ -143,7 +142,7 @@ export default function AdminTracker() {
         <form onSubmit={handleTrack} className="tracker-search-form">
           <div className="tracker-search-wrapper">
             <div className="tracker-search-input-container">
-              <PackageSearch size={20} className="tracker-search-icon" />
+              <Package size={20} className="tracker-search-icon" />
               <input
                 type="text"
                 value={parcelCode}
@@ -408,7 +407,7 @@ export default function AdminTracker() {
       {/* Empty State */}
       {!trackingData && !loading && !error && (
         <div className="tracker-empty-state">
-          <PackageSearch size={64} />
+          <Package size={64} />
           <h3>Aucune recherche effectuée</h3>
           <p>
             Entrez le code d'un colis Welivexpress pour suivre son statut

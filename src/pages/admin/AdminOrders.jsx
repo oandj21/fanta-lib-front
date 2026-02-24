@@ -349,6 +349,9 @@ export default function AdminOrders() {
   const [updateError, setUpdateError] = useState(null);
   const [addError, setAddError] = useState(null);
   
+  // Track if total was manually edited
+  const [totalManuallyEdited, setTotalManuallyEdited] = useState(false);
+  
   // Form state for update
   const [formData, setFormData] = useState({
     parcel_receiver: "",
@@ -370,17 +373,17 @@ export default function AdminOrders() {
     parcel_phone: "",
     parcel_city: "",
     parcel_address: "",
-    parcel_price: 0, // This will be set to total for Welivexpress (books + fees)
+    parcel_price: 0,
     frais_livraison: 0,
     frais_packaging: 0,
-    total: 0, // This is now just the books subtotal
+    total: 0,
     profit: 0,
     parcel_note: "",
     parcel_open: 0,
     parcel_livreur_sent: "",
     parcel_livreurname_sent: "",
     statut: "new",
-    livres: [], // Array of books with quantities
+    livres: [],
     date: new Date().toISOString().split('T')[0]
   });
 
@@ -411,9 +414,14 @@ export default function AdminOrders() {
     }
   }, [selectedOrder]);
 
-  // Calculate books subtotal, total (for display), and parcel_price (for Welivexpress)
+  // Reset manual edit flag when books change
   useEffect(() => {
-    // Calculate books subtotal
+    setTotalManuallyEdited(false);
+  }, [newOrderData.livres]);
+
+  // Calculate books subtotal, total, and parcel_price
+  useEffect(() => {
+    // Calculate books subtotal (for reference)
     const booksSubtotal = (newOrderData.livres || []).reduce(
       (sum, book) => sum + (book.prix_achat * book.quantity), 0
     );
@@ -421,25 +429,44 @@ export default function AdminOrders() {
     const delivery = parseFloat(newOrderData.frais_livraison) || 0;
     const packaging = parseFloat(newOrderData.frais_packaging) || 0;
     
-    // total is now just the books subtotal (for display in UI)
-    const total = booksSubtotal;
+    // Determine total value
+    let total;
+    if (!totalManuallyEdited || newOrderData.livres.length === 0) {
+      // Auto-calculate from books if not manually edited or no books
+      total = booksSubtotal;
+    } else {
+      // Use manually entered value
+      total = parseFloat(newOrderData.total) || 0;
+    }
     
     // parcel_price is the total for Welivexpress (books + fees)
-    const parcelPrice = booksSubtotal + delivery + packaging;
+    const parcelPrice = total + delivery + packaging;
     
-    // Profit calculation (books subtotal minus fees)
-    const profit = booksSubtotal - (delivery + packaging);
+    // Profit calculation (total minus fees)
+    const profit = total - (delivery + packaging);
     
-    setNewOrderData(prev => ({
-      ...prev,
-      total: total,
-      parcel_price: parcelPrice,
-      profit: profit
-    }));
+    // Only update if values have changed to avoid infinite loops
+    setNewOrderData(prev => {
+      if (
+        prev.total === total &&
+        prev.parcel_price === parcelPrice &&
+        prev.profit === profit
+      ) {
+        return prev;
+      }
+      return {
+        ...prev,
+        total: total,
+        parcel_price: parcelPrice,
+        profit: profit
+      };
+    });
   }, [
     newOrderData.livres, 
     newOrderData.frais_livraison, 
-    newOrderData.frais_packaging
+    newOrderData.frais_packaging,
+    newOrderData.total,
+    totalManuallyEdited
   ]);
 
   const handleDelete = (id) => {
@@ -502,6 +529,7 @@ export default function AdminOrders() {
       livres: [],
       date: new Date().toISOString().split('T')[0]
     });
+    setTotalManuallyEdited(false);
     setAddError(null);
     setShowAddModal(true);
   };
@@ -528,6 +556,7 @@ export default function AdminOrders() {
       livres: [],
       date: new Date().toISOString().split('T')[0]
     });
+    setTotalManuallyEdited(false);
     setAddError(null);
   };
 
@@ -541,6 +570,12 @@ export default function AdminOrders() {
 
   const handleNewOrderChange = (e) => {
     const { name, value, type, checked } = e.target;
+    
+    // Track manual edit for total field
+    if (name === 'total') {
+      setTotalManuallyEdited(true);
+    }
+    
     setNewOrderData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? (checked ? 1 : 0) : value
@@ -632,22 +667,12 @@ export default function AdminOrders() {
       return;
     }
 
-    // Calculate books subtotal
-    const booksSubtotal = newOrderData.livres.reduce(
-      (sum, book) => sum + (parseFloat(book.prix_achat) * parseInt(book.quantity)), 0
-    );
-    
+    // Calculate values for submission
     const delivery = parseFloat(newOrderData.frais_livraison) || 0;
     const packaging = parseFloat(newOrderData.frais_packaging) || 0;
-    
-    // total is books subtotal (for display)
-    const total = booksSubtotal;
-    
-    // parcel_price is total for Welivexpress (books + fees)
-    const parcelPrice = booksSubtotal + delivery + packaging;
-    
-    const rawProfit = booksSubtotal - (delivery + packaging);
-    const profit = Math.max(0, rawProfit);
+    const total = parseFloat(newOrderData.total) || 0;
+    const parcelPrice = total + delivery + packaging;
+    const profit = total - (delivery + packaging);
 
     // Format livres with all necessary information
     const formattedLivres = newOrderData.livres.map(book => ({
@@ -666,17 +691,17 @@ export default function AdminOrders() {
       parcel_phone: newOrderData.parcel_phone || "",
       parcel_city: newOrderData.parcel_city,
       parcel_address: newOrderData.parcel_address || "",
-      parcel_price: parseFloat(parcelPrice.toFixed(2)), // Total for Welivexpress (books + fees)
+      parcel_price: parseFloat(parcelPrice.toFixed(2)),
       frais_livraison: parseFloat(delivery.toFixed(2)),
       frais_packaging: parseFloat(packaging.toFixed(2)),
-      total: parseFloat(total.toFixed(2)), // Books subtotal only
+      total: parseFloat(total.toFixed(2)),
       profit: parseFloat(profit.toFixed(2)),
       parcel_note: newOrderData.parcel_note || "",
       parcel_open: newOrderData.parcel_open ? 1 : 0,
       parcel_livreur_sent: newOrderData.parcel_livreur_sent || "",
       parcel_livreurname_sent: newOrderData.parcel_livreurname_sent || "",
       statut: newOrderData.statut || "new",
-      livres: formattedLivres, // The controller will use this for Welivexpress products
+      livres: formattedLivres,
       date: newOrderData.date
     };
 
@@ -1244,25 +1269,25 @@ export default function AdminOrders() {
 
                   <div className="form-row" style={{ marginTop: '1rem' }}>
                     <div className="form-group">
-  <label htmlFor="total">
-    Total livres (MAD)
-  </label>
-  <input
-    type="number"
-    id="total"
-    name="total"
-    value={newOrderData.total}
-    onChange={handleNewOrderChange}
-    min="0"
-    step="0.01"
-    className={!newOrderData.livres || newOrderData.livres.length === 0 ? "" : "manual-edit-input"}
-  />
-  <small className="field-hint">
-    {newOrderData.livres && newOrderData.livres.length > 0 
-      ? "Valeur modifiable manuellement" 
-      : "Sous-total des livres (automatique)"}
-  </small>
-</div>
+                      <label htmlFor="total">
+                        Total livres (MAD)
+                      </label>
+                      <input
+                        type="number"
+                        id="total"
+                        name="total"
+                        value={newOrderData.total}
+                        onChange={handleNewOrderChange}
+                        min="0"
+                        step="0.01"
+                        className={totalManuallyEdited ? "manual-edit-input" : ""}
+                      />
+                      <small className="field-hint">
+                        {totalManuallyEdited 
+                          ? "Valeur modifiée manuellement" 
+                          : "Sous-total des livres (auto)"}
+                      </small>
+                    </div>
 
                     <div className="form-group">
                       <label htmlFor="parcel_price">
@@ -1273,7 +1298,7 @@ export default function AdminOrders() {
                         id="parcel_price"
                         name="parcel_price"
                         value={newOrderData.parcel_price}
-                        
+                        readOnly
                         className="readonly-input"
                       />
                       <small className="field-hint">Total livres + frais</small>
@@ -1291,7 +1316,7 @@ export default function AdminOrders() {
                         readOnly
                         className="readonly-input"
                       />
-                      <small className="field-hint">Livres - frais</small>
+                      <small className="field-hint">Total livres - frais</small>
                     </div>
                   </div>
 

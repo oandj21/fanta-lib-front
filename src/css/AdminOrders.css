@@ -719,24 +719,6 @@
   overflow-y: auto;
 }
 
-.modal-body::-webkit-scrollbar {
-  width: 8px;
-}
-
-.modal-body::-webkit-scrollbar-track {
-  background: #f8f4f0;
-  border-radius: 4px;
-}
-
-.modal-body::-webkit-scrollbar-thumb {
-  background: #c9b9ae;
-  border-radius: 4px;
-}
-
-.modal-body::-webkit-scrollbar-thumb:hover {
-  background: #a38f89;
-}
-
 .modal-footer {
   display: flex;
   justify-content: flex-end;
@@ -1180,24 +1162,6 @@
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
 }
 
-.book-dropdown::-webkit-scrollbar {
-  width: 8px;
-}
-
-.book-dropdown::-webkit-scrollbar-track {
-  background: #f8f4f0;
-  border-radius: 4px;
-}
-
-.book-dropdown::-webkit-scrollbar-thumb {
-  background: #c9b9ae;
-  border-radius: 4px;
-}
-
-.book-dropdown::-webkit-scrollbar-thumb:hover {
-  background: #a38f89;
-}
-
 .book-dropdown-item {
   padding: 0.75rem 1rem;
   cursor: pointer;
@@ -1271,19 +1235,6 @@
 .selected-books-list {
   max-height: 300px;
   overflow-y: auto;
-}
-
-.selected-books-list::-webkit-scrollbar {
-  width: 8px;
-}
-
-.selected-books-list::-webkit-scrollbar-track {
-  background: #f8f4f0;
-}
-
-.selected-books-list::-webkit-scrollbar-thumb {
-  background: #c9b9ae;
-  border-radius: 4px;
 }
 
 .selected-book-item {

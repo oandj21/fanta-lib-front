@@ -37,6 +37,9 @@ export default function Contact() {
   }, [dispatch]);
 
   const whatsappLink = `https://wa.me/212625854078?text=${encodeURIComponent("مرحباً فانتازيا 📚، لدي سؤال:")}`;
+  
+  // Google Maps location link
+  const googleMapsLink = "https://maps.app.goo.gl/4KvFJ4pueR8YJN3V7";
 
   const handleChange = (e) => {
     const { id, value } = e.target;
@@ -149,7 +152,15 @@ export default function Contact() {
                 </div>
                 <div className="info-content">
                   <p>العنوان</p>
-                  <p>12 شارع الكتب، الدار البيضاء، المغرب</p>
+                  <a 
+                    href={googleMapsLink}
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="location-link"
+                  >
+                    12 شارع الكتب، الدار البيضاء، المغرب
+                    <span className="map-indicator">(عرض على الخريطة)</span>
+                  </a>
                 </div>
               </div>
 

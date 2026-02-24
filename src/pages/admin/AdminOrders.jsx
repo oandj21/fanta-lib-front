@@ -37,7 +37,7 @@ const statusColors = {
   returned: "#6f42c1",
 };
 
-// City Autocomplete Component with improved API integration
+// City Autocomplete Component
 const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
   const [query, setQuery] = useState(value || "");
   const [suggestions, setSuggestions] = useState([]);
@@ -64,19 +64,13 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
         }
       );
       
-      console.log("Cities API response:", response.data);
-      
       let citiesData = [];
       
-      // Handle different response formats
       if (response.data && response.data.data && Array.isArray(response.data.data)) {
-        // Format: { data: [...] }
         citiesData = response.data.data;
       } else if (Array.isArray(response.data)) {
-        // Format: [...]
         citiesData = response.data;
       } else if (response.data && typeof response.data === 'object') {
-        // Try to find any array in the response
         for (let key in response.data) {
           if (Array.isArray(response.data[key])) {
             citiesData = response.data[key];
@@ -85,7 +79,6 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
         }
       }
       
-      // If still no data, use fallback
       if (citiesData.length === 0) {
         citiesData = getFallbackCities();
       }
@@ -94,7 +87,6 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
     } catch (err) {
       console.error("Error fetching cities:", err);
       setError("Impossible de charger les villes");
-      // Fallback cities with IDs
       setCities(getFallbackCities());
     } finally {
       setLoading(false);
@@ -205,7 +197,7 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
   );
 };
 
-// Book Selection Component (improved)
+// Book Selection Component
 const BookSelector = ({ selectedBooks, onBooksChange, onProductNameChange, onTotalQuantityChange }) => {
   const dispatch = useDispatch();
   const { list: booksList = [], loading: booksLoading } = useSelector((state) => state.livres);
@@ -230,14 +222,13 @@ const BookSelector = ({ selectedBooks, onBooksChange, onProductNameChange, onTot
       // Calculate total quantity
       const totalQty = selectedBooks.reduce((sum, book) => sum + book.quantity, 0);
       
-      // Generate product name from book titles
+      // Generate product name from book titles (without quantities)
       const productNames = selectedBooks.map(book => book.titre);
       let productName = productNames.join(' + ');
       if (productName.length > 50) {
         productName = productName.substring(0, 50) + '...';
       }
       
-      // Call parent callbacks to update the form
       if (onProductNameChange) onProductNameChange(productName);
       if (onTotalQuantityChange) onTotalQuantityChange(totalQty);
     } else {
@@ -399,7 +390,7 @@ const BookSelector = ({ selectedBooks, onBooksChange, onProductNameChange, onTot
   );
 };
 
-// Order Details Modal Component (enhanced with new fields)
+// Order Details Modal Component
 const OrderDetailsModal = ({ order, onClose }) => {
   if (!order) return null;
 
@@ -575,8 +566,8 @@ export default function AdminOrders() {
     parcel_code: "",
     parcel_receiver: "",
     parcel_phone: "",
-    parcel_prd_name: "", // Added new field
-    parcel_prd_qty: 0,   // Added new field
+    parcel_prd_name: "",
+    parcel_prd_qty: 0,
     parcel_city: "",
     parcel_address: "",
     parcel_price: 0,
@@ -625,7 +616,6 @@ export default function AdminOrders() {
 
   // Calculate books subtotal, total, and parcel_price
   useEffect(() => {
-    // Calculate books subtotal (for reference)
     const booksSubtotal = (newOrderData.livres || []).reduce(
       (sum, book) => sum + (book.prix_achat * book.quantity), 0
     );
@@ -633,23 +623,16 @@ export default function AdminOrders() {
     const delivery = parseFloat(newOrderData.frais_livraison) || 0;
     const packaging = parseFloat(newOrderData.frais_packaging) || 0;
     
-    // Determine total value
     let total;
     if (!totalManuallyEdited || newOrderData.livres.length === 0) {
-      // Auto-calculate from books if not manually edited or no books
       total = booksSubtotal;
     } else {
-      // Use manually entered value
       total = parseFloat(newOrderData.total) || 0;
     }
     
-    // parcel_price is the total for Welivexpress (books + fees)
     const parcelPrice = total + delivery + packaging;
-    
-    // Profit calculation (total minus fees)
     const profit = total - (delivery + packaging);
     
-    // Only update if values have changed to avoid infinite loops
     setNewOrderData(prev => {
       if (
         prev.total === total &&
@@ -685,26 +668,22 @@ export default function AdminOrders() {
     }
   };
 
-  // Open details modal
   const openDetailsModal = (order) => {
     setSelectedOrder(order);
     setShowDetailsModal(true);
   };
 
-  // Close details modal
   const closeDetailsModal = () => {
     setShowDetailsModal(false);
     setSelectedOrder(null);
   };
 
-  // Open update modal
   const openUpdateModal = (order) => {
     setSelectedOrder(order);
     setUpdateError(null);
     setShowUpdateModal(true);
   };
 
-  // Close update modal
   const closeUpdateModal = () => {
     setShowUpdateModal(false);
     setSelectedOrder(null);
@@ -723,7 +702,6 @@ export default function AdminOrders() {
     setUpdateError(null);
   };
 
-  // Open add modal
   const openAddModal = () => {
     const newParcelCode = `CMD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     setNewOrderData({
@@ -750,7 +728,6 @@ export default function AdminOrders() {
     setShowAddModal(true);
   };
 
-  // Close add modal
   const closeAddModal = () => {
     setShowAddModal(false);
     setNewOrderData({
@@ -787,7 +764,6 @@ export default function AdminOrders() {
   const handleNewOrderChange = (e) => {
     const { name, value, type, checked } = e.target;
     
-    // Track manual edit for total field
     if (name === 'total') {
       setTotalManuallyEdited(true);
     }
@@ -798,7 +774,6 @@ export default function AdminOrders() {
     }));
   };
 
-  // Handle books change
   const handleBooksChange = (books) => {
     setNewOrderData(prev => ({
       ...prev,
@@ -806,7 +781,6 @@ export default function AdminOrders() {
     }));
   };
 
-  // Handle product name update from BookSelector
   const handleProductNameChange = (name) => {
     setNewOrderData(prev => ({
       ...prev,
@@ -814,7 +788,6 @@ export default function AdminOrders() {
     }));
   };
 
-  // Handle total quantity update from BookSelector
   const handleTotalQuantityChange = (qty) => {
     setNewOrderData(prev => ({
       ...prev,
@@ -822,7 +795,6 @@ export default function AdminOrders() {
     }));
   };
 
-  // Handle city selection for update form
   const handleCitySelect = (city, cityId) => {
     setFormData(prev => ({
       ...prev,
@@ -830,7 +802,6 @@ export default function AdminOrders() {
     }));
   };
 
-  // Handle city selection for new order form
   const handleNewCitySelect = (city, cityId) => {
     setNewOrderData(prev => ({
       ...prev,
@@ -862,15 +833,11 @@ export default function AdminOrders() {
         return;
       }
 
-      console.log("Updating order with data:", updateData);
-      
       const result = await dispatch(updateCommande({ 
         id: selectedOrder.id, 
         ...updateData 
       })).unwrap();
 
-      console.log("Update successful:", result);
-      
       await dispatch(fetchCommandes());
       closeUpdateModal();
       
@@ -888,7 +855,6 @@ export default function AdminOrders() {
   const handleAddSubmit = async (e) => {
     e.preventDefault();
     
-    // Validate required fields
     if (!newOrderData.parcel_receiver || !newOrderData.parcel_city) {
       setAddError("Veuillez remplir tous les champs obligatoires (client, ville)");
       return;
@@ -899,14 +865,12 @@ export default function AdminOrders() {
       return;
     }
 
-    // Calculate values for submission
     const delivery = parseFloat(newOrderData.frais_livraison) || 0;
     const packaging = parseFloat(newOrderData.frais_packaging) || 0;
     const total = parseFloat(newOrderData.total) || 0;
     const parcelPrice = total + delivery + packaging;
     const profit = total - (delivery + packaging);
 
-    // Format livres with all necessary information for API
     const formattedLivres = newOrderData.livres.map(book => ({
       id: book.id,
       titre: book.titre,
@@ -916,22 +880,16 @@ export default function AdminOrders() {
       total: parseFloat(book.prix_achat) * parseInt(book.quantity)
     }));
 
-    // Create detailed note for delivery company
-    const productDetails = newOrderData.livres.map(book => 
-      `${book.titre} - ${book.quantity} ex - ${book.prix_achat * book.quantity} MAD`
-    ).join('\n');
-    
-    const finalNote = newOrderData.parcel_note 
-      ? `${newOrderData.parcel_note}\n\nLivres commandés:\n${productDetails}`
-      : `Livres commandés:\n${productDetails}`;
+    // IMPORTANT FIX: Only send the user's note to Welivexpress
+    // Do NOT include book details in the note
+    const cleanNote = newOrderData.parcel_note || '';
 
-    // Prepare order data for database and Welivexpress
     const orderToCreate = {
       parcel_code: newOrderData.parcel_code,
       parcel_receiver: newOrderData.parcel_receiver,
       parcel_phone: newOrderData.parcel_phone || "",
-      parcel_prd_name: newOrderData.parcel_prd_name, // Include new field
-      parcel_prd_qty: newOrderData.parcel_prd_qty,   // Include new field
+      parcel_prd_name: newOrderData.parcel_prd_name,
+      parcel_prd_qty: newOrderData.parcel_prd_qty,
       parcel_city: newOrderData.parcel_city,
       parcel_address: newOrderData.parcel_address || "",
       parcel_price: parseFloat(parcelPrice.toFixed(2)),
@@ -939,22 +897,18 @@ export default function AdminOrders() {
       frais_packaging: parseFloat(packaging.toFixed(2)),
       total: parseFloat(total.toFixed(2)),
       profit: parseFloat(profit.toFixed(2)),
-      parcel_note: finalNote,
+      parcel_note: cleanNote, // Only the user's note, no book details
       parcel_open: newOrderData.parcel_open ? 1 : 0,
       statut: newOrderData.statut || "new",
       livres: formattedLivres,
       date: newOrderData.date
     };
 
-    console.log("Creating new order with data:", orderToCreate);
-
     setAddLoading(true);
     setAddError(null);
 
     try {
       const result = await dispatch(createCommande(orderToCreate)).unwrap();
-      console.log("Create successful:", result);
-      
       await dispatch(fetchCommandes());
       closeAddModal();
     } catch (error) {
@@ -968,7 +922,6 @@ export default function AdminOrders() {
     }
   };
 
-  // Filter and search orders
   const filteredOrders = useMemo(() => {
     return orderList.filter(order => {
       const matchesSearch = searchTerm === "" || 
@@ -986,7 +939,6 @@ export default function AdminOrders() {
     });
   }, [orderList, searchTerm, statusFilter]);
 
-  // Get current page orders
   const currentOrders = useMemo(() => {
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -1015,7 +967,6 @@ export default function AdminOrders() {
     document.querySelector('.table-wrapper')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  // Pagination component
   const Pagination = () => {
     if (totalPages <= 1) return null;
 
@@ -1392,7 +1343,7 @@ export default function AdminOrders() {
                   </div>
                 </div>
 
-                {/* New Welivexpress fields */}
+                {/* Welivexpress fields */}
                 <div className="form-row">
                   <div className="form-group">
                     <label>Nom du produit <span className="required">*</span></label>
@@ -1555,11 +1506,11 @@ export default function AdminOrders() {
                     name="parcel_note"
                     value={newOrderData.parcel_note}
                     onChange={handleNewOrderChange}
-                    placeholder="Instructions spéciales pour la livraison..."
+                    placeholder="Instructions spéciales pour la livraison (sera envoyée à Welivexpress)"
                     rows="2"
                   />
                   <small className="field-hint">
-                    Sera combinée avec la liste des livres dans la note pour Welivexpress
+                    Cette note sera envoyée à Welivexpress sans les détails des livres
                   </small>
                 </div>
 
@@ -1652,7 +1603,6 @@ export default function AdminOrders() {
                   </div>
                 </div>
 
-                {/* New Welivexpress fields in update modal */}
                 <div className="form-row">
                   <div className="form-group">
                     <label>Nom du produit</label>

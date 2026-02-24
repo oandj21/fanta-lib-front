@@ -5,8 +5,7 @@ import {
   X, Save, MapPin, Phone, User, Package, DollarSign,
   Map, FileText, Truck, UserCircle, Building, Plus,
   Loader, ChevronDown, BookOpen, Minus, Plus as PlusIcon,
-  Eye, RefreshCw, AlertCircle, CheckCircle, Box, Layers,
-  Clock, Home, CreditCard
+  Eye, RefreshCw, AlertCircle, CheckCircle, Box, Layers
 } from "lucide-react";
 import axios from "axios";
 import { 
@@ -19,7 +18,7 @@ import {
 } from "../../store/store";
 import "../../css/AdminOrders.css";
 
-// Status labels and colors (local system)
+// Status labels and colors
 const statusLabels = {
   new: "Nouvelle",
   confirmed: "Confirmée",
@@ -38,426 +37,7 @@ const statusColors = {
   returned: "#6f42c1",
 };
 
-// Welivexpress status mapping based on description
-const mapWelivexpressStatus = (deliveryStatus, description) => {
-  // First check by delivery_status code
-  switch (deliveryStatus) {
-    case "DELIVERED":
-      return "delivered";
-    case "RETURNED":
-      return "returned";
-    case "CANCELLED":
-      return "cancelled";
-    case "NEW_PARCEL":
-      return "new";
-    case "PICKED_UP":
-    case "DISTRIBUTION":
-    case "ENVG":
-    case "SENT":
-      return "shipped";
-    case "WAITING_PICKUP":
-    case "POSTPONED":
-    case "NOANSWER":
-    case "DEUX":
-    case "TROIS":
-    case "UNREACHABLE":
-    case "HORS_ZONE":
-      return "confirmed";
-    default:
-      // If no match by code, try to map by description
-      if (description) {
-        const desc = description.toLowerCase();
-        if (desc.includes("livré") || desc.includes("delivered")) return "delivered";
-        if (desc.includes("retourné") || desc.includes("returned")) return "returned";
-        if (desc.includes("annulé") || desc.includes("cancelled")) return "cancelled";
-        if (desc.includes("nouveau") || desc.includes("new")) return "new";
-        if (desc.includes("expédié") || desc.includes("shipped") || desc.includes("envoyé")) return "shipped";
-        if (desc.includes("confirmé") || desc.includes("en attente") || desc.includes("pas de réponse")) return "confirmed";
-      }
-      return "new"; // Default fallback
-  }
-};
-
-// Welivexpress status display names
-const welivexpressStatusLabels = {
-  NEW_PARCEL: "Nouveau colis",
-  PICKED_UP: "Ramassé",
-  DISTRIBUTION: "En cours de distribution",
-  WAITING_PICKUP: "En attente de ramassage",
-  ENVG: "En Voyage",
-  POSTPONED: "Reporté",
-  DELIVERED: "Livré",
-  RETURNED: "Retourné",
-  CANCELLED: "Annulé",
-  NOANSWER: "Pas de réponse",
-  DEUX: "2ème tentative",
-  TROIS: "3ème tentative",
-  UNREACHABLE: "Injoignable",
-  HORS_ZONE: "Hors zone",
-  SENT: "Expédié",
-};
-
-// Get color based on delivery status
-const getStatusColor = (status) => {
-  const colors = {
-    DELIVERED: "#28a745",
-    RETURNED: "#6f42c1",
-    CANCELLED: "#dc3545",
-    NEW_PARCEL: "#666",
-    PICKED_UP: "#ffc107",
-    DISTRIBUTION: "#ffc107",
-    ENVG: "#ffc107",
-    SENT: "#ffc107",
-    WAITING_PICKUP: "#17a2b8",
-    POSTPONED: "#fd7e14",
-    NOANSWER: "#dc3545",
-    DEUX: "#dc3545",
-    TROIS: "#dc3545",
-    UNREACHABLE: "#dc3545",
-    HORS_ZONE: "#6c757d",
-  };
-  return colors[status] || "#666";
-};
-
-// Tracking Modal Component
-const TrackingModal = ({ order, onClose, onUpdateStatus }) => {
-  const [trackingData, setTrackingData] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [updating, setUpdating] = useState(false);
-
-  const fetchTrackingInfo = async () => {
-    if (!order?.parcel_code) return;
-    
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const token = localStorage.getItem("token");
-      
-      const response = await axios.get(
-        `https://welivexpress.ma/apiclient/trackparcel?parcel_code=${order.parcel_code}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json'
-          }
-        }
-      );
-      
-      if (response.data && response.data.success) {
-        setTrackingData(response.data);
-        
-        // Map Welivexpress status to local status using both status code and description
-        const welivexpressStatus = response.data.parcel?.delivery_status;
-        const description = response.data.tracking?.description;
-        const currentLocalStatus = order.statut;
-        
-        const mappedStatus = mapWelivexpressStatus(welivexpressStatus, description);
-        
-        // If status has changed, offer to update
-        if (mappedStatus && mappedStatus !== currentLocalStatus && onUpdateStatus) {
-          const welivexpressDisplay = welivexpressStatusLabels[welivexpressStatus] || welivexpressStatus;
-          const localDisplay = statusLabels[mappedStatus] || mappedStatus;
-          
-          if (window.confirm(
-            `Welivexpress: "${welivexpressDisplay}" (${description || 'aucune description'})\n` +
-            `Voulez-vous mettre à jour le statut local en "${localDisplay}" ?`
-          )) {
-            handleStatusUpdate(mappedStatus);
-          }
-        }
-      } else {
-        setError("Impossible de récupérer les informations de suivi");
-      }
-    } catch (err) {
-      console.error("Error fetching tracking:", err);
-      setError(err.response?.data?.message || "Erreur lors de la récupération du suivi");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleStatusUpdate = async (newStatus) => {
-    setUpdating(true);
-    try {
-      await onUpdateStatus(order.id, newStatus);
-      // Refresh tracking after update
-      await fetchTrackingInfo();
-    } catch (err) {
-      console.error("Error updating status:", err);
-      setError("Erreur lors de la mise à jour du statut");
-    } finally {
-      setUpdating(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchTrackingInfo();
-  }, [order?.parcel_code]);
-
-  if (!order) return null;
-
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content tracking-modal" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
-          <h3>
-            <Truck size={20} />
-            Suivi Welivexpress - #{order.parcel_code}
-          </h3>
-          <button onClick={onClose} className="modal-close">
-            <X size={20} />
-          </button>
-        </div>
-
-        <div className="modal-body">
-          {loading && (
-            <div className="tracking-loading">
-              <Loader size={40} className="spinner" />
-              <p>Récupération des informations de suivi...</p>
-            </div>
-          )}
-
-          {error && (
-            <div className="tracking-error">
-              <AlertCircle size={24} />
-              <p>{error}</p>
-              <button onClick={fetchTrackingInfo} className="btn-retry">
-                <RefreshCw size={14} />
-                Réessayer
-              </button>
-            </div>
-          )}
-
-          {trackingData && trackingData.parcel && (
-            <div className="tracking-content">
-              {/* Current Status */}
-              <div className="tracking-current-status">
-                <div className="status-header">
-                  <span className="status-label">Statut actuel:</span>
-                  <span 
-                    className="status-badge large"
-                    style={{ 
-                      backgroundColor: `${getStatusColor(trackingData.parcel.delivery_status)}20`,
-                      color: getStatusColor(trackingData.parcel.delivery_status),
-                      border: `1px solid ${getStatusColor(trackingData.parcel.delivery_status)}40`
-                    }}
-                  >
-                    {welivexpressStatusLabels[trackingData.parcel.delivery_status] || trackingData.parcel.delivery_status}
-                  </span>
-                </div>
-                {trackingData.tracking && (
-                  <div className="status-description-container">
-                    <p className="status-description">
-                      {trackingData.tracking.description || "Aucune description"}
-                    </p>
-                    {trackingData.parcel.delivery_status && (
-                      <span className="status-code">Code: {trackingData.parcel.delivery_status}</span>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Parcel Details */}
-              <div className="tracking-details-grid">
-                <div className="detail-item">
-                  <User size={16} />
-                  <div>
-                    <label>Destinataire</label>
-                    <span>{trackingData.parcel.receiver || "-"}</span>
-                  </div>
-                </div>
-                
-                <div className="detail-item">
-                  <Phone size={16} />
-                  <div>
-                    <label>Téléphone</label>
-                    <span>{trackingData.parcel.phone || "-"}</span>
-                  </div>
-                </div>
-                
-                <div className="detail-item">
-                  <MapPin size={16} />
-                  <div>
-                    <label>Ville</label>
-                    <span>
-                      {trackingData.parcel.city?.name || 
-                       (typeof trackingData.parcel.city === 'string' ? trackingData.parcel.city : "-")}
-                    </span>
-                  </div>
-                </div>
-                
-                <div className="detail-item">
-                  <Home size={16} />
-                  <div>
-                    <label>Adresse</label>
-                    <span>{trackingData.parcel.address || "-"}</span>
-                  </div>
-                </div>
-                
-                <div className="detail-item">
-                  <Package size={16} />
-                  <div>
-                    <label>Produit</label>
-                    <span>
-                      {trackingData.parcel.product?.name || 
-                       (trackingData.parcel.product_name) || 
-                       "Non spécifié"}
-                    </span>
-                    {(trackingData.parcel.product?.quantity || trackingData.parcel.quantity) > 0 && (
-                      <span className="product-qty">
-                        Qté: {trackingData.parcel.product?.quantity || trackingData.parcel.quantity}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="detail-item">
-                  <DollarSign size={16} />
-                  <div>
-                    <label>Prix</label>
-                    <span>{trackingData.parcel.price || 0} MAD</span>
-                  </div>
-                </div>
-                
-                <div className="detail-item">
-                  <CreditCard size={16} />
-                  <div>
-                    <label>Paiement</label>
-                    <span className={`payment-status ${trackingData.parcel.payment_status?.toLowerCase()}`}>
-                      {trackingData.parcel.payment_status_text || 
-                       trackingData.parcel.payment_status || 
-                       "-"}
-                    </span>
-                  </div>
-                </div>
-                
-                <div className="detail-item">
-                  <Clock size={16} />
-                  <div>
-                    <label>Dernière mise à jour</label>
-                    <span>{trackingData.parcel.updated_date || 
-                           (trackingData.parcel.updated_at ? 
-                            new Date(trackingData.parcel.updated_at).toLocaleString('fr-FR') : 
-                            "-")}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Status Mapping Information */}
-              <div className="status-mapping-info">
-                <h4>Mapping des statuts</h4>
-                <div className="mapping-row">
-                  <span>Statut Welivexpress:</span>
-                  <div className="welivexpress-status-detail">
-                    <span 
-                      className="status-badge"
-                      style={{ 
-                        backgroundColor: `${getStatusColor(trackingData.parcel.delivery_status)}20`,
-                        color: getStatusColor(trackingData.parcel.delivery_status),
-                      }}
-                    >
-                      {welivexpressStatusLabels[trackingData.parcel.delivery_status] || trackingData.parcel.delivery_status}
-                    </span>
-                    <span className="status-description-small">
-                      {trackingData.tracking?.description}
-                    </span>
-                  </div>
-                </div>
-                
-                <div className="mapping-row">
-                  <span>Statut local actuel:</span>
-                  <span 
-                    className="status-badge"
-                    style={{ 
-                      backgroundColor: `${statusColors[order.statut] || "#666"}20`,
-                      color: statusColors[order.statut] || "#666",
-                    }}
-                  >
-                    {statusLabels[order.statut] || order.statut}
-                  </span>
-                </div>
-
-                {/* Suggested mapping */}
-                {trackingData.parcel.delivery_status && (
-                  <div className="mapping-row suggested">
-                    <span>Statut local suggéré:</span>
-                    <span 
-                      className="status-badge"
-                      style={{ 
-                        backgroundColor: `${statusColors[mapWelivexpressStatus(
-                          trackingData.parcel.delivery_status, 
-                          trackingData.tracking?.description
-                        )] || "#666"}20`,
-                        color: statusColors[mapWelivexpressStatus(
-                          trackingData.parcel.delivery_status, 
-                          trackingData.tracking?.description
-                        )] || "#666",
-                      }}
-                    >
-                      {statusLabels[mapWelivexpressStatus(
-                        trackingData.parcel.delivery_status, 
-                        trackingData.tracking?.description
-                      )] || mapWelivexpressStatus(
-                        trackingData.parcel.delivery_status, 
-                        trackingData.tracking?.description
-                      )}
-                    </span>
-                    <span className="mapping-explanation">
-                      (basé sur: {trackingData.parcel.delivery_status} - {trackingData.tracking?.description || 'aucune description'})
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Update button if statuses differ */}
-              {trackingData.parcel.delivery_status && 
-               mapWelivexpressStatus(trackingData.parcel.delivery_status, trackingData.tracking?.description) !== order.statut && (
-                <button
-                  onClick={() => handleStatusUpdate(mapWelivexpressStatus(
-                    trackingData.parcel.delivery_status, 
-                    trackingData.tracking?.description
-                  ))}
-                  disabled={updating}
-                  className="btn-update-status"
-                >
-                  {updating ? (
-                    <>
-                      <span className="spinner-small"></span>
-                      Mise à jour...
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw size={14} />
-                      Mettre à jour le statut local
-                    </>
-                  )}
-                </button>
-              )}
-
-              {/* Refresh button */}
-              <div className="tracking-footer">
-                <button onClick={fetchTrackingInfo} className="btn-refresh" disabled={loading}>
-                  <RefreshCw size={14} className={loading ? 'spin' : ''} />
-                  Actualiser
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="modal-footer">
-          <button onClick={onClose} className="btn-secondary">
-            Fermer
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// City Autocomplete Component (unchanged)
+// City Autocomplete Component
 const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
   const [query, setQuery] = useState(value || "");
   const [suggestions, setSuggestions] = useState([]);
@@ -617,7 +197,7 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
   );
 };
 
-// Book Selection Component (unchanged)
+// Book Selection Component
 const BookSelector = ({ selectedBooks, onBooksChange, onTotalQuantityChange }) => {
   const dispatch = useDispatch();
   const { list: booksList = [], loading: booksLoading } = useSelector((state) => state.livres);
@@ -799,7 +379,7 @@ const BookSelector = ({ selectedBooks, onBooksChange, onTotalQuantityChange }) =
   );
 };
 
-// Order Details Modal Component (unchanged)
+// Order Details Modal Component
 const OrderDetailsModal = ({ order, onClose }) => {
   if (!order) return null;
 
@@ -842,7 +422,7 @@ const OrderDetailsModal = ({ order, onClose }) => {
             <div className="detail-group">
               <label>Statut</label>
               <span 
-                className="status-badge"
+                className="status-bad"
                 style={{ 
                   backgroundColor: `${statusColors[order.statut] || "#666"}20`,
                   color: statusColors[order.statut] || "#666",
@@ -943,7 +523,6 @@ export default function AdminOrders() {
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [showTrackingModal, setShowTrackingModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [updateLoading, setUpdateLoading] = useState(false);
   const [addLoading, setAddLoading] = useState(false);
@@ -1071,20 +650,6 @@ export default function AdminOrders() {
     }
   };
 
-  const handleStatusUpdate = async (id, newStatus) => {
-    try {
-      await dispatch(updateCommande({ 
-        id, 
-        statut: newStatus 
-      })).unwrap();
-      await dispatch(fetchCommandes());
-      return true;
-    } catch (error) {
-      console.error("Failed to update status:", error);
-      throw error;
-    }
-  };
-
   const openDetailsModal = (order) => {
     setSelectedOrder(order);
     setShowDetailsModal(true);
@@ -1092,16 +657,6 @@ export default function AdminOrders() {
 
   const closeDetailsModal = () => {
     setShowDetailsModal(false);
-    setSelectedOrder(null);
-  };
-
-  const openTrackingModal = (order) => {
-    setSelectedOrder(order);
-    setShowTrackingModal(true);
-  };
-
-  const closeTrackingModal = () => {
-    setShowTrackingModal(false);
     setSelectedOrder(null);
   };
 
@@ -1614,7 +1169,7 @@ export default function AdminOrders() {
                       <td>{order.parcel_city || "-"}</td>
                       <td>
                         <span 
-                          className="status-badge"
+                          className="status-bad"
                           style={{ 
                             backgroundColor: `${statusColors[order.statut] || "#666"}20`,
                             color: statusColors[order.statut] || "#666",
@@ -1628,13 +1183,6 @@ export default function AdminOrders() {
                       <td>{order.date ? new Date(order.date).toLocaleDateString('fr-FR') : "-"}</td>
                       <td>
                         <div className="action-buttons">
-                          <button
-                            onClick={() => openTrackingModal(order)}
-                            className="btn-icon track"
-                            title="Suivi Welivexpress"
-                          >
-                            <Truck size={16} />
-                          </button>
                           <button
                             onClick={() => openDetailsModal(order)}
                             className="btn-icon view"
@@ -1682,15 +1230,6 @@ export default function AdminOrders() {
         <OrderDetailsModal 
           order={selectedOrder} 
           onClose={closeDetailsModal} 
-        />
-      )}
-
-      {/* Tracking Modal */}
-      {showTrackingModal && (
-        <TrackingModal 
-          order={selectedOrder} 
-          onClose={closeTrackingModal}
-          onUpdateStatus={handleStatusUpdate}
         />
       )}
 

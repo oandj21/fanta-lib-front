@@ -4,7 +4,8 @@ import {
   Pencil, Trash2, Check, Search, XCircle, Filter, 
   X, Save, MapPin, Phone, User, Package, DollarSign,
   Map, FileText, Truck, UserCircle, Building, Plus,
-  Loader, ChevronDown, BookOpen, Minus, Plus as PlusIcon
+  Loader, ChevronDown, BookOpen, Minus, Plus as PlusIcon,
+  Eye
 } from "lucide-react";
 import axios from "axios";
 import { 
@@ -274,7 +275,6 @@ const BookSelector = ({ selectedBooks, onBooksChange }) => {
 
       {selectedBooks.length > 0 && (
         <div className="selected-books">
-          <h5>Livres sélectionnés</h5>
           <div className="selected-books-list">
             {selectedBooks.map(book => (
               <div key={book.id} className="selected-book-item">
@@ -327,6 +327,132 @@ const BookSelector = ({ selectedBooks, onBooksChange }) => {
   );
 };
 
+// Order Details Modal Component
+const OrderDetailsModal = ({ order, onClose }) => {
+  if (!order) return null;
+
+  const livresCount = order.livres ? 
+    (Array.isArray(order.livres) ? 
+      order.livres.reduce((sum, book) => sum + (book.quantity || 1), 0) : 0) : 0;
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content details-modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3>Détails de la commande #{order.parcel_code}</h3>
+          <button onClick={onClose} className="modal-close">
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="modal-body">
+          <div className="details-grid">
+            <div className="detail-group">
+              <label>Client</label>
+              <p>{order.parcel_receiver || "-"}</p>
+            </div>
+            <div className="detail-group">
+              <label>Téléphone</label>
+              <p>{order.parcel_phone || "-"}</p>
+            </div>
+            <div className="detail-group">
+              <label>Ville</label>
+              <p>{order.parcel_city || "-"}</p>
+            </div>
+            <div className="detail-group">
+              <label>Adresse</label>
+              <p>{order.parcel_address || "-"}</p>
+            </div>
+            <div className="detail-group">
+              <label>Date</label>
+              <p>{order.date ? new Date(order.date).toLocaleDateString('fr-FR') : "-"}</p>
+            </div>
+            <div className="detail-group">
+              <label>Statut</label>
+              <span 
+                className="status-badge"
+                style={{ 
+                  backgroundColor: `${statusColors[order.statut] || "#666"}20`,
+                  color: statusColors[order.statut] || "#666",
+                  border: `1px solid ${(statusColors[order.statut] || "#666")}40`
+                }}
+              >
+                {statusLabels[order.statut] || order.statut || "Nouvelle"}
+              </span>
+            </div>
+          </div>
+
+          <div className="details-section">
+            <h4>Livres commandés</h4>
+            {order.livres && Array.isArray(order.livres) && order.livres.length > 0 ? (
+              <table className="details-books-table">
+                <thead>
+                  <tr>
+                    <th>Titre</th>
+                    <th>Auteur</th>
+                    <th>Prix unitaire</th>
+                    <th>Quantité</th>
+                    <th>Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {order.livres.map((book, index) => (
+                    <tr key={index}>
+                      <td>{book.titre || book.title || "-"}</td>
+                      <td>{book.auteur || book.author || "-"}</td>
+                      <td>{book.prix_achat || book.price || 0} MAD</td>
+                      <td>{book.quantity || 1}</td>
+                      <td>{(book.prix_achat || book.price || 0) * (book.quantity || 1)} MAD</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p className="no-books">Aucun livre dans cette commande</p>
+            )}
+          </div>
+
+          <div className="details-financial">
+            <div className="financial-row">
+              <span>Sous-total livres:</span>
+              <span>{order.total || 0} MAD</span>
+            </div>
+            <div className="financial-row">
+              <span>Frais de livraison:</span>
+              <span>{order.frais_livraison || 0} MAD</span>
+            </div>
+            <div className="financial-row">
+              <span>Frais de packaging:</span>
+              <span>{order.frais_packaging || 0} MAD</span>
+            </div>
+            <div className="financial-row total">
+              <span>Total (Welivexpress):</span>
+              <span>{order.parcel_price || 0} MAD</span>
+            </div>
+            <div className="financial-row profit">
+              <span>Profit:</span>
+              <span>{order.profit || 0} MAD</span>
+            </div>
+          </div>
+
+          {order.parcel_note && (
+            <div className="details-note">
+              <label>Note:</label>
+              <p>{order.parcel_note}</p>
+            </div>
+          )}
+        </div>
+
+        <div className="modal-footer">
+          <button onClick={onClose} className="btn-secondary">
+            Fermer
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function AdminOrders() {
   const dispatch = useDispatch();
   const { list: orderList = [], loading } = useSelector((state) => state.commandes);
@@ -343,6 +469,7 @@ export default function AdminOrders() {
   // Modal states
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [updateLoading, setUpdateLoading] = useState(false);
   const [addLoading, setAddLoading] = useState(false);
@@ -361,8 +488,6 @@ export default function AdminOrders() {
     parcel_price: "",
     parcel_note: "",
     parcel_open: 0,
-    parcel_livreur_sent: "",
-    parcel_livreurname_sent: "",
     statut: "new"
   });
 
@@ -380,8 +505,6 @@ export default function AdminOrders() {
     profit: 0,
     parcel_note: "",
     parcel_open: 0,
-    parcel_livreur_sent: "",
-    parcel_livreurname_sent: "",
     statut: "new",
     livres: [],
     date: new Date().toISOString().split('T')[0]
@@ -407,8 +530,6 @@ export default function AdminOrders() {
         parcel_price: selectedOrder.parcel_price || "",
         parcel_note: selectedOrder.parcel_note || "",
         parcel_open: selectedOrder.parcel_open || 0,
-        parcel_livreur_sent: selectedOrder.parcel_livreur_sent || "",
-        parcel_livreurname_sent: selectedOrder.parcel_livreurname_sent || "",
         statut: selectedOrder.statut || "new"
       });
     }
@@ -481,6 +602,18 @@ export default function AdminOrders() {
     }
   };
 
+  // Open details modal
+  const openDetailsModal = (order) => {
+    setSelectedOrder(order);
+    setShowDetailsModal(true);
+  };
+
+  // Close details modal
+  const closeDetailsModal = () => {
+    setShowDetailsModal(false);
+    setSelectedOrder(null);
+  };
+
   // Open update modal
   const openUpdateModal = (order) => {
     setSelectedOrder(order);
@@ -500,8 +633,6 @@ export default function AdminOrders() {
       parcel_price: "",
       parcel_note: "",
       parcel_open: 0,
-      parcel_livreur_sent: "",
-      parcel_livreurname_sent: "",
       statut: "new"
     });
     setUpdateError(null);
@@ -523,8 +654,6 @@ export default function AdminOrders() {
       profit: 0,
       parcel_note: "",
       parcel_open: 0,
-      parcel_livreur_sent: "",
-      parcel_livreurname_sent: "",
       statut: "new",
       livres: [],
       date: new Date().toISOString().split('T')[0]
@@ -550,8 +679,6 @@ export default function AdminOrders() {
       profit: 0,
       parcel_note: "",
       parcel_open: 0,
-      parcel_livreur_sent: "",
-      parcel_livreurname_sent: "",
       statut: "new",
       livres: [],
       date: new Date().toISOString().split('T')[0]
@@ -698,8 +825,6 @@ export default function AdminOrders() {
       profit: parseFloat(profit.toFixed(2)),
       parcel_note: newOrderData.parcel_note || "",
       parcel_open: newOrderData.parcel_open ? 1 : 0,
-      parcel_livreur_sent: newOrderData.parcel_livreur_sent || "",
-      parcel_livreurname_sent: newOrderData.parcel_livreurname_sent || "",
       statut: newOrderData.statut || "new",
       livres: formattedLivres,
       date: newOrderData.date
@@ -986,46 +1111,20 @@ export default function AdminOrders() {
                   <th>Client</th>
                   <th>Téléphone</th>
                   <th>Ville</th>
-                  <th>Adresse</th>
-                  <th>Livres</th>
-                  <th>Prix colis (Welivexpress)</th>
-                  <th>Frais</th>
-                  <th>Total livres</th>
                   <th>Statut</th>
-                  <th>Livreur</th>
+                  <th>Prix colis</th>
                   <th>Date</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {currentOrders.map((order) => {
-                  const livresCount = order.livres ? 
-                    (Array.isArray(order.livres) ? 
-                      order.livres.reduce((sum, book) => sum + (book.quantity || 1), 0) : 0) : 0;
-                  
                   return (
                     <tr key={order.id}>
                       <td className="order-code">{order.parcel_code || "-"}</td>
                       <td className="order-client">{order.parcel_receiver || "-"}</td>
                       <td>{order.parcel_phone || "-"}</td>
                       <td>{order.parcel_city || "-"}</td>
-                      <td className="order-address" title={order.parcel_address}>
-                        {order.parcel_address ? 
-                          (order.parcel_address.length > 30 ? 
-                            order.parcel_address.substring(0, 30) + "..." : 
-                            order.parcel_address) 
-                          : "-"}
-                      </td>
-                      <td>
-                        {livresCount > 0 ? (
-                          <span className="livres-count-badge">
-                            {livresCount} livre{livresCount > 1 ? 's' : ''}
-                          </span>
-                        ) : "-"}
-                      </td>
-                      <td className="order-price">{order.parcel_price ? `${order.parcel_price} MAD` : "-"}</td>
-                      <td>{(order.frais_livraison || 0) + (order.frais_packaging || 0)} MAD</td>
-                      <td className="order-total">{order.total ? `${order.total} MAD` : "-"}</td>
                       <td>
                         <span 
                           className="status-badge"
@@ -1038,12 +1137,17 @@ export default function AdminOrders() {
                           {statusLabels[order.statut] || order.statut || "Nouvelle"}
                         </span>
                       </td>
-                      <td>
-                        {order.parcel_livreurname_sent || order.parcel_livreur_sent || "-"}
-                      </td>
+                      <td className="order-price">{order.parcel_price ? `${order.parcel_price} MAD` : "-"}</td>
                       <td>{order.date ? new Date(order.date).toLocaleDateString('fr-FR') : "-"}</td>
                       <td>
                         <div className="action-buttons">
+                          <button
+                            onClick={() => openDetailsModal(order)}
+                            className="btn-icon view"
+                            title="Voir détails"
+                          >
+                            <Eye size={16} />
+                          </button>
                           <button
                             onClick={() => openUpdateModal(order)}
                             className="btn-icon edit"
@@ -1079,7 +1183,15 @@ export default function AdminOrders() {
         </>
       )}
 
-      {/* ADD MODAL with Book Selection */}
+      {/* Details Modal */}
+      {showDetailsModal && (
+        <OrderDetailsModal 
+          order={selectedOrder} 
+          onClose={closeDetailsModal} 
+        />
+      )}
+
+      {/* ADD MODAL - Without sections */}
       {showAddModal && (
         <div className="modal-overlay" onClick={closeAddModal}>
           <div className="modal-content add-order-modal" onClick={e => e.stopPropagation()}>
@@ -1098,317 +1210,185 @@ export default function AdminOrders() {
                 </div>
               )}
 
-              <form onSubmit={handleAddSubmit} className="update-form">
-                <div className="form-section">
-                  <h4>
-                    <Package size={16} />
-                    Informations de la commande
-                  </h4>
-                  
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label htmlFor="parcel_code">
-                        Code colis <span className="required">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        id="parcel_code"
-                        name="parcel_code"
-                        value={newOrderData.parcel_code}
-                        onChange={handleNewOrderChange}
-                        placeholder="Code unique"
-                        readOnly
-                        className="readonly-input"
-                      />
-                      <small className="field-hint">Généré automatiquement</small>
-                    </div>
+              <form onSubmit={handleAddSubmit} className="compact-form">
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Code colis</label>
+                    <input
+                      type="text"
+                      name="parcel_code"
+                      value={newOrderData.parcel_code}
+                      onChange={handleNewOrderChange}
+                      readOnly
+                      className="readonly-input"
+                    />
+                  </div>
 
-                    <div className="form-group">
-                      <label htmlFor="date">
-                        Date <span className="required">*</span>
-                      </label>
-                      <input
-                        type="date"
-                        id="date"
-                        name="date"
-                        value={newOrderData.date}
-                        onChange={handleNewOrderChange}
-                        required
-                      />
-                    </div>
+                  <div className="form-group">
+                    <label>Date</label>
+                    <input
+                      type="date"
+                      name="date"
+                      value={newOrderData.date}
+                      onChange={handleNewOrderChange}
+                      required
+                    />
                   </div>
                 </div>
 
-                <div className="form-section">
-                  <h4>
-                    <User size={16} />
-                    Informations client <span className="required">*</span>
-                  </h4>
-                  
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label htmlFor="parcel_receiver">
-                        <UserCircle size={14} />
-                        Nom complet
-                      </label>
-                      <input
-                        type="text"
-                        id="parcel_receiver"
-                        name="parcel_receiver"
-                        value={newOrderData.parcel_receiver}
-                        onChange={handleNewOrderChange}
-                        placeholder="Nom du client"
-                        required
-                      />
-                    </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Client</label>
+                    <input
+                      type="text"
+                      name="parcel_receiver"
+                      value={newOrderData.parcel_receiver}
+                      onChange={handleNewOrderChange}
+                      placeholder="Nom du client"
+                      required
+                    />
+                  </div>
 
-                    <div className="form-group">
-                      <label htmlFor="parcel_phone">
-                        <Phone size={14} />
-                        Téléphone
-                      </label>
-                      <input
-                        type="text"
-                        id="parcel_phone"
-                        name="parcel_phone"
-                        value={newOrderData.parcel_phone}
-                        onChange={handleNewOrderChange}
-                        placeholder="Numéro de téléphone"
-                      />
-                    </div>
+                  <div className="form-group">
+                    <label>Téléphone</label>
+                    <input
+                      type="text"
+                      name="parcel_phone"
+                      value={newOrderData.parcel_phone}
+                      onChange={handleNewOrderChange}
+                      placeholder="Numéro de téléphone"
+                    />
                   </div>
                 </div>
 
-                <div className="form-section">
-                  <h4>
-                    <Map size={16} />
-                    Adresse de livraison <span className="required">*</span>
-                  </h4>
-                  
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label htmlFor="parcel_city">
-                        <Building size={14} />
-                        Ville
-                      </label>
-                      <CityAutocomplete
-                        value={newOrderData.parcel_city}
-                        onChange={(value) => setNewOrderData(prev => ({ ...prev, parcel_city: value }))}
-                        onSelect={handleNewCitySelect}
-                      />
-                    </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Ville</label>
+                    <CityAutocomplete
+                      value={newOrderData.parcel_city}
+                      onChange={(value) => setNewOrderData(prev => ({ ...prev, parcel_city: value }))}
+                      onSelect={handleNewCitySelect}
+                    />
+                  </div>
 
-                    <div className="form-group full-width">
-                      <label htmlFor="parcel_address">
-                        <MapPin size={14} />
-                        Adresse complète
-                      </label>
-                      <textarea
-                        id="parcel_address"
-                        name="parcel_address"
-                        value={newOrderData.parcel_address}
-                        onChange={handleNewOrderChange}
-                        placeholder="Adresse détaillée"
-                        rows="2"
-                      />
-                    </div>
+                  <div className="form-group">
+                    <label>Adresse</label>
+                    <input
+                      type="text"
+                      name="parcel_address"
+                      value={newOrderData.parcel_address}
+                      onChange={handleNewOrderChange}
+                      placeholder="Adresse"
+                    />
                   </div>
                 </div>
 
-                <div className="form-section">
-                  <h4>
-                    <BookOpen size={16} />
-                    Livres commandés <span className="required">*</span>
-                  </h4>
-                  
+                <div className="form-group full-width">
+                  <label>Livres commandés</label>
                   <BookSelector 
                     selectedBooks={newOrderData.livres}
                     onBooksChange={handleBooksChange}
                   />
                 </div>
 
-                <div className="form-section">
-                  <h4>
-                    <DollarSign size={16} />
-                    Informations financières
-                  </h4>
-                  
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label htmlFor="frais_livraison">
-                        Frais de livraison (MAD)
-                      </label>
-                      <input
-                        type="number"
-                        id="frais_livraison"
-                        name="frais_livraison"
-                        value={newOrderData.frais_livraison}
-                        onChange={handleNewOrderChange}
-                        placeholder="0.00"
-                        min="0"
-                        step="0.01"
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="frais_packaging">
-                        Frais de packaging (MAD)
-                      </label>
-                      <input
-                        type="number"
-                        id="frais_packaging"
-                        name="frais_packaging"
-                        value={newOrderData.frais_packaging}
-                        onChange={handleNewOrderChange}
-                        placeholder="0.00"
-                        min="0"
-                        step="0.01"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="form-row" style={{ marginTop: '1rem' }}>
-                    <div className="form-group">
-                      <label htmlFor="total">
-                        Total livres (MAD)
-                      </label>
-                      <input
-                        type="number"
-                        id="total"
-                        name="total"
-                        value={newOrderData.total}
-                        onChange={handleNewOrderChange}
-                        min="0"
-                        step="0.01"
-                        className={totalManuallyEdited ? "manual-edit-input" : ""}
-                      />
-                      <small className="field-hint">
-                        {totalManuallyEdited 
-                          ? "Valeur modifiée manuellement" 
-                          : "Sous-total des livres (auto)"}
-                      </small>
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="parcel_price">
-                        Prix colis (Welivexpress) (MAD)
-                      </label>
-                      <input
-                        type="number"
-                        id="parcel_price"
-                        name="parcel_price"
-                        value={newOrderData.parcel_price}
-                        readOnly
-                        className="readonly-input"
-                      />
-                      <small className="field-hint">Total livres + frais</small>
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="profit">
-                        Profit (MAD)
-                      </label>
-                      <input
-                        type="number"
-                        id="profit"
-                        name="profit"
-                        value={newOrderData.profit}
-                        readOnly
-                        className="readonly-input"
-                      />
-                      <small className="field-hint">Total livres - frais</small>
-                    </div>
-                  </div>
-
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label htmlFor="statut">
-                        Statut
-                      </label>
-                      <select
-                        id="statut"
-                        name="statut"
-                        value={newOrderData.statut}
-                        onChange={handleNewOrderChange}
-                        className="status-select-modal"
-                      >
-                        {Object.entries(statusLabels).map(([value, label]) => (
-                          <option key={value} value={value}>{label}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="form-section">
-                  <h4>
-                    <Truck size={16} />
-                    Informations livreur
-                  </h4>
-                  
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label htmlFor="parcel_livreur_sent">
-                        ID Livreur
-                      </label>
-                      <input
-                        type="text"
-                        id="parcel_livreur_sent"
-                        name="parcel_livreur_sent"
-                        value={newOrderData.parcel_livreur_sent}
-                        onChange={handleNewOrderChange}
-                        placeholder="ID du livreur"
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="parcel_livreurname_sent">
-                        Nom du livreur
-                      </label>
-                      <input
-                        type="text"
-                        id="parcel_livreurname_sent"
-                        name="parcel_livreurname_sent"
-                        value={newOrderData.parcel_livreurname_sent}
-                        onChange={handleNewOrderChange}
-                        placeholder="Nom du livreur"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="form-section">
-                  <h4>
-                    <FileText size={16} />
-                    Informations supplémentaires
-                  </h4>
-                  
-                  <div className="form-group full-width">
-                    <label htmlFor="parcel_note">
-                      Note
-                    </label>
-                    <textarea
-                      id="parcel_note"
-                      name="parcel_note"
-                      value={newOrderData.parcel_note}
-                      onChange={handleNewOrderChange}
-                      placeholder="Notes ou instructions spéciales"
-                      rows="3"
-                    />
-                  </div>
-
-                  <div className="form-checkbox">
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Frais livraison (MAD)</label>
                     <input
-                      type="checkbox"
-                      id="parcel_open"
-                      name="parcel_open"
-                      checked={newOrderData.parcel_open === 1}
+                      type="number"
+                      name="frais_livraison"
+                      value={newOrderData.frais_livraison}
                       onChange={handleNewOrderChange}
+                      placeholder="0.00"
+                      min="0"
+                      step="0.01"
                     />
-                    <label htmlFor="parcel_open">
-                      Colis ouvert / vérifié
-                    </label>
                   </div>
+
+                  <div className="form-group">
+                    <label>Frais packaging (MAD)</label>
+                    <input
+                      type="number"
+                      name="frais_packaging"
+                      value={newOrderData.frais_packaging}
+                      onChange={handleNewOrderChange}
+                      placeholder="0.00"
+                      min="0"
+                      step="0.01"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Statut</label>
+                    <select
+                      name="statut"
+                      value={newOrderData.statut}
+                      onChange={handleNewOrderChange}
+                    >
+                      {Object.entries(statusLabels).map(([value, label]) => (
+                        <option key={value} value={value}>{label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Total livres (MAD)</label>
+                    <input
+                      type="number"
+                      name="total"
+                      value={newOrderData.total}
+                      onChange={handleNewOrderChange}
+                      min="0"
+                      step="0.01"
+                      className={totalManuallyEdited ? "manual-edit-input" : ""}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Prix colis (MAD)</label>
+                    <input
+                      type="number"
+                      name="parcel_price"
+                      value={newOrderData.parcel_price}
+                      readOnly
+                      className="readonly-input"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Profit (MAD)</label>
+                    <input
+                      type="number"
+                      name="profit"
+                      value={newOrderData.profit}
+                      readOnly
+                      className="readonly-input"
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group full-width">
+                  <label>Note</label>
+                  <textarea
+                    name="parcel_note"
+                    value={newOrderData.parcel_note}
+                    onChange={handleNewOrderChange}
+                    placeholder="Notes ou instructions spéciales"
+                    rows="2"
+                  />
+                </div>
+
+                <div className="form-checkbox">
+                  <input
+                    type="checkbox"
+                    id="parcel_open"
+                    name="parcel_open"
+                    checked={newOrderData.parcel_open === 1}
+                    onChange={handleNewOrderChange}
+                  />
+                  <label htmlFor="parcel_open">Colis ouvert / vérifié</label>
                 </div>
               </form>
             </div>
@@ -1436,7 +1416,7 @@ export default function AdminOrders() {
                 ) : (
                   <>
                     <Save size={16} />
-                    Créer la commande
+                    Créer
                   </>
                 )}
               </button>
@@ -1445,7 +1425,7 @@ export default function AdminOrders() {
         </div>
       )}
 
-      {/* UPDATE MODAL */}
+      {/* UPDATE MODAL - Without sections */}
       {showUpdateModal && selectedOrder && (
         <div className="modal-overlay" onClick={closeUpdateModal}>
           <div className="modal-content update-order-modal" onClick={e => e.stopPropagation()}>
@@ -1464,193 +1444,101 @@ export default function AdminOrders() {
                 </div>
               )}
 
-              <form onSubmit={handleUpdateSubmit} className="update-form">
-                <div className="form-section">
-                  <h4>
-                    <User size={16} />
-                    Informations client
-                  </h4>
-                  
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label htmlFor="parcel_receiver">
-                        <UserCircle size={14} />
-                        Nom complet
-                      </label>
-                      <input
-                        type="text"
-                        id="parcel_receiver"
-                        name="parcel_receiver"
-                        value={formData.parcel_receiver}
-                        onChange={handleInputChange}
-                        placeholder="Nom du client"
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="parcel_phone">
-                        <Phone size={14} />
-                        Téléphone
-                      </label>
-                      <input
-                        type="text"
-                        id="parcel_phone"
-                        name="parcel_phone"
-                        value={formData.parcel_phone}
-                        onChange={handleInputChange}
-                        placeholder="Numéro de téléphone"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="form-section">
-                  <h4>
-                    <Map size={16} />
-                    Adresse de livraison
-                  </h4>
-                  
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label htmlFor="parcel_city">
-                        <Building size={14} />
-                        Ville
-                      </label>
-                      <CityAutocomplete
-                        value={formData.parcel_city}
-                        onChange={(value) => setFormData(prev => ({ ...prev, parcel_city: value }))}
-                        onSelect={handleCitySelect}
-                      />
-                    </div>
-
-                    <div className="form-group full-width">
-                      <label htmlFor="parcel_address">
-                        <MapPin size={14} />
-                        Adresse complète
-                      </label>
-                      <textarea
-                        id="parcel_address"
-                        name="parcel_address"
-                        value={formData.parcel_address}
-                        onChange={handleInputChange}
-                        placeholder="Adresse détaillée"
-                        rows="2"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="form-section">
-                  <h4>
-                    <DollarSign size={16} />
-                    Informations financières
-                  </h4>
-                  
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label htmlFor="parcel_price">
-                        Prix colis (MAD)
-                      </label>
-                      <input
-                        type="number"
-                        id="parcel_price"
-                        name="parcel_price"
-                        value={formData.parcel_price}
-                        onChange={handleInputChange}
-                        placeholder="0.00"
-                        min="0"
-                        step="0.01"
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="statut">
-                        Statut
-                      </label>
-                      <select
-                        id="statut"
-                        name="statut"
-                        value={formData.statut}
-                        onChange={handleInputChange}
-                        className="status-select-modal"
-                      >
-                        {Object.entries(statusLabels).map(([value, label]) => (
-                          <option key={value} value={value}>{label}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="form-section">
-                  <h4>
-                    <Truck size={16} />
-                    Informations livreur
-                  </h4>
-                  
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label htmlFor="parcel_livreur_sent">
-                        ID Livreur
-                      </label>
-                      <input
-                        type="text"
-                        id="parcel_livreur_sent"
-                        name="parcel_livreur_sent"
-                        value={formData.parcel_livreur_sent}
-                        onChange={handleInputChange}
-                        placeholder="ID du livreur"
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="parcel_livreurname_sent">
-                        Nom du livreur
-                      </label>
-                      <input
-                        type="text"
-                        id="parcel_livreurname_sent"
-                        name="parcel_livreurname_sent"
-                        value={formData.parcel_livreurname_sent}
-                        onChange={handleInputChange}
-                        placeholder="Nom du livreur"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="form-section">
-                  <h4>
-                    <FileText size={16} />
-                    Informations supplémentaires
-                  </h4>
-                  
-                  <div className="form-group full-width">
-                    <label htmlFor="parcel_note">
-                      Note
-                    </label>
-                    <textarea
-                      id="parcel_note"
-                      name="parcel_note"
-                      value={formData.parcel_note}
-                      onChange={handleInputChange}
-                      placeholder="Notes ou instructions spéciales"
-                      rows="3"
-                    />
-                  </div>
-
-                  <div className="form-checkbox">
+              <form onSubmit={handleUpdateSubmit} className="compact-form">
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Client</label>
                     <input
-                      type="checkbox"
-                      id="parcel_open"
-                      name="parcel_open"
-                      checked={formData.parcel_open === 1}
+                      type="text"
+                      name="parcel_receiver"
+                      value={formData.parcel_receiver}
                       onChange={handleInputChange}
+                      placeholder="Nom du client"
                     />
-                    <label htmlFor="parcel_open">
-                      Colis ouvert / vérifié
-                    </label>
                   </div>
+
+                  <div className="form-group">
+                    <label>Téléphone</label>
+                    <input
+                      type="text"
+                      name="parcel_phone"
+                      value={formData.parcel_phone}
+                      onChange={handleInputChange}
+                      placeholder="Numéro de téléphone"
+                    />
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Ville</label>
+                    <CityAutocomplete
+                      value={formData.parcel_city}
+                      onChange={(value) => setFormData(prev => ({ ...prev, parcel_city: value }))}
+                      onSelect={handleCitySelect}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Adresse</label>
+                    <input
+                      type="text"
+                      name="parcel_address"
+                      value={formData.parcel_address}
+                      onChange={handleInputChange}
+                      placeholder="Adresse"
+                    />
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Prix colis (MAD)</label>
+                    <input
+                      type="number"
+                      name="parcel_price"
+                      value={formData.parcel_price}
+                      onChange={handleInputChange}
+                      placeholder="0.00"
+                      min="0"
+                      step="0.01"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Statut</label>
+                    <select
+                      name="statut"
+                      value={formData.statut}
+                      onChange={handleInputChange}
+                    >
+                      {Object.entries(statusLabels).map(([value, label]) => (
+                        <option key={value} value={value}>{label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="form-group full-width">
+                  <label>Note</label>
+                  <textarea
+                    name="parcel_note"
+                    value={formData.parcel_note}
+                    onChange={handleInputChange}
+                    placeholder="Notes ou instructions spéciales"
+                    rows="2"
+                  />
+                </div>
+
+                <div className="form-checkbox">
+                  <input
+                    type="checkbox"
+                    id="parcel_open"
+                    name="parcel_open"
+                    checked={formData.parcel_open === 1}
+                    onChange={handleInputChange}
+                  />
+                  <label htmlFor="parcel_open">Colis ouvert / vérifié</label>
                 </div>
               </form>
             </div>

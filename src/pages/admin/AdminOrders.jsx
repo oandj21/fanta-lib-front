@@ -198,7 +198,7 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
 };
 
 // Book Selection Component
-const BookSelector = ({ selectedBooks, onBooksChange, onProductNameChange, onTotalQuantityChange }) => {
+const BookSelector = ({ selectedBooks, onBooksChange, onTotalQuantityChange }) => {
   const dispatch = useDispatch();
   const { list: booksList = [], loading: booksLoading } = useSelector((state) => state.livres);
   const [searchTerm, setSearchTerm] = useState("");
@@ -216,26 +216,15 @@ const BookSelector = ({ selectedBooks, onBooksChange, onProductNameChange, onTot
     );
   }, [booksList, searchTerm]);
 
-  // Update product name and quantity whenever selected books change
+  // Update total quantity whenever selected books change
   useEffect(() => {
     if (selectedBooks.length > 0) {
-      // Calculate total quantity
       const totalQty = selectedBooks.reduce((sum, book) => sum + book.quantity, 0);
-      
-      // Generate product name from book titles (without quantities)
-      const productNames = selectedBooks.map(book => book.titre);
-      let productName = productNames.join(' + ');
-      if (productName.length > 50) {
-        productName = productName.substring(0, 50) + '...';
-      }
-      
-      if (onProductNameChange) onProductNameChange(productName);
       if (onTotalQuantityChange) onTotalQuantityChange(totalQty);
     } else {
-      if (onProductNameChange) onProductNameChange('');
       if (onTotalQuantityChange) onTotalQuantityChange(0);
     }
-  }, [selectedBooks, onProductNameChange, onTotalQuantityChange]);
+  }, [selectedBooks, onTotalQuantityChange]);
 
   const addBook = (book) => {
     const existingBook = selectedBooks.find(b => b.id === book.id);
@@ -415,11 +404,7 @@ const OrderDetailsModal = ({ order, onClose }) => {
               <p>{order.parcel_phone || "-"}</p>
             </div>
             <div className="detail-group">
-              <label>Produit</label>
-              <p>{order.parcel_prd_name || "-"}</p>
-            </div>
-            <div className="detail-group">
-              <label>Quantité</label>
+              <label>Quantité totale</label>
               <p>{order.parcel_prd_qty || 0}</p>
             </div>
             <div className="detail-group">
@@ -551,7 +536,6 @@ export default function AdminOrders() {
   const [formData, setFormData] = useState({
     parcel_receiver: "",
     parcel_phone: "",
-    parcel_prd_name: "",
     parcel_prd_qty: "",
     parcel_city: "",
     parcel_address: "",
@@ -566,7 +550,6 @@ export default function AdminOrders() {
     parcel_code: "",
     parcel_receiver: "",
     parcel_phone: "",
-    parcel_prd_name: "",
     parcel_prd_qty: 0,
     parcel_city: "",
     parcel_address: "",
@@ -597,7 +580,6 @@ export default function AdminOrders() {
       setFormData({
         parcel_receiver: selectedOrder.parcel_receiver || "",
         parcel_phone: selectedOrder.parcel_phone || "",
-        parcel_prd_name: selectedOrder.parcel_prd_name || "",
         parcel_prd_qty: selectedOrder.parcel_prd_qty || 0,
         parcel_city: selectedOrder.parcel_city || "",
         parcel_address: selectedOrder.parcel_address || "",
@@ -690,7 +672,6 @@ export default function AdminOrders() {
     setFormData({
       parcel_receiver: "",
       parcel_phone: "",
-      parcel_prd_name: "",
       parcel_prd_qty: 0,
       parcel_city: "",
       parcel_address: "",
@@ -708,7 +689,6 @@ export default function AdminOrders() {
       parcel_code: newParcelCode,
       parcel_receiver: "",
       parcel_phone: "",
-      parcel_prd_name: "",
       parcel_prd_qty: 0,
       parcel_city: "",
       parcel_address: "",
@@ -734,7 +714,6 @@ export default function AdminOrders() {
       parcel_code: "",
       parcel_receiver: "",
       parcel_phone: "",
-      parcel_prd_name: "",
       parcel_prd_qty: 0,
       parcel_city: "",
       parcel_address: "",
@@ -778,13 +757,6 @@ export default function AdminOrders() {
     setNewOrderData(prev => ({
       ...prev,
       livres: books
-    }));
-  };
-
-  const handleProductNameChange = (name) => {
-    setNewOrderData(prev => ({
-      ...prev,
-      parcel_prd_name: name
     }));
   };
 
@@ -880,19 +852,12 @@ export default function AdminOrders() {
         total: parseFloat(book.prix_achat) * parseInt(book.quantity)
     }));
 
-    // CRITICAL: Log what we're sending
-    console.log("📤 Sending to backend:", {
-        parcel_prd_name: newOrderData.parcel_prd_name,
-        parcel_prd_qty: newOrderData.parcel_prd_qty,
-        livres: formattedLivres
-    });
-
     const orderToCreate = {
         parcel_code: newOrderData.parcel_code,
         parcel_receiver: newOrderData.parcel_receiver,
         parcel_phone: newOrderData.parcel_phone || "",
-        parcel_prd_name: newOrderData.parcel_prd_name, // This should be "x + v"
-        parcel_prd_qty: newOrderData.parcel_prd_qty,   // This should be 2
+        // parcel_prd_name is NOT included
+        parcel_prd_qty: newOrderData.parcel_prd_qty,
         parcel_city: newOrderData.parcel_city,
         parcel_address: newOrderData.parcel_address || "",
         parcel_price: parseFloat(parcelPrice.toFixed(2)),
@@ -933,7 +898,7 @@ export default function AdminOrders() {
       const matchesSearch = searchTerm === "" || 
         order.parcel_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.parcel_receiver?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.parcel_prd_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        // Removed parcel_prd_name from search
         order.parcel_city?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.parcel_phone?.toLowerCase().includes(searchTerm.toLowerCase());
       
@@ -1117,7 +1082,7 @@ export default function AdminOrders() {
           <Search size={18} className="search-icon" />
           <input
             type="text"
-            placeholder="Rechercher par code, client, produit, ville ou téléphone..."
+            placeholder="Rechercher par code, client, ville ou téléphone..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="search-input"
@@ -1185,8 +1150,7 @@ export default function AdminOrders() {
                   <th>Code</th>
                   <th>Client</th>
                   <th>Téléphone</th>
-                  <th>Produit</th>
-                  <th>Qté</th>
+                  <th>Quantité</th>
                   <th>Ville</th>
                   <th>Statut</th>
                   <th>Prix colis</th>
@@ -1201,16 +1165,6 @@ export default function AdminOrders() {
                       <td className="order-code">{order.parcel_code || "-"}</td>
                       <td className="order-client">{order.parcel_receiver || "-"}</td>
                       <td>{order.parcel_phone || "-"}</td>
-                      <td className="order-product" title={order.parcel_prd_name}>
-                        {order.parcel_prd_name ? (
-                          <>
-                            <Box size={14} className="product-icon" />
-                            {order.parcel_prd_name.length > 20 
-                              ? order.parcel_prd_name.substring(0, 20) + '...' 
-                              : order.parcel_prd_name}
-                          </>
-                        ) : "-"}
-                      </td>
                       <td className="order-qty">{order.parcel_prd_qty || 0}</td>
                       <td>{order.parcel_city || "-"}</td>
                       <td>
@@ -1349,26 +1303,8 @@ export default function AdminOrders() {
                   </div>
                 </div>
 
-                {/* Welivexpress fields */}
+                {/* Welivexpress fields - only quantity now */}
                 <div className="form-row">
-                  <div className="form-group">
-                    <label>Nom du produit <span className="required">*</span></label>
-                    <div className="input-with-icon">
-                      <Box size={16} className="input-icon" />
-                      <input
-                        type="text"
-                        name="parcel_prd_name"
-                        value={newOrderData.parcel_prd_name}
-                        onChange={handleNewOrderChange}
-                        placeholder="Nom du produit pour Welivexpress"
-                        required
-                      />
-                    </div>
-                    <small className="field-hint">
-                      Sera automatiquement généré à partir des livres sélectionnés
-                    </small>
-                  </div>
-
                   <div className="form-group">
                     <label>Quantité totale <span className="required">*</span></label>
                     <div className="input-with-icon">
@@ -1387,9 +1323,7 @@ export default function AdminOrders() {
                       Sera automatiquement calculée à partir des livres sélectionnés
                     </small>
                   </div>
-                </div>
 
-                <div className="form-row">
                   <div className="form-group">
                     <label>Ville <span className="required">*</span></label>
                     <CityAutocomplete
@@ -1398,15 +1332,17 @@ export default function AdminOrders() {
                       onSelect={handleNewCitySelect}
                     />
                   </div>
+                </div>
 
-                  <div className="form-group">
+                <div className="form-row">
+                  <div className="form-group full-width">
                     <label>Adresse</label>
                     <input
                       type="text"
                       name="parcel_address"
                       value={newOrderData.parcel_address}
                       onChange={handleNewOrderChange}
-                      placeholder="Adresse"
+                      placeholder="Adresse complète"
                     />
                   </div>
                 </div>
@@ -1416,11 +1352,10 @@ export default function AdminOrders() {
                   <BookSelector 
                     selectedBooks={newOrderData.livres}
                     onBooksChange={handleBooksChange}
-                    onProductNameChange={handleProductNameChange}
                     onTotalQuantityChange={handleTotalQuantityChange}
                   />
                   <small className="field-hint">
-                    La sélection des livres mettra automatiquement à jour le nom du produit et la quantité
+                    La sélection des livres mettra automatiquement à jour la quantité totale
                   </small>
                 </div>
 
@@ -1611,20 +1546,6 @@ export default function AdminOrders() {
 
                 <div className="form-row">
                   <div className="form-group">
-                    <label>Nom du produit</label>
-                    <div className="input-with-icon">
-                      <Box size={16} className="input-icon" />
-                      <input
-                        type="text"
-                        name="parcel_prd_name"
-                        value={formData.parcel_prd_name}
-                        onChange={handleInputChange}
-                        placeholder="Nom du produit"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="form-group">
                     <label>Quantité totale</label>
                     <div className="input-with-icon">
                       <Layers size={16} className="input-icon" />
@@ -1638,9 +1559,7 @@ export default function AdminOrders() {
                       />
                     </div>
                   </div>
-                </div>
 
-                <div className="form-row">
                   <div className="form-group">
                     <label>Ville</label>
                     <CityAutocomplete
@@ -1649,8 +1568,10 @@ export default function AdminOrders() {
                       onSelect={handleCitySelect}
                     />
                   </div>
+                </div>
 
-                  <div className="form-group">
+                <div className="form-row">
+                  <div className="form-group full-width">
                     <label>Adresse</label>
                     <input
                       type="text"

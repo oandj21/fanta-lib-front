@@ -1244,18 +1244,25 @@ export default function AdminOrders() {
 
                   <div className="form-row" style={{ marginTop: '1rem' }}>
                     <div className="form-group">
-                      <label htmlFor="total">
-                        Total livres (MAD)
-                      </label>
-                      <input
-                        type="number"
-                        id="total"
-                        name="total"
-                        value={newOrderData.total}
-                        
-                      />
-                      <small className="field-hint">Sous-total des livres</small>
-                    </div>
+  <label htmlFor="total">
+    Total livres (MAD)
+  </label>
+  <input
+    type="number"
+    id="total"
+    name="total"
+    value={newOrderData.total}
+    onChange={handleNewOrderChange}
+    min="0"
+    step="0.01"
+    className={!newOrderData.livres || newOrderData.livres.length === 0 ? "" : "manual-edit-input"}
+  />
+  <small className="field-hint">
+    {newOrderData.livres && newOrderData.livres.length > 0 
+      ? "Valeur modifiable manuellement" 
+      : "Sous-total des livres (automatique)"}
+  </small>
+</div>
 
                     <div className="form-group">
                       <label htmlFor="parcel_price">

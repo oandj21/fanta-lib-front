@@ -33,6 +33,7 @@ export default function AdminLayout() {
     { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
     { to: "/books", icon: BookOpen, label: "Livres" },
     { to: "/orders", icon: ShoppingCart, label: "Commandes" },
+    { path: '/tracker', icon: PackageSearch, label: 'Tracker Colis' }, 
     { to: "/expenses", icon: Receipt, label: "Dépenses" },
     { to: "/finance", icon: TrendingUp, label: "Finance" },
     { to: "/users", icon: Users, label: "Utilisateurs" },

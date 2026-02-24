@@ -1,4 +1,3 @@
-// src/App.jsx
 import { Toaster } from "./components/ui/toaster";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
@@ -9,14 +8,13 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Index from "./pages/Index";
 import Livres from "./pages/Livres";
 import Contact from "./pages/Contact";
-import Cart from "./pages/Cart";
+import Cart from "./pages/Cart"; // Add this import
 import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/AdminLogin";
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminBooks from "./pages/admin/AdminBooks";
 import AdminOrders from "./pages/admin/AdminOrders";
-import AdminTracker from "./pages/admin/AdminTracker"; // Add this import
 import AdminExpenses from "./pages/admin/AdminExpenses";
 import AdminFinance from "./pages/admin/AdminFinance";
 import AdminUsers from "./pages/admin/AdminUsers";
@@ -34,7 +32,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/livres" element={<Livres />} />
             <Route path="/contact" element={<Contact />} />
-            <Route path="/cart" element={<Cart />} />
+            <Route path="/cart" element={<Cart />} /> {/* Add cart route */}
             
             {/* Login route */}
             <Route path="/login" element={<AdminLogin />} />
@@ -72,18 +70,6 @@ const App = () => (
             >
               <Route index element={<AdminOrders />} />
             </Route>
-
-            {/* Add Tracker route */}
-            <Route
-              path="/tracker"
-              element={
-                <ProtectedRoute>
-                  <AdminLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<AdminTracker />} />
-            </Route>
             
             <Route
               path="/expenses"
@@ -117,18 +103,16 @@ const App = () => (
             >
               <Route index element={<AdminUsers />} />
             </Route>
-            
             <Route
-              path="/messages"
-              element={
-                <ProtectedRoute>
-                  <AdminLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<AdminMessages />} />
-            </Route>
-            
+  path="/messages"
+  element={
+    <ProtectedRoute>
+      <AdminLayout />
+    </ProtectedRoute>
+  }
+>
+  <Route index element={<AdminMessages />} />
+</Route>
             <Route
               path="/profile"
               element={
@@ -146,7 +130,6 @@ const App = () => (
             <Route path="/admin/dashboard" element={<Navigate to="/dashboard" replace />} />
             <Route path="/admin/books" element={<Navigate to="/books" replace />} />
             <Route path="/admin/orders" element={<Navigate to="/orders" replace />} />
-            <Route path="/admin/tracker" element={<Navigate to="/tracker" replace />} />
             <Route path="/admin/expenses" element={<Navigate to="/expenses" replace />} />
             <Route path="/admin/finance" element={<Navigate to="/finance" replace />} />
             <Route path="/admin/users" element={<Navigate to="/users" replace />} />

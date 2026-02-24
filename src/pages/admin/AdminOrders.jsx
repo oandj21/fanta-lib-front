@@ -363,17 +363,17 @@ export default function AdminOrders() {
     statut: "new"
   });
 
-  // Form state for new order - WITH BOOKS ARRAY
+  // Form state for new order
   const [newOrderData, setNewOrderData] = useState({
     parcel_code: "",
     parcel_receiver: "",
     parcel_phone: "",
     parcel_city: "",
     parcel_address: "",
-    parcel_price: "", // This will be set to total for Welivexpress
+    parcel_price: 0, // This will be set to total for Welivexpress (books + fees)
     frais_livraison: 0,
     frais_packaging: 0,
-    total: 0,
+    total: 0, // This is now just the books subtotal
     profit: 0,
     parcel_note: "",
     parcel_open: 0,
@@ -411,7 +411,7 @@ export default function AdminOrders() {
     }
   }, [selectedOrder]);
 
-  // Calculate total and profit when relevant fields change
+  // Calculate books subtotal, total (for display), and parcel_price (for Welivexpress)
   useEffect(() => {
     // Calculate books subtotal
     const booksSubtotal = (newOrderData.livres || []).reduce(
@@ -421,16 +421,20 @@ export default function AdminOrders() {
     const delivery = parseFloat(newOrderData.frais_livraison) || 0;
     const packaging = parseFloat(newOrderData.frais_packaging) || 0;
     
-    const total = booksSubtotal + delivery + packaging;
-    // Profit calculation (adjust formula as needed)
+    // total is now just the books subtotal (for display in UI)
+    const total = booksSubtotal;
+    
+    // parcel_price is the total for Welivexpress (books + fees)
+    const parcelPrice = booksSubtotal + delivery + packaging;
+    
+    // Profit calculation (books subtotal minus fees)
     const profit = booksSubtotal - (delivery + packaging);
     
     setNewOrderData(prev => ({
       ...prev,
       total: total,
-      profit: profit,
-      // Set parcel_price to total for Welivexpress
-      parcel_price: total
+      parcel_price: parcelPrice,
+      profit: profit
     }));
   }, [
     newOrderData.livres, 
@@ -615,87 +619,87 @@ export default function AdminOrders() {
   };
 
   const handleAddSubmit = async (e) => {
-  e.preventDefault();
-  
-  // Validate required fields
-  if (!newOrderData.parcel_receiver || !newOrderData.parcel_city) {
-    setAddError("Veuillez remplir tous les champs obligatoires (client, ville)");
-    return;
-  }
+    e.preventDefault();
+    
+    // Validate required fields
+    if (!newOrderData.parcel_receiver || !newOrderData.parcel_city) {
+      setAddError("Veuillez remplir tous les champs obligatoires (client, ville)");
+      return;
+    }
 
-  if (newOrderData.livres.length === 0) {
-    setAddError("Veuillez sélectionner au moins un livre");
-    return;
-  }
+    if (newOrderData.livres.length === 0) {
+      setAddError("Veuillez sélectionner au moins un livre");
+      return;
+    }
 
-  // Calculate books subtotal
-  const booksSubtotal = newOrderData.livres.reduce(
-    (sum, book) => sum + (parseFloat(book.prix_achat) * parseInt(book.quantity)), 0
-  );
-  
-  const delivery = parseFloat(newOrderData.frais_livraison) || 0;
-  const packaging = parseFloat(newOrderData.frais_packaging) || 0;
-  const total = booksSubtotal + delivery + packaging;
-  const rawProfit = booksSubtotal - (delivery + packaging);
-  const profit = Math.max(0, rawProfit);
-
-  // Format livres with all necessary information
-  const formattedLivres = newOrderData.livres.map(book => ({
-    id: book.id,
-    titre: book.titre,
-    auteur: book.auteur || '',
-    quantity: parseInt(book.quantity),
-    price: parseFloat(book.prix_achat),
-    total: parseFloat(book.prix_achat) * parseInt(book.quantity)
-  }));
-
-  // Create a summary for local reference (optional)
-  const productsSummary = formattedLivres.map(book => 
-    `${book.titre} (x${book.quantity})`
-  ).join(', ');
-
-  // Prepare order data for database
-  const orderToCreate = {
-    parcel_code: newOrderData.parcel_code,
-    parcel_receiver: newOrderData.parcel_receiver,
-    parcel_phone: newOrderData.parcel_phone || "",
-    parcel_city: newOrderData.parcel_city,
-    parcel_address: newOrderData.parcel_address || "",
-    parcel_price: parseFloat(total.toFixed(2)), // Total for Welivexpress
-    frais_livraison: parseFloat(delivery.toFixed(2)),
-    frais_packaging: parseFloat(packaging.toFixed(2)),
-    total: parseFloat(total.toFixed(2)),
-    profit: parseFloat(profit.toFixed(2)),
-    // Keep parcel_note simple - just additional notes, not product info
-    parcel_note: newOrderData.parcel_note || "",
-    parcel_open: newOrderData.parcel_open ? 1 : 0,
-    parcel_livreur_sent: newOrderData.parcel_livreur_sent || "",
-    parcel_livreurname_sent: newOrderData.parcel_livreurname_sent || "",
-    statut: newOrderData.statut || "new",
-    livres: formattedLivres, // The controller will use this for Welivexpress products
-    date: newOrderData.date
-  };
-
-  console.log("Creating new order with data:", orderToCreate);
-
-  setAddLoading(true);
-  setAddError(null);
-
-  try {
-    const result = await dispatch(createCommande(orderToCreate)).unwrap();
-    console.log("Create successful:", result);
-    await dispatch(fetchCommandes());
-    closeAddModal();
-  } catch (error) {
-    console.error("Create failed:", error);
-    setAddError(
-      error?.message || 
-      "Erreur lors de la création de la commande. Veuillez réessayer."
+    // Calculate books subtotal
+    const booksSubtotal = newOrderData.livres.reduce(
+      (sum, book) => sum + (parseFloat(book.prix_achat) * parseInt(book.quantity)), 0
     );
-  } finally {
-    setAddLoading(false);
-  }
-};
+    
+    const delivery = parseFloat(newOrderData.frais_livraison) || 0;
+    const packaging = parseFloat(newOrderData.frais_packaging) || 0;
+    
+    // total is books subtotal (for display)
+    const total = booksSubtotal;
+    
+    // parcel_price is total for Welivexpress (books + fees)
+    const parcelPrice = booksSubtotal + delivery + packaging;
+    
+    const rawProfit = booksSubtotal - (delivery + packaging);
+    const profit = Math.max(0, rawProfit);
+
+    // Format livres with all necessary information
+    const formattedLivres = newOrderData.livres.map(book => ({
+      id: book.id,
+      titre: book.titre,
+      auteur: book.auteur || '',
+      quantity: parseInt(book.quantity),
+      price: parseFloat(book.prix_achat),
+      total: parseFloat(book.prix_achat) * parseInt(book.quantity)
+    }));
+
+    // Prepare order data for database
+    const orderToCreate = {
+      parcel_code: newOrderData.parcel_code,
+      parcel_receiver: newOrderData.parcel_receiver,
+      parcel_phone: newOrderData.parcel_phone || "",
+      parcel_city: newOrderData.parcel_city,
+      parcel_address: newOrderData.parcel_address || "",
+      parcel_price: parseFloat(parcelPrice.toFixed(2)), // Total for Welivexpress (books + fees)
+      frais_livraison: parseFloat(delivery.toFixed(2)),
+      frais_packaging: parseFloat(packaging.toFixed(2)),
+      total: parseFloat(total.toFixed(2)), // Books subtotal only
+      profit: parseFloat(profit.toFixed(2)),
+      parcel_note: newOrderData.parcel_note || "",
+      parcel_open: newOrderData.parcel_open ? 1 : 0,
+      parcel_livreur_sent: newOrderData.parcel_livreur_sent || "",
+      parcel_livreurname_sent: newOrderData.parcel_livreurname_sent || "",
+      statut: newOrderData.statut || "new",
+      livres: formattedLivres, // The controller will use this for Welivexpress products
+      date: newOrderData.date
+    };
+
+    console.log("Creating new order with data:", orderToCreate);
+
+    setAddLoading(true);
+    setAddError(null);
+
+    try {
+      const result = await dispatch(createCommande(orderToCreate)).unwrap();
+      console.log("Create successful:", result);
+      await dispatch(fetchCommandes());
+      closeAddModal();
+    } catch (error) {
+      console.error("Create failed:", error);
+      setAddError(
+        error?.message || 
+        "Erreur lors de la création de la commande. Veuillez réessayer."
+      );
+    } finally {
+      setAddLoading(false);
+    }
+  };
 
   // Filter and search orders
   const filteredOrders = useMemo(() => {
@@ -959,9 +963,9 @@ export default function AdminOrders() {
                   <th>Ville</th>
                   <th>Adresse</th>
                   <th>Livres</th>
-                  <th>Prix</th>
+                  <th>Prix colis (Welivexpress)</th>
                   <th>Frais</th>
-                  <th>Total</th>
+                  <th>Total livres</th>
                   <th>Statut</th>
                   <th>Livreur</th>
                   <th>Date</th>
@@ -1241,7 +1245,7 @@ export default function AdminOrders() {
                   <div className="form-row" style={{ marginTop: '1rem' }}>
                     <div className="form-group">
                       <label htmlFor="total">
-                        Total (MAD)
+                        Total livres (MAD)
                       </label>
                       <input
                         type="number"
@@ -1251,7 +1255,22 @@ export default function AdminOrders() {
                         readOnly
                         className="readonly-input"
                       />
-                      <small className="field-hint">Calculé automatiquement (livres + frais)</small>
+                      <small className="field-hint">Sous-total des livres</small>
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="parcel_price">
+                        Prix colis (Welivexpress) (MAD)
+                      </label>
+                      <input
+                        type="number"
+                        id="parcel_price"
+                        name="parcel_price"
+                        value={newOrderData.parcel_price}
+                        readOnly
+                        className="readonly-input"
+                      />
+                      <small className="field-hint">Total livres + frais</small>
                     </div>
 
                     <div className="form-group">
@@ -1266,9 +1285,11 @@ export default function AdminOrders() {
                         readOnly
                         className="readonly-input"
                       />
-                      <small className="field-hint">Calculé automatiquement</small>
+                      <small className="field-hint">Livres - frais</small>
                     </div>
+                  </div>
 
+                  <div className="form-row">
                     <div className="form-group">
                       <label htmlFor="statut">
                         Statut
@@ -1285,13 +1306,6 @@ export default function AdminOrders() {
                         ))}
                       </select>
                     </div>
-                  </div>
-
-                  {/* Hidden field showing that parcel_price (for Welivexpress) = total */}
-                  <div className="form-info">
-                    <small>
-                      <strong>Note:</strong> Le prix du colis envoyé à Welivexpress sera le total: {newOrderData.total} MAD
-                    </small>
                   </div>
                 </div>
 
@@ -1504,7 +1518,7 @@ export default function AdminOrders() {
                   <div className="form-row">
                     <div className="form-group">
                       <label htmlFor="parcel_price">
-                        Prix (MAD)
+                        Prix colis (MAD)
                       </label>
                       <input
                         type="number"

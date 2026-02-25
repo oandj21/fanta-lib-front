@@ -48,7 +48,7 @@
 
 /* Buttons */
 .btn-primary {
-  background-color: #075601;
+  background-color: #059669;
   color: #ead2b8;
   border: none;
   padding: 0.75rem 1.5rem;
@@ -65,7 +65,7 @@
 }
 
 .btn-primary:hover {
-  background-color: #075601;
+  background-color: #059669;
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }

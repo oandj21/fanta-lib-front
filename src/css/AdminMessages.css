@@ -376,8 +376,8 @@
   background-color: white;
   border-radius: 12px;
   padding: 30px;
-  max-width: 500px;
-  width: 90%;
+  max-width: 1200px;
+  width: 100%;
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
@@ -1047,8 +1047,8 @@
   background-color: white;
   border-radius: 1rem;
   padding: 2rem;
-  max-width: 600px;
-  width: 90%;
+  max-width: 1200px;
+  width: 100%;
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);

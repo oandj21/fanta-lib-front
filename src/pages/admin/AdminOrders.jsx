@@ -459,7 +459,7 @@ const OrderDetailsModal = ({ order, onClose }) => {
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-conten details-moda" onClick={e => e.stopPropagation()}>
+      <div className="modal-content details-modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h3>Détails de la commande #{order.parcel_code}</h3>
           <button onClick={onClose} className="modal-close">

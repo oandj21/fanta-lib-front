@@ -11,7 +11,9 @@ import {
   ArrowUpCircle,
   ArrowDownCircle,
   RefreshCw,
-  Edit3
+  Edit3,
+  BarChart3,
+  PlusCircle
 } from "lucide-react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -22,6 +24,8 @@ import {
   fetchMonthlyStats,
   fetchFinances,
   fetchBooksTotalValue,
+  fetchBooksProfit,
+  fetchTotalGain,
   updateFinance,
   createFinance
 } from "../../store/store";
@@ -30,7 +34,8 @@ import "../../css/AdminFinance.css";
 export default function AdminFinance() {
   const dispatch = useDispatch();
   const { stats = {}, monthlyStats = [] } = useSelector((state) => state.dashboard);
-  const { currentFinance, list: financesList, totalBooksValue } = useSelector((state) => state.finances);
+  const { currentFinance, totalBooksValue, totalBooksProfit, totalGain } = useSelector((state) => state.finances);
+  const { list: depensesList } = useSelector((state) => state.depenses);
   const [activeTab, setActiveTab] = useState('overview');
   const [showCapitalModal, setShowCapitalModal] = useState(false);
   const [capitalAmount, setCapitalAmount] = useState('');
@@ -41,6 +46,8 @@ export default function AdminFinance() {
     dispatch(fetchMonthlyStats());
     dispatch(fetchFinances());
     dispatch(fetchBooksTotalValue());
+    dispatch(fetchBooksProfit());
+    dispatch(fetchTotalGain());
   }, [dispatch]);
 
   useEffect(() => {
@@ -49,26 +56,22 @@ export default function AdminFinance() {
     }
   }, [currentFinance]);
 
-  // Get capital from finance (if multiple records, get the latest)
+  // Get capital from finance
   const capital = currentFinance?.capital || 0;
 
-  // Calculate total profit from books
-  const totalProfitBooks = Number(stats.total_profit || 0);
-  
-  // Calculate total expenses
-  const totalDepenses = Number(stats.total_expenses || 0);
-  
+  // Calculate total expenses from depenses
+  const totalDepenses = depensesList.reduce((sum, depense) => {
+    return sum + (Number(depense.montant) || 0);
+  }, 0);
+
   // Calculate revenue (total sales)
   const revenue = Number(stats.total_sales || 0);
   
-  // Calculate net income (profit - expenses)
-  const netIncome = totalProfitBooks - totalDepenses;
-  
   // Calculate ROI (Return on Investment)
-  const roi = capital > 0 ? ((netIncome / capital) * 100).toFixed(1) : 0;
+  const roi = capital > 0 ? ((totalGain / capital) * 100).toFixed(1) : 0;
   
   // Calculate profit margin
-  const profitMargin = revenue > 0 ? ((totalProfitBooks / revenue) * 100).toFixed(1) : 0;
+  const profitMargin = revenue > 0 ? ((totalBooksProfit / revenue) * 100).toFixed(1) : 0;
 
   const handleUpdateCapital = async () => {
     if (!capitalAmount || isNaN(capitalAmount)) {
@@ -81,19 +84,16 @@ export default function AdminFinance() {
       const amount = parseInt(capitalAmount);
       
       if (currentFinance) {
-        // Update existing finance record
         await dispatch(updateFinance({ 
           id: currentFinance.id, 
           capital: amount 
         })).unwrap();
       } else {
-        // Create new finance record if none exists
         await dispatch(createFinance({ 
           capital: amount 
         })).unwrap();
       }
       
-      // Refresh finances data
       await dispatch(fetchFinances());
       setShowCapitalModal(false);
       alert('Capital mis à jour avec succès !');
@@ -122,22 +122,12 @@ export default function AdminFinance() {
       description: "Prix d'achat total"
     },
     { 
-      label: "Revenu Total", 
-      value: revenue, 
-      icon: DollarSign,
-      color: "success",
-      description: "Chiffre d'affaires"
-    },
-    { 
-      label: "Profit Total", 
-      value: totalProfitBooks, 
+      label: "Profit des Livres", 
+      value: totalBooksProfit, 
       icon: TrendingUp,
       color: "success",
-      description: "Marge brute"
+      description: "Bénéfice des ventes"
     },
-  ];
-
-  const secondaryCards = [
     { 
       label: "Dépenses Totales", 
       value: totalDepenses, 
@@ -145,19 +135,29 @@ export default function AdminFinance() {
       color: "danger",
       description: "Coûts opérationnels"
     },
+  ];
+
+  const secondaryCards = [
     { 
-      label: "Revenu Net", 
-      value: netIncome, 
-      icon: PieChart,
-      color: netIncome >= 0 ? "success" : "danger",
-      description: netIncome >= 0 ? "Bénéfice" : "Perte"
+      label: "Gain Net", 
+      value: totalGain, 
+      icon: DollarSign,
+      color: totalGain >= 0 ? "success" : "danger",
+      description: totalGain >= 0 ? "Bénéfice net" : "Perte nette"
+    },
+    { 
+      label: "Revenu Total", 
+      value: revenue, 
+      icon: BarChart3,
+      color: "warning",
+      description: "Chiffre d'affaires"
     },
     { 
       label: "Marge Bénéficiaire", 
       value: profitMargin,
       isPercentage: true,
       icon: ArrowUpCircle,
-      color: "warning",
+      color: "purple",
       description: "Profit / Revenu"
     },
     { 
@@ -165,7 +165,7 @@ export default function AdminFinance() {
       value: roi,
       isPercentage: true,
       icon: RefreshCw,
-      color: "purple",
+      color: "primary",
       description: "Retour sur investissement"
     },
   ];
@@ -179,9 +179,9 @@ export default function AdminFinance() {
     net: Number(item.profit || 0) - Number(item.depenses || item.expenses || 0)
   }));
 
-  // Pie chart data for expense breakdown
-  const expenseBreakdown = [
-    { name: 'Profit Net', value: Math.max(netIncome, 0), color: '#10b981' },
+  // Pie chart data for profit breakdown
+  const profitBreakdown = [
+    { name: 'Gain Net', value: Math.max(totalGain, 0), color: '#10b981' },
     { name: 'Dépenses', value: totalDepenses, color: '#ef4444' },
   ];
 
@@ -262,7 +262,7 @@ export default function AdminFinance() {
         </div>
       )}
 
-      {/* Main Stats Grid */}
+      {/* Main Stats Grid - 4 cards */}
       <div className="stats-grid main-grid">
         {mainCards.map(({ label, value, icon: Icon, color, description, editable }) => (
           <div key={label} className={`stat-card ${color}`}>
@@ -289,7 +289,7 @@ export default function AdminFinance() {
         ))}
       </div>
 
-      {/* Secondary Stats Grid */}
+      {/* Secondary Stats Grid - 4 cards */}
       <div className="stats-grid secondary-grid">
         {secondaryCards.map(({ label, value, icon: Icon, color, description, isPercentage }) => (
           <div key={label} className={`stat-card ${color}`}>
@@ -344,21 +344,17 @@ export default function AdminFinance() {
                 <span className="amount">{formatCurrency(totalBooksValue)}</span>
               </div>
               <div className="summary-item">
-                <span>Chiffre d'affaires</span>
-                <span className="amount">{formatCurrency(revenue)}</span>
-              </div>
-              <div className="summary-item">
-                <span>Profit brut</span>
-                <span className="amount positive">{formatCurrency(totalProfitBooks)}</span>
+                <span>Profit des livres</span>
+                <span className="amount positive">{formatCurrency(totalBooksProfit)}</span>
               </div>
               <div className="summary-item">
                 <span>Dépenses totales</span>
                 <span className="amount negative">-{formatCurrency(totalDepenses)}</span>
               </div>
               <div className="summary-total">
-                <span>Résultat net</span>
-                <span className={`amount ${netIncome >= 0 ? 'positive' : 'negative'}`}>
-                  {formatCurrency(netIncome)}
+                <span>Gain net</span>
+                <span className={`amount ${totalGain >= 0 ? 'positive' : 'negative'}`}>
+                  {formatCurrency(totalGain)}
                 </span>
               </div>
             </div>
@@ -386,17 +382,17 @@ export default function AdminFinance() {
                 <span className="ratio-value">{roi}%</span>
               </div>
               <div className="ratio-item">
-                <span className="ratio-label">Ratio dépenses/ventes</span>
+                <span className="ratio-label">Ratio dépenses/profit</span>
                 <div className="ratio-bar">
                   <div 
                     className="ratio-fill danger" 
                     style={{ 
-                      width: `${revenue > 0 ? (totalDepenses / revenue * 100) : 0}%` 
+                      width: `${totalBooksProfit > 0 ? (totalDepenses / totalBooksProfit * 100) : 0}%` 
                     }}
                   ></div>
                 </div>
                 <span className="ratio-value">
-                  {revenue > 0 ? (totalDepenses / revenue * 100).toFixed(1) : 0}%
+                  {totalBooksProfit > 0 ? (totalDepenses / totalBooksProfit * 100).toFixed(1) : 0}%
                 </span>
               </div>
               <div className="ratio-item">
@@ -417,12 +413,12 @@ export default function AdminFinance() {
           </div>
 
           <div className="chart-card">
-            <h3>Répartition des revenus</h3>
+            <h3>Répartition des gains</h3>
             <div className="pie-chart-container">
               <ResponsiveContainer width="100%" height={300}>
                 <RePieChart>
                   <Pie
-                    data={expenseBreakdown}
+                    data={profitBreakdown}
                     cx="50%"
                     cy="50%"
                     innerRadius={60}
@@ -432,7 +428,7 @@ export default function AdminFinance() {
                     dataKey="value"
                     label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                   >
-                    {expenseBreakdown.map((entry, index) => (
+                    {profitBreakdown.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
@@ -458,14 +454,14 @@ export default function AdminFinance() {
               <div className="profit-item">
                 <span>Point mort (jours)</span>
                 <span className="value">
-                  {revenue > 0 ? Math.ceil((totalDepenses / revenue) * 30) : 0} jours
+                  {totalBooksProfit > 0 ? Math.ceil((totalDepenses / totalBooksProfit) * 30) : 0} jours
                 </span>
                 <small>Temps pour couvrir les dépenses</small>
               </div>
               <div className="profit-item highlight">
                 <span>Rentabilité nette</span>
-                <span className={`value ${netIncome >= 0 ? 'positive' : 'negative'}`}>
-                  {formatCurrency(netIncome)}
+                <span className={`value ${totalGain >= 0 ? 'positive' : 'negative'}`}>
+                  {formatCurrency(totalGain)}
                 </span>
                 <small>Profit après dépenses</small>
               </div>
@@ -483,7 +479,7 @@ export default function AdminFinance() {
               <div className="profit-item">
                 <span>Marge unitaire moyenne</span>
                 <span className="value positive">
-                  {stats.total_orders > 0 ? formatCurrency(totalProfitBooks / stats.total_orders) : formatCurrency(0)}
+                  {stats.total_orders > 0 ? formatCurrency(totalBooksProfit / stats.total_orders) : formatCurrency(0)}
                 </span>
                 <small>Profit par commande</small>
               </div>
@@ -526,17 +522,8 @@ export default function AdminFinance() {
                   />
                   <Line 
                     type="monotone" 
-                    dataKey="ventes" 
-                    name="Ventes" 
-                    stroke="#4a2c2a" 
-                    strokeWidth={2.5} 
-                    dot={{ fill: "#4a2c2a", r: 4 }} 
-                    activeDot={{ r: 6 }}
-                  />
-                  <Line 
-                    type="monotone" 
                     dataKey="profit" 
-                    name="Profit" 
+                    name="Profit Livres" 
                     stroke="#10b981" 
                     strokeWidth={2.5} 
                     dot={{ fill: "#10b981", r: 4 }} 
@@ -554,7 +541,7 @@ export default function AdminFinance() {
                   <Line 
                     type="monotone" 
                     dataKey="net" 
-                    name="Net" 
+                    name="Gain Net" 
                     stroke="#8b5cf6" 
                     strokeWidth={2.5} 
                     dot={{ fill: "#8b5cf6", r: 4 }} 
@@ -595,7 +582,7 @@ export default function AdminFinance() {
                   <Legend 
                     wrapperStyle={{ fontFamily: "Lato", fontSize: 13, paddingTop: 10 }}
                   />
-                  <Bar dataKey="profit" name="Profit" fill="#10b981" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="profit" name="Profit Livres" fill="#10b981" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="depenses" name="Dépenses" fill="#ef4444" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>

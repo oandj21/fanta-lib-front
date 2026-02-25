@@ -67,14 +67,9 @@ export default function AdminFinance() {
     return sum + (Number(livre.prix_achat) || 0);
   }, 0);
 
-  // 2. Calculate total profit from all orders (profit from commandes)
+  // 2. Calculate total profit from ALL orders (profit from commandes)
   const totalProfit = commandesList.reduce((sum, commande) => {
-    // Only count profit from delivered orders
-    const deliveredStatuses = ['delivered', 'livrée', 'livree', 'Livré', 'Livrée'];
-    if (deliveredStatuses.includes(commande.statut?.toLowerCase())) {
-      return sum + (Number(commande.profit) || 0);
-    }
-    return sum;
+    return sum + (Number(commande.profit) || 0);
   }, 0);
 
   // 3. Calculate total expenses (montant from depenses)
@@ -82,13 +77,9 @@ export default function AdminFinance() {
     return sum + (Number(depense.montant) || 0);
   }, 0);
 
-  // 4. Calculate revenue (total from delivered orders)
+  // 4. Calculate revenue from ALL orders (total from commandes)
   const revenue = commandesList.reduce((sum, commande) => {
-    const deliveredStatuses = ['delivered', 'livrée', 'livree', 'Livré', 'Livrée'];
-    if (deliveredStatuses.includes(commande.statut?.toLowerCase())) {
-      return sum + (Number(commande.total) || 0);
-    }
-    return sum;
+    return sum + (Number(commande.total) || 0);
   }, 0);
 
   // 5. Calculate net gain (profit - expenses)
@@ -100,17 +91,14 @@ export default function AdminFinance() {
   // 7. Calculate profit margin
   const profitMargin = revenue > 0 ? ((totalProfit / revenue) * 100).toFixed(1) : 0;
 
-  // 8. Calculate number of delivered orders
-  const deliveredOrdersCount = commandesList.filter(c => {
-    const deliveredStatuses = ['delivered', 'livrée', 'livree', 'Livré', 'Livrée'];
-    return deliveredStatuses.includes(c.statut?.toLowerCase());
-  }).length;
+  // 8. Calculate total number of orders
+  const totalOrdersCount = commandesList.length;
 
   // 9. Calculate average order value
-  const averageOrderValue = deliveredOrdersCount > 0 ? revenue / deliveredOrdersCount : 0;
+  const averageOrderValue = totalOrdersCount > 0 ? revenue / totalOrdersCount : 0;
 
   // 10. Calculate average profit per order
-  const averageProfitPerOrder = deliveredOrdersCount > 0 ? totalProfit / deliveredOrdersCount : 0;
+  const averageProfitPerOrder = totalOrdersCount > 0 ? totalProfit / totalOrdersCount : 0;
 
   // Main financial cards
   const mainCards = [
@@ -134,7 +122,7 @@ export default function AdminFinance() {
       value: totalProfit, 
       icon: TrendingUp,
       color: "success",
-      description: "Bénéfice des ventes réalisées"
+      description: "Bénéfice des ventes"
     },
     { 
       label: "Dépenses Totales", 
@@ -158,7 +146,7 @@ export default function AdminFinance() {
       value: revenue, 
       icon: BarChart3,
       color: "warning",
-      description: "Total des ventes réalisées"
+      description: "Total des ventes (toutes commandes)"
     },
     { 
       label: "Marge Bénéficiaire", 
@@ -496,7 +484,7 @@ export default function AdminFinance() {
               <div className="profit-item">
                 <span>Ticket moyen</span>
                 <span className="value">{formatCurrency(averageOrderValue)}</span>
-                <small>Par commande livrée</small>
+                <small>Par commande (toutes commandes)</small>
               </div>
               <div className="profit-item">
                 <span>Marge unitaire moyenne</span>
@@ -504,9 +492,9 @@ export default function AdminFinance() {
                 <small>Profit par commande</small>
               </div>
               <div className="profit-item">
-                <span>Commandes livrées</span>
-                <span className="value">{deliveredOrdersCount}</span>
-                <small>Nombre total de ventes</small>
+                <span>Nombre total de commandes</span>
+                <span className="value">{totalOrdersCount}</span>
+                <small>Toutes commandes confondues</small>
               </div>
             </div>
           </div>

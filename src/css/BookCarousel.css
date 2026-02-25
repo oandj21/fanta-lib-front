@@ -16,12 +16,12 @@
 
 .carousel-gradient-left {
   left: 0;
-  background: linear-gradient(to right, #f8f4f0, transparent);
+  background: linear-gradient(to right, #ffead0, transparent);
 }
 
 .carousel-gradient-right {
   right: 0;
-  background: linear-gradient(to left, #f8f4f0, transparent);
+  background: linear-gradient(to left, #ffead0, transparent);
 }
 
 .carousel-track-container {

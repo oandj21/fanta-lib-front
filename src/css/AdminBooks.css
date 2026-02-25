@@ -89,7 +89,7 @@
 }
 
 .btn-secondary:hover {
-  background-color: #f8f4f0;
+  background-color: #ffead0;
   border-color: #c9b9ae;
 }
 
@@ -135,7 +135,7 @@
 .data-table th {
   text-align: left;
   padding: 1rem 1rem;
-  background-color: #f8f4f0;
+  background-color: #ffead0;
   font-family: 'Lato', sans-serif;
   font-size: 0.75rem;
   font-weight: 600;
@@ -180,7 +180,7 @@
 .book-thumb-placeholder {
   width: 40px;
   height: 52px;
-  background-color: #f8f4f0;
+  background-color: #ffead0;
   border-radius: 0.5rem;
   display: flex;
   align-items: center;
@@ -325,7 +325,7 @@
 }
 
 .modal-close:hover {
-  background-color: #f8f4f0;
+  background-color: #ffead0;
   color: #5c0202;
 }
 
@@ -448,7 +448,7 @@
   border-radius: 0.5rem;
   overflow: hidden;
   border: 1px solid #e0d6cc;
-  background-color: #f8f4f0;
+  background-color: #ffead0;
 }
 
 .image-item img {
@@ -521,7 +521,7 @@
 
 .upload-placeholder:hover {
   border-color: #5c0202;
-  background-color: #f8f4f0;
+  background-color: #ffead0;
 }
 
 .upload-placeholder svg {
@@ -597,7 +597,7 @@
 }
 
 .modal-actions button[type="button"]:hover {
-  background-color: #f8f4f0;
+  background-color: #ffead0;
 }
 
 /* Loading state */
@@ -660,7 +660,7 @@ textarea:focus-visible {
 }
 
 .modal-content::-webkit-scrollbar-track {
-  background: #f8f4f0;
+  background: #ffead0;
   border-radius: 4px;
 }
 
@@ -678,7 +678,7 @@ textarea:focus-visible {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  background-color: #f8f4f0;
+  background-color: #ffead0;
 }
 
 /* Better image previews */
@@ -692,7 +692,7 @@ textarea:focus-visible {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #f8f4f0;
+  background-color: #ffead0;
 }
 
 .image-item.loading::after {
@@ -899,7 +899,7 @@ textarea:focus-visible {
 }
 
 .clear-search:hover {
-  background-color: #f8f4f0;
+  background-color: #ffead0;
   color: #5c0202;
 }
 
@@ -921,7 +921,7 @@ textarea:focus-visible {
 }
 
 .filters-toggle:hover {
-  background-color: #f8f4f0;
+  background-color: #ffead0;
   border-color: #c9b9ae;
 }
 
@@ -1011,7 +1011,7 @@ textarea:focus-visible {
 }
 
 .btn-clear-filters {
-  background-color: #f8f4f0;
+  background-color: #ffead0;
   border: 1px solid #e0d6cc;
   border-radius: 0.5rem;
   padding: 0.625rem 1.25rem;
@@ -1310,7 +1310,7 @@ textarea:focus-visible {
 }
 
 .pagination-btn:hover:not(:disabled) {
-  background-color: #f8f4f0;
+  background-color: #ffead0;
   border-color: #c9b9ae;
   transform: translateY(-1px);
 }
@@ -1324,7 +1324,7 @@ textarea:focus-visible {
 .pagination-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  background-color: #f8f4f0;
+  background-color: #ffead0;
 }
 
 .pagination-dots {

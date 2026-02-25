@@ -1,7 +1,7 @@
 .admin-layout {
   display: flex;
   min-height: 100vh;
-  background-color: #f8f4f0;
+  background-color: #ffead0;
 }
 
 /* Sidebar */
@@ -203,7 +203,7 @@
   font-size: 14px;
   color: #666;
   padding: 5px 15px;
-  background-color: #f8f4f0;
+  background-color: #ffead0;
   border-radius: 20px;
 }
 

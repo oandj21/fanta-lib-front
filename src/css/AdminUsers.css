@@ -78,7 +78,7 @@
 }
 
 .btn-secondary:hover {
-  background-color: #f8f4f0;
+  background-color: #ffead0;
 }
 
 .btn-icon-left {
@@ -102,7 +102,7 @@
 .data-table th {
   text-align: left;
   padding: 15px 20px;
-  background-color: #f8f4f0;
+  background-color: #ffead0;
   font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
@@ -122,7 +122,7 @@
 }
 
 .data-table tbody tr:hover {
-  background-color: #f8f4f0;
+  background-color: #ffead0;
 }
 
 /* User name */
@@ -150,7 +150,7 @@
 }
 
 .role-badge.bg-muted {
-  background-color: #f8f4f0;
+  background-color: #ffead0;
   color: #666;
 }
 
@@ -169,7 +169,7 @@
 }
 
 .status-bad.inactive {
-  background-color: #f8f4f0;
+  background-color: #ffead0;
   color: #666;
 }
 
@@ -281,7 +281,7 @@
 }
 
 .modal-close:hover {
-  background-color: #f8f4f0;
+  background-color: #ffead0;
   color: #5c0202;
 }
 
@@ -395,7 +395,7 @@
 .loading-spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid #f8f4f0;
+  border: 3px solid #ffead0;
   border-top-color: #5c0202;
   border-radius: 50%;
   animation: spin 1s linear infinite;
@@ -574,7 +574,7 @@
 }
 
 .clear-search:hover {
-  background-color: #f8f4f0;
+  background-color: #ffead0;
   color: #5c0202;
 }
 
@@ -596,7 +596,7 @@
 }
 
 .filters-toggle:hover {
-  background-color: #f8f4f0;
+  background-color: #ffead0;
   border-color: #c9b9ae;
 }
 
@@ -678,7 +678,7 @@
 }
 
 .btn-clear-filters {
-  background-color: #f8f4f0;
+  background-color: #ffead0;
   border: 1px solid #e0d6cc;
   border-radius: 0.5rem;
   padding: 0.625rem 1.25rem;
@@ -717,7 +717,7 @@
 }
 
 .status-badge.inactive {
-  background-color: #f8f4f0;
+  background-color: #ffead0;
   color: #6b5752;
 }
 
@@ -807,7 +807,7 @@
 }
 
 .pagination-btn:hover:not(:disabled) {
-  background-color: #f8f4f0;
+  background-color: #ffead0;
   border-color: #c9b9ae;
   transform: translateY(-1px);
 }
@@ -821,7 +821,7 @@
 .pagination-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  background-color: #f8f4f0;
+  background-color: #ffead0;
 }
 
 .pagination-dots {
@@ -918,7 +918,7 @@
 }
 
 .role-badge.bg-muted {
-  background-color: #f8f4f0;
+  background-color: #ffead0;
   color: #6b5752;
 }
 
@@ -1158,7 +1158,7 @@
 }
 
 .status-badge.inactive {
-  background: linear-gradient(135deg, #f8f4f0 0%, #f0e9e5 100%);
+  background: linear-gradient(135deg, #ffead0 0%, #f0e9e5 100%);
   color: #6b5752;
   border: 1px solid #e0d6cc;
 }

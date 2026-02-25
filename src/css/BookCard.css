@@ -130,17 +130,17 @@
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
-  background-color: #5c0202;
+  background-color: #25ba22;
   color: #f8f4f0;
 }
 
 .btn-cart:hover:not(:disabled) {
-  background-color: #5f3a37;
+  background-color: #27d124;
   transform: scale(1.05);
 }
 
 .btn-cart.added {
-  background-color: #28a745;
+  background-color: #22ae43;
   color: white;
 }
 

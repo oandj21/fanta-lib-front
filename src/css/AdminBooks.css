@@ -582,17 +582,17 @@
 }
 
 .modal-actions button[type="submit"] {
-  background-color: #4a2c2a;
+  background-color: #059669;
   color: #ffead0;
 }
 
 .modal-actions button[type="submit"]:hover {
-  background-color: #5f3a37;
+  background-color: #059669;
 }
 
 .modal-actions button[type="button"] {
   background-color: white;
-  color: #4a2c2a;
+  color: #059669;
   border: 1px solid #e0d6cc;
 }
 

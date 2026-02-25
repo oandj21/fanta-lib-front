@@ -1216,7 +1216,7 @@ export default function AdminOrders() {
         profit: parseFloat(profit.toFixed(2)),
         parcel_note: newOrderData.parcel_note || "",
         parcel_open: newOrderData.parcel_open ? 1 : 0,
-        statut: newOrderData.statut || "new",
+        statut: "new", // Default status
         livres: formattedLivres,
         date: newOrderData.date
     };
@@ -1363,8 +1363,7 @@ export default function AdminOrders() {
     return {
       deliveryStatus: info.parcel.delivery_status,
       paymentStatus: info.parcel.payment_status,
-      paymentText: info.parcel.payment_status_text,
-      description: info.tracking?.description
+      paymentText: info.parcel.payment_status_text
     };
   };
 
@@ -1515,7 +1514,6 @@ export default function AdminOrders() {
                   <th>Ville</th>
                   <th>Statut Livraison</th>
                   <th>Statut Paiement</th>
-                  <th>Description</th>
                   <th>Prix colis</th>
                   <th>Date</th>
                   <th>Actions</th>
@@ -1566,15 +1564,6 @@ export default function AdminOrders() {
                           </span>
                         ) : (
                           <span className="status-bad">-</span>
-                        )}
-                      </td>
-                      <td className="tracking-description">
-                        {loadingTracking[order.parcel_code] ? (
-                          <RefreshCw size={14} className="spinning" />
-                        ) : tracking?.description ? (
-                          <span className="description-text">{tracking.description}</span>
-                        ) : (
-                          '-'
                         )}
                       </td>
                       <td className="order-price">{order.parcel_price ? `${order.parcel_price} MAD` : "-"}</td>
@@ -1783,19 +1772,6 @@ export default function AdminOrders() {
                       step="0.01"
                     />
                   </div>
-
-                  <div className="form-group">
-                    <label>Statut</label>
-                    <select
-                      name="statut"
-                      value={newOrderData.statut}
-                      onChange={handleNewOrderChange}
-                    >
-                      {Object.entries(statusLabels).map(([value, label]) => (
-                        <option key={value} value={value}>{label}</option>
-                      ))}
-                    </select>
-                  </div>
                 </div>
 
                 <div className="form-row">
@@ -1993,19 +1969,6 @@ export default function AdminOrders() {
                       min="0"
                       step="0.01"
                     />
-                  </div>
-
-                  <div className="form-group">
-                    <label>Statut</label>
-                    <select
-                      name="statut"
-                      value={formData.statut}
-                      onChange={handleInputChange}
-                    >
-                      {Object.entries(statusLabels).map(([value, label]) => (
-                        <option key={value} value={value}>{label}</option>
-                      ))}
-                    </select>
                   </div>
                 </div>
 

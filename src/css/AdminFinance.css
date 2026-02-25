@@ -64,6 +64,7 @@
   }
 }
 
+/* Main Container */
 .admin-finance {
   width: 100%;
   padding: clamp(15px, 3vw, 30px);
@@ -72,7 +73,7 @@
   min-height: 100vh;
 }
 
-/* Header */
+/* Header Section */
 .finance-header {
   margin-bottom: 30px;
   display: flex;
@@ -117,6 +118,7 @@
   flex-wrap: wrap;
 }
 
+/* Time Range Selector */
 .time-range-selector {
   display: flex;
   gap: 5px;
@@ -197,6 +199,7 @@
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
 }
 
+/* Stat Cards */
 .stat-card {
   background: white;
   border-radius: 16px;
@@ -314,7 +317,7 @@
 
 .stat-content {
   flex: 1;
-  min-width: 0; /* Prevents overflow */
+  min-width: 0;
 }
 
 .stat-label {
@@ -883,7 +886,7 @@
   cursor: not-allowed;
 }
 
-/* Loading state */
+/* Loading State */
 .admin-loading {
   text-align: center;
   padding: 60px;

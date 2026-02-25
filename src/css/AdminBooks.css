@@ -49,7 +49,7 @@
 /* Buttons */
 .btn-primary {
   background-color: #059669;
-  color: #ead2b8;
+  color: #ffead0;
   border: none;
   padding: 0.75rem 1.5rem;
   border-radius: 0.75rem;
@@ -583,7 +583,7 @@
 
 .modal-actions button[type="submit"] {
   background-color: #4a2c2a;
-  color: #ead2b8;
+  color: #ffead0;
 }
 
 .modal-actions button[type="submit"]:hover {
@@ -927,12 +927,12 @@ textarea:focus-visible {
 
 .filters-toggle.active {
   background-color: #4a2c2a;
-  color: #ead2b8;
+  color: #ffead0;
   border-color: #4a2c2a;
 }
 
 .filters-toggle.active svg {
-  color: #ead2b8;
+  color: #ffead0;
 }
 
 .chevron {
@@ -1317,7 +1317,7 @@ textarea:focus-visible {
 
 .pagination-btn.active {
   background-color: #4a2c2a;
-  color: #ead2b8;
+  color: #ffead0;
   border-color: #4a2c2a;
 }
 

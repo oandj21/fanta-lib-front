@@ -23,7 +23,7 @@
   color: #4a2c2a;
   margin: 0;
   line-height: 1;
-  text-shadow: 3px 3px 0 #ead2b8;
+  text-shadow: 3px 3px 0 #ffead0;
   animation: pulse 2s infinite;
 }
 
@@ -47,7 +47,7 @@
 
 .btn-primary {
   background-color: #059669;
-  color: #ead2b8;
+  color: #ffead0;
   border: none;
   padding: 12px 30px;
   border-radius: 50px;
@@ -77,7 +77,7 @@
 
 .btn-outline:hover {
   background-color: #4a2c2a;
-  color: #ead2b8;
+  color: #ffead0;
   transform: translateY(-2px);
 }
 

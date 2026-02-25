@@ -207,12 +207,12 @@
 
 .filters-toggle.active {
   background-color: #4a2c2a;
-  color: #ead2b8;
+  color: #ffead0;
   border-color: #4a2c2a;
 }
 
 .filters-toggle.active svg {
-  color: #ead2b8;
+  color: #ffead0;
 }
 
 /* Filter Panel */
@@ -544,7 +544,7 @@
 
 .pagination-btn.active {
   background-color: #4a2c2a;
-  color: #ead2b8;
+  color: #ffead0;
   border-color: #4a2c2a;
 }
 

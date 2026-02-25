@@ -43,7 +43,7 @@
 /* Buttons */
 .btn-primary {
   background-color: #059669;
-  color: #ead2b8;
+  color: #ffead0;
   border: none;
   padding: 10px 20px;
   border-radius: 8px;
@@ -141,7 +141,7 @@
 
 .role-badge.bg-primary {
   background-color: #4a2c2a;
-  color: #ead2b8;
+  color: #ffead0;
 }
 
 .role-badge.bg-info\10 {
@@ -368,7 +368,7 @@
 
 .modal-actions button[type="submit"] {
   background-color: #4a2c2a;
-  color: #ead2b8;
+  color: #ffead0;
 }
 
 .modal-actions button[type="submit"]:hover {
@@ -602,12 +602,12 @@
 
 .filters-toggle.active {
   background-color: #4a2c2a;
-  color: #ead2b8;
+  color: #ffead0;
   border-color: #4a2c2a;
 }
 
 .filters-toggle.active svg {
-  color: #ead2b8;
+  color: #ffead0;
 }
 
 /* Filter Panel */
@@ -814,7 +814,7 @@
 
 .pagination-btn.active {
   background-color: #4a2c2a;
-  color: #ead2b8;
+  color: #ffead0;
   border-color: #4a2c2a;
 }
 

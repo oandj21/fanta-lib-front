@@ -56,7 +56,7 @@
 /* Buttons */
 .btn-primary {
   background-color: #059669;
-  color: #ead2b8;
+  color: #ffead0;
   border: none;
   padding: 0.75rem 1.5rem;
   border-radius: 0.75rem;
@@ -770,12 +770,12 @@ select:focus-visible {
 
 .filters-toggle.active {
   background-color: #4a2c2a;
-  color: #ead2b8;
+  color: #ffead0;
   border-color: #4a2c2a;
 }
 
 .filters-toggle.active svg {
-  color: #ead2b8;
+  color: #ffead0;
 }
 
 /* Filter Panel */
@@ -960,7 +960,7 @@ select:focus-visible {
 
 .pagination-btn.active {
   background-color: #4a2c2a;
-  color: #ead2b8;
+  color: #ffead0;
   border-color: #4a2c2a;
 }
 

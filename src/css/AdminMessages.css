@@ -107,7 +107,7 @@
   height: 45px;
   border-radius: 50%;
   background: linear-gradient(135deg, #4a2c2a, #5c0202);
-  color: #ead2b8;
+  color: #ffead0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -234,7 +234,7 @@
   height: 55px;
   border-radius: 50%;
   background: linear-gradient(135deg, #4a2c2a, #5c0202);
-  color: #ead2b8;
+  color: #ffead0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -281,7 +281,7 @@
 
 .btn-primar {
   background-color: #4a2c2a;
-  color: #ead2b8;
+  color: #ffead0;
   border: none;
   padding: 12px 20px;
   border-radius: 8px;
@@ -712,12 +712,12 @@
 
 .filters-toggle.active {
   background-color: #4a2c2a;
-  color: #ead2b8;
+  color: #ffead0;
   border-color: #4a2c2a;
 }
 
 .filters-toggle.active svg {
-  color: #ead2b8;
+  color: #ffead0;
 }
 
 /* Filter Panel */
@@ -844,7 +844,7 @@
   height: 2.5rem;
   border-radius: 50%;
   background-color: #4a2c2a;
-  color: #ead2b8;
+  color: #ffead0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1014,7 +1014,7 @@
 
 .pagination-btn.active {
   background-color: #4a2c2a;
-  color: #ead2b8;
+  color: #ffead0;
   border-color: #4a2c2a;
 }
 
@@ -1120,7 +1120,7 @@
   height: 3rem;
   border-radius: 50%;
   background-color: #4a2c2a;
-  color: #ead2b8;
+  color: #ffead0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1189,7 +1189,7 @@
 
 .btn-primary {
   background-color: #059669;
-  color: #ead2b8;
+  color: #ffead0;
   border: none;
 }
 

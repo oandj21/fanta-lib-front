@@ -8,7 +8,7 @@
 .sidebar {
   width: 260px;
   background: linear-gradient(180deg, #5c0202 0%, #4a2c2a 100%);
-  color: #ead2b8;
+  color: #ffead0;
   position: fixed;
   height: 100vh;
   left: 0;
@@ -32,14 +32,14 @@
   margin: 0;
   font-size: 24px;
   font-weight: 600;
-  color: #ead2b8;
+  color: #ffead0;
 }
 
 .close-sidebar {
   display: none;
   background: none;
   border: none;
-  color: #ead2b8;
+  color: #ffead0;
   font-size: 20px;
   cursor: pointer;
   padding: 5px;
@@ -56,7 +56,7 @@
   align-items: center;
   gap: 10px;
   padding: 4px 15px;
-  color: #ead2b8;
+  color: #ffead0;
   text-decoration: none;
   border-radius: 8px;
   margin-bottom: 5px;
@@ -71,7 +71,7 @@
 
 .nav-item.active {
   opacity: 1;
-  background-color: #ead2b8;
+  background-color: #ffead0;
   color: #5c0202;
   font-weight: 600;
 }
@@ -98,7 +98,7 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background-color: #ead2b8;
+  background-color: #ffead0;
   color: #5c0202;
   display: flex;
   align-items: center;
@@ -135,7 +135,7 @@
   padding: 10px;
   background: none;
   border: 1px solid rgba(234, 210, 184, 0.3);
-  color: #ead2b8;
+  color: #ffead0;
   border-radius: 8px;
   cursor: pointer;
   display: flex;

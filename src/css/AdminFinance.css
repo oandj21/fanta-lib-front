@@ -634,6 +634,7 @@
 }
 
 .recharts-surface {
+  padding: 30px;
   width: 100% !important;
   height: 100% !important;
 }

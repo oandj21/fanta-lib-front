@@ -20,42 +20,28 @@ import {
 } from "../../store/store";
 import "../../css/AdminOrders.css";
 
-// Status labels and colors for local status
-const statusLabels = {
-  new: "Nouvelle",
-  confirmed: "Confirmée",
-  shipped: "Expédiée",
-  delivered: "Livrée",
-  cancelled: "Annulée",
-  returned: "Retournée",
-};
-
-const statusColors = {
-  new: "#666",
-  confirmed: "#007bff",
-  shipped: "#ffc107",
-  delivered: "#28a745",
-  cancelled: "#dc3545",
-  returned: "#6f42c1",
-};
+// REMOVED: statusLabels and statusColors - now using API values directly
 
 // Helper to get status color based on status text
 const getStatusColor = (status) => {
   if (!status) return '#6b7280';
   
   const statusLower = status.toLowerCase();
-  if (statusLower.includes('livré') || statusLower.includes('delivered')) return '#10b981';
-  if (statusLower.includes('retourné') || statusLower.includes('returned')) return '#ef4444';
-  if (statusLower.includes('annulé') || statusLower.includes('cancelled')) return '#6b7280';
+  
+  // Welivexpress statuses
+  if (status === 'NEW_PARCEL' || statusLower.includes('nouveau')) return '#3b82f6';
+  if (status === 'PARCEL_CONFIRMED' || statusLower.includes('confirm')) return '#007bff';
+  if (status === 'PARCEL_IN_TRANSIT' || statusLower.includes('transit') || statusLower.includes('expéd')) return '#ffc107';
+  if (status === 'PARCEL_DELIVERED' || statusLower.includes('livré') || statusLower.includes('delivered')) return '#10b981';
+  if (status === 'PARCEL_CANCELLED' || statusLower.includes('annul') || statusLower.includes('cancelled')) return '#6b7280';
+  if (status === 'PARCEL_RETURNED' || statusLower.includes('retour') || statusLower.includes('returned')) return '#ef4444';
+  
+  // Payment statuses
   if (statusLower.includes('payé') || statusLower.includes('paid')) return '#10b981';
   if (statusLower.includes('non payé') || statusLower.includes('not_paid')) return '#ef4444';
   if (statusLower.includes('facturé') || statusLower.includes('invoiced')) return '#8b5cf6';
-  if (statusLower.includes('nouveau') || statusLower.includes('new')) return '#3b82f6';
-  if (statusLower.includes('expédié') || statusLower.includes('sent')) return '#3b82f6';
-  if (statusLower.includes('voyage') || statusLower.includes('envg')) return '#06b6d4';
-  if (statusLower.includes('distribution')) return '#f59e0b';
-  if (statusLower.includes('ramassé') || statusLower.includes('picked')) return '#8b5cf6';
   
+  // Default
   return '#6b7280';
 };
 
@@ -457,8 +443,8 @@ const OrderDetailsModal = ({ order, onClose }) => {
 
   if (!order) return null;
 
-  // Get the delivery status from tracking info - THIS IS THE FIX
-  const deliveryStatus = trackingInfo?.parcel?.delivery_status || null;
+  // Get the delivery status from tracking info
+  const deliveryStatus = trackingInfo?.parcel?.delivery_status || order.statut;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -780,7 +766,7 @@ const OrderDetailsModal = ({ order, onClose }) => {
                     <div className="order-info-value">
                       {loadingTracking ? (
                         <RefreshCw size={14} className="spinning" />
-                      ) : deliveryStatus ? (
+                      ) : (
                         <span 
                           className="status-bad"
                           style={{ 
@@ -790,17 +776,6 @@ const OrderDetailsModal = ({ order, onClose }) => {
                           }}
                         >
                           {deliveryStatus}
-                        </span>
-                      ) : (
-                        <span 
-                          className="status-bad"
-                          style={{ 
-                            backgroundColor: `${statusColors[order.statut] || "#666"}20`,
-                            color: statusColors[order.statut] || "#666",
-                            border: `1px solid ${(statusColors[order.statut] || "#666")}40`
-                          }}
-                        >
-                          {statusLabels[order.statut] || order.statut || "Nouvelle"}
                         </span>
                       )}
                     </div>
@@ -947,7 +922,6 @@ export default function AdminOrders() {
     profit: 0,
     parcel_note: "",
     parcel_open: 0,
-    statut: "new",
     livres: [],
     date: new Date().toISOString().split('T')[0]
   });
@@ -956,7 +930,7 @@ export default function AdminOrders() {
     dispatch(fetchCommandes());
   }, [dispatch]);
 
-  // Fetch tracking info for all orders
+  // Fetch tracking info for all orders and update Redux when status changes
   useEffect(() => {
     if (orderList.length > 0) {
       const fetchAllTrackingInfo = async () => {
@@ -983,6 +957,17 @@ export default function AdminOrders() {
                   ...prev,
                   [order.parcel_code]: response.data.data
                 }));
+                
+                // Update Redux if status changed
+                if (response.data.data.parcel?.delivery_status) {
+                  const deliveryStatus = response.data.data.parcel.delivery_status;
+                  if (order.statut !== deliveryStatus) {
+                    dispatch(updateCommande({ 
+                      id: order.id, 
+                      statut: deliveryStatus 
+                    }));
+                  }
+                }
               }
             } catch (err) {
               console.error(`Error fetching tracking for ${order.parcel_code}:`, err);
@@ -995,7 +980,7 @@ export default function AdminOrders() {
 
       fetchAllTrackingInfo();
     }
-  }, [orderList]);
+  }, [orderList, dispatch]);
 
   // Reset to first page when filters change
   useEffect(() => {
@@ -1014,7 +999,7 @@ export default function AdminOrders() {
         parcel_price: selectedOrder.parcel_price || "",
         parcel_note: selectedOrder.parcel_note || "",
         parcel_open: selectedOrder.parcel_open || 0,
-        statut: selectedOrder.statut || "new"
+        statut: selectedOrder.statut || ""
       });
     }
   }, [selectedOrder]);
@@ -1106,7 +1091,7 @@ export default function AdminOrders() {
       parcel_price: "",
       parcel_note: "",
       parcel_open: 0,
-      statut: "new"
+      statut: ""
     });
     setUpdateError(null);
   };
@@ -1127,7 +1112,6 @@ export default function AdminOrders() {
       profit: 0,
       parcel_note: "",
       parcel_open: 0,
-      statut: "new",
       livres: [],
       date: new Date().toISOString().split('T')[0]
     });
@@ -1152,7 +1136,6 @@ export default function AdminOrders() {
       profit: 0,
       parcel_note: "",
       parcel_open: 0,
-      statut: "new",
       livres: [],
       date: new Date().toISOString().split('T')[0]
     });
@@ -1294,7 +1277,7 @@ export default function AdminOrders() {
         profit: parseFloat(profit.toFixed(2)),
         parcel_note: newOrderData.parcel_note || "",
         parcel_open: newOrderData.parcel_open ? 1 : 0,
-        statut: "new", // Default status
+        // REMOVED: statut: "new", // Don't set default status
         livres: formattedLivres,
         date: newOrderData.date
     };
@@ -1344,15 +1327,27 @@ export default function AdminOrders() {
 
   const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
 
-  const stats = {
-    total: orderList.length,
-    new: orderList.filter(o => o.statut === "new").length,
-    confirmed: orderList.filter(o => o.statut === "confirmed").length,
-    shipped: orderList.filter(o => o.statut === "shipped").length,
-    delivered: orderList.filter(o => o.statut === "delivered").length,
-    cancelled: orderList.filter(o => o.statut === "cancelled").length,
-    returned: orderList.filter(o => o.statut === "returned").length,
-  };
+  // Get unique statuses from orders for filter dropdown
+  const uniqueStatuses = useMemo(() => {
+    const statuses = new Set();
+    orderList.forEach(order => {
+      if (order.statut) {
+        statuses.add(order.statut);
+      }
+    });
+    return Array.from(statuses).sort();
+  }, [orderList]);
+
+  // Calculate stats dynamically from orderList
+  const stats = useMemo(() => {
+    const statsMap = {};
+    orderList.forEach(order => {
+      if (order.statut) {
+        statsMap[order.statut] = (statsMap[order.statut] || 0) + 1;
+      }
+    });
+    return statsMap;
+  }, [orderList]);
 
   const clearFilters = () => {
     setSearchTerm("");
@@ -1468,50 +1463,27 @@ export default function AdminOrders() {
         </button>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards - Dynamic from API */}
       <div className="orders-stats-grid">
         <div className="order-stat-card">
           <div className="order-stat-content">
             <span className="order-stat-label">Total commandes</span>
-            <span className="order-stat-value">{stats.total}</span>
+            <span className="order-stat-value">{orderList.length}</span>
           </div>
         </div>
-        <div className="order-stat-card">
-          <div className="order-stat-content">
-            <span className="order-stat-label" style={{ color: statusColors.new }}>Nouvelles</span>
-            <span className="order-stat-value">{stats.new}</span>
+        {Object.entries(stats).map(([status, count]) => (
+          <div key={status} className="order-stat-card">
+            <div className="order-stat-content">
+              <span 
+                className="order-stat-label" 
+                style={{ color: getStatusColor(status) }}
+              >
+                {status}
+              </span>
+              <span className="order-stat-value">{count}</span>
+            </div>
           </div>
-        </div>
-        <div className="order-stat-card">
-          <div className="order-stat-content">
-            <span className="order-stat-label" style={{ color: statusColors.confirmed }}>Confirmées</span>
-            <span className="order-stat-value">{stats.confirmed}</span>
-          </div>
-        </div>
-        <div className="order-stat-card">
-          <div className="order-stat-content">
-            <span className="order-stat-label" style={{ color: statusColors.shipped }}>Expédiées</span>
-            <span className="order-stat-value">{stats.shipped}</span>
-          </div>
-        </div>
-        <div className="order-stat-card">
-          <div className="order-stat-content">
-            <span className="order-stat-label" style={{ color: statusColors.delivered }}>Livrées</span>
-            <span className="order-stat-value">{stats.delivered}</span>
-          </div>
-        </div>
-        <div className="order-stat-card">
-          <div className="order-stat-content">
-            <span className="order-stat-label" style={{ color: statusColors.cancelled }}>Annulées</span>
-            <span className="order-stat-value">{stats.cancelled}</span>
-          </div>
-        </div>
-        <div className="order-stat-card">
-          <div className="order-stat-content">
-            <span className="order-stat-label" style={{ color: statusColors.returned }}>Retournées</span>
-            <span className="order-stat-value">{stats.returned}</span>
-          </div>
-        </div>
+        ))}
       </div>
 
       {/* Search and Filters */}
@@ -1553,8 +1525,8 @@ export default function AdminOrders() {
                 className="filter-select"
               >
                 <option value="all">Tous les statuts</option>
-                {Object.entries(statusLabels).map(([value, label]) => (
-                  <option key={value} value={value}>{label}</option>
+                {uniqueStatuses.map(status => (
+                  <option key={status} value={status}>{status}</option>
                 ))}
               </select>
             </div>
@@ -1623,7 +1595,16 @@ export default function AdminOrders() {
                             {tracking.deliveryStatus || '-'}
                           </span>
                         ) : (
-                          <span className="status-bad">-</span>
+                          <span 
+                            className="status-bad"
+                            style={{ 
+                              backgroundColor: `${getStatusColor(order.statut)}15`,
+                              color: getStatusColor(order.statut),
+                              border: `1px solid ${getStatusColor(order.statut)}30`
+                            }}
+                          >
+                            {order.statut || '-'}
+                          </span>
                         )}
                       </td>
                       <td>
@@ -1666,7 +1647,7 @@ export default function AdminOrders() {
                             onClick={() => markDelivered(order.id)}
                             className="btn-icon success"
                             title="Marquer livrée"
-                            disabled={order.statut === "delivered"}
+                            disabled={order.statut === "PARCEL_DELIVERED" || order.statut === "delivered"}
                           >
                             <Check size={16} />
                           </button>

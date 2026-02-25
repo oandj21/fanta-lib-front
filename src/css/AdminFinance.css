@@ -774,4 +774,249 @@
 
 .admin-finance::-webkit-scrollbar-thumb:hover {
   background: #6b5752;
+}/* Add these styles to your existing AdminFinance.css */
+
+.update-capital-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #4a2c2a 0%, #6b4f4a 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-family: "Playfair Display", serif;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(74, 44, 42, 0.2);
+}
+
+.update-capital-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(74, 44, 42, 0.3);
+  background: linear-gradient(135deg, #3d2a27 0%, #5a433f 100%);
+}
+
+.update-capital-btn:active {
+  transform: translateY(0);
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 450px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  animation: slideUp 0.3s ease;
+}
+
+.modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid #e0d6cc;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-header h3 {
+  font-family: "Playfair Display", serif;
+  color: #4a2c2a;
+  font-size: 1.25rem;
+  margin: 0;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #8b7a74;
+  transition: color 0.3s ease;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+
+.close-btn:hover {
+  color: #4a2c2a;
+  background: #f5f0eb;
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-family: "Lato", sans-serif;
+  font-weight: 500;
+  color: #4a2c2a;
+  font-size: 14px;
+}
+
+.capital-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e0d6cc;
+  border-radius: 8px;
+  font-family: "Lato", sans-serif;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  background: #fcfaf8;
+}
+
+.capital-input:focus {
+  outline: none;
+  border-color: #4a2c2a;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(74, 44, 42, 0.1);
+}
+
+.current-capital-info {
+  font-family: "Lato", sans-serif;
+  font-size: 14px;
+  color: #6b5752;
+  padding: 12px;
+  background: #f5f0eb;
+  border-radius: 8px;
+  margin-top: 8px;
+}
+
+.modal-footer {
+  padding: 20px 24px;
+  border-top: 1px solid #e0d6cc;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.cancel-btn,
+.save-btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-family: "Lato", sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.cancel-btn {
+  background: white;
+  border: 2px solid #e0d6cc;
+  color: #6b5752;
+}
+
+.cancel-btn:hover {
+  background: #f5f0eb;
+  border-color: #c4b5ab;
+}
+
+.save-btn {
+  background: #4a2c2a;
+  border: none;
+  color: white;
+  box-shadow: 0 4px 12px rgba(74, 44, 42, 0.2);
+}
+
+.save-btn:hover:not(:disabled) {
+  background: #3d2a27;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(74, 44, 42, 0.3);
+}
+
+.save-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Edit icon in stat card */
+.stat-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.edit-icon-btn {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: #8b7a74;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.edit-icon-btn:hover {
+  background: rgba(74, 44, 42, 0.1);
+  color: #4a2c2a;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .modal-content {
+    width: 95%;
+    margin: 16px;
+  }
+  
+  .update-capital-btn {
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+  
+  .update-capital-btn span {
+    display: none;
+  }
 }

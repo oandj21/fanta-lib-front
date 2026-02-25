@@ -10,7 +10,8 @@ import {
   PieChart,
   ArrowUpCircle,
   ArrowDownCircle,
-  RefreshCw
+  RefreshCw,
+  Edit3
 } from "lucide-react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -20,16 +21,20 @@ import {
   fetchDashboardStats, 
   fetchMonthlyStats,
   fetchFinances,
-  fetchBooksTotalValue
+  fetchBooksTotalValue,
+  updateFinance,
+  createFinance
 } from "../../store/store";
 import "../../css/AdminFinance.css";
 
 export default function AdminFinance() {
   const dispatch = useDispatch();
   const { stats = {}, monthlyStats = [] } = useSelector((state) => state.dashboard);
-  const { currentFinance, totalBooksValue } = useSelector((state) => state.finances);
+  const { currentFinance, list: financesList, totalBooksValue } = useSelector((state) => state.finances);
   const [activeTab, setActiveTab] = useState('overview');
-  const [timeRange, setTimeRange] = useState('month');
+  const [showCapitalModal, setShowCapitalModal] = useState(false);
+  const [capitalAmount, setCapitalAmount] = useState('');
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     dispatch(fetchDashboardStats());
@@ -37,6 +42,12 @@ export default function AdminFinance() {
     dispatch(fetchFinances());
     dispatch(fetchBooksTotalValue());
   }, [dispatch]);
+
+  useEffect(() => {
+    if (currentFinance) {
+      setCapitalAmount(currentFinance.capital?.toString() || '0');
+    }
+  }, [currentFinance]);
 
   // Get capital from finance (if multiple records, get the latest)
   const capital = currentFinance?.capital || 0;
@@ -59,13 +70,49 @@ export default function AdminFinance() {
   // Calculate profit margin
   const profitMargin = revenue > 0 ? ((totalProfitBooks / revenue) * 100).toFixed(1) : 0;
 
+  const handleUpdateCapital = async () => {
+    if (!capitalAmount || isNaN(capitalAmount)) {
+      alert('Veuillez entrer un montant valide');
+      return;
+    }
+
+    setIsUpdating(true);
+    try {
+      const amount = parseInt(capitalAmount);
+      
+      if (currentFinance) {
+        // Update existing finance record
+        await dispatch(updateFinance({ 
+          id: currentFinance.id, 
+          capital: amount 
+        })).unwrap();
+      } else {
+        // Create new finance record if none exists
+        await dispatch(createFinance({ 
+          capital: amount 
+        })).unwrap();
+      }
+      
+      // Refresh finances data
+      await dispatch(fetchFinances());
+      setShowCapitalModal(false);
+      alert('Capital mis à jour avec succès !');
+    } catch (error) {
+      console.error('Error updating capital:', error);
+      alert('Erreur lors de la mise à jour du capital');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   const mainCards = [
     { 
       label: "Capital Initial", 
       value: capital, 
       icon: Wallet,
       color: "primary",
-      description: "Fonds de départ"
+      description: "Fonds de départ",
+      editable: true
     },
     { 
       label: "Valeur Stock Livres", 
@@ -138,9 +185,6 @@ export default function AdminFinance() {
     { name: 'Dépenses', value: totalDepenses, color: '#ef4444' },
   ];
 
-  // Colors for charts
-  const COLORS = ['#4a2c2a', '#10b981', '#ef4444', '#f59e0b', '#8b5cf6'];
-
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('fr-MA', {
       style: 'currency',
@@ -158,18 +202,86 @@ export default function AdminFinance() {
           <p>Analyse financière détaillée de votre activité</p>
         </div>
         <div className="header-actions">
+          <button 
+            className="update-capital-btn"
+            onClick={() => setShowCapitalModal(true)}
+          >
+            <Edit3 size={18} />
+            Mettre à jour le capital
+          </button>
         </div>
       </div>
 
+      {/* Capital Update Modal */}
+      {showCapitalModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3>Mettre à jour le capital</h3>
+              <button 
+                className="close-btn"
+                onClick={() => setShowCapitalModal(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label htmlFor="capital">Montant du capital (MAD)</label>
+                <input
+                  type="number"
+                  id="capital"
+                  className="capital-input"
+                  value={capitalAmount}
+                  onChange={(e) => setCapitalAmount(e.target.value)}
+                  placeholder="Entrez le montant"
+                  min="0"
+                  step="100"
+                />
+              </div>
+              <div className="current-capital-info">
+                Capital actuel: {formatCurrency(capital)}
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button 
+                className="cancel-btn"
+                onClick={() => setShowCapitalModal(false)}
+              >
+                Annuler
+              </button>
+              <button 
+                className="save-btn"
+                onClick={handleUpdateCapital}
+                disabled={isUpdating}
+              >
+                {isUpdating ? 'Mise à jour...' : 'Enregistrer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Stats Grid */}
       <div className="stats-grid main-grid">
-        {mainCards.map(({ label, value, icon: Icon, color, description }) => (
+        {mainCards.map(({ label, value, icon: Icon, color, description, editable }) => (
           <div key={label} className={`stat-card ${color}`}>
             <div className="stat-icon">
               <Icon size={24} />
             </div>
             <div className="stat-content">
-              <p className="stat-label">{label}</p>
+              <p className="stat-label">
+                {label}
+                {editable && (
+                  <button 
+                    className="edit-icon-btn"
+                    onClick={() => setShowCapitalModal(true)}
+                    title="Modifier le capital"
+                  >
+                    <Edit3 size={14} />
+                  </button>
+                )}
+              </p>
               <h3 className="stat-value">{formatCurrency(value)}</h3>
               <p className="stat-description">{description}</p>
             </div>

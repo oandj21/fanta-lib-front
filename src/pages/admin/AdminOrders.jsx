@@ -413,97 +413,36 @@ const OrderDetailsModal = ({ order, onClose }) => {
     }
   }, [order]);
 
-  // In AdminOrders.jsx, modify the fetchTrackingInfo function
+  const fetchTrackingInfo = async (parcelCode) => {
+    setLoadingTracking(true);
+    setTrackingError(null);
 
-const fetchTrackingInfo = async (parcelCode) => {
-  setLoadingTracking(prev => ({ ...prev, [parcelCode]: true }));
-
-  try {
-    const token = localStorage.getItem("token");
-    
-    const response = await axios.get(
-      `https://fanta-lib-back-production.up.railway.app/api/welivexpress/trackparcel`,
-      {
-        params: { parcel_code: parcelCode },
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json'
-        }
-      }
-    );
-
-    if (response.data.success && response.data.data) {
-      setTrackingInfoMap(prev => ({
-        ...prev,
-        [parcelCode]: response.data.data
-      }));
+    try {
+      const token = localStorage.getItem("token");
       
-      // 🔄 If delivery status changed, trigger a local update
-      if (response.data.data.parcel?.delivery_status) {
-        const deliveryStatus = response.data.data.parcel.delivery_status;
-        const mappedStatus = mapWelivexpressStatus(deliveryStatus);
-        
-        // Find the order in your list and update it locally
-        const orderToUpdate = orderList.find(o => o.parcel_code === parcelCode);
-        if (orderToUpdate && orderToUpdate.statut !== mappedStatus) {
-          // You might want to dispatch an update to your Redux store
-          // Or make a separate API call to update the local database
-          await updateLocalOrderStatus(parcelCode, mappedStatus);
-        }
-      }
-    }
-  } catch (err) {
-    console.error(`Error fetching tracking for ${parcelCode}:`, err);
-  } finally {
-    setLoadingTracking(prev => ({ ...prev, [parcelCode]: false }));
-  }
-};
-
-// Helper function to update local status
-const updateLocalOrderStatus = async (parcelCode, newStatus) => {
-  try {
-    const token = localStorage.getItem("token");
-    const order = orderList.find(o => o.parcel_code === parcelCode);
-    
-    if (order) {
-      await axios.put(
-        `https://fanta-lib-back-production.up.railway.app/api/commandes/${order.id}`,
-        { statut: newStatus },
+      const response = await axios.get(
+        `https://fanta-lib-back-production.up.railway.app/api/welivexpress/trackparcel`,
         {
+          params: { parcel_code: parcelCode },
           headers: {
             'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
+            'Accept': 'application/json'
           }
         }
       );
-      
-      // Update local state
-      dispatch(updateCommande({ id: order.id, statut: newStatus }));
-      console.log(`✅ Updated order ${parcelCode} status to ${newStatus}`);
-    }
-  } catch (error) {
-    console.error('Failed to update local status:', error);
-  }
-};
 
-// Status mapping function
-const mapWelivexpressStatus = (welivexpressStatus) => {
-  const statusMap = {
-    'En attente': 'new',
-    'Confirmée': 'confirmed',
-    'Expédiée': 'shipped',
-    'Livrée': 'delivered',
-    'Annulée': 'cancelled',
-    'Retournée': 'returned',
-    'En cours': 'shipped',
-    'En distribution': 'shipped',
-    'Distribué': 'delivered',
-    'Ramassé': 'delivered',
-    'Non distribué': 'cancelled'
+      console.log("Tracking response in order details:", response.data);
+
+      if (response.data.success && response.data.data) {
+        setTrackingInfo(response.data.data);
+      }
+    } catch (err) {
+      console.error("Error fetching tracking info:", err);
+      setTrackingError("Impossible de récupérer les informations de suivi");
+    } finally {
+      setLoadingTracking(false);
+    }
   };
-  
-  return statusMap[welivexpressStatus] || welivexpressStatus;
-};
 
   const formatDate = (dateString) => {
     if (!dateString) return "-";

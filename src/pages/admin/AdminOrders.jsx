@@ -5,8 +5,7 @@ import {
   X, Save, MapPin, Phone, User, Package, DollarSign,
   Map, FileText, Truck, UserCircle, Building, Plus,
   Loader, ChevronDown, BookOpen, Minus, Plus as PlusIcon,
-  Eye, RefreshCw, AlertCircle, CheckCircle, Box, Layers,
-  Clock, Truck as TruckIcon
+  Eye, RefreshCw, AlertCircle, CheckCircle, Box, Layers
 } from "lucide-react";
 import axios from "axios";
 import { 
@@ -19,7 +18,7 @@ import {
 } from "../../store/store";
 import "../../css/AdminOrders.css";
 
-// Status labels and colors for local status
+// Status labels and colors
 const statusLabels = {
   new: "Nouvelle",
   confirmed: "Confirmée",
@@ -36,26 +35,6 @@ const statusColors = {
   delivered: "#28a745",
   cancelled: "#dc3545",
   returned: "#6f42c1",
-};
-
-// Helper to get status color based on status text
-const getStatusColor = (status) => {
-  if (!status) return '#6b7280';
-  
-  const statusLower = status.toLowerCase();
-  if (statusLower.includes('livré') || statusLower.includes('delivered')) return '#10b981';
-  if (statusLower.includes('retourné') || statusLower.includes('returned')) return '#ef4444';
-  if (statusLower.includes('annulé') || statusLower.includes('cancelled')) return '#6b7280';
-  if (statusLower.includes('payé') || statusLower.includes('paid')) return '#10b981';
-  if (statusLower.includes('non payé') || statusLower.includes('not_paid')) return '#ef4444';
-  if (statusLower.includes('facturé') || statusLower.includes('invoiced')) return '#8b5cf6';
-  if (statusLower.includes('nouveau') || statusLower.includes('new')) return '#3b82f6';
-  if (statusLower.includes('expédié') || statusLower.includes('sent')) return '#3b82f6';
-  if (statusLower.includes('voyage') || statusLower.includes('envg')) return '#06b6d4';
-  if (statusLower.includes('distribution')) return '#f59e0b';
-  if (statusLower.includes('ramassé') || statusLower.includes('picked')) return '#8b5cf6';
-  
-  return '#6b7280';
 };
 
 // City Autocomplete Component
@@ -400,58 +379,8 @@ const BookSelector = ({ selectedBooks, onBooksChange, onTotalQuantityChange }) =
   );
 };
 
-// Order Details Modal Component with real-time tracking
+// Order Details Modal Component
 const OrderDetailsModal = ({ order, onClose }) => {
-  const [trackingInfo, setTrackingInfo] = useState(null);
-  const [loadingTracking, setLoadingTracking] = useState(false);
-  const [trackingError, setTrackingError] = useState(null);
-
-  useEffect(() => {
-    if (order && order.parcel_code) {
-      fetchTrackingInfo(order.parcel_code);
-    }
-  }, [order]);
-
-  const fetchTrackingInfo = async (parcelCode) => {
-    setLoadingTracking(true);
-    setTrackingError(null);
-
-    try {
-      const token = localStorage.getItem("token");
-      
-      const response = await axios.get(
-        `https://fanta-lib-back-production.up.railway.app/api/welivexpress/trackparcel`,
-        {
-          params: { parcel_code: parcelCode },
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json'
-          }
-        }
-      );
-
-      if (response.data.success && response.data.data) {
-        setTrackingInfo(response.data.data);
-      }
-    } catch (err) {
-      console.error("Error fetching tracking info:", err);
-      setTrackingError("Impossible de récupérer les informations de suivi");
-    } finally {
-      setLoadingTracking(false);
-    }
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return "-";
-    return new Date(dateString).toLocaleString('fr-FR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
   if (!order) return null;
 
   return (
@@ -465,79 +394,6 @@ const OrderDetailsModal = ({ order, onClose }) => {
         </div>
 
         <div className="modal-body">
-          {/* Real-time tracking information */}
-          {loadingTracking && (
-            <div className="tracking-loading">
-              <RefreshCw size={20} className="spinning" />
-              <span>Chargement des informations de suivi...</span>
-            </div>
-          )}
-
-          {trackingError && (
-            <div className="tracking-error">
-              <AlertCircle size={20} />
-              <span>{trackingError}</span>
-            </div>
-          )}
-
-          {trackingInfo && trackingInfo.parcel && (
-            <div className="tracking-info-section">
-              <div className="tracking-info-header">
-                <TruckIcon size={20} />
-                <h4>Suivi Welivexpress</h4>
-              </div>
-              
-              <div className="tracking-status-grid">
-                <div className="tracking-status-card">
-                  <div className="tracking-status-label">Statut livraison</div>
-                  <div 
-                    className="tracking-status-badge"
-                    style={{ 
-                      backgroundColor: `${getStatusColor(trackingInfo.parcel.delivery_status)}15`,
-                      color: getStatusColor(trackingInfo.parcel.delivery_status),
-                      border: `1px solid ${getStatusColor(trackingInfo.parcel.delivery_status)}30`
-                    }}
-                  >
-                    {trackingInfo.parcel.delivery_status || 'Inconnu'}
-                  </div>
-                  {trackingInfo.tracking && (
-                    <div className="tracking-status-description">
-                      {trackingInfo.tracking.description}
-                    </div>
-                  )}
-                </div>
-
-                <div className="tracking-status-card">
-                  <div className="tracking-status-label">Statut paiement</div>
-                  <div 
-                    className="tracking-status-badge"
-                    style={{ 
-                      backgroundColor: `${getStatusColor(trackingInfo.parcel.payment_status)}15`,
-                      color: getStatusColor(trackingInfo.parcel.payment_status),
-                      border: `1px solid ${getStatusColor(trackingInfo.parcel.payment_status)}30`
-                    }}
-                  >
-                    {trackingInfo.parcel.payment_status || 'Inconnu'}
-                  </div>
-                  <div className="tracking-payment-text">
-                    {trackingInfo.parcel.payment_status_text}
-                  </div>
-                </div>
-              </div>
-
-              <div className="tracking-dates">
-                <div className="tracking-date-item">
-                  <Clock size={14} />
-                  <span>Création: {formatDate(trackingInfo.parcel.created_at)}</span>
-                </div>
-                <div className="tracking-date-item">
-                  <RefreshCw size={14} />
-                  <span>Dernière mise à jour: {formatDate(trackingInfo.parcel.updated_at)}</span>
-                </div>
-              </div>
-            </div>
-          )}
-
           <div className="details-grid">
             <div className="detail-group">
               <label>Client</label>
@@ -566,7 +422,7 @@ const OrderDetailsModal = ({ order, onClose }) => {
             <div className="detail-group">
               <label>Statut</label>
               <span 
-                className="status-badge"
+                className="status-bad"
                 style={{ 
                   backgroundColor: `${statusColors[order.statut] || "#666"}20`,
                   color: statusColors[order.statut] || "#666",
@@ -1000,6 +856,7 @@ export default function AdminOrders() {
         parcel_code: newOrderData.parcel_code,
         parcel_receiver: newOrderData.parcel_receiver,
         parcel_phone: newOrderData.parcel_phone || "",
+        // parcel_prd_name is NOT included
         parcel_prd_qty: newOrderData.parcel_prd_qty,
         parcel_city: newOrderData.parcel_city,
         parcel_address: newOrderData.parcel_address || "",
@@ -1041,6 +898,7 @@ export default function AdminOrders() {
       const matchesSearch = searchTerm === "" || 
         order.parcel_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.parcel_receiver?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        // Removed parcel_prd_name from search
         order.parcel_city?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.parcel_phone?.toLowerCase().includes(searchTerm.toLowerCase());
       
@@ -1149,153 +1007,12 @@ export default function AdminOrders() {
     );
   };
 
-  // Add this CSS to your AdminOrders.css file
-  const trackingStyles = `
-    .tracking-loading {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 1rem;
-      background-color: #f8f4f0;
-      border-radius: 0.75rem;
-      margin-bottom: 1.5rem;
-      color: #4a2c2a;
-    }
-
-    .tracking-loading .spinning {
-      animation: spin 1s linear infinite;
-    }
-
-    .tracking-error {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 1rem;
-      background-color: #fee2e2;
-      border: 1px solid #ef4444;
-      border-radius: 0.75rem;
-      margin-bottom: 1.5rem;
-      color: #dc2626;
-    }
-
-    .tracking-info-section {
-      background: linear-gradient(135deg, #f8f4f0 0%, #ffffff 100%);
-      border-radius: 1rem;
-      padding: 1.5rem;
-      margin-bottom: 2rem;
-      border: 1px solid #e0d6cc;
-    }
-
-    .tracking-info-header {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-      padding-bottom: 0.5rem;
-      border-bottom: 1px solid #e0d6cc;
-    }
-
-    .tracking-info-header svg {
-      color: #8b5e3c;
-    }
-
-    .tracking-info-header h4 {
-      font-family: 'Lato', sans-serif;
-      font-size: 1rem;
-      font-weight: 600;
-      color: #4a2c2a;
-      margin: 0;
-    }
-
-    .tracking-status-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 1rem;
-      margin-bottom: 1rem;
-    }
-
-    .tracking-status-card {
-      background-color: white;
-      border-radius: 0.75rem;
-      padding: 1rem;
-      border: 1px solid #e0d6cc;
-    }
-
-    .tracking-status-label {
-      font-family: 'Lato', sans-serif;
-      font-size: 0.75rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: #6b5752;
-      margin-bottom: 0.5rem;
-    }
-
-    .tracking-status-badge {
-      display: inline-block;
-      padding: 0.25rem 0.75rem;
-      border-radius: 9999px;
-      font-family: 'Lato', sans-serif;
-      font-size: 0.75rem;
-      font-weight: 600;
-    }
-
-    .tracking-status-description {
-      margin-top: 0.5rem;
-      font-family: 'Lato', sans-serif;
-      font-size: 0.875rem;
-      color: #2c1e1c;
-      font-style: italic;
-    }
-
-    .tracking-payment-text {
-      margin-top: 0.5rem;
-      font-family: 'Lato', sans-serif;
-      font-size: 0.75rem;
-      color: #6b5752;
-    }
-
-    .tracking-dates {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1rem;
-      margin-top: 1rem;
-      padding-top: 1rem;
-      border-top: 1px solid #e0d6cc;
-    }
-
-    .tracking-date-item {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-family: 'Lato', sans-serif;
-      font-size: 0.75rem;
-      color: #6b5752;
-    }
-
-    .tracking-date-item svg {
-      color: #8b5e3c;
-    }
-
-    @keyframes spin {
-      from {
-        transform: rotate(0deg);
-      }
-      to {
-        transform: rotate(360deg);
-      }
-    }
-  `;
-
   if (loading) {
     return <div className="admin-loading">Chargement des commandes...</div>;
   }
 
   return (
     <div className="admin-orders">
-      {/* Add tracking styles */}
-      <style>{trackingStyles}</style>
-      
       <div className="orders-header">
         <div>
           <h2>Gestion des Commandes</h2>
@@ -1452,7 +1169,7 @@ export default function AdminOrders() {
                       <td>{order.parcel_city || "-"}</td>
                       <td>
                         <span 
-                          className="status-badge"
+                          className="status-bad"
                           style={{ 
                             backgroundColor: `${statusColors[order.statut] || "#666"}20`,
                             color: statusColors[order.statut] || "#666",
@@ -1469,7 +1186,7 @@ export default function AdminOrders() {
                           <button
                             onClick={() => openDetailsModal(order)}
                             className="btn-icon view"
-                            title="Voir détails avec suivi"
+                            title="Voir détails"
                           >
                             <Eye size={16} />
                           </button>

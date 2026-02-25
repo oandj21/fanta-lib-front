@@ -459,7 +459,7 @@ const OrderDetailsModal = ({ order, onClose }) => {
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content details-modal" onClick={e => e.stopPropagation()}>
+      <div className="modal-content1 details-modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h3>Détails de la commande #{order.parcel_code}</h3>
           <button onClick={onClose} className="modal-close">
@@ -1683,7 +1683,7 @@ export default function AdminOrders() {
       {/* ADD MODAL */}
       {showAddModal && (
         <div className="modal-overlay" onClick={closeAddModal}>
-          <div className="modal-content add-order-modal" onClick={e => e.stopPropagation()}>
+          <div className="modal-content1 add-order-modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Nouvelle commande</h3>
               <button onClick={closeAddModal} className="modal-close">
@@ -1937,7 +1937,7 @@ export default function AdminOrders() {
       {/* UPDATE MODAL */}
       {showUpdateModal && selectedOrder && (
         <div className="modal-overlay" onClick={closeUpdateModal}>
-          <div className="modal-content update-order-modal" onClick={e => e.stopPropagation()}>
+          <div className="modal-content1 update-order-modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Modifier la commande #{selectedOrder.parcel_code}</h3>
               <button onClick={closeUpdateModal} className="modal-close">

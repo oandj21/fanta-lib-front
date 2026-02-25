@@ -42,7 +42,7 @@
 
 /* Buttons */
 .btn-primary {
-  background-color: #4a2c2a;
+  background-color: #075601;
   color: #ead2b8;
   border: none;
   padding: 10px 20px;
@@ -57,7 +57,7 @@
 }
 
 .btn-primary:hover {
-  background-color: #5f3a37;
+  background-color: #075601;
 }
 
 .btn-secondary {

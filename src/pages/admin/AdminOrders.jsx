@@ -457,6 +457,9 @@ const OrderDetailsModal = ({ order, onClose }) => {
 
   if (!order) return null;
 
+  // Get the delivery status from tracking info - THIS IS THE FIX
+  const deliveryStatus = trackingInfo?.parcel?.delivery_status || null;
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content1 details-modal" onClick={e => e.stopPropagation()}>
@@ -772,19 +775,34 @@ const OrderDetailsModal = ({ order, onClose }) => {
                   <div className="order-info-card">
                     <div className="order-info-label">
                       <Clock size={14} />
-                      Statut
+                      Statut de livraison
                     </div>
                     <div className="order-info-value">
-                      <span 
-                        className="status-bad"
-                        style={{ 
-                          backgroundColor: `${statusColors[order.statut] || "#666"}20`,
-                          color: statusColors[order.statut] || "#666",
-                          border: `1px solid ${(statusColors[order.statut] || "#666")}40`
-                        }}
-                      >
-                        {statusLabels[order.statut] || order.statut || "Nouvelle"}
-                      </span>
+                      {loadingTracking ? (
+                        <RefreshCw size={14} className="spinning" />
+                      ) : deliveryStatus ? (
+                        <span 
+                          className="status-bad"
+                          style={{ 
+                            backgroundColor: `${getStatusColor(deliveryStatus)}15`,
+                            color: getStatusColor(deliveryStatus),
+                            border: `1px solid ${getStatusColor(deliveryStatus)}30`
+                          }}
+                        >
+                          {deliveryStatus}
+                        </span>
+                      ) : (
+                        <span 
+                          className="status-bad"
+                          style={{ 
+                            backgroundColor: `${statusColors[order.statut] || "#666"}20`,
+                            color: statusColors[order.statut] || "#666",
+                            border: `1px solid ${(statusColors[order.statut] || "#666")}40`
+                          }}
+                        >
+                          {statusLabels[order.statut] || order.statut || "Nouvelle"}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>

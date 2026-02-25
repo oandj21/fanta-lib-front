@@ -498,7 +498,7 @@ const OrderDetailsModal = ({ order, onClose }) => {
                     Statut de livraison
                   </div>
                   <div 
-                    className="tracking-status-badge large"
+                    className="tracking-status-bad large"
                     style={{ 
                       backgroundColor: `${getStatusColor(trackingInfo.parcel.delivery_status)}15`,
                       color: getStatusColor(trackingInfo.parcel.delivery_status),
@@ -520,7 +520,7 @@ const OrderDetailsModal = ({ order, onClose }) => {
                     Statut de paiement
                   </div>
                   <div 
-                    className="tracking-status-badge"
+                    className="tracking-status-bad"
                     style={{ 
                       backgroundColor: `${getStatusColor(trackingInfo.parcel.payment_status)}15`,
                       color: getStatusColor(trackingInfo.parcel.payment_status),
@@ -723,7 +723,7 @@ const OrderDetailsModal = ({ order, onClose }) => {
               <div className="detail-group">
                 <label>Statut</label>
                 <span 
-                  className="status-badge"
+                  className="status-bad"
                   style={{ 
                     backgroundColor: `${statusColors[order.statut] || "#666"}20`,
                     color: statusColors[order.statut] || "#666",
@@ -1537,7 +1537,7 @@ export default function AdminOrders() {
                           <RefreshCw size={14} className="spinning" />
                         ) : tracking ? (
                           <span 
-                            className="status-badge"
+                            className="status-bad"
                             style={{ 
                               backgroundColor: `${getStatusColor(tracking.deliveryStatus)}15`,
                               color: getStatusColor(tracking.deliveryStatus),
@@ -1547,7 +1547,7 @@ export default function AdminOrders() {
                             {tracking.deliveryStatus || '-'}
                           </span>
                         ) : (
-                          <span className="status-badge">-</span>
+                          <span className="status-bad">-</span>
                         )}
                       </td>
                       <td>
@@ -1555,7 +1555,7 @@ export default function AdminOrders() {
                           <RefreshCw size={14} className="spinning" />
                         ) : tracking ? (
                           <span 
-                            className="status-badge"
+                            className="status-bad"
                             style={{ 
                               backgroundColor: `${getStatusColor(tracking.paymentStatus)}15`,
                               color: getStatusColor(tracking.paymentStatus),
@@ -1565,7 +1565,7 @@ export default function AdminOrders() {
                             {tracking.paymentText || tracking.paymentStatus || '-'}
                           </span>
                         ) : (
-                          <span className="status-badge">-</span>
+                          <span className="status-bad">-</span>
                         )}
                       </td>
                       <td className="tracking-description">

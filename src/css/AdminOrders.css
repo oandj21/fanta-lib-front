@@ -705,7 +705,7 @@
   background-color: white;
   border-radius: 1rem;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  max-width: 900px;
+  max-width: 1200px;
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
@@ -714,7 +714,7 @@
 }
 
 .details-modal {
-  max-width: 700px;
+  max-width: 1200px;
 }
 
 .modal-header {
@@ -1240,143 +1240,189 @@
   gap: 0.5rem;
 }
 
-/* Details Modal Styles */
-.details-grid {
+/* Details Modal Two Column Layout */
+.details-two-column {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: 1fr 1fr;
   gap: 1.5rem;
   margin-bottom: 2rem;
 }
 
-.detail-group {
+.details-left-column,
+.details-right-column {
+  min-width: 0; /* Prevent overflow */
+}
+
+.details-section.full-width {
+  grid-column: 1 / -1;
+  margin-top: 1rem;
+}
+
+/* Order Info Section - Styled like tracking section */
+.order-info-section {
+  background: linear-gradient(135deg, #f8f4f0 0%, #ffffff 100%);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  margin-bottom: 0;
+  border: 2px solid #5c0202;
+  box-shadow: 0 4px 12px rgba(92, 2, 2, 0.15);
+  position: relative;
+  animation: pulseBorder 2s infinite;
+  width: 100%;
+  box-sizing: border-box;
+  height: fit-content;
+}
+
+.order-info-header {
   display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #e0d6cc;
+  position: relative;
+  flex-wrap: wrap;
 }
 
-.detail-group label {
+.order-info-header svg {
+  color: #5c0202;
+  flex-shrink: 0;
+}
+
+.order-info-header h4 {
   font-family: 'Lato', sans-serif;
-  font-size: 0.75rem;
+  font-size: clamp(1rem, 2.5vw, 1.1rem);
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #6b5752;
-}
-
-.detail-group p {
-  font-family: 'Lato', sans-serif;
-  font-size: 1rem;
   color: #5c0202;
   margin: 0;
-  font-weight: 500;
+  flex: 1;
   word-break: break-word;
 }
 
-.details-section {
-  margin-bottom: 2rem;
+.order-info-badge {
+  background-color: #5c0202;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
 }
 
-.details-section h4 {
-  font-family: 'Lato', sans-serif;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #5c0202;
-  margin: 0 0 1rem 0;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid #e0d6cc;
+/* Order Info Grid */
+.order-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
 }
 
-.details-books-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-family: 'Lato', sans-serif;
-  font-size: 0.875rem;
-  min-width: 500px;
-}
-
-.details-books-table th {
-  text-align: left;
-  padding: 0.75rem 0.5rem;
-  background-color: #f8f4f0;
-  font-weight: 600;
-  color: #5c0202;
-  border-bottom: 1px solid #e0d6cc;
-}
-
-.details-books-table td {
-  padding: 0.75rem 0.5rem;
-  border-bottom: 1px solid #f0e8e0;
-  word-break: break-word;
-}
-
-.details-books-table tr:last-child td {
-  border-bottom: none;
-}
-
-.details-financial {
-  background: linear-gradient(135deg, #f8f4f0 0%, #ffffff 100%);
+.order-info-card {
+  background-color: white;
   border-radius: 0.75rem;
-  padding: 1.5rem;
-  margin-bottom: 2rem;
-}
-
-.financial-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.5rem 0;
-  font-family: 'Lato', sans-serif;
-  font-size: 0.875rem;
-  color: #5c0202;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.financial-row.total {
-  font-weight: 700;
-  font-size: 1rem;
-  border-top: 1px solid #e0d6cc;
-  margin-top: 0.5rem;
-  padding-top: 1rem;
-  color: #8b5e3c;
-}
-
-.financial-row.profit {
-  font-weight: 700;
-  color: #10b981;
-}
-
-.details-note {
   padding: 1rem;
-  background-color: #f8f4f0;
-  border-radius: 0.75rem;
+  border: 1px solid #e0d6cc;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-.details-note label {
+.order-info-card.full-width {
+  grid-column: 1 / -1;
+}
+
+.order-info-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   font-family: 'Lato', sans-serif;
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: #6b5752;
-  display: block;
   margin-bottom: 0.5rem;
+  flex-wrap: wrap;
 }
 
-.details-note p {
+.order-info-label svg {
+  color: #5c0202;
+  flex-shrink: 0;
+}
+
+.order-info-value {
   font-family: 'Lato', sans-serif;
-  font-size: 0.875rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #5c0202;
+  word-break: break-word;
+}
+
+.order-info-value.address {
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+/* Order Financial Summary */
+.order-financial-summary {
+  background-color: white;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  border: 1px solid #e0d6cc;
+  margin-bottom: 1rem;
+}
+
+.order-financial-summary h5 {
+  font-family: 'Lato', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #5c0202;
+  margin: 0 0 0.75rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #f0e8e0;
+}
+
+/* Order Note */
+.order-note {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1rem;
+  background-color: #fff9e6;
+  border-radius: 0.75rem;
+  border: 1px solid #ffd700;
+  flex-wrap: wrap;
+}
+
+.order-note svg {
+  color: #5c0202;
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+.order-note-content {
+  flex: 1;
+  min-width: 200px;
+}
+
+.order-note-content .note-label {
+  display: block;
+  font-family: 'Lato', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b5752;
+  margin-bottom: 0.25rem;
+}
+
+.order-note-content p {
+  font-family: 'Lato', sans-serif;
+  font-size: 0.85rem;
   color: #5c0202;
   margin: 0;
   line-height: 1.5;
-  word-break: break-word;
   white-space: pre-line;
-}
-
-.no-books {
-  text-align: center;
-  padding: 2rem;
-  color: #a38f89;
-  font-style: italic;
+  word-break: break-word;
 }
 
 /* Tracking features */
@@ -1417,7 +1463,7 @@
   background: linear-gradient(135deg, #f8f4f0 0%, #ffffff 100%);
   border-radius: 1rem;
   padding: 1.5rem;
-  margin-bottom: 2rem;
+  margin-bottom: 0;
   border: 2px solid #8b5e3c;
   box-shadow: 0 4px 12px rgba(139, 94, 60, 0.15);
   position: relative;
@@ -1468,7 +1514,7 @@
 /* Tracking status grid */
 .tracking-status-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1rem;
   margin-bottom: 1.5rem;
 }
@@ -1538,7 +1584,7 @@
 /* Tracking details grid */
 .tracking-details-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 1rem;
   margin-bottom: 1.5rem;
 }
@@ -1715,6 +1761,150 @@
   flex-shrink: 0;
 }
 
+/* Details Grid (Original) */
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.detail-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.detail-group label {
+  font-family: 'Lato', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b5752;
+}
+
+.detail-group p {
+  font-family: 'Lato', sans-serif;
+  font-size: 1rem;
+  color: #5c0202;
+  margin: 0;
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.details-section {
+  margin-bottom: 2rem;
+}
+
+.details-section h4 {
+  font-family: 'Lato', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #5c0202;
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e0d6cc;
+}
+
+.details-books-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Lato', sans-serif;
+  font-size: 0.875rem;
+  min-width: 500px;
+}
+
+.details-books-table th {
+  text-align: left;
+  padding: 0.75rem 0.5rem;
+  background-color: #f8f4f0;
+  font-weight: 600;
+  color: #5c0202;
+  border-bottom: 1px solid #e0d6cc;
+}
+
+.details-books-table td {
+  padding: 0.75rem 0.5rem;
+  border-bottom: 1px solid #f0e8e0;
+  word-break: break-word;
+}
+
+.details-books-table tr:last-child td {
+  border-bottom: none;
+}
+
+.details-financial {
+  background: linear-gradient(135deg, #f8f4f0 0%, #ffffff 100%);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.financial-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  font-family: 'Lato', sans-serif;
+  font-size: 0.875rem;
+  color: #5c0202;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.financial-row.total {
+  font-weight: 700;
+  font-size: 1rem;
+  border-top: 1px solid #e0d6cc;
+  margin-top: 0.5rem;
+  padding-top: 1rem;
+  color: #8b5e3c;
+}
+
+.financial-row.profit {
+  font-weight: 700;
+  color: #10b981;
+}
+
+.financial-amount {
+  font-weight: 600;
+  color: #10b981;
+}
+
+.details-note {
+  padding: 1rem;
+  background-color: #f8f4f0;
+  border-radius: 0.75rem;
+}
+
+.details-note label {
+  font-family: 'Lato', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b5752;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.details-note p {
+  font-family: 'Lato', sans-serif;
+  font-size: 0.875rem;
+  color: #5c0202;
+  margin: 0;
+  line-height: 1.5;
+  word-break: break-word;
+  white-space: pre-line;
+}
+
+.no-books {
+  text-align: center;
+  padding: 2rem;
+  color: #a38f89;
+  font-style: italic;
+}
+
 /* Required field indicator */
 .required {
   color: #ef4444;
@@ -1807,6 +1997,10 @@ textarea:focus-visible {
   .description-text {
     max-width: 130px;
   }
+  
+  .details-two-column {
+    gap: 1rem;
+  }
 }
 
 @media (max-width: 1024px) {
@@ -1830,6 +2024,11 @@ textarea:focus-visible {
   
   .tracking-details-grid {
     grid-template-columns: 1fr;
+  }
+  
+  .details-two-column {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
   }
 }
 
@@ -1986,6 +2185,10 @@ textarea:focus-visible {
   .order-client {
     max-width: 100px;
   }
+  
+  .order-info-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 640px) {
@@ -2030,17 +2233,25 @@ textarea:focus-visible {
     align-items: flex-start;
   }
   
-  .tracking-info-section {
+  .tracking-info-section,
+  .order-info-section {
     padding: 1rem;
   }
   
-  .tracking-info-header {
+  .tracking-info-header,
+  .order-info-header {
     flex-direction: column;
     align-items: flex-start;
   }
   
-  .tracking-live-badge {
+  .tracking-live-badge,
+  .order-info-badge {
     align-self: flex-start;
+  }
+  
+  .tracking-status-grid,
+  .order-info-grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -2125,11 +2336,9 @@ textarea:focus-visible {
     font-size: 0.7rem;
   }
   
-  .tracking-status-card {
-    padding: 0.75rem;
-  }
-  
-  .tracking-detail-card {
+  .tracking-status-card,
+  .tracking-detail-card,
+  .order-info-card {
     padding: 0.75rem;
   }
   
@@ -2147,6 +2356,10 @@ textarea:focus-visible {
   
   .description-text {
     max-width: 80px;
+  }
+  
+  .order-info-value {
+    font-size: 0.9rem;
   }
 }
 
@@ -2189,7 +2402,8 @@ textarea:focus-visible {
     border: 1px solid #e0d6cc;
   }
   
-  .tracking-info-section {
+  .tracking-info-section,
+  .order-info-section {
     animation: none;
     border: 2px solid #8b5e3c;
     break-inside: avoid;
@@ -2227,7 +2441,9 @@ textarea:focus-visible {
   .pagination,
   .tracking-status-grid,
   .tracking-details-grid,
-  .details-grid {
+  .details-grid,
+  .details-two-column,
+  .order-info-grid {
     margin: -0.5rem;
   }
   
@@ -2239,7 +2455,9 @@ textarea:focus-visible {
   .pagination > *,
   .tracking-status-grid > *,
   .tracking-details-grid > *,
-  .details-grid > * {
+  .details-grid > *,
+  .details-two-column > *,
+  .order-info-grid > * {
     margin: 0.5rem;
   }
 }

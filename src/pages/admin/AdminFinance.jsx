@@ -424,9 +424,9 @@ export default function AdminFinance() {
             </div>
           </div>
 
-          <div className="chart-card">
+          <div className="chart-card1">
             <h3>Répartition des gains</h3>
-            <div className="pie-chart-container">
+            <div className="pie-chart-container1">
               <ResponsiveContainer width="100%" height={300}>
                 <RePieChart>
                   <Pie

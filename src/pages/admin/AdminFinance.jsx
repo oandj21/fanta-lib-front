@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { 
   TrendingUp, 
@@ -8,13 +8,11 @@ import {
   Wallet,
   ArrowUpCircle,
   Edit3,
-  BarChart3,
-  PieChart as PieChartIcon,
-  LineChart as LineChartIcon
+  BarChart3
 } from "lucide-react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-  BarChart, Bar, PieChart as RePieChart, Pie, Cell, Area, AreaChart
+  BarChart, Bar, PieChart as RePieChart, Pie, Cell
 } from "recharts";
 import { 
   fetchDashboardStats, 
@@ -40,7 +38,6 @@ export default function AdminFinance() {
   const [showCapitalModal, setShowCapitalModal] = useState(false);
   const [capitalAmount, setCapitalAmount] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
-  const [timeRange, setTimeRange] = useState('6months'); // '3months', '6months', '12months', 'all'
 
   useEffect(() => {
     // Fetch all necessary data
@@ -59,39 +56,31 @@ export default function AdminFinance() {
   }, [currentFinance]);
 
   // ==============================================
-  // 📊 DYNAMIC FINANCIAL CALCULATIONS
+  // 📊 FINANCIAL CALCULATIONS
   // ==============================================
 
   // Capital from finance table
   const capital = currentFinance?.capital || 0;
 
   // 1. Calculate total stock value (prix_achat from livres)
-  const totalStockValue = useMemo(() => {
-    return livresList.reduce((sum, livre) => {
-      return sum + (Number(livre.prix_achat) || 0);
-    }, 0);
-  }, [livresList]);
+  const totalStockValue = livresList.reduce((sum, livre) => {
+    return sum + (Number(livre.prix_achat) || 0);
+  }, 0);
 
   // 2. Calculate total profit from ALL orders (profit from commandes)
-  const totalProfit = useMemo(() => {
-    return commandesList.reduce((sum, commande) => {
-      return sum + (Number(commande.profit) || 0);
-    }, 0);
-  }, [commandesList]);
+  const totalProfit = commandesList.reduce((sum, commande) => {
+    return sum + (Number(commande.profit) || 0);
+  }, 0);
 
   // 3. Calculate total expenses (montant from depenses)
-  const totalExpenses = useMemo(() => {
-    return depensesList.reduce((sum, depense) => {
-      return sum + (Number(depense.montant) || 0);
-    }, 0);
-  }, [depensesList]);
+  const totalExpenses = depensesList.reduce((sum, depense) => {
+    return sum + (Number(depense.montant) || 0);
+  }, 0);
 
   // 4. Calculate revenue from ALL orders (total from commandes)
-  const revenue = useMemo(() => {
-    return commandesList.reduce((sum, commande) => {
-      return sum + (Number(commande.total) || 0);
-    }, 0);
-  }, [commandesList]);
+  const revenue = commandesList.reduce((sum, commande) => {
+    return sum + (Number(commande.total) || 0);
+  }, 0);
 
   // 5. Calculate net gain (profit - expenses)
   const netGain = totalProfit - totalExpenses;
@@ -110,112 +99,6 @@ export default function AdminFinance() {
 
   // 10. Calculate average profit per order
   const averageProfitPerOrder = totalOrdersCount > 0 ? totalProfit / totalOrdersCount : 0;
-
-  // 11. Calculate expense ratio
-  const expenseRatio = totalProfit > 0 ? ((totalExpenses / totalProfit) * 100).toFixed(1) : 0;
-
-  // 12. Calculate capital turnover
-  const capitalTurnover = capital > 0 ? (revenue / capital).toFixed(2) : 0;
-
-  // ==============================================
-  // 📊 DYNAMIC CHART DATA
-  // ==============================================
-
-  // Filter monthly data based on time range
-  const filteredMonthlyData = useMemo(() => {
-    if (!monthlyStats || monthlyStats.length === 0) return [];
-    
-    let data = [...monthlyStats];
-    
-    if (timeRange === '3months') {
-      data = data.slice(-3);
-    } else if (timeRange === '6months') {
-      data = data.slice(-6);
-    } else if (timeRange === '12months') {
-      data = data.slice(-12);
-    }
-    // 'all' returns all data
-    
-    return data.map(item => ({
-      month: item.month || item.month_name || '',
-      ventes: Number(item.ventes || item.sales || 0),
-      profit: Number(item.profit || 0),
-      depenses: Number(item.depenses || item.expenses || 0),
-      net: (Number(item.profit || 0) - Number(item.depenses || item.expenses || 0))
-    }));
-  }, [monthlyStats, timeRange]);
-
-  // Category distribution for pie chart
-  const categoryData = useMemo(() => {
-    const categories = {};
-    
-    // Group expenses by category
-    depensesList.forEach(depense => {
-      const category = depense.categorie || 'Autres';
-      if (!categories[category]) {
-        categories[category] = 0;
-      }
-      categories[category] += Number(depense.montant) || 0;
-    });
-    
-    // Convert to array for chart
-    return Object.entries(categories).map(([name, value]) => ({
-      name,
-      value
-    })).sort((a, b) => b.value - a.value);
-  }, [depensesList]);
-
-  // Monthly profit trend
-  const profitTrendData = useMemo(() => {
-    return filteredMonthlyData.map(item => ({
-      month: item.month,
-      profit: item.profit,
-      cumulatedProfit: filteredMonthlyData
-        .slice(0, filteredMonthlyData.indexOf(item) + 1)
-        .reduce((sum, d) => sum + d.profit, 0)
-    }));
-  }, [filteredMonthlyData]);
-
-  // Top performing months
-  const topMonths = useMemo(() => {
-    return [...filteredMonthlyData]
-      .sort((a, b) => b.profit - a.profit)
-      .slice(0, 5)
-      .map(item => ({
-        month: item.month,
-        profit: item.profit
-      }));
-  }, [filteredMonthlyData]);
-
-  // Status distribution for orders
-  const orderStatusData = useMemo(() => {
-    const statuses = {};
-    
-    commandesList.forEach(commande => {
-      const status = commande.statut || 'Inconnu';
-      if (!statuses[status]) {
-        statuses[status] = 0;
-      }
-      statuses[status] += 1;
-    });
-    
-    return Object.entries(statuses).map(([name, count]) => ({
-      name,
-      count
-    }));
-  }, [commandesList]);
-
-  // Monthly performance comparison
-  const comparisonData = useMemo(() => {
-    return filteredMonthlyData.map(item => ({
-      month: item.month,
-      ratio: item.depenses > 0 ? (item.profit / item.depenses).toFixed(2) : item.profit,
-      efficiency: item.ventes > 0 ? ((item.profit / item.ventes) * 100).toFixed(1) : 0
-    }));
-  }, [filteredMonthlyData]);
-
-  // Colors for charts
-  const COLORS = ['#4a2c2a', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#14b8a6'];
 
   // Main financial cards
   const mainCards = [
@@ -283,6 +166,21 @@ export default function AdminFinance() {
     },
   ];
 
+  // Format chart data from monthlyStats
+  const chartData = monthlyStats.map(item => ({
+    month: item.month,
+    ventes: Number(item.ventes || 0),
+    profit: Number(item.profit || 0),
+    depenses: Number(item.depenses || 0),
+    net: Number(item.profit || 0) - Number(item.depenses || 0)
+  }));
+
+  // Pie chart data for profit breakdown
+  const profitBreakdown = [
+    { name: 'Gain Net', value: Math.max(netGain, 0), color: '#10b981' },
+    { name: 'Dépenses', value: totalExpenses, color: '#ef4444' },
+  ];
+
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('fr-MA', {
       style: 'currency',
@@ -332,38 +230,12 @@ export default function AdminFinance() {
           <p>Analyse financière détaillée de votre activité</p>
         </div>
         <div className="header-actions">
-          <div className="time-range-selector">
-            <button 
-              className={timeRange === '3months' ? 'active' : ''}
-              onClick={() => setTimeRange('3months')}
-            >
-              3 mois
-            </button>
-            <button 
-              className={timeRange === '6months' ? 'active' : ''}
-              onClick={() => setTimeRange('6months')}
-            >
-              6 mois
-            </button>
-            <button 
-              className={timeRange === '12months' ? 'active' : ''}
-              onClick={() => setTimeRange('12months')}
-            >
-              12 mois
-            </button>
-            <button 
-              className={timeRange === 'all' ? 'active' : ''}
-              onClick={() => setTimeRange('all')}
-            >
-              Tous
-            </button>
-          </div>
           <button 
             className="update-capital-btn"
             onClick={() => setShowCapitalModal(true)}
           >
             <Edit3 size={18} />
-            <span>Mettre à jour le capital</span>
+            Mettre à jour le capital
           </button>
         </div>
       </div>
@@ -483,12 +355,6 @@ export default function AdminFinance() {
         >
           Graphiques
         </button>
-        <button 
-          className={activeTab === 'analysis' ? 'active' : ''} 
-          onClick={() => setActiveTab('analysis')}
-        >
-          Analyse détaillée
-        </button>
       </div>
 
       {/* Tab Content */}
@@ -548,81 +414,40 @@ export default function AdminFinance() {
                 <div className="ratio-bar">
                   <div 
                     className="ratio-fill danger" 
-                    style={{ width: `${Math.min(expenseRatio, 100)}%` }}
+                    style={{ width: `${totalProfit > 0 ? Math.min((totalExpenses / totalProfit) * 100, 100) : 0}%` }}
                   ></div>
                 </div>
-                <span className="ratio-value">{expenseRatio}%</span>
-              </div>
-              <div className="ratio-item">
-                <span className="ratio-label">Rotation du capital</span>
-                <div className="ratio-bar">
-                  <div 
-                    className="ratio-fill info" 
-                    style={{ width: `${Math.min(capitalTurnover * 10, 100)}%` }}
-                  ></div>
-                </div>
-                <span className="ratio-value">{capitalTurnover}x</span>
+                <span className="ratio-value">
+                  {totalProfit > 0 ? ((totalExpenses / totalProfit) * 100).toFixed(1) : 0}%
+                </span>
               </div>
             </div>
           </div>
 
-          <div className="charts-grid">
-            <div className="chart-card">
-              <h3>Répartition des gains</h3>
-              <div className="pie-chart-container">
-                <ResponsiveContainer width="100%" height={300}>
-                  <RePieChart>
-                    <Pie
-                      data={[
-                        { name: 'Gain Net', value: Math.max(netGain, 0) },
-                        { name: 'Dépenses', value: totalExpenses }
-                      ].filter(item => item.value > 0)}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={100}
-                      fill="#8884d8"
-                      paddingAngle={5}
-                      dataKey="value"
-                      label={({ name, percent }) => percent > 0.05 ? `${name} ${(percent * 100).toFixed(0)}%` : ''}
-                    >
-                      {[
-                        { name: 'Gain Net', color: '#10b981' },
-                        { name: 'Dépenses', color: '#ef4444' }
-                      ].map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => formatCurrency(value)} />
-                    <Legend />
-                  </RePieChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            <div className="chart-card">
-              <h3>Répartition des dépenses par catégorie</h3>
-              <div className="pie-chart-container">
-                <ResponsiveContainer width="100%" height={300}>
-                  <RePieChart>
-                    <Pie
-                      data={categoryData}
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={100}
-                      fill="#8884d8"
-                      dataKey="value"
-                      label={({ name, percent }) => percent > 0.05 ? `${name} ${(percent * 100).toFixed(0)}%` : ''}
-                    >
-                      {categoryData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => formatCurrency(value)} />
-                    <Legend />
-                  </RePieChart>
-                </ResponsiveContainer>
-              </div>
+          <div className="chart-card">
+            <h3>Répartition des gains</h3>
+            <div className="pie-chart-container">
+              <ResponsiveContainer width="100%" height={300}>
+                <RePieChart>
+                  <Pie
+                    data={profitBreakdown.filter(item => item.value > 0)}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={100}
+                    fill="#8884d8"
+                    paddingAngle={5}
+                    dataKey="value"
+                    label={({ name, percent }) => percent > 0 ? `${name} ${(percent * 100).toFixed(0)}%` : ''}
+                  >
+                    {profitBreakdown.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => formatCurrency(value)} />
+                  <Legend />
+                </RePieChart>
+              </ResponsiveContainer>
             </div>
           </div>
         </>
@@ -644,11 +469,6 @@ export default function AdminFinance() {
                   {totalProfit > 0 ? Math.ceil((totalExpenses / totalProfit) * 30) : 0} jours
                 </span>
                 <small>Temps pour couvrir les dépenses</small>
-              </div>
-              <div className="profit-item">
-                <span>Ratio de rentabilité</span>
-                <span className="value">{profitMargin}%</span>
-                <small>Marge bénéficiaire</small>
               </div>
               <div className="profit-item highlight">
                 <span>Rentabilité nette</span>
@@ -676,26 +496,6 @@ export default function AdminFinance() {
                 <span className="value">{totalOrdersCount}</span>
                 <small>Toutes commandes confondues</small>
               </div>
-              <div className="profit-item">
-                <span>Valeur moyenne du stock</span>
-                <span className="value">{formatCurrency(totalStockValue / (livresList.length || 1))}</span>
-                <small>Par livre</small>
-              </div>
-            </div>
-          </div>
-
-          <div className="chart-card">
-            <h3>Top 5 mois les plus rentables</h3>
-            <div className="chart-container">
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={topMonths} layout="vertical" margin={{ top: 20, right: 30, left: 60, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis type="number" tickFormatter={(value) => formatCurrency(value)} />
-                  <YAxis type="category" dataKey="month" />
-                  <Tooltip formatter={(value) => formatCurrency(value)} />
-                  <Bar dataKey="profit" fill="#10b981" radius={[0, 4, 4, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
             </div>
           </div>
         </div>
@@ -707,7 +507,7 @@ export default function AdminFinance() {
             <h3>Évolution financière mensuelle</h3>
             <div className="chart-container">
               <ResponsiveContainer width="100%" height={320}>
-                <LineChart data={filteredMonthlyData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <LineChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e0d6cc" />
                   <XAxis 
                     dataKey="month" 
@@ -719,7 +519,6 @@ export default function AdminFinance() {
                     tick={{ fontFamily: "Lato", fontSize: 12, fill: "#6b5752" }} 
                     axisLine={false} 
                     tickLine={false} 
-                    tickFormatter={(value) => formatCurrency(value)}
                   />
                   <Tooltip
                     contentStyle={{ 
@@ -733,15 +532,6 @@ export default function AdminFinance() {
                   />
                   <Legend 
                     wrapperStyle={{ fontFamily: "Lato", fontSize: 13, paddingTop: 10 }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="ventes" 
-                    name="Ventes" 
-                    stroke="#f59e0b" 
-                    strokeWidth={2.5} 
-                    dot={{ fill: "#f59e0b", r: 4 }} 
-                    activeDot={{ r: 6 }}
                   />
                   <Line 
                     type="monotone" 
@@ -779,7 +569,7 @@ export default function AdminFinance() {
             <h3>Performance comparative</h3>
             <div className="chart-container">
               <ResponsiveContainer width="100%" height={320}>
-                <BarChart data={filteredMonthlyData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <BarChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e0d6cc" />
                   <XAxis 
                     dataKey="month" 
@@ -791,7 +581,6 @@ export default function AdminFinance() {
                     tick={{ fontFamily: "Lato", fontSize: 12, fill: "#6b5752" }} 
                     axisLine={false} 
                     tickLine={false} 
-                    tickFormatter={(value) => formatCurrency(value)}
                   />
                   <Tooltip
                     contentStyle={{ 
@@ -813,118 +602,7 @@ export default function AdminFinance() {
               </ResponsiveContainer>
             </div>
           </div>
-
-          <div className="charts-grid">
-            <div className="chart-card">
-              <h3>Profit cumulé</h3>
-              <div className="chart-container">
-                <ResponsiveContainer width="100%" height={300}>
-                  <AreaChart data={profitTrendData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis tickFormatter={(value) => formatCurrency(value)} />
-                    <Tooltip formatter={(value) => formatCurrency(value)} />
-                    <Area 
-                      type="monotone" 
-                      dataKey="cumulatedProfit" 
-                      name="Profit Cumulé" 
-                      stroke="#10b981" 
-                      fill="#10b981" 
-                      fillOpacity={0.3}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            <div className="chart-card">
-              <h3>Statut des commandes</h3>
-              <div className="pie-chart-container">
-                <ResponsiveContainer width="100%" height={300}>
-                  <RePieChart>
-                    <Pie
-                      data={orderStatusData}
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={100}
-                      fill="#8884d8"
-                      dataKey="count"
-                      label={({ name, percent }) => percent > 0.05 ? `${name} ${(percent * 100).toFixed(0)}%` : ''}
-                    >
-                      {orderStatusData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                    <Legend />
-                  </RePieChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </div>
         </>
-      )}
-
-      {activeTab === 'analysis' && (
-        <div className="analysis-section">
-          <div className="charts-grid">
-            <div className="chart-card">
-              <h3>Ratio Profit/Dépenses</h3>
-              <div className="chart-container">
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={comparisonData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis yAxisId="left" orientation="left" stroke="#10b981" />
-                    <YAxis yAxisId="right" orientation="right" stroke="#8b5cf6" domain={[0, 100]} />
-                    <Tooltip />
-                    <Legend />
-                    <Line 
-                      yAxisId="left"
-                      type="monotone" 
-                      dataKey="ratio" 
-                      name="Ratio Profit/Dépenses" 
-                      stroke="#10b981" 
-                      strokeWidth={2}
-                    />
-                    <Line 
-                      yAxisId="right"
-                      type="monotone" 
-                      dataKey="efficiency" 
-                      name="Efficacité (%)" 
-                      stroke="#8b5cf6" 
-                      strokeWidth={2}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            <div className="chart-card">
-              <h3>Analyse de performance</h3>
-              <div className="stats-mini-grid">
-                <div className="stat-mini-item">
-                  <span className="label">Moyenne mensuelle des ventes</span>
-                  <span className="value">{formatCurrency(revenue / (filteredMonthlyData.length || 1))}</span>
-                </div>
-                <div className="stat-mini-item">
-                  <span className="label">Moyenne mensuelle des profits</span>
-                  <span className="value positive">{formatCurrency(totalProfit / (filteredMonthlyData.length || 1))}</span>
-                </div>
-                <div className="stat-mini-item">
-                  <span className="label">Moyenne mensuelle des dépenses</span>
-                  <span className="value negative">{formatCurrency(totalExpenses / (filteredMonthlyData.length || 1))}</span>
-                </div>
-                <div className="stat-mini-item">
-                  <span className="label">Meilleur mois (profit)</span>
-                  <span className="value positive">
-                    {topMonths[0]?.month} {topMonths[0] ? formatCurrency(topMonths[0].profit) : ''}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
       )}
     </div>
   );

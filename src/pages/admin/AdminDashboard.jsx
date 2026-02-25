@@ -59,6 +59,8 @@ export default function AdminDashboard() {
         returned: 0,
         pending: 0,
         completed: 0,
+        totalSales: 0, // Sum of all parcel prices
+        totalProfit: 0, // Sum of all profits
         revenue: 0,
         conversionRate: 0
       };
@@ -74,6 +76,8 @@ export default function AdminDashboard() {
       returned: 0,
       pending: 0,
       completed: 0,
+      totalSales: 0, // Sum of all parcel prices
+      totalProfit: 0, // Sum of all profits
       revenue: 0,
       conversionRate: 0
     };
@@ -101,6 +105,15 @@ export default function AdminDashboard() {
         stats.completed++;
         stats.revenue += Number(commande.total || 0);
       }
+
+      // Calculate total sales from all commandes (parcel_price)
+      // Use parcel_price if available, otherwise fall back to total
+      const parcelPrice = Number(commande.parcel_price || commande.total || 0);
+      stats.totalSales += parcelPrice;
+
+      // Calculate total profit from all commandes
+      const profit = Number(commande.profit || 0);
+      stats.totalProfit += profit;
     });
 
     // Calculate conversion rate
@@ -190,17 +203,17 @@ export default function AdminDashboard() {
     return data;
   }, [commandesStats]);
 
-  // Main financial cards
+  // Main financial cards - Using calculated values from commandes
   const financialCards = [
     { 
       title: "Total des ventes", 
-      value: Number(stats?.total_sales || 0), 
+      value: commandesStats.totalSales, // Using calculated total from all orders
       icon: ShoppingCart,
       color: "info"
     },
     { 
       title: "Profit total", 
-      value: Number(stats?.total_profit || 0), 
+      value: commandesStats.totalProfit, // Using calculated profit from all orders
       icon: TrendingUp,
       color: "success"
     },
@@ -212,9 +225,9 @@ export default function AdminDashboard() {
     },
     { 
       title: "Revenu net", 
-      value: Number(stats?.net_income || 0), 
+      value: commandesStats.totalProfit - Number(stats?.total_expenses || 0), // Net = Total Profit - Expenses
       icon: BookOpen,
-      color: (stats?.net_income || 0) >= 0 ? "success" : "danger"
+      color: (commandesStats.totalProfit - Number(stats?.total_expenses || 0)) >= 0 ? "success" : "danger"
     },
   ];
 
@@ -298,12 +311,12 @@ export default function AdminDashboard() {
         <div className="header-stats">
           <span className="last-update">
             <Clock size={14} />
-            {commandesStats.total} commandes • {formatCurrency(commandesStats.revenue)} DH
+            {commandesStats.total} commandes • {formatCurrency(commandesStats.totalSales)} DH de ventes
           </span>
         </div>
       </div>
 
-      {/* Financial Stats Cards */}
+      {/* Financial Stats Cards - Now showing correct totals */}
       <div className="section-title">
         <h3>Aperçu financier</h3>
       </div>
@@ -313,6 +326,18 @@ export default function AdminDashboard() {
             <div className="stat-content">
               <p className="stat-title">{card.title}</p>
               <h3 className="stat-value">{formatCurrency(card.value)} DH</h3>
+              {card.title === "Total des ventes" && (
+                <span className="stat-trend">
+                  <ArrowUpRight size={12} />
+                  {commandesStats.total} commandes
+                </span>
+              )}
+              {card.title === "Profit total" && (
+                <span className="stat-trend">
+                  <ArrowUpRight size={12} />
+                  {((commandesStats.totalProfit / commandesStats.totalSales) * 100 || 0).toFixed(1)}% marge
+                </span>
+              )}
             </div>
             <div className="stat-icon">
               <card.icon size={24} />
@@ -493,19 +518,19 @@ export default function AdminDashboard() {
       <div className="summary-card" style={{ marginTop: '1.5rem' }}>
         <h3>Résumé financier</h3>
         <div className="summary-item">
-          <span>Ventes totales</span>
-          <span className="amount positive">{formatCurrency(stats?.total_sales || 0)} DH</span>
+          <span>Total des ventes (toutes commandes)</span>
+          <span className="amount positive">{formatCurrency(commandesStats.totalSales)} DH</span>
         </div>
         <div className="summary-item">
-          <span>Profits</span>
-          <span className="amount positive">{formatCurrency(stats?.total_profit || 0)} DH</span>
+          <span>Profit total (toutes commandes)</span>
+          <span className="amount positive">{formatCurrency(commandesStats.totalProfit)} DH</span>
         </div>
         <div className="summary-item">
-          <span>Dépenses</span>
+          <span>Dépenses totales</span>
           <span className="amount negative">{formatCurrency(stats?.total_expenses || 0)} DH</span>
         </div>
         <div className="summary-item">
-          <span>Revenu des commandes</span>
+          <span>Revenu des commandes livrées</span>
           <span className="amount positive">{formatCurrency(commandesStats.revenue)} DH</span>
         </div>
         <div className="summary-item">
@@ -513,9 +538,9 @@ export default function AdminDashboard() {
           <span className="amount success">{commandesStats.conversionRate.toFixed(1)}%</span>
         </div>
         <div className="summary-total">
-          <span>Résultat net</span>
-          <span className={`amount ${(stats?.net_income || 0) >= 0 ? 'positive' : 'negative'}`}>
-            {formatCurrency(stats?.net_income || 0)} DH
+          <span>Résultat net (Profit - Dépenses)</span>
+          <span className={`amount ${(commandesStats.totalProfit - Number(stats?.total_expenses || 0)) >= 0 ? 'positive' : 'negative'}`}>
+            {formatCurrency(commandesStats.totalProfit - Number(stats?.total_expenses || 0))} DH
           </span>
         </div>
       </div>

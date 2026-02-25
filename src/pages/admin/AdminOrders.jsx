@@ -6,7 +6,8 @@ import {
   Map, FileText, Truck, UserCircle, Building, Plus,
   Loader, ChevronDown, BookOpen, Minus, Plus as PlusIcon,
   Eye, RefreshCw, AlertCircle, CheckCircle, Box, Layers,
-  Clock, CreditCard, Calendar, PackageCheck, PackageX
+  Clock, CreditCard, Calendar, PackageCheck, PackageX,
+  Info
 } from "lucide-react";
 import axios from "axios";
 import { 
@@ -467,277 +468,368 @@ const OrderDetailsModal = ({ order, onClose }) => {
         </div>
 
         <div className="modal-body">
-          {/* Real-time tracking information - ALL FIELDS FROM API */}
-          {loadingTracking && (
-            <div className="tracking-loading">
-              <RefreshCw size={20} className="spinning" />
-              <span>Chargement des informations de suivi en temps réel...</span>
-            </div>
-          )}
+          {/* Two column layout for tracking and order info */}
+          <div className="details-two-column">
+            {/* Left Column - Suivi Welivexpress */}
+            <div className="details-left-column">
+              {/* Real-time tracking information - ALL FIELDS FROM API */}
+              {loadingTracking && (
+                <div className="tracking-loading">
+                  <RefreshCw size={20} className="spinning" />
+                  <span>Chargement des informations de suivi en temps réel...</span>
+                </div>
+              )}
 
-          {trackingError && (
-            <div className="tracking-error">
-              <AlertCircle size={20} />
-              <span>{trackingError}</span>
-            </div>
-          )}
+              {trackingError && (
+                <div className="tracking-error">
+                  <AlertCircle size={20} />
+                  <span>{trackingError}</span>
+                </div>
+              )}
 
-          {trackingInfo && trackingInfo.parcel && (
-            <div className="tracking-info-section">
-              <div className="tracking-info-header">
-                <Truck size={20} />
-                <h4>Suivi Welivexpress en temps réel</h4>
-                <span className="tracking-live-badge">LIVE</span>
-              </div>
-              
-              {/* Status Cards */}
-              <div className="tracking-status-grid">
-                <div className="tracking-status-card">
-                  <div className="tracking-status-label">
-                    <Truck size={14} />
-                    Statut de livraison
+              {trackingInfo && trackingInfo.parcel && (
+                <div className="tracking-info-section">
+                  <div className="tracking-info-header">
+                    <Truck size={20} />
+                    <h4>Suivi Welivexpress en temps réel</h4>
+                    <span className="tracking-live-badge">LIVE</span>
                   </div>
-                  <div 
-                    className="tracking-status-bad large"
-                    style={{ 
-                      backgroundColor: `${getStatusColor(trackingInfo.parcel.delivery_status)}15`,
-                      color: getStatusColor(trackingInfo.parcel.delivery_status),
-                      border: `1px solid ${getStatusColor(trackingInfo.parcel.delivery_status)}30`
-                    }}
-                  >
-                    {trackingInfo.parcel.delivery_status || 'Inconnu'}
+                  
+                  {/* Status Cards */}
+                  <div className="tracking-status-grid">
+                    <div className="tracking-status-card">
+                      <div className="tracking-status-label">
+                        <Truck size={14} />
+                        Statut de livraison
+                      </div>
+                      <div 
+                        className="tracking-status-badge large"
+                        style={{ 
+                          backgroundColor: `${getStatusColor(trackingInfo.parcel.delivery_status)}15`,
+                          color: getStatusColor(trackingInfo.parcel.delivery_status),
+                          border: `1px solid ${getStatusColor(trackingInfo.parcel.delivery_status)}30`
+                        }}
+                      >
+                        {trackingInfo.parcel.delivery_status || 'Inconnu'}
+                      </div>
+                      {trackingInfo.tracking && (
+                        <div className="tracking-status-description">
+                          {trackingInfo.tracking.description}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="tracking-status-card">
+                      <div className="tracking-status-label">
+                        <CreditCard size={14} />
+                        Statut de paiement
+                      </div>
+                      <div 
+                        className="tracking-status-badge"
+                        style={{ 
+                          backgroundColor: `${getStatusColor(trackingInfo.parcel.payment_status)}15`,
+                          color: getStatusColor(trackingInfo.parcel.payment_status),
+                          border: `1px solid ${getStatusColor(trackingInfo.parcel.payment_status)}30`
+                        }}
+                      >
+                        {trackingInfo.parcel.payment_status || 'Inconnu'}
+                      </div>
+                      <div className="tracking-payment-text">
+                        {trackingInfo.parcel.payment_status_text}
+                      </div>
+                    </div>
                   </div>
-                  {trackingInfo.tracking && (
-                    <div className="tracking-status-description">
-                      {trackingInfo.tracking.description}
+
+                  {/* Complete Parcel Information - All fields from API */}
+                  <div className="tracking-details-grid">
+                    {/* Client Information */}
+                    <div className="tracking-detail-card">
+                      <div className="tracking-detail-header">
+                        <User size={16} />
+                        <h5>Client</h5>
+                      </div>
+                      <div className="tracking-detail-content">
+                        <div className="tracking-detail-row">
+                          <span className="detail-label">ID:</span>
+                          <span className="detail-value">{trackingInfo.parcel.id || '-'}</span>
+                        </div>
+                        <div className="tracking-detail-row">
+                          <span className="detail-label">Nom:</span>
+                          <span className="detail-value">{trackingInfo.parcel.receiver || '-'}</span>
+                        </div>
+                        <div className="tracking-detail-row">
+                          <span className="detail-label">Téléphone:</span>
+                          <span className="detail-value">{trackingInfo.parcel.phone || '-'}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Address Information */}
+                    <div className="tracking-detail-card">
+                      <div className="tracking-detail-header">
+                        <MapPin size={16} />
+                        <h5>Adresse</h5>
+                      </div>
+                      <div className="tracking-detail-content">
+                        <div className="tracking-detail-row">
+                          <span className="detail-label">Ville ID:</span>
+                          <span className="detail-value">
+                            {trackingInfo.parcel.city?.id || trackingInfo.parcel.city_id || '-'}
+                          </span>
+                        </div>
+                        <div className="tracking-detail-row">
+                          <span className="detail-label">Ville:</span>
+                          <span className="detail-value">
+                            {trackingInfo.parcel.city?.name || trackingInfo.parcel.city || '-'}
+                          </span>
+                        </div>
+                        <div className="tracking-detail-row">
+                          <span className="detail-label">Adresse:</span>
+                          <span className="detail-value address">
+                            {trackingInfo.parcel.address || '-'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Product Information */}
+                    <div className="tracking-detail-card">
+                      <div className="tracking-detail-header">
+                        <Package size={16} />
+                        <h5>Colis</h5>
+                      </div>
+                      <div className="tracking-detail-content">
+                        <div className="tracking-detail-row">
+                          <span className="detail-label">Code:</span>
+                          <span className="detail-value code">
+                            {trackingInfo.parcel.code || '-'}
+                          </span>
+                        </div>
+                        <div className="tracking-detail-row">
+                          <span className="detail-label">Produit:</span>
+                          <span className="detail-value">
+                            {trackingInfo.parcel.product?.name || '-'}
+                          </span>
+                        </div>
+                        <div className="tracking-detail-row">
+                          <span className="detail-label">Quantité:</span>
+                          <span className="detail-value">
+                            {trackingInfo.parcel.product?.quantity || 1}
+                          </span>
+                        </div>
+                        <div className="tracking-detail-row">
+                          <span className="detail-label">Prix:</span>
+                          <span className="detail-value price">
+                            {trackingInfo.parcel.price || 0} MAD
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Dates Information */}
+                    <div className="tracking-detail-card">
+                      <div className="tracking-detail-header">
+                        <Calendar size={16} />
+                        <h5>Dates</h5>
+                      </div>
+                      <div className="tracking-detail-content">
+                        <div className="tracking-detail-row">
+                          <span className="detail-label">Création:</span>
+                          <span className="detail-value">
+                            {formatDate(trackingInfo.parcel.created_at)}
+                          </span>
+                        </div>
+                        <div className="tracking-detail-row">
+                          <span className="detail-label">Créé le:</span>
+                          <span className="detail-value">
+                            {trackingInfo.parcel.created_date || '-'}
+                          </span>
+                        </div>
+                        <div className="tracking-detail-row">
+                          <span className="detail-label">Mise à jour:</span>
+                          <span className="detail-value">
+                            {formatDate(trackingInfo.parcel.updated_at)}
+                          </span>
+                        </div>
+                        <div className="tracking-detail-row">
+                          <span className="detail-label">Mis à jour le:</span>
+                          <span className="detail-value">
+                            {trackingInfo.parcel.updated_date || '-'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Note if exists */}
+                  {trackingInfo.parcel.note && (
+                    <div className="tracking-note">
+                      <FileText size={16} />
+                      <div className="tracking-note-content">
+                        <span className="note-label">Note:</span>
+                        <p>{trackingInfo.parcel.note}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Can Open Status */}
+                  <div className="tracking-can-open">
+                    {trackingInfo.parcel.can_open === 1 ? (
+                      <div className="can-open-badge allowed">
+                        <PackageCheck size={16} />
+                        Colis ouvert / vérifié
+                      </div>
+                    ) : (
+                      <div className="can-open-badge not-allowed">
+                        <PackageX size={16} />
+                        Colis non ouvert
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Query Time */}
+                  {trackingInfo.query_time && (
+                    <div className="tracking-query-time">
+                      <Clock size={14} />
+                      <span>Dernière mise à jour: {formatDate(trackingInfo.query_time)}</span>
                     </div>
                   )}
                 </div>
-
-                <div className="tracking-status-card">
-                  <div className="tracking-status-label">
-                    <CreditCard size={14} />
-                    Statut de paiement
-                  </div>
-                  <div 
-                    className="tracking-status-bad"
-                    style={{ 
-                      backgroundColor: `${getStatusColor(trackingInfo.parcel.payment_status)}15`,
-                      color: getStatusColor(trackingInfo.parcel.payment_status),
-                      border: `1px solid ${getStatusColor(trackingInfo.parcel.payment_status)}30`
-                    }}
-                  >
-                    {trackingInfo.parcel.payment_status || 'Inconnu'}
-                  </div>
-                  <div className="tracking-payment-text">
-                    {trackingInfo.parcel.payment_status_text}
-                  </div>
-                </div>
-              </div>
-
-              {/* Complete Parcel Information - All fields from API */}
-              <div className="tracking-details-grid">
-                {/* Client Information */}
-                <div className="tracking-detail-card">
-                  <div className="tracking-detail-header">
-                    <User size={16} />
-                    <h5>Client</h5>
-                  </div>
-                  <div className="tracking-detail-content">
-                    <div className="tracking-detail-row">
-                      <span className="detail-label">ID:</span>
-                      <span className="detail-value">{trackingInfo.parcel.id || '-'}</span>
-                    </div>
-                    <div className="tracking-detail-row">
-                      <span className="detail-label">Nom:</span>
-                      <span className="detail-value">{trackingInfo.parcel.receiver || '-'}</span>
-                    </div>
-                    <div className="tracking-detail-row">
-                      <span className="detail-label">Téléphone:</span>
-                      <span className="detail-value">{trackingInfo.parcel.phone || '-'}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Address Information */}
-                <div className="tracking-detail-card">
-                  <div className="tracking-detail-header">
-                    <MapPin size={16} />
-                    <h5>Adresse</h5>
-                  </div>
-                  <div className="tracking-detail-content">
-                    <div className="tracking-detail-row">
-                      <span className="detail-label">Ville ID:</span>
-                      <span className="detail-value">
-                        {trackingInfo.parcel.city?.id || trackingInfo.parcel.city_id || '-'}
-                      </span>
-                    </div>
-                    <div className="tracking-detail-row">
-                      <span className="detail-label">Ville:</span>
-                      <span className="detail-value">
-                        {trackingInfo.parcel.city?.name || trackingInfo.parcel.city || '-'}
-                      </span>
-                    </div>
-                    <div className="tracking-detail-row">
-                      <span className="detail-label">Adresse:</span>
-                      <span className="detail-value address">
-                        {trackingInfo.parcel.address || '-'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Product Information */}
-                <div className="tracking-detail-card">
-                  <div className="tracking-detail-header">
-                    <Package size={16} />
-                    <h5>Colis</h5>
-                  </div>
-                  <div className="tracking-detail-content">
-                    <div className="tracking-detail-row">
-                      <span className="detail-label">Code:</span>
-                      <span className="detail-value code">
-                        {trackingInfo.parcel.code || '-'}
-                      </span>
-                    </div>
-                    <div className="tracking-detail-row">
-                      <span className="detail-label">Produit:</span>
-                      <span className="detail-value">
-                        {trackingInfo.parcel.product?.name || '-'}
-                      </span>
-                    </div>
-                    <div className="tracking-detail-row">
-                      <span className="detail-label">Quantité:</span>
-                      <span className="detail-value">
-                        {trackingInfo.parcel.product?.quantity || 1}
-                      </span>
-                    </div>
-                    <div className="tracking-detail-row">
-                      <span className="detail-label">Prix:</span>
-                      <span className="detail-value price">
-                        {trackingInfo.parcel.price || 0} MAD
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Dates Information */}
-                <div className="tracking-detail-card">
-                  <div className="tracking-detail-header">
-                    <Calendar size={16} />
-                    <h5>Dates</h5>
-                  </div>
-                  <div className="tracking-detail-content">
-                    <div className="tracking-detail-row">
-                      <span className="detail-label">Création:</span>
-                      <span className="detail-value">
-                        {formatDate(trackingInfo.parcel.created_at)}
-                      </span>
-                    </div>
-                    <div className="tracking-detail-row">
-                      <span className="detail-label">Créé le:</span>
-                      <span className="detail-value">
-                        {trackingInfo.parcel.created_date || '-'}
-                      </span>
-                    </div>
-                    <div className="tracking-detail-row">
-                      <span className="detail-label">Mise à jour:</span>
-                      <span className="detail-value">
-                        {formatDate(trackingInfo.parcel.updated_at)}
-                      </span>
-                    </div>
-                    <div className="tracking-detail-row">
-                      <span className="detail-label">Mis à jour le:</span>
-                      <span className="detail-value">
-                        {trackingInfo.parcel.updated_date || '-'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Note if exists */}
-              {trackingInfo.parcel.note && (
-                <div className="tracking-note">
-                  <FileText size={16} />
-                  <div className="tracking-note-content">
-                    <span className="note-label">Note:</span>
-                    <p>{trackingInfo.parcel.note}</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Can Open Status */}
-              <div className="tracking-can-open">
-                {trackingInfo.parcel.can_open === 1 ? (
-                  <div className="can-open-badge allowed">
-                    <PackageCheck size={16} />
-                    Colis ouvert / vérifié
-                  </div>
-                ) : (
-                  <div className="can-open-badge not-allowed">
-                    <PackageX size={16} />
-                    Colis non ouvert
-                  </div>
-                )}
-              </div>
-
-              {/* Query Time */}
-              {trackingInfo.query_time && (
-                <div className="tracking-query-time">
-                  <Clock size={14} />
-                  <span>Dernière mise à jour: {formatDate(trackingInfo.query_time)}</span>
-                </div>
               )}
             </div>
-          )}
 
-          {/* Original Order Details */}
-          <div className="details-section">
-            <h4>Informations de la commande</h4>
-            <div className="details-grid">
-              <div className="detail-group">
-                <label>Client</label>
-                <p>{order.parcel_receiver || "-"}</p>
-              </div>
-              <div className="detail-group">
-                <label>Téléphone</label>
-                <p>{order.parcel_phone || "-"}</p>
-              </div>
-              <div className="detail-group">
-                <label>Quantité totale</label>
-                <p>{order.parcel_prd_qty || 0}</p>
-              </div>
-              <div className="detail-group">
-                <label>Ville</label>
-                <p>{order.parcel_city || "-"}</p>
-              </div>
-              <div className="detail-group">
-                <label>Adresse</label>
-                <p>{order.parcel_address || "-"}</p>
-              </div>
-              <div className="detail-group">
-                <label>Date</label>
-                <p>{order.date ? new Date(order.date).toLocaleDateString('fr-FR') : "-"}</p>
-              </div>
-              <div className="detail-group">
-                <label>Statut</label>
-                <span 
-                  className="status-bad"
-                  style={{ 
-                    backgroundColor: `${statusColors[order.statut] || "#666"}20`,
-                    color: statusColors[order.statut] || "#666",
-                    border: `1px solid ${(statusColors[order.statut] || "#666")}40`
-                  }}
-                >
-                  {statusLabels[order.statut] || order.statut || "Nouvelle"}
-                </span>
+            {/* Right Column - Informations de la commande (styled like tracking) */}
+            <div className="details-right-column">
+              <div className="order-info-section">
+                <div className="order-info-header">
+                  <Info size={20} />
+                  <h4>Informations de la commande</h4>
+                  <span className="order-info-badge">DÉTAILS</span>
+                </div>
+
+                {/* Order Information Cards */}
+                <div className="order-info-grid">
+                  <div className="order-info-card">
+                    <div className="order-info-label">
+                      <User size={14} />
+                      Client
+                    </div>
+                    <div className="order-info-value">
+                      {order.parcel_receiver || "-"}
+                    </div>
+                  </div>
+
+                  <div className="order-info-card">
+                    <div className="order-info-label">
+                      <Phone size={14} />
+                      Téléphone
+                    </div>
+                    <div className="order-info-value">
+                      {order.parcel_phone || "-"}
+                    </div>
+                  </div>
+
+                  <div className="order-info-card">
+                    <div className="order-info-label">
+                      <Layers size={14} />
+                      Quantité totale
+                    </div>
+                    <div className="order-info-value">
+                      {order.parcel_prd_qty || 0}
+                    </div>
+                  </div>
+
+                  <div className="order-info-card">
+                    <div className="order-info-label">
+                      <MapPin size={14} />
+                      Ville
+                    </div>
+                    <div className="order-info-value">
+                      {order.parcel_city || "-"}
+                    </div>
+                  </div>
+
+                  <div className="order-info-card full-width">
+                    <div className="order-info-label">
+                      <Map size={14} />
+                      Adresse
+                    </div>
+                    <div className="order-info-value address">
+                      {order.parcel_address || "-"}
+                    </div>
+                  </div>
+
+                  <div className="order-info-card">
+                    <div className="order-info-label">
+                      <Calendar size={14} />
+                      Date
+                    </div>
+                    <div className="order-info-value">
+                      {order.date ? new Date(order.date).toLocaleDateString('fr-FR') : "-"}
+                    </div>
+                  </div>
+
+                  <div className="order-info-card">
+                    <div className="order-info-label">
+                      <Clock size={14} />
+                      Statut
+                    </div>
+                    <div className="order-info-value">
+                      <span 
+                        className="status-badge"
+                        style={{ 
+                          backgroundColor: `${statusColors[order.statut] || "#666"}20`,
+                          color: statusColors[order.statut] || "#666",
+                          border: `1px solid ${(statusColors[order.statut] || "#666")}40`
+                        }}
+                      >
+                        {statusLabels[order.statut] || order.statut || "Nouvelle"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Financial Summary */}
+                <div className="order-financial-summary">
+                  <h5>Résumé financier</h5>
+                  <div className="financial-row">
+                    <span>Sous-total livres:</span>
+                    <span className="financial-amount">{order.total || 0} MAD</span>
+                  </div>
+                  <div className="financial-row">
+                    <span>Frais de livraison:</span>
+                    <span className="financial-amount">{order.frais_livraison || 0} MAD</span>
+                  </div>
+                  <div className="financial-row">
+                    <span>Frais de packaging:</span>
+                    <span className="financial-amount">{order.frais_packaging || 0} MAD</span>
+                  </div>
+                  <div className="financial-row total">
+                    <span>Total (Welivexpress):</span>
+                    <span className="financial-amount">{order.parcel_price || 0} MAD</span>
+                  </div>
+                  <div className="financial-row profit">
+                    <span>Profit:</span>
+                    <span className="financial-amount">{order.profit || 0} MAD</span>
+                  </div>
+                </div>
+
+                {/* Order Note */}
+                {order.parcel_note && (
+                  <div className="order-note">
+                    <FileText size={16} />
+                    <div className="order-note-content">
+                      <span className="note-label">Note:</span>
+                      <p>{order.parcel_note}</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Books Section */}
-          <div className="details-section">
+          {/* Books Section - Full Width Below */}
+          <div className="details-section full-width">
             <h4>Livres commandés</h4>
             {order.livres && Array.isArray(order.livres) && order.livres.length > 0 ? (
               <table className="details-books-table">
@@ -766,38 +858,6 @@ const OrderDetailsModal = ({ order, onClose }) => {
               <p className="no-books">Aucun livre dans cette commande</p>
             )}
           </div>
-
-          {/* Financial Section */}
-          <div className="details-financial">
-            <div className="financial-row">
-              <span>Sous-total livres:</span>
-              <span>{order.total || 0} MAD</span>
-            </div>
-            <div className="financial-row">
-              <span>Frais de livraison:</span>
-              <span>{order.frais_livraison || 0} MAD</span>
-            </div>
-            <div className="financial-row">
-              <span>Frais de packaging:</span>
-              <span>{order.frais_packaging || 0} MAD</span>
-            </div>
-            <div className="financial-row total">
-              <span>Total (Welivexpress):</span>
-              <span>{order.parcel_price || 0} MAD</span>
-            </div>
-            <div className="financial-row profit">
-              <span>Profit:</span>
-              <span>{order.profit || 0} MAD</span>
-            </div>
-          </div>
-
-          {/* Order Note */}
-          {order.parcel_note && (
-            <div className="details-note">
-              <label>Note de la commande:</label>
-              <p style={{ whiteSpace: 'pre-line' }}>{order.parcel_note}</p>
-            </div>
-          )}
         </div>
 
         <div className="modal-footer">
@@ -1535,7 +1595,7 @@ export default function AdminOrders() {
                           <RefreshCw size={14} className="spinning" />
                         ) : tracking ? (
                           <span 
-                            className="status-bad"
+                            className="status-badge"
                             style={{ 
                               backgroundColor: `${getStatusColor(tracking.deliveryStatus)}15`,
                               color: getStatusColor(tracking.deliveryStatus),
@@ -1545,7 +1605,7 @@ export default function AdminOrders() {
                             {tracking.deliveryStatus || '-'}
                           </span>
                         ) : (
-                          <span className="status-bad">-</span>
+                          <span className="status-badge">-</span>
                         )}
                       </td>
                       <td>
@@ -1553,7 +1613,7 @@ export default function AdminOrders() {
                           <RefreshCw size={14} className="spinning" />
                         ) : tracking ? (
                           <span 
-                            className="status-bad"
+                            className="status-badge"
                             style={{ 
                               backgroundColor: `${getStatusColor(tracking.paymentStatus)}15`,
                               color: getStatusColor(tracking.paymentStatus),
@@ -1563,7 +1623,7 @@ export default function AdminOrders() {
                             {tracking.paymentText || tracking.paymentStatus || '-'}
                           </span>
                         ) : (
-                          <span className="status-bad">-</span>
+                          <span className="status-badge">-</span>
                         )}
                       </td>
                       <td className="order-price">{order.parcel_price ? `${order.parcel_price} MAD` : "-"}</td>

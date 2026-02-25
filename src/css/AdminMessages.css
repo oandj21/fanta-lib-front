@@ -31,7 +31,7 @@
 .admin-header h2 {
   margin: 0 0 5px 0;
   font-size: 24px;
-  color: #2c1e1c;
+  color: #5c0202;
 }
 
 .admin-subtitle {
@@ -106,7 +106,7 @@
   width: 45px;
   height: 45px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #4a2c2a, #2c1e1c);
+  background: linear-gradient(135deg, #4a2c2a, #5c0202);
   color: #ead2b8;
   display: flex;
   align-items: center;
@@ -123,7 +123,7 @@
 .sender-info h4 {
   margin: 0 0 3px 0;
   font-size: 16px;
-  color: #2c1e1c;
+  color: #5c0202;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -196,7 +196,7 @@
 
 .no-messages h3 {
   margin: 0 0 10px 0;
-  color: #2c1e1c;
+  color: #5c0202;
   font-size: 18px;
 }
 
@@ -233,7 +233,7 @@
   width: 55px;
   height: 55px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #4a2c2a, #2c1e1c);
+  background: linear-gradient(135deg, #4a2c2a, #5c0202);
   color: #ead2b8;
   display: flex;
   align-items: center;
@@ -245,7 +245,7 @@
 .detail-sender-info h4 {
   margin: 0 0 5px 0;
   font-size: 18px;
-  color: #2c1e1c;
+  color: #5c0202;
 }
 
 .detail-email {
@@ -268,7 +268,7 @@
 
 .detail-content p {
   margin: 0;
-  color: #2c1e1c;
+  color: #5c0202;
   font-size: 15px;
   line-height: 1.6;
   white-space: pre-wrap;
@@ -394,7 +394,7 @@
 .modal-header h3 {
   margin: 0;
   font-size: 20px;
-  color: #2c1e1c;
+  color: #5c0202;
 }
 
 .modal-close {
@@ -413,7 +413,7 @@
 
 .modal-close:hover {
   background-color: #f8f4f0;
-  color: #2c1e1c;
+  color: #5c0202;
 }
 
 /* Loading */
@@ -544,7 +544,7 @@
   font-family: 'Playfair Display', serif;
   font-size: 1.875rem;
   font-weight: 700;
-  color: #2c1e1c;
+  color: #5c0202;
   margin: 0 0 0.25rem 0;
 }
 
@@ -620,7 +620,7 @@
   font-family: 'Playfair Display', serif;
   font-size: 1.5rem;
   font-weight: 700;
-  color: #2c1e1c;
+  color: #5c0202;
   line-height: 1.2;
 }
 
@@ -653,7 +653,7 @@
   border-radius: 0.75rem;
   font-family: 'Lato', sans-serif;
   font-size: 0.875rem;
-  color: #2c1e1c;
+  color: #5c0202;
   background-color: white;
   transition: all 0.2s;
 }
@@ -685,7 +685,7 @@
 
 .clear-search:hover {
   background-color: #f8f4f0;
-  color: #2c1e1c;
+  color: #5c0202;
 }
 
 .filters-toggle {
@@ -760,7 +760,7 @@
   border-radius: 0.5rem;
   font-family: 'Lato', sans-serif;
   font-size: 0.875rem;
-  color: #2c1e1c;
+  color: #5c0202;
   background-color: white;
   cursor: pointer;
   transition: all 0.2s;
@@ -862,7 +862,7 @@
   margin: 0 0 0.25rem 0;
   font-size: 1rem;
   font-weight: 600;
-  color: #2c1e1c;
+  color: #5c0202;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -905,7 +905,7 @@
   margin: 0;
   font-size: 0.875rem;
   line-height: 1.5;
-  color: #2c1e1c;
+  color: #5c0202;
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
@@ -946,7 +946,7 @@
   font-family: 'Playfair Display', serif;
   font-size: 1.25rem;
   font-weight: 600;
-  color: #2c1e1c;
+  color: #5c0202;
   margin: 1rem 0 0.5rem 0;
 }
 
@@ -1070,7 +1070,7 @@
   font-family: 'Playfair Display', serif;
   font-size: 1.25rem;
   font-weight: 600;
-  color: #2c1e1c;
+  color: #5c0202;
   margin: 0;
 }
 
@@ -1089,7 +1089,7 @@
 
 .modal-close:hover {
   background-color: #f8f4f0;
-  color: #2c1e1c;
+  color: #5c0202;
 }
 
 /* Message Detail */
@@ -1132,7 +1132,7 @@
   margin: 0 0 0.25rem 0;
   font-size: 1.1rem;
   font-weight: 600;
-  color: #2c1e1c;
+  color: #5c0202;
 }
 
 .detail-email {
@@ -1160,7 +1160,7 @@
   margin: 0;
   font-size: 0.95rem;
   line-height: 1.6;
-  color: #2c1e1c;
+  color: #5c0202;
   white-space: pre-wrap;
 }
 
@@ -1263,7 +1263,7 @@
 .no-messages h3 {
   font-family: 'Playfair Display', serif;
   margin: 1rem 0 0.5rem 0;
-  color: #2c1e1c;
+  color: #5c0202;
 }
 
 .no-messages-icon {

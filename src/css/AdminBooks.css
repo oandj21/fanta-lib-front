@@ -35,7 +35,7 @@
   font-family: 'Playfair Display', serif;
   font-size: 1.875rem;
   font-weight: 700;
-  color: #2c1e1c;
+  color: #5c0202;
   margin: 0 0 0.25rem 0;
 }
 
@@ -151,7 +151,7 @@
   border-bottom: 1px solid #e0d6cc;
   font-family: 'Lato', sans-serif;
   font-size: 0.875rem;
-  color: #2c1e1c;
+  color: #5c0202;
   vertical-align: middle;
 }
 
@@ -191,7 +191,7 @@
 
 .book-tit {
   font-weight: 600;
-  color: #2c1e1c;
+  color: #5c0202;
   max-width: 200px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -307,7 +307,7 @@
   font-family: 'Playfair Display', serif;
   font-size: 1.25rem;
   font-weight: 600;
-  color: #2c1e1c;
+  color: #5c0202;
   margin: 0;
 }
 
@@ -326,7 +326,7 @@
 
 .modal-close:hover {
   background-color: #f8f4f0;
-  color: #2c1e1c;
+  color: #5c0202;
 }
 
 /* Delete Content */
@@ -343,7 +343,7 @@
 .delete-content p {
   margin: 0.5rem 0;
   font-size: 1rem;
-  color: #2c1e1c;
+  color: #5c0202;
 }
 
 .delete-warning {
@@ -372,7 +372,7 @@
   font-family: 'Lato', sans-serif;
   font-weight: 600;
   font-size: 0.875rem;
-  color: #2c1e1c;
+  color: #5c0202;
 }
 
 .form-group .required {
@@ -389,7 +389,7 @@
   border-radius: 0.75rem;
   font-family: 'Lato', sans-serif;
   font-size: 0.875rem;
-  color: #2c1e1c;
+  color: #5c0202;
   background-color: #ffffff;
   transition: all 0.2s ease;
   box-sizing: border-box;
@@ -532,7 +532,7 @@
 .upload-placeholder span {
   display: block;
   font-size: 0.875rem;
-  color: #2c1e1c;
+  color: #5c0202;
   margin-bottom: 0.25rem;
 }
 
@@ -636,7 +636,7 @@
   left: 50%;
   transform: translateX(-50%);
   padding: 0.25rem 0.5rem;
-  background-color: #2c1e1c;
+  background-color: #5c0202;
   color: white;
   font-size: 0.75rem;
   border-radius: 0.25rem;
@@ -835,7 +835,7 @@ textarea:focus-visible {
   font-family: 'Playfair Display', serif;
   font-size: 1.875rem;
   font-weight: 700;
-  color: #2c1e1c;
+  color: #5c0202;
   line-height: 1.2;
 }
 
@@ -868,7 +868,7 @@ textarea:focus-visible {
   border-radius: 0.75rem;
   font-family: 'Lato', sans-serif;
   font-size: 0.875rem;
-  color: #2c1e1c;
+  color: #5c0202;
   background-color: white;
   transition: all 0.2s;
 }
@@ -900,7 +900,7 @@ textarea:focus-visible {
 
 .clear-search:hover {
   background-color: #f8f4f0;
-  color: #2c1e1c;
+  color: #5c0202;
 }
 
 .filters-toggle {
@@ -994,7 +994,7 @@ textarea:focus-visible {
   border-radius: 0.5rem;
   font-family: 'Lato', sans-serif;
   font-size: 0.875rem;
-  color: #2c1e1c;
+  color: #5c0202;
   background-color: white;
   cursor: pointer;
   transition: all 0.2s;
@@ -1051,7 +1051,7 @@ textarea:focus-visible {
   font-family: 'Playfair Display', serif;
   font-size: 1.25rem;
   font-weight: 600;
-  color: #2c1e1c;
+  color: #5c0202;
   margin: 0 0 0.5rem 0;
 }
 

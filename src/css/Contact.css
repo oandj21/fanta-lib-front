@@ -7,12 +7,12 @@
 :root {
   --primary: #4a2c2a;
   --primary-light: #6b3f3c;
-  --primary-dark: #2c1e1c;
+  --primary-dark: #5c0202;
   --primary-foreground: #ffffff;
   --background: #faf7f2;
-  --foreground: #2c1e1c;
+  --foreground: #5c0202;
   --card: #ffffff;
-  --card-foreground: #2c1e1c;
+  --card-foreground: #5c0202;
   --muted: #f0e8e0;
   --muted-foreground: #6b5b53;
   --border: #e0d6cc;

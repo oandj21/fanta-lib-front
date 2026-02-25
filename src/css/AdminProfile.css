@@ -9,7 +9,7 @@
 .profile-header h2 {
   margin: 0 0 5px 0;
   font-size: 24px;
-  color: #2c1e1c;
+  color: #5c0202;
 }
 
 .profile-header p {
@@ -39,7 +39,7 @@
   width: 100px;
   height: 100px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #4a2c2a, #2c1e1c);
+  background: linear-gradient(135deg, #4a2c2a, #5c0202);
   color: #ead2b8;
   display: flex;
   align-items: center;
@@ -52,7 +52,7 @@
 .profile-title h3 {
   margin: 0 0 5px 0;
   font-size: 28px;
-  color: #2c1e1c;
+  color: #5c0202;
 }
 
 .profile-role {
@@ -86,7 +86,7 @@
 .info-value {
   font-size: 16px;
   font-weight: 600;
-  color: #2c1e1c;
+  color: #5c0202;
 }
 
 .role-badge {
@@ -125,7 +125,7 @@
 .password-card h3 {
   margin: 0 0 20px 0;
   font-size: 20px;
-  color: #2c1e1c;
+  color: #5c0202;
 }
 
 .form-group {
@@ -137,7 +137,7 @@
   margin-bottom: 8px;
   font-weight: 600;
   font-size: 14px;
-  color: #2c1e1c;
+  color: #5c0202;
 }
 
 .password-input-wrapper {

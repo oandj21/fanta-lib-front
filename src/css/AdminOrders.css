@@ -33,7 +33,7 @@
   font-family: 'Playfair Display', serif;
   font-size: 1.875rem;
   font-weight: 700;
-  color: #2c1e1c;
+  color: #5c0202;
   margin: 0 0 0.25rem 0;
 }
 
@@ -115,7 +115,7 @@
   font-family: 'Playfair Display', serif;
   font-size: 1.5rem;
   font-weight: 700;
-  color: #2c1e1c;
+  color: #5c0202;
   line-height: 1.2;
 }
 
@@ -148,7 +148,7 @@
   border-radius: 0.75rem;
   font-family: 'Lato', sans-serif;
   font-size: 0.875rem;
-  color: #2c1e1c;
+  color: #5c0202;
   background-color: white;
   transition: all 0.2s;
 }
@@ -180,7 +180,7 @@
 
 .clear-search:hover {
   background-color: #f8f4f0;
-  color: #2c1e1c;
+  color: #5c0202;
 }
 
 .filters-toggle {
@@ -266,7 +266,7 @@
   border-radius: 0.75rem;
   font-family: 'Lato', sans-serif;
   font-size: 0.875rem;
-  color: #2c1e1c;
+  color: #5c0202;
   background-color: white;
   cursor: pointer;
   transition: all 0.2s;
@@ -338,7 +338,7 @@
   border-bottom: 1px solid #e0d6cc;
   font-family: 'Lato', sans-serif;
   font-size: 0.875rem;
-  color: #2c1e1c;
+  color: #5c0202;
 }
 
 .data-table tr:last-child td {
@@ -360,7 +360,7 @@
 
 .order-client {
   font-weight: 600;
-  color: #2c1e1c;
+  color: #5c0202;
 }
 
 .order-price {
@@ -453,7 +453,7 @@
   font-family: 'Playfair Display', serif;
   font-size: 1.25rem;
   font-weight: 600;
-  color: #2c1e1c;
+  color: #5c0202;
   margin: 0 0 0.5rem 0;
 }
 
@@ -634,7 +634,7 @@
   font-family: 'Playfair Display', serif;
   font-size: 1.5rem;
   font-weight: 700;
-  color: #2c1e1c;
+  color: #5c0202;
   margin: 0;
 }
 
@@ -653,7 +653,7 @@
 
 .modal-close:hover {
   background-color: rgba(107, 87, 82, 0.1);
-  color: #2c1e1c;
+  color: #5c0202;
   transform: rotate(90deg);
 }
 
@@ -730,7 +730,7 @@
   border-radius: 0.5rem;
   font-family: 'Lato', sans-serif;
   font-size: 0.875rem;
-  color: #2c1e1c;
+  color: #5c0202;
   background-color: white;
   transition: all 0.2s;
 }
@@ -787,7 +787,7 @@
   border-radius: 0.5rem;
   font-family: 'Lato', sans-serif;
   font-size: 0.875rem;
-  color: #2c1e1c;
+  color: #5c0202;
   background-color: white;
   transition: all 0.2s;
 }
@@ -837,7 +837,7 @@
   gap: 0.5rem;
   font-family: 'Lato', sans-serif;
   font-size: 0.875rem;
-  color: #2c1e1c;
+  color: #5c0202;
   transition: all 0.2s;
 }
 
@@ -898,7 +898,7 @@
   border-radius: 0.5rem;
   font-family: 'Lato', sans-serif;
   font-size: 0.875rem;
-  color: #2c1e1c;
+  color: #5c0202;
   background-color: white;
   transition: all 0.2s;
 }
@@ -959,7 +959,7 @@
   font-family: 'Lato', sans-serif;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #2c1e1c;
+  color: #5c0202;
 }
 
 .book-dropdown-author {
@@ -1020,7 +1020,7 @@
   font-family: 'Lato', sans-serif;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #2c1e1c;
+  color: #5c0202;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1149,7 +1149,7 @@
 .detail-group p {
   font-family: 'Lato', sans-serif;
   font-size: 1rem;
-  color: #2c1e1c;
+  color: #5c0202;
   margin: 0;
   font-weight: 500;
 }
@@ -1243,7 +1243,7 @@
 .details-note p {
   font-family: 'Lato', sans-serif;
   font-size: 0.875rem;
-  color: #2c1e1c;
+  color: #5c0202;
   margin: 0;
   line-height: 1.5;
 }
@@ -1620,7 +1620,7 @@
 .tracking-status-description {
   font-family: 'Lato', sans-serif;
   font-size: 0.9rem;
-  color: #2c1e1c;
+  color: #5c0202;
   font-style: italic;
   margin-top: 0.5rem;
   padding-top: 0.5rem;
@@ -1691,7 +1691,7 @@
 }
 
 .detail-value {
-  color: #2c1e1c;
+  color: #5c0202;
   font-weight: 500;
   text-align: right;
   word-break: break-word;
@@ -1749,7 +1749,7 @@
 .tracking-note-content p {
   font-family: 'Lato', sans-serif;
   font-size: 0.85rem;
-  color: #2c1e1c;
+  color: #5c0202;
   margin: 0;
   line-height: 1.5;
   white-space: pre-line;

@@ -58,11 +58,11 @@
 .finance-header h2 {
   margin: 0 0 5px 0;
   font-size: 32px;
-  color: #2c1e1c;
+  color: #5c0202;
   font-family: 'Playfair Display', serif;
   font-weight: 700;
   letter-spacing: -0.5px;
-  background: linear-gradient(135deg, #2c1e1c 0%, #4a2c2a 100%);
+  background: linear-gradient(135deg, #5c0202 0%, #4a2c2a 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -107,7 +107,7 @@
 
 .time-range-selector button:hover {
   background: #f0e9e5;
-  color: #2c1e1c;
+  color: #5c0202;
 }
 
 .time-range-selector button.active {
@@ -296,7 +296,7 @@
 
 .finance-tabs button:hover {
   background: #f0e9e5;
-  color: #2c1e1c;
+  color: #5c0202;
 }
 
 .finance-tabs button.active {
@@ -335,7 +335,7 @@
 .chart-card h3 {
   margin: 0 0 20px 0;
   font-size: 20px;
-  color: #2c1e1c;
+  color: #5c0202;
   font-family: 'Playfair Display', serif;
   font-weight: 600;
   position: relative;
@@ -483,7 +483,7 @@
 .ratio-value {
   font-size: 15px;
   font-weight: 600;
-  color: #2c1e1c;
+  color: #5c0202;
   display: block;
   text-align: right;
 }
@@ -544,7 +544,7 @@
 .profit-card h4 {
   margin: 0 0 20px 0;
   font-size: 18px;
-  color: #2c1e1c;
+  color: #5c0202;
   font-family: 'Playfair Display', serif;
   font-weight: 600;
   position: relative;
@@ -595,7 +595,7 @@
   font-size: 24px;
   font-weight: 700;
   font-family: 'Playfair Display', serif;
-  color: #2c1e1c;
+  color: #5c0202;
   margin-bottom: 5px;
 }
 

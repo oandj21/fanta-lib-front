@@ -411,7 +411,7 @@ export default function AdminDashboard() {
                     }}
                     formatter={(value) => [`${formatCurrency(value)} DH`, '']}
                   />
-                  <Bar dataKey="ventes" name="Ventes" fill="#4a2c2a" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="ventes" name="Ventes" fill="#5c0202" radius={[6, 6, 0, 0]} />
                   <Bar dataKey="profit" name="Profit" fill="#10b981" radius={[6, 6, 0, 0]} />
                   <Bar dataKey="depenses" name="Dépenses" fill="#ef4444" radius={[6, 6, 0, 0]} />
                 </BarChart>

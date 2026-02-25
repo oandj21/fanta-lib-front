@@ -54,12 +54,12 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #4a2c2a;
+  color: #5c0202;
   font-weight: 600;
 }
 
 .stat-item svg {
-  color: #4a2c2a;
+  color: #5c0202;
   opacity: 0.7;
 }
 
@@ -85,7 +85,7 @@
 .message-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-  border-color: #4a2c2a;
+  border-color: #5c0202;
 }
 
 .message-card-header {
@@ -106,7 +106,7 @@
   width: 45px;
   height: 45px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #4a2c2a, #5c0202);
+  background: linear-gradient(135deg, #5c0202, #5c0202);
   color: #ffead0;
   display: flex;
   align-items: center;
@@ -233,7 +233,7 @@
   width: 55px;
   height: 55px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #4a2c2a, #5c0202);
+  background: linear-gradient(135deg, #5c0202, #5c0202);
   color: #ffead0;
   display: flex;
   align-items: center;
@@ -250,7 +250,7 @@
 
 .detail-email {
   margin: 0;
-  color: #4a2c2a;
+  color: #5c0202;
   font-size: 14px;
 }
 
@@ -280,7 +280,7 @@
 }
 
 .btn-primar {
-  background-color: #4a2c2a;
+  background-color: #5c0202;
   color: #ffead0;
   border: none;
   padding: 12px 20px;
@@ -338,13 +338,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #4a2c2a;
+  color: #5c0202;
   transition: all 0.2s;
 }
 
 .pagination-btn:hover:not(:disabled) {
   background-color: #f8f4f0;
-  border-color: #4a2c2a;
+  border-color: #5c0202;
 }
 
 .pagination-btn:disabled {
@@ -430,7 +430,7 @@
   width: 40px;
   height: 40px;
   border: 3px solid #f8f4f0;
-  border-top-color: #4a2c2a;
+  border-top-color: #5c0202;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -581,7 +581,7 @@
 }
 
 .message-stat-card.total {
-  border-left: 4px solid #4a2c2a;
+  border-left: 4px solid #5c0202;
 }
 
 .message-stat-card.today {
@@ -601,7 +601,7 @@
   justify-content: center;
   flex-shrink: 0;
   background-color: #f8f4f0;
-  color: #4a2c2a;
+  color: #5c0202;
 }
 
 .message-stat-content {
@@ -660,7 +660,7 @@
 
 .search-input:focus {
   outline: none;
-  border-color: #4a2c2a;
+  border-color: #5c0202;
   box-shadow: 0 0 0 3px rgba(74, 44, 42, 0.1);
 }
 
@@ -696,7 +696,7 @@
   font-family: 'Lato', sans-serif;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #4a2c2a;
+  color: #5c0202;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -711,9 +711,9 @@
 }
 
 .filters-toggle.active {
-  background-color: #4a2c2a;
+  background-color: #5c0202;
   color: #ffead0;
-  border-color: #4a2c2a;
+  border-color: #5c0202;
 }
 
 .filters-toggle.active svg {
@@ -772,7 +772,7 @@
 
 .filter-select:focus {
   outline: none;
-  border-color: #4a2c2a;
+  border-color: #5c0202;
   box-shadow: 0 0 0 3px rgba(74, 44, 42, 0.1);
 }
 
@@ -783,7 +783,7 @@
   padding: 0.625rem 1.25rem;
   font-family: 'Lato', sans-serif;
   font-size: 0.875rem;
-  color: #4a2c2a;
+  color: #5c0202;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -843,7 +843,7 @@
   width: 2.5rem;
   height: 2.5rem;
   border-radius: 50%;
-  background-color: #4a2c2a;
+  background-color: #5c0202;
   color: #ffead0;
   display: flex;
   align-items: center;
@@ -994,7 +994,7 @@
   padding: 0 0.5rem;
   border: 1px solid #e0d6cc;
   background-color: white;
-  color: #4a2c2a;
+  color: #5c0202;
   font-family: 'Lato', sans-serif;
   font-size: 0.875rem;
   font-weight: 500;
@@ -1013,9 +1013,9 @@
 }
 
 .pagination-btn.active {
-  background-color: #4a2c2a;
+  background-color: #5c0202;
   color: #ffead0;
-  border-color: #4a2c2a;
+  border-color: #5c0202;
 }
 
 .pagination-btn:disabled {
@@ -1119,7 +1119,7 @@
   width: 3rem;
   height: 3rem;
   border-radius: 50%;
-  background-color: #4a2c2a;
+  background-color: #5c0202;
   color: #ffead0;
   display: flex;
   align-items: center;
@@ -1213,7 +1213,7 @@
 
 .btn-secondary {
   background-color: white;
-  color: #4a2c2a;
+  color: #5c0202;
   border: 1px solid #e0d6cc;
   padding: 0.75rem 1.5rem;
   border-radius: 0.75rem;
@@ -1241,7 +1241,7 @@
   width: 40px;
   height: 40px;
   border: 3px solid #e0d6cc;
-  border-top-color: #4a2c2a;
+  border-top-color: #5c0202;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }

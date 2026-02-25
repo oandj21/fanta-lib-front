@@ -360,7 +360,7 @@
   left: 0;
   width: 40px;
   height: 2px;
-  background: #4a2c2a;
+  background: #5c0202;
   border-radius: 2px;
 }
 
@@ -391,7 +391,7 @@
 }
 
 .last-update svg {
-  color: #4a2c2a;
+  color: #5c0202;
 }
 
 /* Status Grid - for 8 cards */
@@ -491,11 +491,11 @@
 /* New color classes for stat cards */
 .stat-card.primary .stat-icon {
   background-color: rgba(74, 44, 42, 0.1);
-  color: #4a2c2a;
+  color: #5c0202;
 }
 
 .stat-card.primary .stat-value {
-  color: #4a2c2a;
+  color: #5c0202;
 }
 
 .stat-card.purple .stat-icon {
@@ -589,7 +589,7 @@
   left: 0;
   width: 40px;
   height: 2px;
-  background: #4a2c2a;
+  background: #5c0202;
   border-radius: 2px;
 }
 
@@ -620,7 +620,7 @@
 }
 
 .last-update svg {
-  color: #4a2c2a;
+  color: #5c0202;
 }
 
 /* Status Grid - for 8 cards */
@@ -647,7 +647,7 @@
 }
 
 .chart-header svg {
-  color: #4a2c2a;
+  color: #5c0202;
 }
 
 .chart-header h3 {
@@ -752,11 +752,11 @@
 /* New color classes for stat cards */
 .stat-card.primary .stat-icon {
   background-color: rgba(74, 44, 42, 0.1);
-  color: #4a2c2a;
+  color: #5c0202;
 }
 
 .stat-card.primary .stat-value {
-  color: #4a2c2a;
+  color: #5c0202;
 }
 
 .stat-card.purple .stat-icon {

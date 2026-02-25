@@ -79,7 +79,7 @@
 
 .btn-secondary {
   background-color: white;
-  color: #4a2c2a;
+  color: #5c0202;
   border: 1px solid #e0d6cc;
   padding: 0.75rem 1.5rem;
   border-radius: 0.75rem;
@@ -203,7 +203,7 @@
   font-size: 0.75rem;
   font-weight: 600;
   background-color: #f8f4f0;
-  color: #4a2c2a;
+  color: #5c0202;
   white-space: nowrap;
 }
 
@@ -254,7 +254,7 @@
 
 .btn-icon.edit:hover {
   background-color: rgba(74, 44, 42, 0.1);
-  color: #4a2c2a;
+  color: #5c0202;
 }
 
 .btn-icon.delete:hover {
@@ -411,7 +411,7 @@
 .form-group input:focus,
 .form-group select:focus {
   outline: none;
-  border-color: #4a2c2a;
+  border-color: #5c0202;
   box-shadow: 0 0 0 3px rgba(74, 44, 42, 0.1);
 }
 
@@ -460,7 +460,7 @@
   width: 1rem;
   height: 1rem;
   border: 2px solid #e0d6cc;
-  border-top-color: #4a2c2a;
+  border-top-color: #5c0202;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -491,7 +491,7 @@
 button:focus-visible,
 input:focus-visible,
 select:focus-visible {
-  outline: 2px solid #4a2c2a;
+  outline: 2px solid #5c0202;
   outline-offset: 2px;
 }
 
@@ -591,7 +591,7 @@ select:focus-visible {
 }
 
 .expense-stat-card.month {
-  border-left: 4px solid #4a2c2a;
+  border-left: 4px solid #5c0202;
 }
 
 .expense-stat-card.count {
@@ -607,7 +607,7 @@ select:focus-visible {
   justify-content: center;
   flex-shrink: 0;
   background-color: #f8f4f0;
-  color: #4a2c2a;
+  color: #5c0202;
 }
 
 .expense-stat-content {
@@ -672,7 +672,7 @@ select:focus-visible {
   font-family: 'Lato', sans-serif;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #4a2c2a;
+  color: #5c0202;
 }
 
 .category-stat-amount {
@@ -718,7 +718,7 @@ select:focus-visible {
 
 .search-input:focus {
   outline: none;
-  border-color: #4a2c2a;
+  border-color: #5c0202;
   box-shadow: 0 0 0 3px rgba(74, 44, 42, 0.1);
 }
 
@@ -754,7 +754,7 @@ select:focus-visible {
   font-family: 'Lato', sans-serif;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #4a2c2a;
+  color: #5c0202;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -769,9 +769,9 @@ select:focus-visible {
 }
 
 .filters-toggle.active {
-  background-color: #4a2c2a;
+  background-color: #5c0202;
   color: #ffead0;
-  border-color: #4a2c2a;
+  border-color: #5c0202;
 }
 
 .filters-toggle.active svg {
@@ -841,7 +841,7 @@ select:focus-visible {
 
 .filter-select:focus {
   outline: none;
-  border-color: #4a2c2a;
+  border-color: #5c0202;
   box-shadow: 0 0 0 3px rgba(74, 44, 42, 0.1);
 }
 
@@ -852,7 +852,7 @@ select:focus-visible {
   padding: 0.625rem 1.25rem;
   font-family: 'Lato', sans-serif;
   font-size: 0.875rem;
-  color: #4a2c2a;
+  color: #5c0202;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -940,7 +940,7 @@ select:focus-visible {
   padding: 0 0.5rem;
   border: 1px solid #e0d6cc;
   background-color: white;
-  color: #4a2c2a;
+  color: #5c0202;
   font-family: 'Lato', sans-serif;
   font-size: 0.875rem;
   font-weight: 500;
@@ -959,9 +959,9 @@ select:focus-visible {
 }
 
 .pagination-btn.active {
-  background-color: #4a2c2a;
+  background-color: #5c0202;
   color: #ffead0;
-  border-color: #4a2c2a;
+  border-color: #5c0202;
 }
 
 .pagination-btn:disabled {

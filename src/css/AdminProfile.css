@@ -39,7 +39,7 @@
   width: 100px;
   height: 100px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #4a2c2a, #5c0202);
+  background: linear-gradient(135deg, #5c0202, #5c0202);
   color: #ffead0;
   display: flex;
   align-items: center;
@@ -92,7 +92,7 @@
 .role-badge {
   display: inline-block;
   padding: 4px 12px;
-  background-color: #4a2c2a;
+  background-color: #5c0202;
   color: #ffead0;
   border-radius: 20px;
   font-size: 14px;
@@ -155,7 +155,7 @@
 
 .password-input-wrapper input:focus {
   outline: none;
-  border-color: #4a2c2a;
+  border-color: #5c0202;
 }
 
 .toggle-password {
@@ -172,7 +172,7 @@
 }
 
 .toggle-password:hover {
-  color: #4a2c2a;
+  color: #5c0202;
 }
 
 .alert {

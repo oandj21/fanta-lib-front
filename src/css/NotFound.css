@@ -20,7 +20,7 @@
 .not-found-title {
   font-size: 120px;
   font-weight: 700;
-  color: #4a2c2a;
+  color: #5c0202;
   margin: 0;
   line-height: 1;
   text-shadow: 3px 3px 0 #ffead0;
@@ -65,8 +65,8 @@
 
 .btn-outline {
   background: transparent;
-  color: #4a2c2a;
-  border: 2px solid #4a2c2a;
+  color: #5c0202;
+  border: 2px solid #5c0202;
   padding: 12px 30px;
   border-radius: 50px;
   font-weight: 600;
@@ -76,7 +76,7 @@
 }
 
 .btn-outline:hover {
-  background-color: #4a2c2a;
+  background-color: #5c0202;
   color: #ffead0;
   transform: translateY(-2px);
 }

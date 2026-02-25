@@ -103,7 +103,7 @@
   border: none;
   border-radius: 6px;
   background-color: #f0e8e0;
-  color: #4a2c2a;
+  color: #5c0202;
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
@@ -130,7 +130,7 @@
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
-  background-color: #4a2c2a;
+  background-color: #5c0202;
   color: #ffead0;
 }
 

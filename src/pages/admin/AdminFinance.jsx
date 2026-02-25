@@ -424,9 +424,9 @@ export default function AdminFinance() {
             </div>
           </div>
 
-          <div className="chart-card1">
+          <div className="chart-card">
             <h3>Répartition des gains</h3>
-            <div className="pie-chart-container1">
+            <div className="pie-chart-container">
               <ResponsiveContainer width="100%" height={300}>
                 <RePieChart>
                   <Pie
@@ -503,7 +503,7 @@ export default function AdminFinance() {
 
       {activeTab === 'charts' && (
         <>
-          <div className="chart-card1">
+          <div className="chart-card">
             <h3>Évolution financière mensuelle</h3>
             <div className="chart-container">
               <ResponsiveContainer width="100%" height={320}>
@@ -565,7 +565,7 @@ export default function AdminFinance() {
             </div>
           </div>
 
-          <div className="chart-card1">
+          <div className="chart-card">
             <h3>Performance comparative</h3>
             <div className="chart-container">
               <ResponsiveContainer width="100%" height={320}>

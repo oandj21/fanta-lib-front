@@ -131,7 +131,7 @@
   justify-content: center;
   transition: all 0.2s;
   background-color: #5c0202;
-  color: #ffead0;
+  color: #f8f4f0;
 }
 
 .btn-cart:hover:not(:disabled) {

@@ -42,7 +42,7 @@ body, html {
 
 .brand-content {
   text-align: center;
-  color: #ffead0;
+  color: #f8f4f0;
   max-width: 400px;
   padding: 0 40px;
   z-index: 1;
@@ -62,14 +62,14 @@ body, html {
   height: 120px;
   border-radius: 50%;
   object-fit: cover;
-  border: 4px solid #ffead0;
+  border: 4px solid #f8f4f0;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
 .brand-text {
   font-size: 36px;
   font-weight: 700;
-  color: #ffead0;
+  color: #f8f4f0;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   letter-spacing: 2px;
 }
@@ -105,7 +105,7 @@ body, html {
   backdrop-filter: blur(10px);
   border: 1px solid rgba(234, 210, 184, 0.3);
   transition: transform 0.3s ease;
-  color: #ffead0;
+  color: #f8f4f0;
 }
 
 .feature-item:hover {
@@ -118,10 +118,10 @@ body, html {
   font-weight: 500;
 }
 
-/* Right Side - Login Form with #ffead0 */
+/* Right Side - Login Form with #f8f4f0 */
 .login-form-section {
   flex: 1;
-  background: #ffead0;
+  background: #f8f4f0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -212,7 +212,7 @@ body, html {
 .form-input-modern {
   width: 100%;
   padding: 16px 16px 16px 50px;
-  border: 2px solid #ffead0;
+  border: 2px solid #f8f4f0;
   border-radius: 12px;
   font-size: 16px;
   background: #fff;
@@ -286,7 +286,7 @@ body, html {
 .checkmark {
   width: 18px;
   height: 18px;
-  border: 2px solid #ffead0;
+  border: 2px solid #f8f4f0;
   border-radius: 4px;
   position: relative;
   transition: all 0.2s ease;
@@ -303,7 +303,7 @@ body, html {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  color: #ffead0;
+  color: #f8f4f0;
   font-size: 12px;
   font-weight: bold;
 }
@@ -336,7 +336,7 @@ body, html {
   background: #5c0202;
   border: none;
   border-radius: 12px;
-  color: #ffead0;
+  color: #f8f4f0;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
@@ -429,7 +429,7 @@ body, html {
 .login-footer {
   text-align: center;
   padding-top: 20px;
-  border-top: 1px solid #ffead0;
+  border-top: 1px solid #f8f4f0;
 }
 
 .login-footer p {

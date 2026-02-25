@@ -1,14 +1,14 @@
 .admin-layout {
   display: flex;
   min-height: 100vh;
-  background-color: #ffead0;
+  background-color: #f8f4f0;
 }
 
 /* Sidebar */
 .sidebar {
   width: 260px;
   background: linear-gradient(180deg, #5c0202 0%, #5c0202 100%);
-  color: #ffead0;
+  color: #f8f4f0;
   position: fixed;
   height: 100vh;
   left: 0;
@@ -32,14 +32,14 @@
   margin: 0;
   font-size: 24px;
   font-weight: 600;
-  color: #ffead0;
+  color: #f8f4f0;
 }
 
 .close-sidebar {
   display: none;
   background: none;
   border: none;
-  color: #ffead0;
+  color: #f8f4f0;
   font-size: 20px;
   cursor: pointer;
   padding: 5px;
@@ -56,7 +56,7 @@
   align-items: center;
   gap: 10px;
   padding: 4px 15px;
-  color: #ffead0;
+  color: #f8f4f0;
   text-decoration: none;
   border-radius: 8px;
   margin-bottom: 5px;
@@ -71,7 +71,7 @@
 
 .nav-item.active {
   opacity: 1;
-  background-color: #ffead0;
+  background-color: #f8f4f0;
   color: #5c0202;
   font-weight: 600;
 }
@@ -98,7 +98,7 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background-color: #ffead0;
+  background-color: #f8f4f0;
   color: #5c0202;
   display: flex;
   align-items: center;
@@ -135,7 +135,7 @@
   padding: 10px;
   background: none;
   border: 1px solid rgba(234, 210, 184, 0.3);
-  color: #ffead0;
+  color: #f8f4f0;
   border-radius: 8px;
   cursor: pointer;
   display: flex;
@@ -203,7 +203,7 @@
   font-size: 14px;
   color: #666;
   padding: 5px 15px;
-  background-color: #ffead0;
+  background-color: #f8f4f0;
   border-radius: 20px;
 }
 

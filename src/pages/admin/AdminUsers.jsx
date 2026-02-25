@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Plus, Pencil, Trash2, X, Check, Power, Search, Filter, XCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Check, Power, Search, Filter, XCircle, AlertTriangle } from "lucide-react";
 import { 
   fetchUtilisateurs, 
   createUtilisateur, 
@@ -38,6 +38,7 @@ export default function AdminUsers() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(20);
   
+  // Modal states
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({
@@ -48,6 +49,11 @@ export default function AdminUsers() {
     password: "",
   });
   const [formErrors, setFormErrors] = useState({});
+
+  // Delete confirmation modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     dispatch(fetchUtilisateurs());
@@ -159,10 +165,32 @@ export default function AdminUsers() {
     setShowModal(true);
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm("Êtes-vous sûr de vouloir supprimer cet utilisateur ?")) {
-      dispatch(deleteUtilisateur(id));
+  // Open delete confirmation modal
+  const openDeleteConfirmation = (user) => {
+    setUserToDelete(user);
+    setShowDeleteModal(true);
+  };
+
+  // Handle delete confirmation
+  const handleConfirmDelete = async () => {
+    if (!userToDelete) return;
+    
+    setIsDeleting(true);
+    try {
+      await dispatch(deleteUtilisateur(userToDelete.id)).unwrap();
+      setShowDeleteModal(false);
+      setUserToDelete(null);
+    } catch (error) {
+      console.error("Error deleting user:", error);
+    } finally {
+      setIsDeleting(false);
     }
+  };
+
+  // Cancel delete
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
+    setUserToDelete(null);
   };
 
   const toggleActive = (id) => {
@@ -531,7 +559,7 @@ export default function AdminUsers() {
                       </span>
                     </td>
                     <td>
-                      <span className={`status-bad ${user.is_active ? 'active' : 'inactive'}`}>
+                      <span className={`status-badge ${user.is_active ? 'active' : 'inactive'}`}>
                         {user.is_active ? "Actif" : "Inactif"}
                       </span>
                     </td>
@@ -553,7 +581,7 @@ export default function AdminUsers() {
                           <Power size={16} className={user.is_active ? 'text-warning' : 'text-success'} />
                         </button>
                         <button 
-                          onClick={() => handleDelete(user.id)} 
+                          onClick={() => openDeleteConfirmation(user)} 
                           className="btn-icon delete"
                           title="Supprimer"
                         >
@@ -572,7 +600,7 @@ export default function AdminUsers() {
         </>
       )}
 
-      {/* Modal */}
+      {/* Add/Edit User Modal */}
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-content modal-lg">
@@ -674,6 +702,49 @@ export default function AdminUsers() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="modal-overlay">
+          <div className="modal-content modal-confirm">
+            <div className="modal-confirm-icon">
+              <AlertTriangle size={48} />
+            </div>
+            <h3 className="modal-confirm-title">Confirmer la suppression</h3>
+            <p className="modal-confirm-message">
+              Êtes-vous sûr de vouloir supprimer l'utilisateur <strong>{userToDelete?.name}</strong> ?
+              <br />
+              Cette action est irréversible.
+            </p>
+            <div className="modal-confirm-actions">
+              <button 
+                onClick={handleCancelDelete} 
+                className="btn-secondary"
+                disabled={isDeleting}
+              >
+                Annuler
+              </button>
+              <button 
+                onClick={handleConfirmDelete} 
+                className="btn-danger"
+                disabled={isDeleting}
+              >
+                {isDeleting ? (
+                  <>
+                    <div className="loading-spinner-small"></div>
+                    Suppression...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={16} />
+                    Supprimer
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

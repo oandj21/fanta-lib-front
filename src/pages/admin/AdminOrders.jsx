@@ -776,7 +776,7 @@ const OrderDetailsModal = ({ order, onClose }) => {
                     </div>
                     <div className="order-info-value">
                       <span 
-                        className="status-badge"
+                        className="status-bad"
                         style={{ 
                           backgroundColor: `${statusColors[order.statut] || "#666"}20`,
                           color: statusColors[order.statut] || "#666",
@@ -1595,7 +1595,7 @@ export default function AdminOrders() {
                           <RefreshCw size={14} className="spinning" />
                         ) : tracking ? (
                           <span 
-                            className="status-badge"
+                            className="status-bad"
                             style={{ 
                               backgroundColor: `${getStatusColor(tracking.deliveryStatus)}15`,
                               color: getStatusColor(tracking.deliveryStatus),
@@ -1605,7 +1605,7 @@ export default function AdminOrders() {
                             {tracking.deliveryStatus || '-'}
                           </span>
                         ) : (
-                          <span className="status-badge">-</span>
+                          <span className="status-bad">-</span>
                         )}
                       </td>
                       <td>
@@ -1613,7 +1613,7 @@ export default function AdminOrders() {
                           <RefreshCw size={14} className="spinning" />
                         ) : tracking ? (
                           <span 
-                            className="status-badge"
+                            className="status-bad"
                             style={{ 
                               backgroundColor: `${getStatusColor(tracking.paymentStatus)}15`,
                               color: getStatusColor(tracking.paymentStatus),
@@ -1623,7 +1623,7 @@ export default function AdminOrders() {
                             {tracking.paymentText || tracking.paymentStatus || '-'}
                           </span>
                         ) : (
-                          <span className="status-badge">-</span>
+                          <span className="status-bad">-</span>
                         )}
                       </td>
                       <td className="order-price">{order.parcel_price ? `${order.parcel_price} MAD` : "-"}</td>

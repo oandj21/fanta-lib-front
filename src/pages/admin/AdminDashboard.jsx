@@ -183,8 +183,10 @@ export default function AdminDashboard() {
   
   // Notification state
   const [notifications, setNotifications] = useState([]);
+  const [lastOrderCount, setLastOrderCount] = useState(0);
+  const [notifiedOrderIds, setNotifiedOrderIds] = useState(new Set());
 
-  // Load notifications from localStorage on mount
+  // Load notifications and notified IDs from localStorage on mount
   useEffect(() => {
     const savedNotifications = localStorage.getItem('dashboard_notifications');
     if (savedNotifications) {
@@ -194,6 +196,15 @@ export default function AdminDashboard() {
         console.error('Error loading notifications:', e);
       }
     }
+    
+    const savedNotifiedIds = localStorage.getItem('notified_order_ids');
+    if (savedNotifiedIds) {
+      try {
+        setNotifiedOrderIds(new Set(JSON.parse(savedNotifiedIds)));
+      } catch (e) {
+        console.error('Error loading notified IDs:', e);
+      }
+    }
   }, []);
 
   // Save notifications to localStorage
@@ -201,13 +212,94 @@ export default function AdminDashboard() {
     localStorage.setItem('dashboard_notifications', JSON.stringify(notifications));
   }, [notifications]);
 
-  // Listen for CRUD events - Only show in-progress orders
+  // Save notified IDs to localStorage
+  useEffect(() => {
+    localStorage.setItem('notified_order_ids', JSON.stringify(Array.from(notifiedOrderIds)));
+  }, [notifiedOrderIds]);
+
+  // AUTO-DETECT NEW ORDERS FROM API DATA
+  // This runs whenever commandes data changes (after API fetches)
+  useEffect(() => {
+    if (commandes && commandes.length > 0) {
+      // Set initial count on first load
+      if (lastOrderCount === 0) {
+        setLastOrderCount(commandes.length);
+        return;
+      }
+      
+      // Check if we have new orders (count increased)
+      if (commandes.length > lastOrderCount) {
+        // Find which orders are new (not in our notified set)
+        const newOrders = commandes.filter(order => !notifiedOrderIds.has(order.id));
+        
+        newOrders.forEach(order => {
+          // Check if the status is "in progress" or similar
+          const status = order.statut || order.status || order.deliveryStatus || '';
+          const statusLower = status.toLowerCase();
+          
+          // Define in-progress statuses (all statuses except final states)
+          const inProgressStatuses = [
+            'in_progress', 'en cours', 'distribution', 'picked_up', 
+            'ramassé', 'sent', 'expédié', 'waiting_pickup', 'en attente',
+            'deux', '2ème', 'trois', '3ème', 'programmer', 'programmé',
+            'envg', 'en voyage', 'postponed', 'reporté', 'new_parcel', 
+            'nouveau', 'parcel_confirmed', 'confirmé', 'picked_up', 'ramassé',
+            'refuse', 'refusé', 'noanswer', 'pas de réponse', 'unreachable',
+            'injoignable', 'hors_zone', 'hors zone'
+          ];
+          
+          // Final states that should NOT trigger notifications
+          const finalStatuses = [
+            'delivered', 'livré', 'returned', 'retourné', 
+            'cancelled', 'annulé', 'return_by_amana', 'retour amana'
+          ];
+          
+          // Check if current status is in progress (not a final state)
+          const isInProgress = inProgressStatuses.some(s => statusLower.includes(s)) && 
+                              !finalStatuses.some(s => statusLower.includes(s));
+          
+          if (isInProgress) {
+            // Create notification for new order
+            const newNotification = {
+              id: Date.now() + Math.random(),
+              type: 'commande',
+              action: 'create',
+              message: `📦 Nouvelle commande en cours`,
+              details: `${order.parcel_receiver || 'Client'} • ${statusLabels[status] || status}`,
+              timestamp: new Date().toISOString(),
+              read: false,
+              user: 'Système',
+              status: status,
+              orderId: order.id,
+              orderCode: order.parcel_code,
+              clientName: order.parcel_receiver
+            };
+
+            setNotifications(prev => [newNotification, ...prev].slice(0, 50));
+          }
+          
+          // Mark this order as notified
+          setNotifiedOrderIds(prev => new Set([...Array.from(prev), order.id]));
+        });
+      }
+      
+      // Update the order count
+      setLastOrderCount(commandes.length);
+    }
+  }, [commandes]); // Runs whenever commandes data changes
+
+  // Listen for CRUD events (keeping your existing listener for updates)
   useEffect(() => {
     const handleCrudEvent = (event) => {
       const { type, action, item, user } = event.detail;
       
       // Only show notifications for commandes (orders)
       if (type !== 'commande') {
+        return;
+      }
+      
+      // Skip if this is a create event (we already handle creates with auto-detection)
+      if (action === 'create') {
         return;
       }
       
@@ -245,10 +337,6 @@ export default function AdminDashboard() {
       let details = '';
       
       switch(action) {
-        case 'create':
-          message = `📦 Nouvelle commande en cours`;
-          details = `${item.parcel_receiver || 'Client'} • ${statusLabels[status] || status}`;
-          break;
         case 'update':
           message = `✏️ Commande mise à jour`;
           details = `${item.parcel_receiver || `#${item.id}`} • ${statusLabels[status] || status}`;

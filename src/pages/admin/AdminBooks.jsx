@@ -199,19 +199,43 @@ export default function AdminBooks() {
       return true;
     });
     
-    setSelectedImages(validFiles);
+    setSelectedImages(prev => [...prev, ...validFiles]);
     
     // Create preview URLs
-    const previews = validFiles.map(file => URL.createObjectURL(file));
-    
-    // Clean up previous previews
-    imagePreviews.forEach(url => URL.revokeObjectURL(url));
-    setImagePreviews(previews);
+    const newPreviews = validFiles.map(file => URL.createObjectURL(file));
+    setImagePreviews(prev => [...prev, ...newPreviews]);
   };
 
-  const handleDeleteImage = (imagePath) => {
+  // Remove new image from selection (during add or edit)
+  const handleRemoveNewImage = (indexToRemove) => {
+    // Clean up the preview URL
+    URL.revokeObjectURL(imagePreviews[indexToRemove]);
+    
+    // Remove the image and its preview
+    setSelectedImages(prev => prev.filter((_, index) => index !== indexToRemove));
+    setImagePreviews(prev => prev.filter((_, index) => index !== indexToRemove));
+  };
+
+  // Delete existing image immediately
+  const handleDeleteExistingImage = async (imagePath) => {
     if (window.confirm("Voulez-vous vraiment supprimer cette image ?")) {
-      dispatch(deleteLivreImage({ id: editing.id, image: imagePath }));
+      try {
+        await dispatch(deleteLivreImage({ id: editing.id, image: imagePath })).unwrap();
+        // Update the editing book's images in local state
+        const updatedImages = getImagesArray(editing.images).filter(img => img !== imagePath);
+        setEditing({
+          ...editing,
+          images: updatedImages
+        });
+        // Also update the form if needed
+        setForm({
+          ...form,
+          images: updatedImages
+        });
+      } catch (error) {
+        console.error('Error deleting image:', error);
+        alert('Erreur lors de la suppression de l\'image');
+      }
     }
   };
 
@@ -238,7 +262,7 @@ export default function AdminBooks() {
       }
     });
 
-    // Append images if selected
+    // Append new images if selected
     if (selectedImages.length > 0) {
       selectedImages.forEach(image => {
         formData.append('images[]', image);
@@ -827,7 +851,7 @@ export default function AdminBooks() {
                               />
                               <button 
                                 type="button"
-                                onClick={() => handleDeleteImage(image)}
+                                onClick={() => handleDeleteExistingImage(image)}
                                 className="btn-icon delete-image"
                                 title="Supprimer cette image"
                               >
@@ -860,7 +884,7 @@ export default function AdminBooks() {
                   </label>
                 </div>
 
-                {/* Image previews */}
+                {/* Image previews with delete buttons */}
                 {imagePreviews.length > 0 && (
                   <div className="image-previews">
                     <p className="section-label">Nouvelles images :</p>
@@ -868,6 +892,14 @@ export default function AdminBooks() {
                       {imagePreviews.map((preview, index) => (
                         <div key={index} className="image-item preview">
                           <img src={preview} alt={`Preview ${index + 1}`} />
+                          <button 
+                            type="button"
+                            onClick={() => handleRemoveNewImage(index)}
+                            className="btn-icon delete-image"
+                            title="Supprimer cette image"
+                          >
+                            <X size={14} />
+                          </button>
                         </div>
                       ))}
                     </div>

@@ -28,7 +28,6 @@ export default function AdminBooks() {
   const [editing, setEditing] = useState(null);
   const [selectedImages, setSelectedImages] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
-  const [imagesToDelete, setImagesToDelete] = useState([]); // For tracking images to delete during edit
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [categoryInput, setCategoryInput] = useState("");
   const [showCategorySuggestions, setShowCategorySuggestions] = useState(false);
@@ -159,7 +158,6 @@ export default function AdminBooks() {
     setCategoryInput("");
     setSelectedImages([]);
     setImagePreviews([]);
-    setImagesToDelete([]);
     setShowModal(true);
   };
 
@@ -177,7 +175,6 @@ export default function AdminBooks() {
     setCategoryInput(book.categorie || "");
     setSelectedImages([]);
     setImagePreviews([]);
-    setImagesToDelete([]);
     setShowModal(true);
   };
 
@@ -202,39 +199,19 @@ export default function AdminBooks() {
       return true;
     });
     
-    setSelectedImages(prev => [...prev, ...validFiles]);
+    setSelectedImages(validFiles);
     
-    // Create preview URLs for new files
-    const newPreviews = validFiles.map(file => URL.createObjectURL(file));
-    setImagePreviews(prev => [...prev, ...newPreviews]);
-  };
-
-  // Remove new image from selection (during add or edit)
-  const handleRemoveNewImage = (indexToRemove) => {
-    // Clean up the preview URL
-    URL.revokeObjectURL(imagePreviews[indexToRemove]);
+    // Create preview URLs
+    const previews = validFiles.map(file => URL.createObjectURL(file));
     
-    // Remove the image and its preview
-    setSelectedImages(prev => prev.filter((_, index) => index !== indexToRemove));
-    setImagePreviews(prev => prev.filter((_, index) => index !== indexToRemove));
+    // Clean up previous previews
+    imagePreviews.forEach(url => URL.revokeObjectURL(url));
+    setImagePreviews(previews);
   };
 
-  // Mark existing image for deletion (during edit)
-  const handleMarkImageForDeletion = (imagePath) => {
-    setImagesToDelete(prev => [...prev, imagePath]);
-  };
-
-  // Restore image that was marked for deletion
-  const handleRestoreImage = (imagePath) => {
-    setImagesToDelete(prev => prev.filter(img => img !== imagePath));
-  };
-
-  const handleDeleteExistingImage = (imagePath) => {
+  const handleDeleteImage = (imagePath) => {
     if (window.confirm("Voulez-vous vraiment supprimer cette image ?")) {
-      dispatch(deleteLivreImage({ id: editing.id, image: imagePath })).then(() => {
-        // Refresh the book data to get updated images
-        dispatch(fetchLivres());
-      });
+      dispatch(deleteLivreImage({ id: editing.id, image: imagePath }));
     }
   };
 
@@ -261,16 +238,7 @@ export default function AdminBooks() {
       }
     });
 
-    // Handle deleted images for edit mode
-    if (editing && imagesToDelete.length > 0) {
-      // In a real scenario, you'd need to handle this on the backend
-      // For now, we'll delete them one by one
-      for (const imagePath of imagesToDelete) {
-        await dispatch(deleteLivreImage({ id: editing.id, image: imagePath })).unwrap();
-      }
-    }
-
-    // Append new images if selected
+    // Append images if selected
     if (selectedImages.length > 0) {
       selectedImages.forEach(image => {
         formData.append('images[]', image);
@@ -847,35 +815,26 @@ export default function AdminBooks() {
                       {(() => {
                         const existingImages = getImagesArray(editing.images);
                         return existingImages.length > 0 ? (
-                          existingImages.map((image, index) => {
-                            const isMarkedForDeletion = imagesToDelete.includes(image);
-                            return (
-                              <div key={index} className={`image-item ${isMarkedForDeletion ? 'marked-for-delete' : ''}`}>
-                                <img 
-                                  src={`https://fanta-lib-back-production.up.railway.app/storage/${image}`} 
-                                  alt={`${editing.titre} - ${index + 1}`}
-                                  onError={(e) => {
-                                    e.target.onerror = null;
-                                    e.target.src = 'https://dummyimage.com/40x52/cccccc/000000&text=No+Image';
-                                  }}
-                                />
-                                <button 
-                                  type="button"
-                                  onClick={() => isMarkedForDeletion 
-                                    ? handleRestoreImage(image)
-                                    : handleMarkImageForDeletion(image)
-                                  }
-                                  className={`btn-icon ${isMarkedForDeletion ? 'restore-image' : 'delete-image'}`}
-                                  title={isMarkedForDeletion ? "Restaurer l'image" : "Marquer pour suppression"}
-                                >
-                                  {isMarkedForDeletion ? <Check size={14} /> : <X size={14} />}
-                                </button>
-                                {isMarkedForDeletion && (
-                                  <span className="delete-badge">À supprimer</span>
-                                )}
-                              </div>
-                            );
-                          })
+                          existingImages.map((image, index) => (
+                            <div key={index} className="image-item">
+                              <img 
+                                src={`https://fanta-lib-back-production.up.railway.app/storage/${image}`} 
+                                alt={`${editing.titre} - ${index + 1}`}
+                                onError={(e) => {
+                                  e.target.onerror = null;
+                                  e.target.src = 'https://dummyimage.com/40x52/cccccc/000000&text=No+Image';
+                                }}
+                              />
+                              <button 
+                                type="button"
+                                onClick={() => handleDeleteImage(image)}
+                                className="btn-icon delete-image"
+                                title="Supprimer cette image"
+                              >
+                                <X size={14} />
+                              </button>
+                            </div>
+                          ))
                         ) : (
                           <p className="no-images">Aucune image</p>
                         );
@@ -901,7 +860,7 @@ export default function AdminBooks() {
                   </label>
                 </div>
 
-                {/* Image previews with delete buttons */}
+                {/* Image previews */}
                 {imagePreviews.length > 0 && (
                   <div className="image-previews">
                     <p className="section-label">Nouvelles images :</p>
@@ -909,14 +868,6 @@ export default function AdminBooks() {
                       {imagePreviews.map((preview, index) => (
                         <div key={index} className="image-item preview">
                           <img src={preview} alt={`Preview ${index + 1}`} />
-                          <button 
-                            type="button"
-                            onClick={() => handleRemoveNewImage(index)}
-                            className="btn-icon delete-image"
-                            title="Supprimer cette image"
-                          >
-                            <X size={14} />
-                          </button>
                         </div>
                       ))}
                     </div>

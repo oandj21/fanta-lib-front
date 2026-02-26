@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { 
   Plus, Pencil, Trash2, X, Check, Upload, Image as ImageIcon, 
   AlertCircle, Search, Filter, BookOpen, BookX, BookMarked, 
-  ChevronDown, XCircle 
+  ChevronDown, XCircle, Loader 
 } from "lucide-react";
 import { fetchLivres, createLivre, updateLivre, deleteLivre, deleteLivreImage } from "../../store/store";
 import "../../css/AdminBooks.css";
@@ -29,8 +29,13 @@ export default function AdminBooks() {
   const [selectedImages, setSelectedImages] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+  const [showImageDeleteConfirm, setShowImageDeleteConfirm] = useState(null);
+  const [deletingImage, setDeletingImage] = useState(false);
   const [categoryInput, setCategoryInput] = useState("");
   const [showCategorySuggestions, setShowCategorySuggestions] = useState(false);
+  // Track removed images
+  const [removedImages, setRemovedImages] = useState([]);
+  
   const [form, setForm] = useState({
     titre: "",
     auteur: "",
@@ -77,29 +82,25 @@ export default function AdminBooks() {
     const inputLower = categoryInput.toLowerCase();
     return categories
       .filter(cat => cat.toLowerCase().includes(inputLower))
-      .slice(0, 5); // Limit to 5 suggestions
+      .slice(0, 5);
   }, [categories, categoryInput]);
 
   // Filter and search books
   const filteredBooks = useMemo(() => {
     return bookList.filter(book => {
-      // Search filter
       const matchesSearch = searchTerm === "" || 
         book.titre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         book.auteur?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         book.isbn?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         book.categorie?.toLowerCase().includes(searchTerm.toLowerCase());
       
-      // Status filter
       const matchesStatus = statusFilter === "all" || book.status === statusFilter;
       
-      // Category filter
       const matchesCategory = categoryFilter === "all" || 
         book.categorie?.toLowerCase() === categoryFilter.toLowerCase();
       
       return matchesSearch && matchesStatus && matchesCategory;
     }).sort((a, b) => {
-      // Sorting
       let aVal = a[sortBy] || "";
       let bVal = b[sortBy] || "";
       
@@ -126,7 +127,6 @@ export default function AdminBooks() {
     return filteredBooks.slice(indexOfFirstItem, indexOfLastItem);
   }, [filteredBooks, currentPage, itemsPerPage]);
 
-  // Calculate total pages
   const totalPages = Math.ceil(filteredBooks.length / itemsPerPage);
 
   // Calculate statistics
@@ -136,12 +136,7 @@ export default function AdminBooks() {
     const outOfStock = bookList.filter(book => book.status === "out_of_stock").length;
     const uniqueCategories = categories.length;
     
-    return {
-      total,
-      available,
-      outOfStock,
-      uniqueCategories
-    };
+    return { total, available, outOfStock, uniqueCategories };
   }, [bookList, categories]);
 
   const openAdd = () => {
@@ -158,6 +153,7 @@ export default function AdminBooks() {
     setCategoryInput("");
     setSelectedImages([]);
     setImagePreviews([]);
+    setRemovedImages([]);
     setShowModal(true);
   };
 
@@ -175,6 +171,7 @@ export default function AdminBooks() {
     setCategoryInput(book.categorie || "");
     setSelectedImages([]);
     setImagePreviews([]);
+    setRemovedImages([]); // Reset removed images
     setShowModal(true);
   };
 
@@ -209,9 +206,66 @@ export default function AdminBooks() {
     setImagePreviews(previews);
   };
 
+  // Improved image deletion handler
   const handleDeleteImage = (imagePath) => {
-    if (window.confirm("Voulez-vous vraiment supprimer cette image ?")) {
-      dispatch(deleteLivreImage({ id: editing.id, image: imagePath }));
+    if (!editing || !editing.id) return;
+    
+    setShowImageDeleteConfirm({
+      bookId: editing.id,
+      imagePath: imagePath,
+      bookTitle: editing.titre
+    });
+  };
+
+  const confirmDeleteImage = async () => {
+    if (!showImageDeleteConfirm) return;
+    
+    setDeletingImage(true);
+    
+    try {
+      const result = await dispatch(deleteLivreImage({ 
+        id: showImageDeleteConfirm.bookId, 
+        image: showImageDeleteConfirm.imagePath 
+      })).unwrap();
+      
+      // Update the editing book with the new images from response
+      if (result && result.data) {
+        setEditing(result.data);
+        
+        // Also update the form if needed
+        setForm(prev => ({
+          ...prev,
+          // Keep other form values
+        }));
+      }
+      
+      // Refresh the book list
+      dispatch(fetchLivres());
+      
+      // Show success message
+      alert('Image supprimée avec succès');
+      
+    } catch (error) {
+      console.error('Error deleting image:', error);
+      alert('Erreur lors de la suppression de l\'image');
+    } finally {
+      setDeletingImage(false);
+      setShowImageDeleteConfirm(null);
+    }
+  };
+
+  // Handle removing image from the list (mark for deletion)
+  const handleRemoveImageFromList = (imagePath) => {
+    // Add to removed images list
+    setRemovedImages(prev => [...prev, imagePath]);
+    
+    // Update the editing book's images in the UI
+    if (editing && editing.images) {
+      const updatedImages = editing.images.filter(img => img !== imagePath);
+      setEditing({
+        ...editing,
+        images: updatedImages
+      });
     }
   };
 
@@ -238,11 +292,26 @@ export default function AdminBooks() {
       }
     });
 
-    // Append images if selected
+    // Append new images if selected
     if (selectedImages.length > 0) {
       selectedImages.forEach(image => {
         formData.append('images[]', image);
       });
+    }
+
+    // Add existing image references for editing
+    if (editing) {
+      const existingImages = getImagesArray(editing.images || []);
+      
+      // Only append if there are existing images
+      if (existingImages.length > 0) {
+        formData.append('existing_images', JSON.stringify(existingImages));
+      }
+      
+      // Add removed images to be deleted from server
+      if (removedImages.length > 0) {
+        formData.append('removed_images', JSON.stringify(removedImages));
+      }
     }
 
     try {
@@ -258,6 +327,7 @@ export default function AdminBooks() {
       
       // Clean up previews
       imagePreviews.forEach(url => URL.revokeObjectURL(url));
+      
     } catch (error) {
       console.error('Error saving book:', error);
       alert('Une erreur est survenue lors de l\'enregistrement');
@@ -274,7 +344,6 @@ export default function AdminBooks() {
 
   const paginate = (pageNumber) => {
     setCurrentPage(pageNumber);
-    // Scroll to top of table
     document.querySelector('.table-wrapper')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
@@ -625,7 +694,7 @@ export default function AdminBooks() {
                         {book.prix_achat ? Number(book.prix_achat).toFixed(2) : "0.00"} DH
                       </td>
                       <td>
-                        <span className={`status-bad ${book.status === "available" ? "available" : "out_of_stock"}`}>
+                        <span className={`status-badge ${book.status === "available" ? "available" : "out_of_stock"}`}>
                           {book.status === "available" ? "Disponible" : "Rupture"}
                         </span>
                       </td>
@@ -673,6 +742,43 @@ export default function AdminBooks() {
               <button onClick={() => confirmDelete(showDeleteConfirm)} className="btn-delete">
                 <Trash2 size={16} />
                 Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Image Delete Confirmation Modal */}
+      {showImageDeleteConfirm && (
+        <div className="modal-overlay">
+          <div className="modal-content delete-modal">
+            <div className="modal-header">
+              <h3>Confirmer la suppression</h3>
+              <button onClick={() => setShowImageDeleteConfirm(null)} className="modal-close">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="delete-content">
+              <AlertCircle size={48} className="delete-icon" />
+              <p>Êtes-vous sûr de vouloir supprimer cette image ?</p>
+              <p className="delete-warning">Cette action est irréversible.</p>
+            </div>
+            <div className="modal-actions">
+              <button onClick={() => setShowImageDeleteConfirm(null)} className="btn-secondary" disabled={deletingImage}>
+                Annuler
+              </button>
+              <button onClick={confirmDeleteImage} className="btn-delete" disabled={deletingImage}>
+                {deletingImage ? (
+                  <>
+                    <Loader size={16} className="spin" />
+                    Suppression...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={16} />
+                    Supprimer
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -830,6 +936,7 @@ export default function AdminBooks() {
                                 onClick={() => handleDeleteImage(image)}
                                 className="btn-icon delete-image"
                                 title="Supprimer cette image"
+                                disabled={deletingImage}
                               >
                                 <X size={14} />
                               </button>
@@ -843,6 +950,18 @@ export default function AdminBooks() {
                   </div>
                 )}
 
+                {/* Show removed images count when editing */}
+                {editing && removedImages.length > 0 && (
+                  <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded">
+                    <p className="text-sm text-red-700 font-medium">
+                      <span className="font-bold">{removedImages.length}</span> image{removedImages.length !== 1 ? 's' : ''} marquée{removedImages.length !== 1 ? 's' : ''} pour suppression
+                    </p>
+                    <p className="text-xs text-red-600 mt-1">
+                      Ces images seront supprimées du serveur lorsque vous enregistrerez les modifications.
+                    </p>
+                  </div>
+                )}
+
                 {/* New image upload */}
                 <div className="image-upload">
                   <label className="upload-area">
@@ -851,6 +970,7 @@ export default function AdminBooks() {
                       multiple
                       accept="image/jpeg,image/png,image/jpg"
                       onChange={handleImageChange}
+                      disabled={deletingImage}
                     />
                     <div className="upload-placeholder">
                       <Upload size={24} />
@@ -879,10 +999,10 @@ export default function AdminBooks() {
                 <button type="button" onClick={() => {
                   setShowModal(false);
                   imagePreviews.forEach(url => URL.revokeObjectURL(url));
-                }} className="btn-secondary">
+                }} className="btn-secondary" disabled={deletingImage}>
                   Annuler
                 </button>
-                <button type="submit" className="btn-primary">
+                <button type="submit" className="btn-primary" disabled={deletingImage}>
                   <Check size={16} />
                   {editing ? "Modifier" : "Ajouter"}
                 </button>

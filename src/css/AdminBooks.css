@@ -1505,21 +1505,6 @@ textarea:focus-visible {
   border-radius: 8px;
   overflow: hidden;
   border: 2px solid #e2e8f0;
-  transition: all 0.2s ease;
-}
-
-.image-item:hover {
-  border-color: #4299e1;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.image-item.existing {
-  border-color: #cbd5e0;
-}
-
-.image-item.preview {
-  border-color: #9f7aea;
-  border-style: dashed;
 }
 
 .image-item img {
@@ -1542,20 +1527,13 @@ textarea:focus-visible {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.2s ease;
   padding: 0;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.image-item:hover .delete-image {
-  opacity: 1;
 }
 
 .delete-image:hover {
   background: #e53e3e;
   color: white;
-  transform: scale(1.1);
 }
 
 .no-images {
@@ -1587,13 +1565,7 @@ textarea:focus-visible {
   border-radius: 8px;
   padding: 30px;
   text-align: center;
-  transition: all 0.2s ease;
   background: #f7fafc;
-}
-
-.upload-placeholder:hover {
-  border-color: #4299e1;
-  background: #ebf8ff;
 }
 
 .upload-placeholder svg {
@@ -1613,101 +1585,10 @@ textarea:focus-visible {
   font-size: 0.8rem;
 }
 
-/* Confirmation Modal for Image Deletion */
-.delete-image-confirm {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1100;
-}
-
-.delete-image-confirm .modal-content {
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  max-width: 400px;
-  width: 90%;
-  text-align: center;
-}
-
-.delete-image-confirm .delete-icon {
-  color: #e53e3e;
-  margin-bottom: 16px;
-}
-
-.delete-image-confirm h3 {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin-bottom: 8px;
-  color: #2d3748;
-}
-
-.delete-image-confirm p {
-  color: #718096;
-  margin-bottom: 24px;
-}
-
-.delete-image-confirm .modal-actions {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-}
-
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .image-grid {
     grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
     gap: 10px;
   }
-  
-  .upload-placeholder {
-    padding: 20px;
-  }
-  
-  .upload-placeholder svg {
-    width: 32px;
-    height: 32px;
-  }
-}
-
-/* Animation for new images */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.image-item.preview {
-  animation: fadeIn 0.3s ease;
-}
-
-/* Tooltip for delete button */
-.btn-icon.delete-image {
-  position: relative;
-}
-
-.btn-icon.delete-image:hover::after {
-  content: attr(title);
-  position: absolute;
-  bottom: 100%;
-  right: 0;
-  background: #2d3748;
-  color: white;
-  font-size: 0.75rem;
-  padding: 4px 8px;
-  border-radius: 4px;
-  white-space: nowrap;
-  margin-bottom: 5px;
-  z-index: 10;
 }

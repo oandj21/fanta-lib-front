@@ -28,7 +28,10 @@ import {
   Info,
   Filter,
   Bell,
-  Download
+  Download,
+  X,
+  Check,
+  ChevronRight
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell } from "recharts";
 import axios from "axios";
@@ -203,6 +206,18 @@ const isStatusInProgress = (status) => {
   return isInProgress && !isFinal;
 };
 
+// Format time helper
+const formatTime = (timestamp) => {
+  const now = new Date();
+  const notifTime = new Date(timestamp);
+  const diffInMinutes = Math.floor((now - notifTime) / (1000 * 60));
+  
+  if (diffInMinutes < 1) return "À l'instant";
+  if (diffInMinutes < 60) return `Il y a ${diffInMinutes} min`;
+  if (diffInMinutes < 1440) return `Il y a ${Math.floor(diffInMinutes / 60)} h`;
+  return notifTime.toLocaleDateString('fr-FR');
+};
+
 export default function AdminDashboard() {
   const dispatch = useDispatch();
   
@@ -217,12 +232,16 @@ export default function AdminDashboard() {
   const [showFilters, setShowFilters] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
   
-  // Notification state
+  // Notification state - Built-in without NotificationCenter
   const [notifications, setNotifications] = useState([]);
   const [notifiedOrderIds, setNotifiedOrderIds] = useState(new Set());
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedNotification, setSelectedNotification] = useState(null);
   
   // Use ref to track if initial processing has been done
   const initialProcessingDone = useRef(false);
+  const notificationRef = useRef(null);
 
   // Load notifications and notified IDs from localStorage on mount
   useEffect(() => {
@@ -255,7 +274,19 @@ export default function AdminDashboard() {
     localStorage.setItem('notified_order_ids', JSON.stringify(Array.from(notifiedOrderIds)));
   }, [notifiedOrderIds]);
 
-  // FIXED: SHOW ALL COMMANDS WITH STATUS IN PROGRESS IN NOTIFICATIONS - NO DUPLICATES
+  // Close notifications when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+        setShowNotifications(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // SHOW ALL COMMANDS WITH STATUS IN PROGRESS IN NOTIFICATIONS - NO DUPLICATES
   useEffect(() => {
     // Only run if we have commandes and initial processing hasn't been done yet
     if (commandes && commandes.length > 0 && !initialProcessingDone.current) {
@@ -419,6 +450,106 @@ export default function AdminDashboard() {
 
   const handleDeleteNotification = (id) => {
     setNotifications(prev => prev.filter(n => n.id !== id));
+  };
+
+  // View notification details
+  const handleViewDetails = (notification) => {
+    setSelectedNotification(notification);
+    setShowDetailsModal(true);
+  };
+
+  // Close details modal
+  const closeDetailsModal = () => {
+    setShowDetailsModal(false);
+    setSelectedNotification(null);
+  };
+
+  // Get unread count
+  const unreadCount = useMemo(() => {
+    return notifications.filter(n => !n.read).length;
+  }, [notifications]);
+
+  // Get icon based on notification type
+  const getNotificationIcon = (type, action, status) => {
+    switch(type) {
+      case 'livre':
+        return <BookOpen size={18} />;
+      case 'commande':
+        if (action === 'create') return <Package size={18} />;
+        if (action === 'update') return <ShoppingCart size={18} />;
+        if (action === 'status_change') return <RefreshCw size={18} />;
+        
+        // Status-based icons
+        const statusLower = (status || '').toLowerCase();
+        if (statusLower.includes('distribution') || statusLower.includes('en cours')) {
+          return <Truck size={18} />;
+        }
+        if (statusLower.includes('ramassé') || statusLower.includes('picked')) {
+          return <Package size={18} />;
+        }
+        if (statusLower.includes('expédié') || statusLower.includes('sent')) {
+          return <RefreshCw size={18} />;
+        }
+        if (statusLower.includes('attente') || statusLower.includes('waiting')) {
+          return <Clock size={18} />;
+        }
+        if (statusLower.includes('refusé') || statusLower.includes('refuse')) {
+          return <AlertCircle size={18} />;
+        }
+        return <ShoppingCart size={18} />;
+      case 'depense':
+        return <Receipt size={18} />;
+      case 'finance':
+        return <TrendingUp size={18} />;
+      case 'utilisateur':
+        return <Users size={18} />;
+      case 'message':
+        return <Mail size={18} />;
+      case 'profile':
+        return <User size={18} />;
+      default:
+        return <AlertCircle size={18} />;
+    }
+  };
+
+  // Get color based on action type and status
+  const getActionColor = (action, status) => {
+    if (action === 'status_change' || action === 'update') {
+      const statusLower = (status || '').toLowerCase();
+      if (statusLower.includes('distribution')) return '#f59e0b';
+      if (statusLower.includes('ramassé')) return '#8b5cf6';
+      if (statusLower.includes('expédié')) return '#0891b2';
+      if (statusLower.includes('attente')) return '#f97316';
+      if (statusLower.includes('refusé')) return '#ef4444';
+      return '#3b82f6';
+    }
+    
+    switch(action) {
+      case 'create': return '#10b981';
+      case 'update': return '#f59e0b';
+      case 'delete': return '#ef4444';
+      default: return '#6b7280';
+    }
+  };
+
+  // Get status badge color
+  const getStatusBadgeColor = (status) => {
+    const statusLower = (status || '').toLowerCase();
+    
+    if (statusLower.includes('distribution')) return '#f59e0b';
+    if (statusLower.includes('ramassé')) return '#8b5cf6';
+    if (statusLower.includes('expédié')) return '#0891b2';
+    if (statusLower.includes('attente')) return '#f97316';
+    if (statusLower.includes('nouveau')) return '#3b82f6';
+    if (statusLower.includes('confirmé')) return '#007bff';
+    if (statusLower.includes('programmé')) return '#2563eb';
+    if (statusLower.includes('reporté')) return '#8b5cf6';
+    if (statusLower.includes('refusé')) return '#ef4444';
+    if (statusLower.includes('pas de réponse')) return '#f59e0b';
+    if (statusLower.includes('injoignable')) return '#d97706';
+    if (statusLower.includes('hors zone')) return '#7c3aed';
+    
+    return '#6b7280';
   };
 
   // Export handlers
@@ -1190,8 +1321,173 @@ export default function AdminDashboard() {
             {commandesStats.total} commandes • {formatCurrency(commandesStats.totalSales)} DH de ventes
           </span>
           
-          {/* Notification Bell */}
-      
+          {/* Built-in Notification Bell (replaces NotificationCenter) */}
+          <div className="notification-wrapper" ref={notificationRef}>
+            <button 
+              className={`notification-bell ${showNotifications ? 'active' : ''}`}
+              onClick={() => setShowNotifications(!showNotifications)}
+            >
+              <Bell size={20} />
+              {unreadCount > 0 && (
+                <span className="notification-badge">{unreadCount}</span>
+              )}
+            </button>
+
+            {showNotifications && (
+              <div className="notification-panel">
+                <div className="notification-header">
+                  <h3>Notifications</h3>
+                  <div className="notification-header-actions">
+                    <div className="notification-actions">
+                      {unreadCount > 0 && (
+                        <button onClick={handleMarkAllAsRead} title="Tout marquer comme lu">
+                          <CheckCheck size={16} />
+                        </button>
+                      )}
+                      {notifications.length > 0 && (
+                        <button onClick={handleClearAll} title="Tout effacer">
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="notification-list">
+                  {notifications.length === 0 ? (
+                    <div className="notification-empty">
+                      <Bell size={32} />
+                      <p>Aucune notification</p>
+                    </div>
+                  ) : (
+                    notifications.map((notif) => (
+                      <div 
+                        key={notif.id} 
+                        className={`notification-item ${!notif.read ? 'unread' : ''}`}
+                      >
+                        <div 
+                          className="notification-icon"
+                          style={{ backgroundColor: `${getActionColor(notif.action, notif.status)}15` }}
+                        >
+                          <span style={{ color: getActionColor(notif.action, notif.status) }}>
+                            {getNotificationIcon(notif.type, notif.action, notif.status)}
+                          </span>
+                        </div>
+                        
+                        <div className="notification-content">
+                          <div className="notification-title">
+                            <span className="notification-action" style={{ color: getActionColor(notif.action, notif.status) }}>
+                              {notif.action === 'create' && '📦 Nouvelle commande'}
+                              {notif.action === 'update' && '✏️ Mise à jour'}
+                              {notif.action === 'delete' && '🗑️ Suppression'}
+                              {notif.action === 'status_change' && '🔄 Changement de statut'}
+                            </span>
+                            <span className="notification-time">{formatTime(notif.timestamp)}</span>
+                          </div>
+                          
+                          <p className="notification-message">{notif.message}</p>
+                          
+                          {/* Order Details */}
+                          {notif.type === 'commande' && (
+                            <div className="order-details">
+                              {/* Status Badge */}
+                              {notif.status && (
+                                <div className="order-status-badge" style={{ 
+                                  backgroundColor: `${getStatusBadgeColor(notif.status)}15`,
+                                  color: getStatusBadgeColor(notif.status),
+                                  border: `1px solid ${getStatusBadgeColor(notif.status)}30`
+                                }}>
+                                  {statusLabels[notif.status] || notif.status}
+                                </div>
+                              )}
+                              
+                              {/* Client Info */}
+                              {notif.clientName && (
+                                <div className="order-client-info">
+                                  <User size={12} />
+                                  <span>{notif.clientName}</span>
+                                  {notif.clientPhone && (
+                                    <span className="client-phone">
+                                      <Phone size={10} />
+                                      {notif.clientPhone}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                              
+                              {/* City & Price */}
+                              {(notif.city || notif.parcelPrice) && (
+                                <div className="order-meta">
+                                  {notif.city && (
+                                    <span className="order-city">
+                                      <MapPin size={12} />
+                                      {notif.city}
+                                    </span>
+                                  )}
+                                  {notif.parcelPrice && (
+                                    <span className="order-price">
+                                      <CreditCard size={12} />
+                                      {notif.parcelPrice} MAD
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          
+                          {/* Additional Details */}
+                          {notif.details && notif.type !== 'commande' && (
+                            <div className="notification-details">
+                              <ChevronRight size={12} />
+                              <span>{notif.details}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="notification-item-actions">
+                          {/* View Details Button for Orders */}
+                          {notif.type === 'commande' && notif.parcelCode && (
+                            <button 
+                              onClick={() => handleViewDetails(notif)}
+                              className="view-order-btn"
+                              title="Voir les détails"
+                            >
+                              <Eye size={14} />
+                            </button>
+                          )}
+                          
+                          {!notif.read && (
+                            <button 
+                              onClick={() => handleMarkAsRead(notif.id)}
+                              className="mark-read"
+                              title="Marquer comme lu"
+                            >
+                              <Check size={14} />
+                            </button>
+                          )}
+                          <button 
+                            onClick={() => handleDeleteNotification(notif.id)}
+                            className="delete-notification"
+                            title="Supprimer"
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+                
+                {notifications.length > 0 && (
+                  <div className="notification-footer">
+                    <span className="notification-count">
+                      {notifications.length} notification{notifications.length > 1 ? 's' : ''}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Download Button */}
           <DownloadMenu onDownload={handleDownload} />
@@ -1546,6 +1842,136 @@ export default function AdminDashboard() {
           </span>
         </div>
       </div>
+
+      {/* Notification Details Modal */}
+      {showDetailsModal && selectedNotification && (
+        <div className="modal-overlay" onClick={closeDetailsModal}>
+          <div className="order-details-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Détails de la commande</h3>
+              <button onClick={closeDetailsModal} className="modal-close">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="modal-body">
+              {/* Order Code */}
+              <div className="detail-section">
+                <div className="detail-label">Code colis</div>
+                <div className="detail-value code">{selectedNotification.parcelCode}</div>
+              </div>
+
+              {/* Status */}
+              {selectedNotification.status && (
+                <div className="detail-section">
+                  <div className="detail-label">Statut</div>
+                  <div className="detail-value">
+                    <span 
+                      className="status-badge"
+                      style={{ 
+                        backgroundColor: `${getStatusBadgeColor(selectedNotification.status)}15`,
+                        color: getStatusBadgeColor(selectedNotification.status),
+                        border: `1px solid ${getStatusBadgeColor(selectedNotification.status)}30`
+                      }}
+                    >
+                      {statusLabels[selectedNotification.status] || selectedNotification.status}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Client Info */}
+              {selectedNotification.clientName && (
+                <div className="detail-section">
+                  <div className="detail-label">Client</div>
+                  <div className="detail-value">{selectedNotification.clientName}</div>
+                </div>
+              )}
+
+              {/* Phone */}
+              {selectedNotification.clientPhone && (
+                <div className="detail-section">
+                  <div className="detail-label">Téléphone</div>
+                  <div className="detail-value">{selectedNotification.clientPhone}</div>
+                </div>
+              )}
+
+              {/* City */}
+              {selectedNotification.city && (
+                <div className="detail-section">
+                  <div className="detail-label">Ville</div>
+                  <div className="detail-value">{selectedNotification.city}</div>
+                </div>
+              )}
+
+              {/* Address */}
+              {selectedNotification.address && (
+                <div className="detail-section">
+                  <div className="detail-label">Adresse</div>
+                  <div className="detail-value">{selectedNotification.address}</div>
+                </div>
+              )}
+
+              {/* Price */}
+              {selectedNotification.parcelPrice && (
+                <div className="detail-section">
+                  <div className="detail-label">Prix</div>
+                  <div className="detail-value price">{selectedNotification.parcelPrice} MAD</div>
+                </div>
+              )}
+
+              {/* Quantity */}
+              {selectedNotification.quantity && (
+                <div className="detail-section">
+                  <div className="detail-label">Quantité</div>
+                  <div className="detail-value">{selectedNotification.quantity}</div>
+                </div>
+              )}
+
+              {/* Message */}
+              {selectedNotification.message && (
+                <div className="detail-section">
+                  <div className="detail-label">Message</div>
+                  <div className="detail-value">{selectedNotification.message}</div>
+                </div>
+              )}
+
+              {/* Details */}
+              {selectedNotification.details && (
+                <div className="detail-section">
+                  <div className="detail-label">Détails</div>
+                  <div className="detail-value">{selectedNotification.details}</div>
+                </div>
+              )}
+
+              {/* Timestamp */}
+              {selectedNotification.timestamp && (
+                <div className="detail-section">
+                  <div className="detail-label">Date</div>
+                  <div className="detail-value">{new Date(selectedNotification.timestamp).toLocaleString('fr-FR')}</div>
+                </div>
+              )}
+            </div>
+
+            <div className="modal-footer">
+              <button onClick={closeDetailsModal} className="btn-secondary">
+                Fermer
+              </button>
+              <button 
+                onClick={() => {
+                  if (selectedNotification.parcelCode) {
+                    copyTrackingLink(selectedNotification.parcelCode);
+                  }
+                }} 
+                className="btn-primary"
+              >
+                <Copy size={16} />
+                Copier le lien
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

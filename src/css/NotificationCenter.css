@@ -1,8 +1,3 @@
-/* Ensure proper box sizing */
-* {
-    max-width: none;
-  box-sizing: border-box;
-}
 .notification-wrapper {
   position: relative;
   display: inline-block;

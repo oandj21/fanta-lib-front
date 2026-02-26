@@ -44,7 +44,6 @@ import {
 } from "../../store/store";
 import NotificationCenter from "../../components/NotificationCenter";
 import DownloadMenu from "../../components/DownloadMenu";
-// Replace the existing imports with these
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -202,30 +201,61 @@ export default function AdminDashboard() {
     localStorage.setItem('dashboard_notifications', JSON.stringify(notifications));
   }, [notifications]);
 
-  // Listen for CRUD events
+  // Listen for CRUD events - Only show in-progress orders
   useEffect(() => {
     const handleCrudEvent = (event) => {
       const { type, action, item, user } = event.detail;
+      
+      // Only show notifications for commandes (orders)
+      if (type !== 'commande') {
+        return;
+      }
+      
+      // Check if the status is "in progress" or similar
+      const status = item.statut || item.status || item.deliveryStatus || '';
+      const statusLower = status.toLowerCase();
+      
+      // Define in-progress statuses (all statuses except final states)
+      const inProgressStatuses = [
+        'in_progress', 'en cours', 'distribution', 'picked_up', 
+        'ramassé', 'sent', 'expédié', 'waiting_pickup', 'en attente',
+        'deux', '2ème', 'trois', '3ème', 'programmer', 'programmé',
+        'envg', 'en voyage', 'postponed', 'reporté', 'new_parcel', 
+        'nouveau', 'parcel_confirmed', 'confirmé', 'picked_up', 'ramassé',
+        'refuse', 'refusé', 'noanswer', 'pas de réponse', 'unreachable',
+        'injoignable', 'hors_zone', 'hors zone'
+      ];
+      
+      // Final states that should NOT trigger notifications
+      const finalStatuses = [
+        'delivered', 'livré', 'returned', 'retourné', 
+        'cancelled', 'annulé', 'return_by_amana', 'retour amana'
+      ];
+      
+      // Check if current status is in progress (not a final state)
+      const isInProgress = inProgressStatuses.some(s => statusLower.includes(s)) && 
+                          !finalStatuses.some(s => statusLower.includes(s));
+      
+      if (!isInProgress) {
+        console.log('Skipping notification for non-in-progress order:', status);
+        return; // Don't create notification if not in progress
+      }
       
       let message = '';
       let details = '';
       
       switch(action) {
         case 'create':
-          message = `Nouveau ${type} créé`;
-          details = item.name || item.title || item.parcel_receiver || `ID: ${item.id}`;
+          message = `📦 Nouvelle commande en cours`;
+          details = `${item.parcel_receiver || 'Client'} • ${statusLabels[status] || status}`;
           break;
         case 'update':
-          message = `${type} modifié`;
-          details = item.name || item.title || item.parcel_receiver || `ID: ${item.id}`;
-          break;
-        case 'delete':
-          message = `${type} supprimé`;
-          details = item.name || item.title || item.parcel_receiver || `ID: ${item.id}`;
+          message = `✏️ Commande mise à jour`;
+          details = `${item.parcel_receiver || `#${item.id}`} • ${statusLabels[status] || status}`;
           break;
         case 'status_change':
-          message = `Statut de ${type} changé`;
-          details = `${item.old_status} → ${item.new_status}`;
+          message = `🔄 Statut de commande modifié`;
+          details = `${item.parcel_receiver || `#${item.id}`}: ${statusLabels[item.old_status] || item.old_status} → ${statusLabels[item.new_status] || item.new_status}`;
           break;
         default:
           return;
@@ -239,7 +269,11 @@ export default function AdminDashboard() {
         details,
         timestamp: new Date().toISOString(),
         read: false,
-        user: user || 'Système'
+        user: user || 'Système',
+        status: status,
+        orderId: item.id,
+        orderCode: item.parcel_code,
+        clientName: item.parcel_receiver
       };
 
       setNotifications(prev => [newNotification, ...prev].slice(0, 50)); // Keep last 50
@@ -280,219 +314,222 @@ export default function AdminDashboard() {
   };
 
   const exportToExcel = () => {
-    // Prepare data for Excel
-    const financialData = [
-      ['Aperçu Financier'],
-      ['Métrique', 'Valeur (MAD)'],
-      ['Total dépenses', stats?.total_expenses || 0],
-      ['Profit total', commandesStats.totalProfit],
-      ['Total des ventes', commandesStats.totalSales],
-      ['Revenu net', commandesStats.totalProfit - Number(stats?.total_expenses || 0)],
-      [],
-      ['Statistiques des Commandes'],
-      ['Statut', 'Nombre'],
-      ['Total Commandes', commandesStats.total],
-      ['Nouveaux', commandesStats.new_parcel],
-      ['Confirmés', commandesStats.parcel_confirmed],
-      ['Ramassés', commandesStats.picked_up],
-      ['Distribution', commandesStats.distribution],
-      ['En cours', commandesStats.in_progress],
-      ['Expédiés', commandesStats.sent],
-      ['Livrés', commandesStats.delivered],
-      ['Retournés', commandesStats.returned],
-      ['Annulés', commandesStats.cancelled],
-      ['En attente', commandesStats.waiting_pickup],
-      ['Reçus', commandesStats.received],
-      ['Refusés', commandesStats.refuse],
-      ['Pas de réponse', commandesStats.noanswer],
-      ['Injoignables', commandesStats.unreachable],
-      ['Hors zone', commandesStats.hors_zone],
-      ['Reportés', commandesStats.postponed],
-      ['Programmés', commandesStats.programmer],
-      ['2ème tentative', commandesStats.deux],
-      ['3ème tentative', commandesStats.trois],
-      ['En voyage', commandesStats.envg],
-      ['Retour Amana', commandesStats.return_by_amana],
-      ['Envoyé Amana', commandesStats.sent_by_amana],
-      [],
-      ['Évolution Mensuelle'],
-      ['Mois', 'Dépenses', 'Profit', 'Ventes']
-    ];
+    try {
+      // Prepare data for Excel
+      const financialData = [
+        ['Aperçu Financier'],
+        ['Métrique', 'Valeur (MAD)'],
+        ['Total dépenses', stats?.total_expenses || 0],
+        ['Profit total', commandesStats.totalProfit],
+        ['Total des ventes', commandesStats.totalSales],
+        ['Revenu net', commandesStats.totalProfit - Number(stats?.total_expenses || 0)],
+        [],
+        ['Statistiques des Commandes'],
+        ['Statut', 'Nombre'],
+        ['Total Commandes', commandesStats.total],
+        ...Object.entries(commandesStats)
+          .filter(([key, value]) => 
+            !['totalSales', 'totalProfit', 'revenue', 'conversionRate', 'pending', 'completed'].includes(key) && 
+            typeof value === 'number' && 
+            value > 0
+          )
+          .map(([key, value]) => {
+            const displayName = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            return [displayName, value];
+          }),
+        [],
+        ['Évolution Mensuelle'],
+        ['Mois', 'Dépenses', 'Profit', 'Ventes']
+      ];
 
-    // Add monthly data
-    monthlyData.forEach(m => {
-      financialData.push([m.month, m.depenses, m.profit, m.ventes]);
-    });
+      // Add monthly data
+      monthlyData.forEach(m => {
+        financialData.push([m.month, m.depenses, m.profit, m.ventes]);
+      });
 
-    // Add recent orders
-    financialData.push([], ['Commandes Récentes']);
-    financialData.push(['Client', 'Code', 'Date', 'Total', 'Statut']);
-    
-    recentOrders.forEach(order => {
-      const tracking = getTrackingStatus(order.parcel_code);
-      const deliveryStatus = tracking?.deliveryStatus || order.statut;
-      financialData.push([
-        order.parcel_receiver || 'Client',
-        order.parcel_code || `#${order.id}`,
-        new Date(order.date || order.created_at).toLocaleDateString('fr-FR'),
-        order.parcel_price || 0,
-        statusLabels[deliveryStatus] || deliveryStatus
-      ]);
-    });
+      // Add recent orders
+      financialData.push([], ['Commandes Récentes']);
+      financialData.push(['Client', 'Code', 'Date', 'Total', 'Statut']);
+      
+      recentOrders.forEach(order => {
+        const tracking = getTrackingStatus(order.parcel_code);
+        const deliveryStatus = tracking?.deliveryStatus || order.statut;
+        financialData.push([
+          order.parcel_receiver || 'Client',
+          order.parcel_code || `#${order.id}`,
+          new Date(order.date || order.created_at).toLocaleDateString('fr-FR'),
+          order.parcel_price || 0,
+          statusLabels[deliveryStatus] || deliveryStatus
+        ]);
+      });
 
-    // Create worksheet
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet(financialData);
-    
-    // Style the worksheet
-    ws['!cols'] = [
-      { wch: 20 }, // First column width
-      { wch: 15 }, // Second column width
-      { wch: 15 }, // Third column width
-      { wch: 15 }  // Fourth column width
-    ];
+      // Create worksheet
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet(financialData);
+      
+      // Style the worksheet
+      ws['!cols'] = [
+        { wch: 25 }, // First column width
+        { wch: 20 }, // Second column width
+        { wch: 20 }, // Third column width
+        { wch: 20 }  // Fourth column width
+      ];
 
-    XLSX.utils.book_append_sheet(wb, ws, 'Dashboard');
-    XLSX.writeFile(wb, `dashboard_export_${new Date().toISOString().split('T')[0]}.xlsx`);
+      XLSX.utils.book_append_sheet(wb, ws, 'Dashboard');
+      XLSX.writeFile(wb, `dashboard_${new Date().toISOString().split('T')[0]}.xlsx`);
+      
+    } catch (error) {
+      console.error('Error generating Excel:', error);
+      alert('Erreur lors de la génération du fichier Excel. Veuillez réessayer.');
+    }
   };
 
   const exportToPDF = () => {
-  // Create new PDF document
-  const doc = new jsPDF();
-  const pageWidth = doc.internal.pageSize.getWidth();
-  
-  // Title
-  doc.setFontSize(20);
-  doc.setTextColor(92, 2, 2);
-  doc.text('Tableau de bord - Fantasia', pageWidth / 2, 20, { align: 'center' });
-  
-  doc.setFontSize(10);
-  doc.setTextColor(100, 100, 100);
-  doc.text(`Généré le ${new Date().toLocaleDateString('fr-FR')}`, pageWidth / 2, 28, { align: 'center' });
+    try {
+      // Create new PDF document
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      
+      // Title
+      doc.setFontSize(20);
+      doc.setTextColor(92, 2, 2);
+      doc.text('Tableau de bord - Fantasia', pageWidth / 2, 20, { align: 'center' });
+      
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Généré le ${new Date().toLocaleDateString('fr-FR')}`, pageWidth / 2, 28, { align: 'center' });
 
-  // Financial Overview
-  doc.setFontSize(14);
-  doc.setTextColor(92, 2, 2);
-  doc.text('Aperçu Financier', 14, 40);
-  
-  const financialData = [
-    ['Métrique', 'Valeur (MAD)'],
-    ['Total dépenses', `${(stats?.total_expenses || 0).toLocaleString()} DH`],
-    ['Profit total', `${commandesStats.totalProfit.toLocaleString()} DH`],
-    ['Total des ventes', `${commandesStats.totalSales.toLocaleString()} DH`],
-    ['Revenu net', `${(commandesStats.totalProfit - Number(stats?.total_expenses || 0)).toLocaleString()} DH`]
-  ];
-
-  // Use autoTable correctly
-  autoTable(doc, {
-    startY: 45,
-    head: [financialData[0]],
-    body: financialData.slice(1),
-    theme: 'striped',
-    headStyles: { fillColor: [92, 2, 2], textColor: [255, 255, 255] },
-    styles: { fontSize: 10 }
-  });
-
-  // Orders Statistics
-  doc.addPage();
-  doc.setFontSize(14);
-  doc.setTextColor(92, 2, 2);
-  doc.text('Statistiques des Commandes', 14, 20);
-
-  const statusData = [
-    ['Statut', 'Nombre'],
-    ['Total Commandes', commandesStats.total],
-    ['Nouveaux', commandesStats.new_parcel],
-    ['Confirmés', commandesStats.parcel_confirmed],
-    ['Ramassés', commandesStats.picked_up],
-    ['Distribution', commandesStats.distribution],
-    ['En cours', commandesStats.in_progress],
-    ['Expédiés', commandesStats.sent],
-    ['Livrés', commandesStats.delivered],
-    ['Retournés', commandesStats.returned],
-    ['Annulés', commandesStats.cancelled],
-    ['En attente', commandesStats.waiting_pickup],
-    ['Reçus', commandesStats.received],
-    ['Refusés', commandesStats.refuse],
-    ['Pas de réponse', commandesStats.noanswer],
-    ['Injoignables', commandesStats.unreachable],
-    ['Hors zone', commandesStats.hors_zone],
-    ['Reportés', commandesStats.postponed],
-    ['Programmés', commandesStats.programmer],
-    ['2ème tentative', commandesStats.deux],
-    ['3ème tentative', commandesStats.trois],
-    ['En voyage', commandesStats.envg],
-    ['Retour Amana', commandesStats.return_by_amana],
-    ['Envoyé Amana', commandesStats.sent_by_amana]
-  ];
-
-  autoTable(doc, {
-    startY: 25,
-    head: [statusData[0]],
-    body: statusData.slice(1),
-    theme: 'striped',
-    headStyles: { fillColor: [92, 2, 2], textColor: [255, 255, 255] },
-    styles: { fontSize: 9 }
-  });
-
-  // Monthly Evolution
-  doc.addPage();
-  doc.setFontSize(14);
-  doc.setTextColor(92, 2, 2);
-  doc.text('Évolution Mensuelle', 14, 20);
-
-  const monthlyTableData = [
-    ['Mois', 'Dépenses', 'Profit', 'Ventes'],
-    ...monthlyData.map(m => [
-      m.month,
-      `${m.depenses.toLocaleString()} DH`,
-      `${m.profit.toLocaleString()} DH`,
-      `${m.ventes.toLocaleString()} DH`
-    ])
-  ];
-
-  autoTable(doc, {
-    startY: 25,
-    head: [monthlyTableData[0]],
-    body: monthlyTableData.slice(1),
-    theme: 'striped',
-    headStyles: { fillColor: [92, 2, 2], textColor: [255, 255, 255] },
-    styles: { fontSize: 10 }
-  });
-
-  // Recent Orders
-  doc.addPage();
-  doc.setFontSize(14);
-  doc.setTextColor(92, 2, 2);
-  doc.text('Commandes Récentes', 14, 20);
-
-  const recentOrdersData = [
-    ['Client', 'Code', 'Date', 'Total', 'Statut'],
-    ...recentOrders.map(order => {
-      const tracking = getTrackingStatus(order.parcel_code);
-      const deliveryStatus = tracking?.deliveryStatus || order.statut;
-      return [
-        order.parcel_receiver || 'Client',
-        order.parcel_code || `#${order.id}`,
-        new Date(order.date || order.created_at).toLocaleDateString('fr-FR'),
-        `${(order.parcel_price || 0).toLocaleString()} DH`,
-        statusLabels[deliveryStatus] || deliveryStatus
+      // Financial Overview
+      doc.setFontSize(14);
+      doc.setTextColor(92, 2, 2);
+      doc.text('Aperçu Financier', 14, 40);
+      
+      const financialData = [
+        ['Métrique', 'Valeur (MAD)'],
+        ['Total dépenses', `${(stats?.total_expenses || 0).toLocaleString()} DH`],
+        ['Profit total', `${commandesStats.totalProfit.toLocaleString()} DH`],
+        ['Total des ventes', `${commandesStats.totalSales.toLocaleString()} DH`],
+        ['Revenu net', `${(commandesStats.totalProfit - Number(stats?.total_expenses || 0)).toLocaleString()} DH`]
       ];
-    })
-  ];
 
-  autoTable(doc, {
-    startY: 25,
-    head: [recentOrdersData[0]],
-    body: recentOrdersData.slice(1),
-    theme: 'striped',
-    headStyles: { fillColor: [92, 2, 2], textColor: [255, 255, 255] },
-    styles: { fontSize: 9 }
-  });
+      autoTable(doc, {
+        startY: 45,
+        head: [financialData[0]],
+        body: financialData.slice(1),
+        theme: 'striped',
+        headStyles: { fillColor: [92, 2, 2], textColor: [255, 255, 255] },
+        styles: { fontSize: 10 }
+      });
 
-  // Save the PDF
-  doc.save(`dashboard_export_${new Date().toISOString().split('T')[0]}.pdf`);
-};
+      // Orders Statistics
+      doc.addPage();
+      doc.setFontSize(14);
+      doc.setTextColor(92, 2, 2);
+      doc.text('Statistiques des Commandes', 14, 20);
+
+      const statusData = [
+        ['Statut', 'Nombre'],
+        ...Object.entries(commandesStats)
+          .filter(([key, value]) => 
+            !['totalSales', 'totalProfit', 'revenue', 'conversionRate', 'pending', 'completed'].includes(key) && 
+            typeof value === 'number' && 
+            value > 0
+          )
+          .map(([key, value]) => {
+            const displayName = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            return [displayName, value.toString()];
+          })
+      ];
+
+      autoTable(doc, {
+        startY: 25,
+        head: [statusData[0]],
+        body: statusData.slice(1),
+        theme: 'striped',
+        headStyles: { fillColor: [92, 2, 2], textColor: [255, 255, 255] },
+        styles: { fontSize: 9 },
+        columnStyles: {
+          0: { cellWidth: 80 },
+          1: { cellWidth: 40, halign: 'center' }
+        }
+      });
+
+      // Monthly Evolution
+      doc.addPage();
+      doc.setFontSize(14);
+      doc.setTextColor(92, 2, 2);
+      doc.text('Évolution Mensuelle', 14, 20);
+
+      const monthlyTableData = [
+        ['Mois', 'Dépenses (DH)', 'Profit (DH)', 'Ventes (DH)'],
+        ...monthlyData.map(m => [
+          m.month,
+          m.depenses.toLocaleString(),
+          m.profit.toLocaleString(),
+          m.ventes.toLocaleString()
+        ])
+      ];
+
+      autoTable(doc, {
+        startY: 25,
+        head: [monthlyTableData[0]],
+        body: monthlyTableData.slice(1),
+        theme: 'striped',
+        headStyles: { fillColor: [92, 2, 2], textColor: [255, 255, 255] },
+        styles: { fontSize: 10 },
+        columnStyles: {
+          0: { cellWidth: 40 },
+          1: { cellWidth: 50, halign: 'right' },
+          2: { cellWidth: 50, halign: 'right' },
+          3: { cellWidth: 50, halign: 'right' }
+        }
+      });
+
+      // Recent Orders
+      doc.addPage();
+      doc.setFontSize(14);
+      doc.setTextColor(92, 2, 2);
+      doc.text('Commandes Récentes', 14, 20);
+
+      const recentOrdersData = [
+        ['Client', 'Code', 'Date', 'Total (DH)', 'Statut'],
+        ...recentOrders.map(order => {
+          const tracking = getTrackingStatus(order.parcel_code);
+          const deliveryStatus = tracking?.deliveryStatus || order.statut;
+          return [
+            order.parcel_receiver || 'Client',
+            order.parcel_code || `#${order.id}`,
+            new Date(order.date || order.created_at).toLocaleDateString('fr-FR'),
+            (order.parcel_price || 0).toLocaleString(),
+            statusLabels[deliveryStatus] || deliveryStatus
+          ];
+        })
+      ];
+
+      autoTable(doc, {
+        startY: 25,
+        head: [recentOrdersData[0]],
+        body: recentOrdersData.slice(1),
+        theme: 'striped',
+        headStyles: { fillColor: [92, 2, 2], textColor: [255, 255, 255] },
+        styles: { fontSize: 9 },
+        columnStyles: {
+          0: { cellWidth: 50 },
+          1: { cellWidth: 40 },
+          2: { cellWidth: 40 },
+          3: { cellWidth: 40, halign: 'right' },
+          4: { cellWidth: 50 }
+        }
+      });
+
+      // Save the PDF
+      doc.save(`dashboard_${new Date().toISOString().split('T')[0]}.pdf`);
+      
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Erreur lors de la génération du PDF. Veuillez réessayer.');
+    }
+  };
 
   useEffect(() => {
     // Fetch all dashboard data

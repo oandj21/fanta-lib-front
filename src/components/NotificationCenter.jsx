@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { 
   Bell, 
   X, 
@@ -19,7 +19,8 @@ import {
   AlertCircle,
   Package,
   DollarSign,
-  Clock
+  Clock,
+  Filter
 } from "lucide-react";
 import "../css/NotificationCenter.css";
 
@@ -32,6 +33,7 @@ export default function NotificationCenter({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [showOnlyInProgress, setShowOnlyInProgress] = useState(true);
   const notificationRef = useRef(null);
 
   // Update unread count
@@ -52,12 +54,60 @@ export default function NotificationCenter({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Filter notifications to show only in-progress orders
+  const filteredNotifications = useMemo(() => {
+    if (!showOnlyInProgress) return notifications;
+    
+    return notifications.filter(notif => {
+      // Only filter commande type notifications
+      if (notif.type !== 'commande') return false;
+      
+      // Check if the status is in progress
+      const status = notif.status || '';
+      const statusLower = status.toLowerCase();
+      const details = notif.details?.toLowerCase() || '';
+      const message = notif.message?.toLowerCase() || '';
+      
+      // Define in-progress statuses
+      const inProgressKeywords = [
+        'en cours', 'distribution', 'ramassé', 'expédié', 'attente',
+        'nouveau', 'confirmé', 'programmé', 'reporté', 'voyage',
+        'in_progress', 'picked_up', 'sent', 'waiting', 'new_parcel',
+        'parcel_confirmed', 'programmer', 'postponed', 'envg',
+        'deux', 'trois', '2ème', '3ème', 'refusé', 'noanswer',
+        'pas de réponse', 'injoignable', 'hors zone'
+      ];
+      
+      // Final states to exclude
+      const finalKeywords = [
+        'livré', 'delivered', 'retourné', 'returned', 'annulé', 'cancelled'
+      ];
+      
+      const isInProgress = inProgressKeywords.some(keyword => 
+        statusLower.includes(keyword) || 
+        details.includes(keyword) || 
+        message.includes(keyword)
+      );
+      
+      const isFinal = finalKeywords.some(keyword => 
+        statusLower.includes(keyword) || 
+        details.includes(keyword) || 
+        message.includes(keyword)
+      );
+      
+      return isInProgress && !isFinal;
+    });
+  }, [notifications, showOnlyInProgress]);
+
   // Get icon based on notification type
-  const getNotificationIcon = (type) => {
+  const getNotificationIcon = (type, action) => {
     switch(type) {
       case 'livre':
         return <BookOpen size={18} />;
       case 'commande':
+        if (action === 'create') return <Package size={18} />;
+        if (action === 'update') return <ShoppingCart size={18} />;
+        if (action === 'status_change') return <RefreshCw size={18} />;
         return <ShoppingCart size={18} />;
       case 'depense':
         return <Receipt size={18} />;
@@ -113,28 +163,46 @@ export default function NotificationCenter({
         <div className="notification-panel">
           <div className="notification-header">
             <h3>Notifications</h3>
-            <div className="notification-actions">
-              {unreadCount > 0 && (
-                <button onClick={onMarkAllAsRead} title="Tout marquer comme lu">
-                  <CheckCheck size={16} />
+            <div className="notification-header-actions">
+              <div className="notification-filter">
+                <button 
+                  className={`filter-btn ${showOnlyInProgress ? 'active' : ''}`}
+                  onClick={() => setShowOnlyInProgress(!showOnlyInProgress)}
+                  title="Filtrer les commandes en cours"
+                >
+                  <Filter size={14} />
+                  <span>En cours</span>
                 </button>
-              )}
-              {notifications.length > 0 && (
-                <button onClick={onClearAll} title="Tout effacer">
-                  <Trash2 size={16} />
-                </button>
-              )}
+              </div>
+              <div className="notification-actions">
+                {unreadCount > 0 && (
+                  <button onClick={onMarkAllAsRead} title="Tout marquer comme lu">
+                    <CheckCheck size={16} />
+                  </button>
+                )}
+                {notifications.length > 0 && (
+                  <button onClick={onClearAll} title="Tout effacer">
+                    <Trash2 size={16} />
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
           <div className="notification-list">
-            {notifications.length === 0 ? (
+            {filteredNotifications.length === 0 ? (
               <div className="notification-empty">
                 <Bell size={32} />
                 <p>Aucune notification</p>
+                {notifications.length > 0 && showOnlyInProgress && (
+                  <p className="empty-hint">
+                    <Filter size={12} />
+                    Filtre "En cours" activé
+                  </p>
+                )}
               </div>
             ) : (
-              notifications.map((notif) => (
+              filteredNotifications.map((notif) => (
                 <div 
                   key={notif.id} 
                   className={`notification-item ${!notif.read ? 'unread' : ''}`}
@@ -144,17 +212,17 @@ export default function NotificationCenter({
                     style={{ backgroundColor: `${getActionColor(notif.action)}15` }}
                   >
                     <span style={{ color: getActionColor(notif.action) }}>
-                      {getNotificationIcon(notif.type)}
+                      {getNotificationIcon(notif.type, notif.action)}
                     </span>
                   </div>
                   
                   <div className="notification-content">
                     <div className="notification-title">
                       <span className="notification-action" style={{ color: getActionColor(notif.action) }}>
-                        {notif.action === 'create' && 'Création'}
-                        {notif.action === 'update' && 'Modification'}
-                        {notif.action === 'delete' && 'Suppression'}
-                        {notif.action === 'status_change' && 'Changement de statut'}
+                        {notif.action === 'create' && '📦 Nouvelle commande'}
+                        {notif.action === 'update' && '✏️ Mise à jour'}
+                        {notif.action === 'delete' && '🗑️ Suppression'}
+                        {notif.action === 'status_change' && '🔄 Changement de statut'}
                       </span>
                       <span className="notification-time">{formatTime(notif.timestamp)}</span>
                     </div>
@@ -163,6 +231,12 @@ export default function NotificationCenter({
                       <div className="notification-details">
                         <ChevronRight size={12} />
                         <span>{notif.details}</span>
+                      </div>
+                    )}
+                    {notif.clientName && (
+                      <div className="notification-client">
+                        <User size={10} />
+                        <span>{notif.clientName}</span>
                       </div>
                     )}
                   </div>
@@ -189,6 +263,15 @@ export default function NotificationCenter({
               ))
             )}
           </div>
+          
+          {filteredNotifications.length > 0 && (
+            <div className="notification-footer">
+              <span className="notification-count">
+                {filteredNotifications.length} notification{filteredNotifications.length > 1 ? 's' : ''}
+                {showOnlyInProgress && ' (en cours)'}
+              </span>
+            </div>
+          )}
         </div>
       )}
     </div>

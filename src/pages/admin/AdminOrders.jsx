@@ -7,7 +7,7 @@ import {
   Loader, ChevronDown, BookOpen, Minus, Plus as PlusIcon,
   Eye, RefreshCw, AlertCircle, CheckCircle, Box, Layers,
   Clock, CreditCard, Calendar, PackageCheck, PackageX,
-  Info,Copy
+  Info, Copy
 } from "lucide-react";
 import axios from "axios";
 import { 
@@ -20,32 +20,106 @@ import {
 } from "../../store/store";
 import "../../css/AdminOrders.css";
 
-// REMOVED: statusLabels and statusColors - now using API values directly
+// ==============================================
+// HELPER FUNCTIONS FOR STATUS HANDLING
+// ==============================================
 
-// Helper to get status color based on status text
+/**
+ * Get color for status based on Welivexpress status codes
+ */
 const getStatusColor = (status) => {
   if (!status) return '#6b7280';
   
-  const statusLower = status.toLowerCase();
+  // Statuts Principaux (Main Statuses)
+  if (status === 'NEW_PARCEL') return '#3b82f6'; // Blue - Nouveau Colis
+  if (status === 'WAITING_PICKUP') return '#ff9300'; // Orange - Attente Ramassage
+  if (status === 'PICKED_UP') return '#00a3d7'; // Light blue - Ramassé
+  if (status === 'SENT') return '#0080ff'; // Blue - Expédié
+  if (status === 'RECEIVED') return '#069d40'; // Green - Reçu
+  if (status === 'DISTRIBUTION') return '#606060'; // Gray - En distribution
+  if (status === 'IN_PROGRESS') return '#ff8040'; // Orange-red - En cours
+  if (status === 'RETURNED') return '#bb0707'; // Dark red - Retourné
+  if (status === 'DELIVERED') return '#10b981'; // Green - Livré
   
-  // Welivexpress statuses
-  if (status === 'NEW_PARCEL' || statusLower.includes('nouveau')) return '#3b82f6';
-  if (status === 'PARCEL_CONFIRMED' || statusLower.includes('confirm')) return '#007bff';
-  if (status === 'PARCEL_IN_TRANSIT' || statusLower.includes('transit') || statusLower.includes('expéd')) return '#ffc107';
-  if (status === 'PARCEL_DELIVERED' || statusLower.includes('livré') || statusLower.includes('delivered')) return '#10b981';
-  if (status === 'PARCEL_CANCELLED' || statusLower.includes('annulé') || statusLower.includes('cancelled')) return '#6b7280';
-  if (status === 'PARCEL_RETURNED' || statusLower.includes('retour') || statusLower.includes('returned')) return '#ef4444';
+  // Statuts Secondaires (Secondary Statuses)
+  if (status === 'REFUSE') return '#EB1A00'; // Red - Refusé
+  if (status === 'POSTPONED') return '#53d5fd'; // Light blue - Reporté
+  if (status === 'PROGRAMMER') return '#74a7fe'; // Light blue - Programmé
+  if (status === 'NOANSWER') return '#ff9300'; // Orange - Pas de réponse
+  if (status === 'UNREACHABLE') return '#25a0d7'; // Blue - Injoignable
+  if (status === 'HORS_ZONE') return '#94e3fe'; // Very light blue - Hors zone
+  if (status === 'CANCELLED') return '#f41515'; // Red - Annulé
+  if (status === 'DEUX') return '#3a88fe'; // Blue - 2ème appel sans réponse
+  if (status === 'TROIS') return '#0042aa'; // Dark blue - 3ème appel sans réponse
+  if (status === 'ENVG') return '#6e6bff'; // Purple-blue - En Voyage
+  if (status === 'RETURN_BY_AMANA') return '#eb1a00'; // Red - Retour par AMANA
+  if (status === 'SENT_BY_AMANA') return '#eb1a00'; // Red - Envoyé par AMANA
   
   // Payment statuses
-  if (statusLower.includes('payé') || statusLower.includes('paid')) return '#10b981';
-  if (statusLower.includes('non payé') || statusLower.includes('not_paid')) return '#ef4444';
-  if (statusLower.includes('facturé') || statusLower.includes('invoiced')) return '#8b5cf6';
+  if (status === 'PAID' || status?.includes('Payé')) return '#10b981';
+  if (status === 'NOT_PAID' || status?.includes('Non Payé')) return '#ef4444';
   
   // Default
   return '#6b7280';
 };
 
-// City Autocomplete Component
+/**
+ * Get display name for status codes
+ */
+const getStatusDisplayName = (status) => {
+  if (!status) return '-';
+  
+  const statusMap = {
+    // Statuts Principaux
+    'NEW_PARCEL': 'Nouveau Colis',
+    'WAITING_PICKUP': 'Attente Ramassage',
+    'PICKED_UP': 'Ramassé',
+    'SENT': 'Expédié',
+    'RECEIVED': 'Reçu',
+    'DISTRIBUTION': 'En distribution',
+    'IN_PROGRESS': 'En cours',
+    'RETURNED': 'Retourné',
+    'DELIVERED': 'Livré',
+    
+    // Statuts Secondaires
+    'REFUSE': 'Refusé',
+    'POSTPONED': 'Reporté',
+    'PROGRAMMER': 'Programmé',
+    'NOANSWER': 'Pas de réponse',
+    'UNREACHABLE': 'Injoignable',
+    'HORS_ZONE': 'Hors zone',
+    'CANCELLED': 'Annulé',
+    'DEUX': '2ème appel',
+    'TROIS': '3ème appel',
+    'ENVG': 'En voyage',
+    'RETURN_BY_AMANA': 'Retour AMANA',
+    'SENT_BY_AMANA': 'Envoi AMANA',
+    
+    // Payment
+    'PAID': 'Payé',
+    'NOT_PAID': 'Non payé'
+  };
+  
+  return statusMap[status] || status;
+};
+
+/**
+ * Determine which status to display (prioritize secondary if available)
+ */
+const getDisplayStatus = (trackingData) => {
+  if (!trackingData || !trackingData.parcel) return null;
+  
+  // Check for secondary status in the API response
+  const secondaryStatus = trackingData.parcel.parcel_status_second || null;
+  
+  // Return secondary status if it exists, otherwise return delivery_status
+  return secondaryStatus || trackingData.parcel.delivery_status;
+};
+
+// ==============================================
+// CITY AUTOCOMPLETE COMPONENT
+// ==============================================
+
 const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
   const [query, setQuery] = useState(value || "");
   const [suggestions, setSuggestions] = useState([]);
@@ -72,7 +146,6 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
         }
       );
 
-      
       let citiesData = [];
       
       if (response.data && response.data.data && Array.isArray(response.data.data)) {
@@ -206,7 +279,10 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
   );
 };
 
-// Book Selection Component
+// ==============================================
+// BOOK SELECTOR COMPONENT
+// ==============================================
+
 const BookSelector = ({ selectedBooks, onBooksChange, onTotalQuantityChange }) => {
   const dispatch = useDispatch();
   const { list: booksList = [], loading: booksLoading } = useSelector((state) => state.livres);
@@ -388,7 +464,10 @@ const BookSelector = ({ selectedBooks, onBooksChange, onTotalQuantityChange }) =
   );
 };
 
-// Order Details Modal Component with complete tracking information
+// ==============================================
+// ORDER DETAILS MODAL COMPONENT
+// ==============================================
+
 const OrderDetailsModal = ({ order, onClose }) => {
   const [trackingInfo, setTrackingInfo] = useState(null);
   const [loadingTracking, setLoadingTracking] = useState(false);
@@ -444,8 +523,7 @@ const OrderDetailsModal = ({ order, onClose }) => {
 
   if (!order) return null;
 
-  // Get the delivery status from tracking info
-  const deliveryStatus = trackingInfo?.parcel?.delivery_status || order.statut;
+  const displayStatus = trackingInfo ? getDisplayStatus(trackingInfo) : order.statut;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -462,7 +540,6 @@ const OrderDetailsModal = ({ order, onClose }) => {
           <div className="details-two-column">
             {/* Left Column - Suivi Welivexpress */}
             <div className="details-left-column">
-              {/* Real-time tracking information - ALL FIELDS FROM API */}
               {loadingTracking && (
                 <div className="tracking-loading">
                   <RefreshCw size={20} className="spinning" />
@@ -485,12 +562,12 @@ const OrderDetailsModal = ({ order, onClose }) => {
                     <span className="tracking-live-badge">LIVE</span>
                   </div>
                   
-                  {/* Status Cards */}
+                  {/* Status Cards - Show both principal and secondary */}
                   <div className="tracking-status-grid">
                     <div className="tracking-status-card">
                       <div className="tracking-status-label">
                         <Truck size={14} />
-                        Statut de livraison
+                        Statut Principal
                       </div>
                       <div 
                         className="tracking-status-badge large"
@@ -500,7 +577,7 @@ const OrderDetailsModal = ({ order, onClose }) => {
                           border: `1px solid ${getStatusColor(trackingInfo.parcel.delivery_status)}30`
                         }}
                       >
-                        {trackingInfo.parcel.delivery_status || 'Inconnu'}
+                        {getStatusDisplayName(trackingInfo.parcel.delivery_status) || trackingInfo.parcel.delivery_status || 'Inconnu'}
                       </div>
                       {trackingInfo.tracking && (
                         <div className="tracking-status-description">
@@ -508,6 +585,25 @@ const OrderDetailsModal = ({ order, onClose }) => {
                         </div>
                       )}
                     </div>
+
+                    {trackingInfo.parcel.parcel_status_second && (
+                      <div className="tracking-status-card">
+                        <div className="tracking-status-label">
+                          <Truck size={14} />
+                          Statut Secondaire
+                        </div>
+                        <div 
+                          className="tracking-status-badge large"
+                          style={{ 
+                            backgroundColor: `${getStatusColor(trackingInfo.parcel.parcel_status_second)}15`,
+                            color: getStatusColor(trackingInfo.parcel.parcel_status_second),
+                            border: `1px solid ${getStatusColor(trackingInfo.parcel.parcel_status_second)}30`
+                          }}
+                        >
+                          {getStatusDisplayName(trackingInfo.parcel.parcel_status_second) || trackingInfo.parcel.parcel_status_second}
+                        </div>
+                      </div>
+                    )}
 
                     <div className="tracking-status-card">
                       <div className="tracking-status-label">
@@ -530,7 +626,7 @@ const OrderDetailsModal = ({ order, onClose }) => {
                     </div>
                   </div>
 
-                  {/* Complete Parcel Information - All fields from API */}
+                  {/* Complete Parcel Information */}
                   <div className="tracking-details-grid">
                     {/* Client Information */}
                     <div className="tracking-detail-card">
@@ -688,7 +784,7 @@ const OrderDetailsModal = ({ order, onClose }) => {
               )}
             </div>
 
-            {/* Right Column - Informations de la commande (styled like tracking) */}
+            {/* Right Column - Informations de la commande */}
             <div className="details-right-column">
               <div className="order-info-section">
                 <div className="order-info-header">
@@ -762,21 +858,22 @@ const OrderDetailsModal = ({ order, onClose }) => {
                   <div className="order-info-card">
                     <div className="order-info-label">
                       <Clock size={14} />
-                      Statut de livraison
+                      Statut
                     </div>
                     <div className="order-info-value">
                       {loadingTracking ? (
                         <RefreshCw size={14} className="spinning" />
                       ) : (
                         <span 
-                          className="status-bad"
+                          className="status-badge"
                           style={{ 
-                            backgroundColor: `${getStatusColor(deliveryStatus)}15`,
-                            color: getStatusColor(deliveryStatus),
-                            border: `1px solid ${getStatusColor(deliveryStatus)}30`
+                            backgroundColor: `${getStatusColor(displayStatus)}15`,
+                            color: getStatusColor(displayStatus),
+                            border: `1px solid ${getStatusColor(displayStatus)}30`
                           }}
+                          title={`Principal: ${trackingInfo?.parcel?.delivery_status || order.statut}${trackingInfo?.parcel?.parcel_status_second ? ` | Secondaire: ${trackingInfo.parcel.parcel_status_second}` : ''}`}
                         >
-                          {deliveryStatus}
+                          {getStatusDisplayName(displayStatus)}
                         </span>
                       )}
                     </div>
@@ -864,7 +961,10 @@ const OrderDetailsModal = ({ order, onClose }) => {
   );
 };
 
-// Main AdminOrders Component
+// ==============================================
+// MAIN ADMIN ORDERS COMPONENT
+// ==============================================
+
 export default function AdminOrders() {
   const dispatch = useDispatch();
   const { list: orderList = [], loading } = useSelector((state) => state.commandes);
@@ -905,7 +1005,7 @@ export default function AdminOrders() {
     parcel_price: "",
     parcel_note: "",
     parcel_open: 0,
-    statut: "new"
+    statut: ""
   });
 
   // Form state for new order
@@ -926,18 +1026,19 @@ export default function AdminOrders() {
     livres: [],
     date: new Date().toISOString().split('T')[0]
   });
-      const copyTrackingLink = (parcelCode) => {
-  const link = `${window.location.origin}/track/${parcelCode}`;
-  navigator.clipboard.writeText(link).then(() => {
-    // You can show a toast notification here
-    alert("Lien de suivi copié !");
-  });
-};
+
+  const copyTrackingLink = (parcelCode) => {
+    const link = `${window.location.origin}/track/${parcelCode}`;
+    navigator.clipboard.writeText(link).then(() => {
+      alert("Lien de suivi copié !");
+    });
+  };
+
   useEffect(() => {
     dispatch(fetchCommandes());
   }, [dispatch]);
 
-  // Fetch tracking info for all orders and update Redux when status changes
+  // Fetch tracking info for all orders
   useEffect(() => {
     if (orderList.length > 0) {
       const fetchAllTrackingInfo = async () => {
@@ -965,7 +1066,7 @@ export default function AdminOrders() {
                   [order.parcel_code]: response.data.data
                 }));
                 
-                // Update Redux if status changed
+                // Update Redux if principal status changed
                 if (response.data.data.parcel?.delivery_status) {
                   const deliveryStatus = response.data.data.parcel.delivery_status;
                   if (order.statut !== deliveryStatus) {
@@ -987,7 +1088,7 @@ export default function AdminOrders() {
 
       fetchAllTrackingInfo();
     }
-  }, [orderList, dispatch]);
+  }, [orderList, dispatch, trackingInfoMap]);
 
   // Reset to first page when filters change
   useEffect(() => {
@@ -1284,7 +1385,6 @@ export default function AdminOrders() {
         profit: parseFloat(profit.toFixed(2)),
         parcel_note: newOrderData.parcel_note || "",
         parcel_open: newOrderData.parcel_open ? 1 : 0,
-        // REMOVED: statut: "new", // Don't set default status
         livres: formattedLivres,
         date: newOrderData.date
     };
@@ -1308,7 +1408,7 @@ export default function AdminOrders() {
     } finally {
         setAddLoading(false);
     }
-};
+  };
 
   const filteredOrders = useMemo(() => {
     return orderList.filter(order => {
@@ -1442,8 +1542,10 @@ export default function AdminOrders() {
     if (!info || !info.parcel) return null;
     return {
       deliveryStatus: info.parcel.delivery_status,
+      secondaryStatus: info.parcel.parcel_status_second,
       paymentStatus: info.parcel.payment_status,
-      paymentText: info.parcel.payment_status_text
+      paymentText: info.parcel.payment_status_text,
+      displayStatus: getDisplayStatus(info)
     };
   };
 
@@ -1484,8 +1586,9 @@ export default function AdminOrders() {
               <span 
                 className="order-stat-label" 
                 style={{ color: getStatusColor(status) }}
+                title={status}
               >
-                {status}
+                {getStatusDisplayName(status)}
               </span>
               <span className="order-stat-value">{count}</span>
             </div>
@@ -1533,7 +1636,7 @@ export default function AdminOrders() {
               >
                 <option value="all">Tous les statuts</option>
                 {uniqueStatuses.map(status => (
-                  <option key={status} value={status}>{status}</option>
+                  <option key={status} value={status}>{getStatusDisplayName(status)}</option>
                 ))}
               </select>
             </div>
@@ -1569,7 +1672,7 @@ export default function AdminOrders() {
                   <th>Téléphone</th>
                   <th>Quantité</th>
                   <th>Ville</th>
-                  <th>Statut Livraison</th>
+                  <th>Statut</th>
                   <th>Statut Paiement</th>
                   <th>Prix colis</th>
                   <th>Date</th>
@@ -1579,6 +1682,10 @@ export default function AdminOrders() {
               <tbody>
                 {currentOrders.map((order) => {
                   const tracking = getTrackingStatus(order.parcel_code);
+                  const displayStatus = tracking ? tracking.displayStatus : order.statut;
+                  const statusTooltip = tracking ? 
+                    `Principal: ${tracking.deliveryStatus}${tracking.secondaryStatus ? ` | Secondaire: ${tracking.secondaryStatus}` : ''}` : 
+                    `Statut: ${order.statut}`;
                   
                   return (
                     <tr key={order.id}>
@@ -1590,27 +1697,17 @@ export default function AdminOrders() {
                       <td>
                         {loadingTracking[order.parcel_code] ? (
                           <RefreshCw size={14} className="spinning" />
-                        ) : tracking ? (
-                          <span 
-                            className="status-bad"
-                            style={{ 
-                              backgroundColor: `${getStatusColor(tracking.deliveryStatus)}15`,
-                              color: getStatusColor(tracking.deliveryStatus),
-                              border: `1px solid ${getStatusColor(tracking.deliveryStatus)}30`
-                            }}
-                          >
-                            {tracking.deliveryStatus || '-'}
-                          </span>
                         ) : (
                           <span 
-                            className="status-bad"
+                            className="status-badge"
                             style={{ 
-                              backgroundColor: `${getStatusColor(order.statut)}15`,
-                              color: getStatusColor(order.statut),
-                              border: `1px solid ${getStatusColor(order.statut)}30`
+                              backgroundColor: `${getStatusColor(displayStatus)}15`,
+                              color: getStatusColor(displayStatus),
+                              border: `1px solid ${getStatusColor(displayStatus)}30`
                             }}
+                            title={statusTooltip}
                           >
-                            {order.statut || '-'}
+                            {getStatusDisplayName(displayStatus)}
                           </span>
                         )}
                       </td>
@@ -1619,17 +1716,17 @@ export default function AdminOrders() {
                           <RefreshCw size={14} className="spinning" />
                         ) : tracking ? (
                           <span 
-                            className="status-bad"
+                            className="status-badge"
                             style={{ 
-                              backgroundColor: `${getStatusColor(tracking.paymentStatus)}15`,
-                              color: getStatusColor(tracking.paymentStatus),
-                              border: `1px solid ${getStatusColor(tracking.paymentStatus)}30`
+                              backgroundColor: tracking.paymentStatus === 'PAID' ? '#10b98115' : '#ef444415',
+                              color: tracking.paymentStatus === 'PAID' ? '#10b981' : '#ef4444',
+                              border: `1px solid ${tracking.paymentStatus === 'PAID' ? '#10b98130' : '#ef444430'}`
                             }}
                           >
                             {tracking.paymentText || tracking.paymentStatus || '-'}
                           </span>
                         ) : (
-                          <span className="status-bad">-</span>
+                          <span className="status-badge">-</span>
                         )}
                       </td>
                       <td className="order-price">{order.parcel_price ? `${order.parcel_price} MAD` : "-"}</td>
@@ -1755,7 +1852,6 @@ export default function AdminOrders() {
                   </div>
                 </div>
 
-                {/* Welivexpress fields - only quantity now */}
                 <div className="form-row">
                   <div className="form-group">
                     <label>Quantité totale <span className="required">*</span></label>

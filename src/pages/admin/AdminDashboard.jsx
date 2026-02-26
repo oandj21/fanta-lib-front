@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { 
   BookOpen, 
@@ -221,6 +221,9 @@ export default function AdminDashboard() {
   // Notification state
   const [notifications, setNotifications] = useState([]);
   const [notifiedOrderIds, setNotifiedOrderIds] = useState(new Set());
+  
+  // Use ref to track if initial processing has been done
+  const initialProcessingDone = useRef(false);
 
   // Load notifications and notified IDs from localStorage on mount
   useEffect(() => {
@@ -253,26 +256,36 @@ export default function AdminDashboard() {
     localStorage.setItem('notified_order_ids', JSON.stringify(Array.from(notifiedOrderIds)));
   }, [notifiedOrderIds]);
 
-  // SHOW ALL COMMANDS WITH STATUS IN PROGRESS IN NOTIFICATIONS
-  // This runs whenever commandes data changes and shows ALL in-progress orders
+  // FIXED: SHOW ALL COMMANDS WITH STATUS IN PROGRESS IN NOTIFICATIONS - NO DUPLICATES
   useEffect(() => {
-    if (commandes && commandes.length > 0) {
+    // Only run if we have commandes and initial processing hasn't been done yet
+    if (commandes && commandes.length > 0 && !initialProcessingDone.current) {
+      
+      // Get all order IDs that are currently in our notifications
+      const existingNotificationOrderIds = new Set(
+        notifications
+          .filter(n => n.type === 'commande')
+          .map(n => n.orderId)
+      );
+      
+      // Combine with already notified IDs
+      const allNotifiedIds = new Set([...Array.from(notifiedOrderIds), ...Array.from(existingNotificationOrderIds)]);
+      
       // Find all orders that are in progress and not yet notified
       const inProgressOrders = commandes.filter(order => {
         const status = order.statut || order.status || '';
-        return isStatusInProgress(status) && !notifiedOrderIds.has(order.id);
+        return isStatusInProgress(status) && !allNotifiedIds.has(order.id);
       });
       
       if (inProgressOrders.length > 0) {
         console.log(`Found ${inProgressOrders.length} new in-progress orders to notify`);
         
         // Create notifications for each in-progress order
-        inProgressOrders.forEach(order => {
+        const newNotifications = inProgressOrders.map(order => {
           const status = order.statut || order.status || '';
           
-          // Create notification for in-progress order
-          const newNotification = {
-            id: Date.now() + Math.random(),
+          return {
+            id: Date.now() + Math.random() + order.id,
             type: 'commande',
             action: 'status_change',
             message: `🔄 Commande en cours`,
@@ -290,17 +303,25 @@ export default function AdminDashboard() {
             parcelPrice: order.parcel_price,
             quantity: order.parcel_prd_qty
           };
-
-          setNotifications(prev => [newNotification, ...prev].slice(0, 50));
-          
-          // Mark this order as notified
-          setNotifiedOrderIds(prev => new Set([...Array.from(prev), order.id]));
         });
-      }
-    }
-  }, [commandes]); // Runs whenever commandes data changes
 
-  // Listen for CRUD events (keeping your existing listener for updates)
+        // Update notifications - prepend new ones and keep only last 50
+        setNotifications(prev => [...newNotifications, ...prev].slice(0, 50));
+        
+        // Mark these orders as notified
+        const newNotifiedIds = new Set([
+          ...Array.from(notifiedOrderIds),
+          ...inProgressOrders.map(o => o.id)
+        ]);
+        setNotifiedOrderIds(newNotifiedIds);
+      }
+      
+      // Mark initial processing as done
+      initialProcessingDone.current = true;
+    }
+  }, [commandes]); // Only depend on commandes
+
+  // Listen for CRUD events - FIXED to prevent duplicates
   useEffect(() => {
     const handleCrudEvent = (event) => {
       const { type, action, item, user } = event.detail;
@@ -319,8 +340,10 @@ export default function AdminDashboard() {
         return;
       }
       
-      // Skip if this order was already notified
-      if (notifiedOrderIds.has(item.id)) {
+      // Skip if this order was already notified (check both state and existing notifications)
+      const existingNotification = notifications.find(n => n.orderId === item.id);
+      if (existingNotification || notifiedOrderIds.has(item.id)) {
+        console.log('Skipping duplicate notification for order:', item.id);
         return;
       }
       
@@ -345,7 +368,7 @@ export default function AdminDashboard() {
       }
 
       const newNotification = {
-        id: Date.now() + Math.random(),
+        id: Date.now() + Math.random() + item.id,
         type,
         action,
         message,
@@ -372,7 +395,7 @@ export default function AdminDashboard() {
 
     window.addEventListener('crud-event', handleCrudEvent);
     return () => window.removeEventListener('crud-event', handleCrudEvent);
-  }, [notifiedOrderIds]);
+  }, [notifiedOrderIds, notifications]);
 
   // Notification handlers
   const handleMarkAsRead = (id) => {
@@ -391,6 +414,8 @@ export default function AdminDashboard() {
     setNotifications([]);
     // Also clear notified IDs when clearing all notifications
     setNotifiedOrderIds(new Set());
+    // Reset initial processing flag to allow reprocessing if needed
+    initialProcessingDone.current = false;
   };
 
   const handleDeleteNotification = (id) => {

@@ -1292,8 +1292,16 @@ export default function AdminOrders() {
                       order.payment_status !== paymentStatus) {
                     
                     console.log(`🔔 Status changed for ${order.parcel_code}:`, {
-                      old: { statut: order.statut, secondary: order.statut_second },
-                      new: { statut: deliveryStatus, secondary: secondaryStatus }
+                      old: { 
+                        statut: order.statut, 
+                        secondary: order.statut_second,
+                        payment: order.payment_status 
+                      },
+                      new: { 
+                        statut: deliveryStatus, 
+                        secondary: secondaryStatus,
+                        payment: paymentStatus 
+                      }
                     });
                     
                     // 🔔 WEBHOOK AUTO-SYNC: Create and send webhook payload

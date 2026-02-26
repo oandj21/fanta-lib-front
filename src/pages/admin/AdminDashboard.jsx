@@ -44,9 +44,10 @@ import {
 } from "../../store/store";
 import NotificationCenter from "../../components/NotificationCenter";
 import DownloadMenu from "../../components/DownloadMenu";
+// Replace the existing imports with these
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import "../../css/AdminDashboard.css";
 
 // Helper to get status color based on status text (same as AdminOrders)
@@ -356,139 +357,142 @@ export default function AdminDashboard() {
   };
 
   const exportToPDF = () => {
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.getWidth();
-    
-    // Title
-    doc.setFontSize(20);
-    doc.setTextColor(92, 2, 2);
-    doc.text('Tableau de bord - Fantasia', pageWidth / 2, 20, { align: 'center' });
-    
-    doc.setFontSize(10);
-    doc.setTextColor(100, 100, 100);
-    doc.text(`Généré le ${new Date().toLocaleDateString('fr-FR')}`, pageWidth / 2, 28, { align: 'center' });
+  // Create new PDF document
+  const doc = new jsPDF();
+  const pageWidth = doc.internal.pageSize.getWidth();
+  
+  // Title
+  doc.setFontSize(20);
+  doc.setTextColor(92, 2, 2);
+  doc.text('Tableau de bord - Fantasia', pageWidth / 2, 20, { align: 'center' });
+  
+  doc.setFontSize(10);
+  doc.setTextColor(100, 100, 100);
+  doc.text(`Généré le ${new Date().toLocaleDateString('fr-FR')}`, pageWidth / 2, 28, { align: 'center' });
 
-    // Financial Overview
-    doc.setFontSize(14);
-    doc.setTextColor(92, 2, 2);
-    doc.text('Aperçu Financier', 14, 40);
-    
-    const financialData = [
-      ['Métrique', 'Valeur (MAD)'],
-      ['Total dépenses', `${(stats?.total_expenses || 0).toLocaleString()} DH`],
-      ['Profit total', `${commandesStats.totalProfit.toLocaleString()} DH`],
-      ['Total des ventes', `${commandesStats.totalSales.toLocaleString()} DH`],
-      ['Revenu net', `${(commandesStats.totalProfit - Number(stats?.total_expenses || 0)).toLocaleString()} DH`]
-    ];
+  // Financial Overview
+  doc.setFontSize(14);
+  doc.setTextColor(92, 2, 2);
+  doc.text('Aperçu Financier', 14, 40);
+  
+  const financialData = [
+    ['Métrique', 'Valeur (MAD)'],
+    ['Total dépenses', `${(stats?.total_expenses || 0).toLocaleString()} DH`],
+    ['Profit total', `${commandesStats.totalProfit.toLocaleString()} DH`],
+    ['Total des ventes', `${commandesStats.totalSales.toLocaleString()} DH`],
+    ['Revenu net', `${(commandesStats.totalProfit - Number(stats?.total_expenses || 0)).toLocaleString()} DH`]
+  ];
 
-    doc.autoTable({
-      startY: 45,
-      head: [financialData[0]],
-      body: financialData.slice(1),
-      theme: 'striped',
-      headStyles: { fillColor: [92, 2, 2], textColor: [255, 255, 255] },
-      styles: { fontSize: 10 }
-    });
+  // Use autoTable correctly
+  autoTable(doc, {
+    startY: 45,
+    head: [financialData[0]],
+    body: financialData.slice(1),
+    theme: 'striped',
+    headStyles: { fillColor: [92, 2, 2], textColor: [255, 255, 255] },
+    styles: { fontSize: 10 }
+  });
 
-    // Orders Statistics
-    doc.addPage();
-    doc.setFontSize(14);
-    doc.setTextColor(92, 2, 2);
-    doc.text('Statistiques des Commandes', 14, 20);
+  // Orders Statistics
+  doc.addPage();
+  doc.setFontSize(14);
+  doc.setTextColor(92, 2, 2);
+  doc.text('Statistiques des Commandes', 14, 20);
 
-    const statusData = [
-      ['Statut', 'Nombre'],
-      ['Total Commandes', commandesStats.total],
-      ['Nouveaux', commandesStats.new_parcel],
-      ['Confirmés', commandesStats.parcel_confirmed],
-      ['Ramassés', commandesStats.picked_up],
-      ['Distribution', commandesStats.distribution],
-      ['En cours', commandesStats.in_progress],
-      ['Expédiés', commandesStats.sent],
-      ['Livrés', commandesStats.delivered],
-      ['Retournés', commandesStats.returned],
-      ['Annulés', commandesStats.cancelled],
-      ['En attente', commandesStats.waiting_pickup],
-      ['Reçus', commandesStats.received],
-      ['Refusés', commandesStats.refuse],
-      ['Pas de réponse', commandesStats.noanswer],
-      ['Injoignables', commandesStats.unreachable],
-      ['Hors zone', commandesStats.hors_zone],
-      ['Reportés', commandesStats.postponed],
-      ['Programmés', commandesStats.programmer],
-      ['2ème tentative', commandesStats.deux],
-      ['3ème tentative', commandesStats.trois],
-      ['En voyage', commandesStats.envg],
-      ['Retour Amana', commandesStats.return_by_amana],
-      ['Envoyé Amana', commandesStats.sent_by_amana]
-    ];
+  const statusData = [
+    ['Statut', 'Nombre'],
+    ['Total Commandes', commandesStats.total],
+    ['Nouveaux', commandesStats.new_parcel],
+    ['Confirmés', commandesStats.parcel_confirmed],
+    ['Ramassés', commandesStats.picked_up],
+    ['Distribution', commandesStats.distribution],
+    ['En cours', commandesStats.in_progress],
+    ['Expédiés', commandesStats.sent],
+    ['Livrés', commandesStats.delivered],
+    ['Retournés', commandesStats.returned],
+    ['Annulés', commandesStats.cancelled],
+    ['En attente', commandesStats.waiting_pickup],
+    ['Reçus', commandesStats.received],
+    ['Refusés', commandesStats.refuse],
+    ['Pas de réponse', commandesStats.noanswer],
+    ['Injoignables', commandesStats.unreachable],
+    ['Hors zone', commandesStats.hors_zone],
+    ['Reportés', commandesStats.postponed],
+    ['Programmés', commandesStats.programmer],
+    ['2ème tentative', commandesStats.deux],
+    ['3ème tentative', commandesStats.trois],
+    ['En voyage', commandesStats.envg],
+    ['Retour Amana', commandesStats.return_by_amana],
+    ['Envoyé Amana', commandesStats.sent_by_amana]
+  ];
 
-    doc.autoTable({
-      startY: 25,
-      head: [statusData[0]],
-      body: statusData.slice(1),
-      theme: 'striped',
-      headStyles: { fillColor: [92, 2, 2], textColor: [255, 255, 255] },
-      styles: { fontSize: 9 }
-    });
+  autoTable(doc, {
+    startY: 25,
+    head: [statusData[0]],
+    body: statusData.slice(1),
+    theme: 'striped',
+    headStyles: { fillColor: [92, 2, 2], textColor: [255, 255, 255] },
+    styles: { fontSize: 9 }
+  });
 
-    // Monthly Evolution
-    doc.addPage();
-    doc.setFontSize(14);
-    doc.setTextColor(92, 2, 2);
-    doc.text('Évolution Mensuelle', 14, 20);
+  // Monthly Evolution
+  doc.addPage();
+  doc.setFontSize(14);
+  doc.setTextColor(92, 2, 2);
+  doc.text('Évolution Mensuelle', 14, 20);
 
-    const monthlyTableData = [
-      ['Mois', 'Dépenses', 'Profit', 'Ventes'],
-      ...monthlyData.map(m => [
-        m.month,
-        `${m.depenses.toLocaleString()} DH`,
-        `${m.profit.toLocaleString()} DH`,
-        `${m.ventes.toLocaleString()} DH`
-      ])
-    ];
+  const monthlyTableData = [
+    ['Mois', 'Dépenses', 'Profit', 'Ventes'],
+    ...monthlyData.map(m => [
+      m.month,
+      `${m.depenses.toLocaleString()} DH`,
+      `${m.profit.toLocaleString()} DH`,
+      `${m.ventes.toLocaleString()} DH`
+    ])
+  ];
 
-    doc.autoTable({
-      startY: 25,
-      head: [monthlyTableData[0]],
-      body: monthlyTableData.slice(1),
-      theme: 'striped',
-      headStyles: { fillColor: [92, 2, 2], textColor: [255, 255, 255] },
-      styles: { fontSize: 10 }
-    });
+  autoTable(doc, {
+    startY: 25,
+    head: [monthlyTableData[0]],
+    body: monthlyTableData.slice(1),
+    theme: 'striped',
+    headStyles: { fillColor: [92, 2, 2], textColor: [255, 255, 255] },
+    styles: { fontSize: 10 }
+  });
 
-    // Recent Orders
-    doc.addPage();
-    doc.setFontSize(14);
-    doc.setTextColor(92, 2, 2);
-    doc.text('Commandes Récentes', 14, 20);
+  // Recent Orders
+  doc.addPage();
+  doc.setFontSize(14);
+  doc.setTextColor(92, 2, 2);
+  doc.text('Commandes Récentes', 14, 20);
 
-    const recentOrdersData = [
-      ['Client', 'Code', 'Date', 'Total', 'Statut'],
-      ...recentOrders.map(order => {
-        const tracking = getTrackingStatus(order.parcel_code);
-        const deliveryStatus = tracking?.deliveryStatus || order.statut;
-        return [
-          order.parcel_receiver || 'Client',
-          order.parcel_code || `#${order.id}`,
-          new Date(order.date || order.created_at).toLocaleDateString('fr-FR'),
-          `${(order.parcel_price || 0).toLocaleString()} DH`,
-          statusLabels[deliveryStatus] || deliveryStatus
-        ];
-      })
-    ];
+  const recentOrdersData = [
+    ['Client', 'Code', 'Date', 'Total', 'Statut'],
+    ...recentOrders.map(order => {
+      const tracking = getTrackingStatus(order.parcel_code);
+      const deliveryStatus = tracking?.deliveryStatus || order.statut;
+      return [
+        order.parcel_receiver || 'Client',
+        order.parcel_code || `#${order.id}`,
+        new Date(order.date || order.created_at).toLocaleDateString('fr-FR'),
+        `${(order.parcel_price || 0).toLocaleString()} DH`,
+        statusLabels[deliveryStatus] || deliveryStatus
+      ];
+    })
+  ];
 
-    doc.autoTable({
-      startY: 25,
-      head: [recentOrdersData[0]],
-      body: recentOrdersData.slice(1),
-      theme: 'striped',
-      headStyles: { fillColor: [92, 2, 2], textColor: [255, 255, 255] },
-      styles: { fontSize: 9 }
-    });
+  autoTable(doc, {
+    startY: 25,
+    head: [recentOrdersData[0]],
+    body: recentOrdersData.slice(1),
+    theme: 'striped',
+    headStyles: { fillColor: [92, 2, 2], textColor: [255, 255, 255] },
+    styles: { fontSize: 9 }
+  });
 
-    doc.save(`dashboard_export_${new Date().toISOString().split('T')[0]}.pdf`);
-  };
+  // Save the PDF
+  doc.save(`dashboard_export_${new Date().toISOString().split('T')[0]}.pdf`);
+};
 
   useEffect(() => {
     // Fetch all dashboard data

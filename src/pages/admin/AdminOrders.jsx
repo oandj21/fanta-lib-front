@@ -71,13 +71,7 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
           }
         }
       );
-      const copyTrackingLink = (parcelCode) => {
-  const link = `${window.location.origin}/track/${parcelCode}`;
-  navigator.clipboard.writeText(link).then(() => {
-    // You can show a toast notification here
-    alert("Lien de suivi copié !");
-  });
-};
+
       
       let citiesData = [];
       
@@ -932,7 +926,13 @@ export default function AdminOrders() {
     livres: [],
     date: new Date().toISOString().split('T')[0]
   });
-
+      const copyTrackingLink = (parcelCode) => {
+  const link = `${window.location.origin}/track/${parcelCode}`;
+  navigator.clipboard.writeText(link).then(() => {
+    // You can show a toast notification here
+    alert("Lien de suivi copié !");
+  });
+};
   useEffect(() => {
     dispatch(fetchCommandes());
   }, [dispatch]);

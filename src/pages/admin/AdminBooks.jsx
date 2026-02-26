@@ -199,20 +199,14 @@ export default function AdminBooks() {
       return true;
     });
     
-    setSelectedImages(prev => [...prev, ...validFiles]);
+    setSelectedImages(validFiles);
     
     // Create preview URLs
-    const newPreviews = validFiles.map(file => URL.createObjectURL(file));
-    setImagePreviews(prev => [...prev, ...newPreviews]);
-  };
-
-  const handleDeletePreviewImage = (index) => {
-    // Revoke the object URL to free memory
-    URL.revokeObjectURL(imagePreviews[index]);
+    const previews = validFiles.map(file => URL.createObjectURL(file));
     
-    // Remove from previews and selected images
-    setImagePreviews(prev => prev.filter((_, i) => i !== index));
-    setSelectedImages(prev => prev.filter((_, i) => i !== index));
+    // Clean up previous previews
+    imagePreviews.forEach(url => URL.revokeObjectURL(url));
+    setImagePreviews(previews);
   };
 
   const handleDeleteImage = (imagePath) => {
@@ -872,16 +866,8 @@ export default function AdminBooks() {
                     <p className="section-label">Nouvelles images :</p>
                     <div className="image-grid">
                       {imagePreviews.map((preview, index) => (
-                        <div key={index} className="image-item">
+                        <div key={index} className="image-item preview">
                           <img src={preview} alt={`Preview ${index + 1}`} />
-                          <button 
-                            type="button"
-                            onClick={() => handleDeletePreviewImage(index)}
-                            className="btn-icon delete-image"
-                            title="Supprimer cette image"
-                          >
-                            <X size={14} />
-                          </button>
                         </div>
                       ))}
                     </div>

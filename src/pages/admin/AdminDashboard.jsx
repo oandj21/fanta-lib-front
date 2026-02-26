@@ -26,7 +26,9 @@ import {
   Copy,
   Eye,
   Info,
-  Filter
+  Filter,
+  Bell,
+  Download
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell } from "recharts";
 import axios from "axios";
@@ -40,6 +42,11 @@ import {
   selectCommandes,
   selectDepenses
 } from "../../store/store";
+import NotificationCenter from "../../components/NotificationCenter";
+import DownloadMenu from "../../components/DownloadMenu";
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import "../../css/AdminDashboard.css";
 
 // Helper to get status color based on status text (same as AdminOrders)
@@ -173,6 +180,315 @@ export default function AdminDashboard() {
   const [loadingTracking, setLoadingTracking] = useState({});
   const [showFilters, setShowFilters] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
+  
+  // Notification state
+  const [notifications, setNotifications] = useState([]);
+
+  // Load notifications from localStorage on mount
+  useEffect(() => {
+    const savedNotifications = localStorage.getItem('dashboard_notifications');
+    if (savedNotifications) {
+      try {
+        setNotifications(JSON.parse(savedNotifications));
+      } catch (e) {
+        console.error('Error loading notifications:', e);
+      }
+    }
+  }, []);
+
+  // Save notifications to localStorage
+  useEffect(() => {
+    localStorage.setItem('dashboard_notifications', JSON.stringify(notifications));
+  }, [notifications]);
+
+  // Listen for CRUD events
+  useEffect(() => {
+    const handleCrudEvent = (event) => {
+      const { type, action, item, user } = event.detail;
+      
+      let message = '';
+      let details = '';
+      
+      switch(action) {
+        case 'create':
+          message = `Nouveau ${type} créé`;
+          details = item.name || item.title || item.parcel_receiver || `ID: ${item.id}`;
+          break;
+        case 'update':
+          message = `${type} modifié`;
+          details = item.name || item.title || item.parcel_receiver || `ID: ${item.id}`;
+          break;
+        case 'delete':
+          message = `${type} supprimé`;
+          details = item.name || item.title || item.parcel_receiver || `ID: ${item.id}`;
+          break;
+        case 'status_change':
+          message = `Statut de ${type} changé`;
+          details = `${item.old_status} → ${item.new_status}`;
+          break;
+        default:
+          return;
+      }
+
+      const newNotification = {
+        id: Date.now() + Math.random(),
+        type,
+        action,
+        message,
+        details,
+        timestamp: new Date().toISOString(),
+        read: false,
+        user: user || 'Système'
+      };
+
+      setNotifications(prev => [newNotification, ...prev].slice(0, 50)); // Keep last 50
+    };
+
+    window.addEventListener('crud-event', handleCrudEvent);
+    return () => window.removeEventListener('crud-event', handleCrudEvent);
+  }, []);
+
+  // Notification handlers
+  const handleMarkAsRead = (id) => {
+    setNotifications(prev => 
+      prev.map(n => n.id === id ? { ...n, read: true } : n)
+    );
+  };
+
+  const handleMarkAllAsRead = () => {
+    setNotifications(prev => 
+      prev.map(n => ({ ...n, read: true }))
+    );
+  };
+
+  const handleClearAll = () => {
+    setNotifications([]);
+  };
+
+  const handleDeleteNotification = (id) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
+  };
+
+  // Export handlers
+  const handleDownload = (format) => {
+    if (format === 'excel') {
+      exportToExcel();
+    } else if (format === 'pdf') {
+      exportToPDF();
+    }
+  };
+
+  const exportToExcel = () => {
+    // Prepare data for Excel
+    const financialData = [
+      ['Aperçu Financier'],
+      ['Métrique', 'Valeur (MAD)'],
+      ['Total dépenses', stats?.total_expenses || 0],
+      ['Profit total', commandesStats.totalProfit],
+      ['Total des ventes', commandesStats.totalSales],
+      ['Revenu net', commandesStats.totalProfit - Number(stats?.total_expenses || 0)],
+      [],
+      ['Statistiques des Commandes'],
+      ['Statut', 'Nombre'],
+      ['Total Commandes', commandesStats.total],
+      ['Nouveaux', commandesStats.new_parcel],
+      ['Confirmés', commandesStats.parcel_confirmed],
+      ['Ramassés', commandesStats.picked_up],
+      ['Distribution', commandesStats.distribution],
+      ['En cours', commandesStats.in_progress],
+      ['Expédiés', commandesStats.sent],
+      ['Livrés', commandesStats.delivered],
+      ['Retournés', commandesStats.returned],
+      ['Annulés', commandesStats.cancelled],
+      ['En attente', commandesStats.waiting_pickup],
+      ['Reçus', commandesStats.received],
+      ['Refusés', commandesStats.refuse],
+      ['Pas de réponse', commandesStats.noanswer],
+      ['Injoignables', commandesStats.unreachable],
+      ['Hors zone', commandesStats.hors_zone],
+      ['Reportés', commandesStats.postponed],
+      ['Programmés', commandesStats.programmer],
+      ['2ème tentative', commandesStats.deux],
+      ['3ème tentative', commandesStats.trois],
+      ['En voyage', commandesStats.envg],
+      ['Retour Amana', commandesStats.return_by_amana],
+      ['Envoyé Amana', commandesStats.sent_by_amana],
+      [],
+      ['Évolution Mensuelle'],
+      ['Mois', 'Dépenses', 'Profit', 'Ventes']
+    ];
+
+    // Add monthly data
+    monthlyData.forEach(m => {
+      financialData.push([m.month, m.depenses, m.profit, m.ventes]);
+    });
+
+    // Add recent orders
+    financialData.push([], ['Commandes Récentes']);
+    financialData.push(['Client', 'Code', 'Date', 'Total', 'Statut']);
+    
+    recentOrders.forEach(order => {
+      const tracking = getTrackingStatus(order.parcel_code);
+      const deliveryStatus = tracking?.deliveryStatus || order.statut;
+      financialData.push([
+        order.parcel_receiver || 'Client',
+        order.parcel_code || `#${order.id}`,
+        new Date(order.date || order.created_at).toLocaleDateString('fr-FR'),
+        order.parcel_price || 0,
+        statusLabels[deliveryStatus] || deliveryStatus
+      ]);
+    });
+
+    // Create worksheet
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(financialData);
+    
+    // Style the worksheet
+    ws['!cols'] = [
+      { wch: 20 }, // First column width
+      { wch: 15 }, // Second column width
+      { wch: 15 }, // Third column width
+      { wch: 15 }  // Fourth column width
+    ];
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Dashboard');
+    XLSX.writeFile(wb, `dashboard_export_${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    
+    // Title
+    doc.setFontSize(20);
+    doc.setTextColor(92, 2, 2);
+    doc.text('Tableau de bord - Fantasia', pageWidth / 2, 20, { align: 'center' });
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Généré le ${new Date().toLocaleDateString('fr-FR')}`, pageWidth / 2, 28, { align: 'center' });
+
+    // Financial Overview
+    doc.setFontSize(14);
+    doc.setTextColor(92, 2, 2);
+    doc.text('Aperçu Financier', 14, 40);
+    
+    const financialData = [
+      ['Métrique', 'Valeur (MAD)'],
+      ['Total dépenses', `${(stats?.total_expenses || 0).toLocaleString()} DH`],
+      ['Profit total', `${commandesStats.totalProfit.toLocaleString()} DH`],
+      ['Total des ventes', `${commandesStats.totalSales.toLocaleString()} DH`],
+      ['Revenu net', `${(commandesStats.totalProfit - Number(stats?.total_expenses || 0)).toLocaleString()} DH`]
+    ];
+
+    doc.autoTable({
+      startY: 45,
+      head: [financialData[0]],
+      body: financialData.slice(1),
+      theme: 'striped',
+      headStyles: { fillColor: [92, 2, 2], textColor: [255, 255, 255] },
+      styles: { fontSize: 10 }
+    });
+
+    // Orders Statistics
+    doc.addPage();
+    doc.setFontSize(14);
+    doc.setTextColor(92, 2, 2);
+    doc.text('Statistiques des Commandes', 14, 20);
+
+    const statusData = [
+      ['Statut', 'Nombre'],
+      ['Total Commandes', commandesStats.total],
+      ['Nouveaux', commandesStats.new_parcel],
+      ['Confirmés', commandesStats.parcel_confirmed],
+      ['Ramassés', commandesStats.picked_up],
+      ['Distribution', commandesStats.distribution],
+      ['En cours', commandesStats.in_progress],
+      ['Expédiés', commandesStats.sent],
+      ['Livrés', commandesStats.delivered],
+      ['Retournés', commandesStats.returned],
+      ['Annulés', commandesStats.cancelled],
+      ['En attente', commandesStats.waiting_pickup],
+      ['Reçus', commandesStats.received],
+      ['Refusés', commandesStats.refuse],
+      ['Pas de réponse', commandesStats.noanswer],
+      ['Injoignables', commandesStats.unreachable],
+      ['Hors zone', commandesStats.hors_zone],
+      ['Reportés', commandesStats.postponed],
+      ['Programmés', commandesStats.programmer],
+      ['2ème tentative', commandesStats.deux],
+      ['3ème tentative', commandesStats.trois],
+      ['En voyage', commandesStats.envg],
+      ['Retour Amana', commandesStats.return_by_amana],
+      ['Envoyé Amana', commandesStats.sent_by_amana]
+    ];
+
+    doc.autoTable({
+      startY: 25,
+      head: [statusData[0]],
+      body: statusData.slice(1),
+      theme: 'striped',
+      headStyles: { fillColor: [92, 2, 2], textColor: [255, 255, 255] },
+      styles: { fontSize: 9 }
+    });
+
+    // Monthly Evolution
+    doc.addPage();
+    doc.setFontSize(14);
+    doc.setTextColor(92, 2, 2);
+    doc.text('Évolution Mensuelle', 14, 20);
+
+    const monthlyTableData = [
+      ['Mois', 'Dépenses', 'Profit', 'Ventes'],
+      ...monthlyData.map(m => [
+        m.month,
+        `${m.depenses.toLocaleString()} DH`,
+        `${m.profit.toLocaleString()} DH`,
+        `${m.ventes.toLocaleString()} DH`
+      ])
+    ];
+
+    doc.autoTable({
+      startY: 25,
+      head: [monthlyTableData[0]],
+      body: monthlyTableData.slice(1),
+      theme: 'striped',
+      headStyles: { fillColor: [92, 2, 2], textColor: [255, 255, 255] },
+      styles: { fontSize: 10 }
+    });
+
+    // Recent Orders
+    doc.addPage();
+    doc.setFontSize(14);
+    doc.setTextColor(92, 2, 2);
+    doc.text('Commandes Récentes', 14, 20);
+
+    const recentOrdersData = [
+      ['Client', 'Code', 'Date', 'Total', 'Statut'],
+      ...recentOrders.map(order => {
+        const tracking = getTrackingStatus(order.parcel_code);
+        const deliveryStatus = tracking?.deliveryStatus || order.statut;
+        return [
+          order.parcel_receiver || 'Client',
+          order.parcel_code || `#${order.id}`,
+          new Date(order.date || order.created_at).toLocaleDateString('fr-FR'),
+          `${(order.parcel_price || 0).toLocaleString()} DH`,
+          statusLabels[deliveryStatus] || deliveryStatus
+        ];
+      })
+    ];
+
+    doc.autoTable({
+      startY: 25,
+      head: [recentOrdersData[0]],
+      body: recentOrdersData.slice(1),
+      theme: 'striped',
+      headStyles: { fillColor: [92, 2, 2], textColor: [255, 255, 255] },
+      styles: { fontSize: 9 }
+    });
+
+    doc.save(`dashboard_export_${new Date().toISOString().split('T')[0]}.pdf`);
+  };
 
   useEffect(() => {
     // Fetch all dashboard data
@@ -715,6 +1031,19 @@ export default function AdminDashboard() {
             <Clock size={14} />
             {commandesStats.total} commandes • {formatCurrency(commandesStats.totalSales)} DH de ventes
           </span>
+          
+          {/* Notification Bell */}
+          <NotificationCenter 
+            notifications={notifications}
+            onMarkAsRead={handleMarkAsRead}
+            onMarkAllAsRead={handleMarkAllAsRead}
+            onClearAll={handleClearAll}
+            onDeleteNotification={handleDeleteNotification}
+          />
+
+          {/* Download Button */}
+          <DownloadMenu onDownload={handleDownload} />
+
           <button 
             className={`filters-toggle ${showFilters ? 'active' : ''}`}
             onClick={() => setShowFilters(!showFilters)}

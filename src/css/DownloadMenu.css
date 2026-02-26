@@ -1,0 +1,259 @@
+.download-menu-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.download-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid #e0d6cc;
+  border-radius: 2rem;
+  background: white;
+  font-family: 'Lato', sans-serif;
+  font-size: 0.875rem;
+  color: #6b5752;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.download-button:hover {
+  border-color: #5c0202;
+  color: #5c0202;
+  background: #f8f4f0;
+}
+
+.download-button.active {
+  background: #5c0202;
+  color: white;
+  border-color: #5c0202;
+}
+
+.download-button.active svg {
+  color: white;
+}
+
+.download-menu {
+  position: absolute;
+  top: 50px;
+  right: 0;
+  width: 280px;
+  background: white;
+  border-radius: 1rem;
+  border: 1px solid #e0d6cc;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.download-menu-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  border-bottom: 1px solid #e0d6cc;
+}
+
+.download-menu-header h4 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #5c0202;
+  margin: 0;
+}
+
+.close-menu {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 0.375rem;
+  border: 1px solid #e0d6cc;
+  background: transparent;
+  color: #6b5752;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.close-menu:hover {
+  background: #f8f4f0;
+  border-color: #5c0202;
+  color: #5c0202;
+}
+
+.download-options {
+  padding: 0.5rem;
+}
+
+.download-option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  border: none;
+  background: transparent;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.download-option:hover {
+  background: #f8f4f0;
+}
+
+.download-option svg {
+  color: #5c0202;
+  flex-shrink: 0;
+}
+
+.option-text {
+  flex: 1;
+}
+
+.option-title {
+  display: block;
+  font-family: 'Lato', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #5c0202;
+  margin-bottom: 0.125rem;
+}
+
+.option-desc {
+  display: block;
+  font-family: 'Lato', sans-serif;
+  font-size: 0.7rem;
+  color: #8b7a75;
+}
+
+/* Confirm Dialog */
+.download-confirm {
+  position: absolute;
+  top: 50px;
+  right: 0;
+  width: 280px;
+  background: white;
+  border-radius: 1rem;
+  border: 1px solid #e0d6cc;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  animation: slideDown 0.2s ease;
+}
+
+.confirm-content {
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.confirm-content h4 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #5c0202;
+  margin: 0 0 0.5rem 0;
+}
+
+.confirm-content p {
+  font-family: 'Lato', sans-serif;
+  font-size: 0.875rem;
+  color: #6b5752;
+  margin: 0 0 1rem 0;
+  line-height: 1.4;
+}
+
+.confirm-content strong {
+  color: #5c0202;
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.confirm-actions button {
+  flex: 1;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  font-family: 'Lato', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-cancel {
+  background: white;
+  border: 1px solid #e0d6cc;
+  color: #6b5752;
+}
+
+.btn-cancel:hover {
+  background: #f8f4f0;
+  border-color: #8b7a75;
+}
+
+.btn-confirm {
+  background: #5c0202;
+  border: 1px solid #5c0202;
+  color: white;
+}
+
+.btn-confirm:hover {
+  background: #7a0202;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .download-button span {
+    display: none;
+  }
+  
+  .download-button {
+    padding: 0.5rem;
+    border-radius: 50%;
+  }
+  
+  .download-menu,
+  .download-confirm {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-width: none;
+    border-radius: 1rem 1rem 0 0;
+    animation: slideUp 0.3s ease;
+  }
+  
+  @keyframes slideUp {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .download-menu,
+  .download-confirm {
+    border-radius: 1rem 1rem 0 0;
+  }
+}

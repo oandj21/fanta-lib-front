@@ -147,7 +147,8 @@
   position: absolute;
   top: 50px;
   right: 0;
-  width: 280px;
+  width: 400px;
+  max-width: 400px;
   background: white;
   border-radius: 1rem;
   border: 1px solid #e0d6cc;

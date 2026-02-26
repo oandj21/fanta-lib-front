@@ -1644,14 +1644,6 @@ export default function AdminOrders() {
                             <Pencil size={16} />
                           </button>
                           <button
-                            onClick={() => markDelivered(order.id)}
-                            className="btn-icon success"
-                            title="Marquer livrée"
-                            disabled={order.statut === "PARCEL_DELIVERED" || order.statut === "delivered"}
-                          >
-                            <Check size={16} />
-                          </button>
-                          <button
                             onClick={() => handleDelete(order.id)}
                             className="btn-icon delete"
                             title="Supprimer"

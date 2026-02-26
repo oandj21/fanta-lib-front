@@ -26,8 +26,10 @@ export default function AdminBooks() {
   
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [selectedImages, setSelectedImages] = useState([]);
-  const [imagePreviews, setImagePreviews] = useState([]);
+  
+  // Modified: Track selected files with unique IDs for removal
+  const [selectedFiles, setSelectedFiles] = useState([]); // Array of { id, file, preview }
+  
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [categoryInput, setCategoryInput] = useState("");
   const [showCategorySuggestions, setShowCategorySuggestions] = useState(false);
@@ -156,8 +158,7 @@ export default function AdminBooks() {
       status: "available",
     });
     setCategoryInput("");
-    setSelectedImages([]);
-    setImagePreviews([]);
+    setSelectedFiles([]); // Reset selected files
     setShowModal(true);
   };
 
@@ -173,8 +174,7 @@ export default function AdminBooks() {
       status: book.status || "available",
     });
     setCategoryInput(book.categorie || "");
-    setSelectedImages([]);
-    setImagePreviews([]);
+    setSelectedFiles([]); // Reset selected files
     setShowModal(true);
   };
 
@@ -187,6 +187,7 @@ export default function AdminBooks() {
     setShowDeleteConfirm(null);
   };
 
+  // Modified: Handle file selection with unique IDs
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
     
@@ -198,15 +199,45 @@ export default function AdminBooks() {
       }
       return true;
     });
+
+    // Create new file objects with unique IDs and preview URLs
+    const newFiles = validFiles.map(file => ({
+      id: Date.now() + Math.random().toString(36).substr(2, 9), // Unique ID
+      file: file,
+      preview: URL.createObjectURL(file)
+    }));
+
+    // Add new files to existing ones
+    setSelectedFiles(prev => [...prev, ...newFiles]);
+
+    // Clear the input value to allow selecting the same file again
+    e.target.value = '';
+  };
+
+  // New: Remove selected file by ID
+  const removeSelectedFile = (fileId) => {
+    setSelectedFiles(prev => {
+      const fileToRemove = prev.find(f => f.id === fileId);
+      
+      // Revoke the object URL to free memory
+      if (fileToRemove && fileToRemove.preview) {
+        URL.revokeObjectURL(fileToRemove.preview);
+      }
+      
+      return prev.filter(f => f.id !== fileId);
+    });
+  };
+
+  // New: Remove all selected files
+  const removeAllSelectedFiles = () => {
+    // Revoke all object URLs
+    selectedFiles.forEach(file => {
+      if (file.preview) {
+        URL.revokeObjectURL(file.preview);
+      }
+    });
     
-    setSelectedImages(validFiles);
-    
-    // Create preview URLs
-    const previews = validFiles.map(file => URL.createObjectURL(file));
-    
-    // Clean up previous previews
-    imagePreviews.forEach(url => URL.revokeObjectURL(url));
-    setImagePreviews(previews);
+    setSelectedFiles([]);
   };
 
   const handleDeleteImage = (imagePath) => {
@@ -228,6 +259,7 @@ export default function AdminBooks() {
     setShowCategorySuggestions(false);
   };
 
+  // Modified: Use selectedFiles for form data
   const handleSave = async () => {
     const formData = new FormData();
     
@@ -238,10 +270,10 @@ export default function AdminBooks() {
       }
     });
 
-    // Append images if selected
-    if (selectedImages.length > 0) {
-      selectedImages.forEach(image => {
-        formData.append('images[]', image);
+    // Append images from selectedFiles
+    if (selectedFiles.length > 0) {
+      selectedFiles.forEach(fileObj => {
+        formData.append('images[]', fileObj.file);
       });
     }
 
@@ -254,10 +286,11 @@ export default function AdminBooks() {
       }
       
       setShowModal(false);
-      dispatch(fetchLivres());
       
       // Clean up previews
-      imagePreviews.forEach(url => URL.revokeObjectURL(url));
+      removeAllSelectedFiles();
+      
+      dispatch(fetchLivres());
     } catch (error) {
       console.error('Error saving book:', error);
       alert('Une erreur est survenue lors de l\'enregistrement');
@@ -293,12 +326,17 @@ export default function AdminBooks() {
     return [];
   };
 
-  // Cleanup preview URLs on unmount
+  // Cleanup preview URLs on component unmount
   useEffect(() => {
     return () => {
-      imagePreviews.forEach(url => URL.revokeObjectURL(url));
+      // Clean up any remaining object URLs
+      selectedFiles.forEach(file => {
+        if (file.preview) {
+          URL.revokeObjectURL(file.preview);
+        }
+      });
     };
-  }, [imagePreviews]);
+  }, [selectedFiles]);
 
   // Close suggestions when clicking outside
   useEffect(() => {
@@ -687,7 +725,7 @@ export default function AdminBooks() {
               <h3>{editing ? "Modifier le livre" : "Ajouter un livre"}</h3>
               <button onClick={() => {
                 setShowModal(false);
-                imagePreviews.forEach(url => URL.revokeObjectURL(url));
+                removeAllSelectedFiles(); // Clean up previews
               }} className="modal-close">
                 <X size={20} />
               </button>
@@ -860,14 +898,33 @@ export default function AdminBooks() {
                   </label>
                 </div>
 
-                {/* Image previews */}
-                {imagePreviews.length > 0 && (
+                {/* Selected images preview with remove option */}
+                {selectedFiles.length > 0 && (
                   <div className="image-previews">
-                    <p className="section-label">Nouvelles images :</p>
+                    <div className="previews-header">
+                      <p className="section-label">Nouvelles images sélectionnées ({selectedFiles.length}) :</p>
+                      <button 
+                        type="button" 
+                        onClick={removeAllSelectedFiles}
+                        className="btn-remove-all"
+                        title="Tout supprimer"
+                      >
+                        <Trash2 size={14} />
+                        Tout supprimer
+                      </button>
+                    </div>
                     <div className="image-grid">
-                      {imagePreviews.map((preview, index) => (
-                        <div key={index} className="image-item preview">
-                          <img src={preview} alt={`Preview ${index + 1}`} />
+                      {selectedFiles.map((fileObj) => (
+                        <div key={fileObj.id} className="image-item preview">
+                          <img src={fileObj.preview} alt={`Preview`} />
+                          <button 
+                            type="button"
+                            onClick={() => removeSelectedFile(fileObj.id)}
+                            className="btn-icon delete-image"
+                            title="Supprimer cette image"
+                          >
+                            <X size={14} />
+                          </button>
                         </div>
                       ))}
                     </div>
@@ -878,7 +935,7 @@ export default function AdminBooks() {
               <div className="modal-actions">
                 <button type="button" onClick={() => {
                   setShowModal(false);
-                  imagePreviews.forEach(url => URL.revokeObjectURL(url));
+                  removeAllSelectedFiles(); // Clean up previews
                 }} className="btn-secondary">
                   Annuler
                 </button>

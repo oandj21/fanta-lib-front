@@ -137,6 +137,59 @@ const getStatusDescription = (status) => {
   return descriptions[status] || status;
 };
 
+// ==============================================
+// PROMPT COMPONENTS
+// ==============================================
+
+// Delete Confirmation Modal
+const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm, orderCode }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="delete-confirm-modal" onClick={e => e.stopPropagation()}>
+        <div className="delete-confirm-icon">
+          <AlertCircle size={48} />
+        </div>
+        
+        <h3 className="delete-confirm-title">Confirmer la suppression</h3>
+        
+        <p className="delete-confirm-message">
+          Êtes-vous sûr de vouloir supprimer la commande <strong>#{orderCode}</strong> ?
+        </p>
+        
+        <p className="delete-confirm-warning">
+          Cette action est irréversible et supprimera définitivement la commande.
+        </p>
+        
+        <div className="delete-confirm-actions">
+          <button onClick={onClose} className="btn-secondary">
+            Annuler
+          </button>
+          <button onClick={onConfirm} className="btn-delete">
+            <Trash2 size={16} />
+            Supprimer
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Copy Success Notification
+const CopyNotification = ({ message, isVisible, onClose }) => {
+  if (!isVisible) return null;
+
+  return (
+    <div className="copy-notification" onClick={onClose}>
+      <div className="copy-notification-content">
+        <CheckCircle size={20} className="copy-notification-icon" />
+        <span className="copy-notification-message">{message}</span>
+      </div>
+    </div>
+  );
+};
+
 // City Autocomplete Component
 const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
   const [query, setQuery] = useState(value || "");
@@ -1197,9 +1250,16 @@ export default function AdminOrders() {
   const [updateError, setUpdateError] = useState(null);
   const [addError, setAddError] = useState(null);
   
-  // Tracking info for all orders
+  // Prompt states
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState(null);
+  const [showCopyNotification, setShowCopyNotification] = useState(false);
+  const [copyMessage, setCopyMessage] = useState("");
+  
+  // Tracking info for all orders - OPTIMIZED: Single object to store all tracking data
   const [trackingInfoMap, setTrackingInfoMap] = useState({});
-  const [loadingTracking, setLoadingTracking] = useState({});
+  const [loadingTracking, setLoadingTracking] = useState(false); // Single loading state for all tracking
+  const [trackingFetched, setTrackingFetched] = useState(false); // Flag to prevent multiple fetches
   
   // Track if total was manually edited
   const [totalManuallyEdited, setTotalManuallyEdited] = useState(false);
@@ -1239,7 +1299,9 @@ export default function AdminOrders() {
   const copyTrackingLink = (parcelCode) => {
     const link = `${window.location.origin}/track/${parcelCode}`;
     navigator.clipboard.writeText(link).then(() => {
-      alert("Lien de suivi copié !");
+      setCopyMessage(`Lien de suivi copié : ${link}`);
+      setShowCopyNotification(true);
+      setTimeout(() => setShowCopyNotification(false), 3000);
     });
   };
 
@@ -1247,18 +1309,24 @@ export default function AdminOrders() {
     dispatch(fetchCommandes());
   }, [dispatch]);
 
-  // 🔔 WEBHOOK AUTO-SYNC: Enhanced tracking fetch with webhook auto-update
+  // OPTIMIZED: Fetch all tracking info in a single batch when orders are loaded
   useEffect(() => {
-    if (orderList.length > 0) {
-      const fetchAllTrackingInfo = async () => {
+    const fetchAllTrackingInfo = async () => {
+      // Don't fetch if already fetched or no orders
+      if (trackingFetched || orderList.length === 0) return;
+      
+      setLoadingTracking(true);
+      
+      try {
         const token = localStorage.getItem("token");
+        const trackingPromises = [];
+        const validOrders = [];
         
+        // Collect all valid parcel codes
         for (const order of orderList) {
-          if (order.parcel_code && !trackingInfoMap[order.parcel_code]) {
-            setLoadingTracking(prev => ({ ...prev, [order.parcel_code]: true }));
-            
-            try {
-              const response = await axios.get(
+          if (order.parcel_code) {
+            trackingPromises.push(
+              axios.get(
                 `https://fanta-lib-back-production.up.railway.app/api/welivexpress/trackparcel`,
                 {
                   params: { parcel_code: order.parcel_code },
@@ -1267,81 +1335,109 @@ export default function AdminOrders() {
                     'Accept': 'application/json'
                   }
                 }
-              );
-
-              if (response.data.success && response.data.data) {
-                const trackingData = response.data.data;
-                setTrackingInfoMap(prev => ({
-                  ...prev,
-                  [order.parcel_code]: trackingData
-                }));
-                
-                // 🔔 WEBHOOK AUTO-SYNC: Check if status changed (including secondary)
-                if (trackingData.parcel?.delivery_status) {
-                  const deliveryStatus = trackingData.parcel.delivery_status;
-                  const secondaryStatus = trackingData.parcel.status_second;
-                  const paymentStatus = trackingData.parcel.payment_status;
-                  const paymentStatusText = trackingData.parcel.payment_status_text;
-                  const displayStatus = secondaryStatus 
-                    ? `${deliveryStatus} - ${secondaryStatus}`
-                    : deliveryStatus;
-                  
-                  // 🔔 WEBHOOK AUTO-SYNC: If status changed, trigger webhook-style update
-                  if (order.statut !== deliveryStatus || 
-                      order.statut_second !== secondaryStatus || 
-                      order.payment_status !== paymentStatus) {
-                    
-                    console.log(`🔔 Status changed for ${order.parcel_code}:`, {
-                      old: { 
-                        statut: order.statut, 
-                        secondary: order.statut_second,
-                        payment: order.payment_status 
-                      },
-                      new: { 
-                        statut: deliveryStatus, 
-                        secondary: secondaryStatus,
-                        payment: paymentStatus 
-                      }
-                    });
-                    
-                    // 🔔 WEBHOOK AUTO-SYNC: Create and send webhook payload
-                    const payload = {
-                      parcel: {
-                        code: order.parcel_code,
-                        status: deliveryStatus,
-                        status_second: secondaryStatus,
-                        payment_status: paymentStatus,
-                        payment_status_text: paymentStatusText
-                      }
-                    };
-                    
-                    // Send to webhook endpoint
-                    await sendWebhookUpdate(payload);
-                    
-                    // Also update Redux directly for immediate UI update
-                    dispatch(updateCommande({ 
-                      id: order.id, 
-                      statut: deliveryStatus,
-                      statut_second: secondaryStatus,
-                      statut_display: displayStatus,
-                      payment_status: paymentStatus,
-                      payment_status_text: paymentStatusText
-                    }));
-                  }
-                }
-              }
-            } catch (err) {
-              console.error(`Error fetching tracking for ${order.parcel_code}:`, err);
-            } finally {
-              setLoadingTracking(prev => ({ ...prev, [order.parcel_code]: false }));
-            }
+              ).catch(err => {
+                console.error(`Error fetching tracking for ${order.parcel_code}:`, err);
+                return null; // Return null for failed requests
+              })
+            );
+            validOrders.push(order);
           }
         }
-      };
 
-      fetchAllTrackingInfo();
-    }
-  }, [orderList, dispatch, trackingInfoMap]);
+        if (trackingPromises.length === 0) {
+          setTrackingFetched(true);
+          setLoadingTracking(false);
+          return;
+        }
+
+        // Execute all promises in parallel
+        const results = await Promise.all(trackingPromises);
+        
+        const newTrackingMap = {};
+        const updatesToDispatch = [];
+
+        // Process results
+        results.forEach((response, index) => {
+          const order = validOrders[index];
+          if (response && response.data && response.data.success && response.data.data) {
+            const trackingData = response.data.data;
+            newTrackingMap[order.parcel_code] = trackingData;
+            
+            // Check for status changes
+            if (trackingData.parcel?.delivery_status) {
+              const deliveryStatus = trackingData.parcel.delivery_status;
+              const secondaryStatus = trackingData.parcel.status_second;
+              const paymentStatus = trackingData.parcel.payment_status;
+              const paymentStatusText = trackingData.parcel.payment_status_text;
+              const displayStatus = secondaryStatus 
+                ? `${deliveryStatus} - ${secondaryStatus}`
+                : deliveryStatus;
+              
+              // If status changed, prepare update
+              if (order.statut !== deliveryStatus || 
+                  order.statut_second !== secondaryStatus || 
+                  order.payment_status !== paymentStatus) {
+                
+                console.log(`🔔 Status changed for ${order.parcel_code}:`, {
+                  old: { 
+                    statut: order.statut, 
+                    secondary: order.statut_second,
+                    payment: order.payment_status 
+                  },
+                  new: { 
+                    statut: deliveryStatus, 
+                    secondary: secondaryStatus,
+                    payment: paymentStatus 
+                  }
+                });
+                
+                // Send webhook update
+                const payload = {
+                  parcel: {
+                    code: order.parcel_code,
+                    status: deliveryStatus,
+                    status_second: secondaryStatus,
+                    payment_status: paymentStatus,
+                    payment_status_text: paymentStatusText
+                  }
+                };
+                
+                sendWebhookUpdate(payload);
+                
+                // Prepare Redux update
+                updatesToDispatch.push(
+                  dispatch(updateCommande({ 
+                    id: order.id, 
+                    statut: deliveryStatus,
+                    statut_second: secondaryStatus,
+                    statut_display: displayStatus,
+                    payment_status: paymentStatus,
+                    payment_status_text: paymentStatusText
+                  }))
+                );
+              }
+            }
+          }
+        });
+
+        // Update tracking map
+        setTrackingInfoMap(newTrackingMap);
+        
+        // Execute all Redux updates in parallel
+        if (updatesToDispatch.length > 0) {
+          await Promise.all(updatesToDispatch);
+        }
+        
+      } catch (error) {
+        console.error("Error fetching tracking info:", error);
+      } finally {
+        setLoadingTracking(false);
+        setTrackingFetched(true);
+      }
+    };
+
+    fetchAllTrackingInfo();
+  }, [orderList, dispatch, trackingFetched]);
 
   // Reset to first page when filters change
   useEffect(() => {
@@ -1412,9 +1508,16 @@ export default function AdminOrders() {
     totalManuallyEdited
   ]);
 
-  const handleDelete = (id) => {
-    if (window.confirm("Êtes-vous sûr de vouloir supprimer cette commande ?")) {
-      dispatch(deleteCommande(id));
+  const handleDelete = (order) => {
+    setOrderToDelete(order);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = () => {
+    if (orderToDelete) {
+      dispatch(deleteCommande(orderToDelete.id));
+      setShowDeleteConfirm(false);
+      setOrderToDelete(null);
     }
   };
 
@@ -1819,6 +1922,24 @@ export default function AdminOrders() {
 
   return (
     <div className="admin-orders">
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal 
+        isOpen={showDeleteConfirm}
+        onClose={() => {
+          setShowDeleteConfirm(false);
+          setOrderToDelete(null);
+        }}
+        onConfirm={confirmDelete}
+        orderCode={orderToDelete?.parcel_code}
+      />
+
+      {/* Copy Notification */}
+      <CopyNotification 
+        message={copyMessage}
+        isVisible={showCopyNotification}
+        onClose={() => setShowCopyNotification(false)}
+      />
+
       <div className="orders-header">
         <div>
           <h2>Gestion des Commandes</h2>
@@ -1977,7 +2098,7 @@ export default function AdminOrders() {
                       <td className="order-qty">{order.parcel_prd_qty || 0}</td>
                       <td>{order.parcel_city || "-"}</td>
                       <td>
-                        {loadingTracking[order.parcel_code] ? (
+                        {loadingTracking ? (
                           <RefreshCw size={14} className="spinning" />
                         ) : (
                           <div className="status-container">
@@ -2008,7 +2129,7 @@ export default function AdminOrders() {
                         )}
                       </td>
                       <td>
-                        {loadingTracking[order.parcel_code] ? (
+                        {loadingTracking ? (
                           <RefreshCw size={14} className="spinning" />
                         ) : (
                           <span 
@@ -2042,7 +2163,7 @@ export default function AdminOrders() {
                             <Pencil size={16} />
                           </button>
                           <button
-                            onClick={() => handleDelete(order.id)}
+                            onClick={() => handleDelete(order)}
                             className="btn-icon delete"
                             title="Supprimer"
                           >

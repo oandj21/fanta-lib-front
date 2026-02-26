@@ -40,6 +40,8 @@ export default function AdminBooks() {
     description: "",
     status: "available",
   });
+  // State for tracking which preview image to delete
+  const [previewToDelete, setPreviewToDelete] = useState(null);
 
   useEffect(() => {
     dispatch(fetchLivres());
@@ -158,6 +160,7 @@ export default function AdminBooks() {
     setCategoryInput("");
     setSelectedImages([]);
     setImagePreviews([]);
+    setPreviewToDelete(null);
     setShowModal(true);
   };
 
@@ -175,6 +178,7 @@ export default function AdminBooks() {
     setCategoryInput(book.categorie || "");
     setSelectedImages([]);
     setImagePreviews([]);
+    setPreviewToDelete(null);
     setShowModal(true);
   };
 
@@ -199,19 +203,36 @@ export default function AdminBooks() {
       return true;
     });
     
-    setSelectedImages(validFiles);
+    setSelectedImages(prev => [...prev, ...validFiles]);
     
     // Create preview URLs
-    const previews = validFiles.map(file => URL.createObjectURL(file));
+    const newPreviews = validFiles.map(file => URL.createObjectURL(file));
+    setImagePreviews(prev => [...prev, ...newPreviews]);
+  };
+
+  const handleDeletePreviewImage = (index) => {
+    // Revoke the object URL to free memory
+    URL.revokeObjectURL(imagePreviews[index]);
     
-    // Clean up previous previews
-    imagePreviews.forEach(url => URL.revokeObjectURL(url));
-    setImagePreviews(previews);
+    // Remove from previews and selected images
+    setImagePreviews(prev => prev.filter((_, i) => i !== index));
+    setSelectedImages(prev => prev.filter((_, i) => i !== index));
+    setPreviewToDelete(null);
   };
 
   const handleDeleteImage = (imagePath) => {
     if (window.confirm("Voulez-vous vraiment supprimer cette image ?")) {
-      dispatch(deleteLivreImage({ id: editing.id, image: imagePath }));
+      dispatch(deleteLivreImage({ id: editing.id, image: imagePath })).then(() => {
+        // Update the local state to reflect the deletion
+        setEditing(prev => {
+          if (!prev) return prev;
+          const updatedImages = getImagesArray(prev.images).filter(img => img !== imagePath);
+          return {
+            ...prev,
+            images: updatedImages
+          };
+        });
+      });
     }
   };
 
@@ -816,7 +837,7 @@ export default function AdminBooks() {
                         const existingImages = getImagesArray(editing.images);
                         return existingImages.length > 0 ? (
                           existingImages.map((image, index) => (
-                            <div key={index} className="image-item">
+                            <div key={index} className="image-item existing">
                               <img 
                                 src={`https://fanta-lib-back-production.up.railway.app/storage/${image}`} 
                                 alt={`${editing.titre} - ${index + 1}`}
@@ -860,7 +881,7 @@ export default function AdminBooks() {
                   </label>
                 </div>
 
-                {/* Image previews */}
+                {/* Image previews with delete option */}
                 {imagePreviews.length > 0 && (
                   <div className="image-previews">
                     <p className="section-label">Nouvelles images :</p>
@@ -868,6 +889,14 @@ export default function AdminBooks() {
                       {imagePreviews.map((preview, index) => (
                         <div key={index} className="image-item preview">
                           <img src={preview} alt={`Preview ${index + 1}`} />
+                          <button 
+                            type="button"
+                            onClick={() => handleDeletePreviewImage(index)}
+                            className="btn-icon delete-image"
+                            title="Supprimer cette image"
+                          >
+                            <X size={14} />
+                          </button>
                         </div>
                       ))}
                     </div>

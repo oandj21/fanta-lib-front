@@ -42,6 +42,7 @@ import {
   selectCommandes,
   selectDepenses
 } from "../../store/store";
+import NotificationCenter from "../../components/NotificationCenter";
 import DownloadMenu from "../../components/DownloadMenu";
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
@@ -1191,7 +1192,13 @@ export default function AdminDashboard() {
           </span>
           
           {/* Notification Bell */}
-      
+          <NotificationCenter 
+            notifications={notifications}
+            onMarkAsRead={handleMarkAsRead}
+            onMarkAllAsRead={handleMarkAllAsRead}
+            onClearAll={handleClearAll}
+            onDeleteNotification={handleDeleteNotification}
+          />
 
           {/* Download Button */}
           <DownloadMenu onDownload={handleDownload} />

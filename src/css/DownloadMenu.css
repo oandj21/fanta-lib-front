@@ -1,3 +1,7 @@
+/* Ensure proper box sizing */
+* {
+  box-sizing: border-box;
+}
 .download-menu-wrapper {
   position: relative;
   display: inline-block;

@@ -222,7 +222,7 @@ export default function AdminDashboard() {
 
       fetchAllTrackingInfo();
     }
-  }, [commandes, trackingInfoMap]);
+  }, [commandes]);
 
   // Helper to get tracking info for an order
   const getTrackingStatus = (parcelCode) => {
@@ -360,7 +360,7 @@ export default function AdminDashboard() {
         stats.revenue += Number(commande.total || 0);
       }
 
-      // Calculate total sales from all commandes
+      // Calculate total sales from all commandes (using parcel_price)
       const parcelPrice = Number(commande.parcel_price || commande.total || 0);
       stats.totalSales += parcelPrice;
 
@@ -374,6 +374,65 @@ export default function AdminDashboard() {
 
     return stats;
   }, [commandes, trackingInfoMap]);
+
+  // Calculate monthly data directly from commandes
+  const monthlyData = useMemo(() => {
+    const last6Months = [];
+    const now = new Date();
+    
+    // Create array of last 6 months
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthName = date.toLocaleDateString('fr-FR', { month: 'short' });
+      const year = date.getFullYear();
+      const month = date.getMonth() + 1;
+      
+      last6Months.push({
+        month: monthName,
+        monthNumber: month,
+        year: year,
+        key: `${year}-${month}`
+      });
+    }
+
+    // Calculate totals for each month
+    return last6Months.map(monthData => {
+      // Filter commandes for this month
+      const monthCommandes = commandes.filter(commande => {
+        const commandeDate = new Date(commande.date || commande.created_at);
+        return commandeDate.getMonth() + 1 === monthData.monthNumber && 
+               commandeDate.getFullYear() === monthData.year;
+      });
+
+      // Filter depenses for this month
+      const monthDepenses = depenses.filter(depense => {
+        const depenseDate = new Date(depense.date || depense.created_at);
+        return depenseDate.getMonth() + 1 === monthData.monthNumber && 
+               depenseDate.getFullYear() === monthData.year;
+      });
+
+      // Calculate totals
+      const totalDepenses = monthDepenses.reduce((sum, d) => sum + (Number(d.montant) || 0), 0);
+      
+      // For sales and profit, only count delivered orders
+      const deliveredCommandes = monthCommandes.filter(c => {
+        const status = (c.statut || '').toUpperCase();
+        return status === 'DELIVERED' || status.includes('LIVRÉ');
+      });
+      
+      const totalSales = deliveredCommandes.reduce((sum, c) => sum + (Number(c.parcel_price || c.total || 0)), 0);
+      const totalProfit = deliveredCommandes.reduce((sum, c) => sum + (Number(c.profit || 0)), 0);
+
+      return {
+        month: monthData.month,
+        monthNumber: monthData.monthNumber,
+        year: monthData.year,
+        depenses: totalDepenses,      // First bar - Dépenses
+        profit: totalProfit,           // Second bar - Profit
+        ventes: totalSales             // Third bar - Ventes
+      };
+    });
+  }, [commandes, depenses]);
 
   // Get recent orders (last 5)
   const recentOrders = useMemo(() => {
@@ -564,13 +623,8 @@ export default function AdminDashboard() {
     }
   ].filter(card => card.value > 0); // Only show statuses that have orders
 
-  // Format month data for chart display - Reordered: dépenses, profit, ventes
-  const chartData = monthlyStats?.map(item => ({
-    month: item.month || item.mois || `Mois ${item.month_number}`,
-    depenses: Number(item.expenses || item.depenses || 0),  // First bar
-    profit: Number(item.profit || 0),                       // Second bar
-    ventes: Number(item.sales || item.ventes || 0)          // Third bar
-  })) || [];
+  // Format month data for chart display - Use calculated monthlyData instead of monthlyStats
+  const chartData = monthlyData;
 
   // Get unique statuses from orders for filter dropdown
   const uniqueStatuses = useMemo(() => {

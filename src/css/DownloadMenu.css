@@ -39,6 +39,7 @@
   top: 50px;
   right: 0;
   width: 400px;
+  max-width: 800px;
   background: white;
   border-radius: 1rem;
   border: 1px solid #e0d6cc;
@@ -156,6 +157,7 @@
 }
 
 .confirm-content {
+  max-width: 400px;
   padding: 1.5rem;
   text-align: center;
 }

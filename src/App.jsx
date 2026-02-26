@@ -20,6 +20,7 @@ import AdminFinance from "./pages/admin/AdminFinance";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminMessages from "./pages/admin/AdminMessages";
 import AdminProfile from "./pages/admin/AdminProfile";
+import PublicTrackOrder from "./pages/PublicTrackOrder";
 
 const App = () => (
   <Provider store={store}>
@@ -33,7 +34,7 @@ const App = () => (
             <Route path="/livres" element={<Livres />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/cart" element={<Cart />} /> {/* Add cart route */}
-            
+<Route path="/track/:parcelCode" element={<PublicTrackOrder />} />
             {/* Login route */}
             <Route path="/login" element={<AdminLogin />} />
             

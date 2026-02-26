@@ -206,7 +206,37 @@ export default function AdminBooks() {
     setImagePreviews(previews);
   };
 
-  // Improved image deletion handler
+  // Handle removing a new image preview (not yet uploaded)
+  const handleRemoveNewImage = (index) => {
+    // Revoke the object URL to avoid memory leaks
+    URL.revokeObjectURL(imagePreviews[index]);
+    
+    // Remove the image from selectedImages and previews
+    const updatedSelectedImages = [...selectedImages];
+    updatedSelectedImages.splice(index, 1);
+    setSelectedImages(updatedSelectedImages);
+    
+    const updatedPreviews = [...imagePreviews];
+    updatedPreviews.splice(index, 1);
+    setImagePreviews(updatedPreviews);
+  };
+
+  // Handle removing an existing image (mark for deletion)
+  const handleRemoveExistingImage = (imagePath) => {
+    // Add to removed images list
+    setRemovedImages(prev => [...prev, imagePath]);
+    
+    // Update the editing book's images in the UI (remove from display)
+    if (editing && editing.images) {
+      const updatedImages = editing.images.filter(img => img !== imagePath);
+      setEditing({
+        ...editing,
+        images: updatedImages
+      });
+    }
+  };
+
+  // Handle permanent deletion from server (with confirmation)
   const handleDeleteImage = (imagePath) => {
     if (!editing || !editing.id) return;
     
@@ -231,12 +261,6 @@ export default function AdminBooks() {
       // Update the editing book with the new images from response
       if (result && result.data) {
         setEditing(result.data);
-        
-        // Also update the form if needed
-        setForm(prev => ({
-          ...prev,
-          // Keep other form values
-        }));
       }
       
       // Refresh the book list
@@ -251,21 +275,6 @@ export default function AdminBooks() {
     } finally {
       setDeletingImage(false);
       setShowImageDeleteConfirm(null);
-    }
-  };
-
-  // Handle removing image from the list (mark for deletion)
-  const handleRemoveImageFromList = (imagePath) => {
-    // Add to removed images list
-    setRemovedImages(prev => [...prev, imagePath]);
-    
-    // Update the editing book's images in the UI
-    if (editing && editing.images) {
-      const updatedImages = editing.images.filter(img => img !== imagePath);
-      setEditing({
-        ...editing,
-        images: updatedImages
-      });
     }
   };
 
@@ -931,15 +940,30 @@ export default function AdminBooks() {
                                   e.target.src = 'https://dummyimage.com/40x52/cccccc/000000&text=No+Image';
                                 }}
                               />
-                              <button 
-                                type="button"
-                                onClick={() => handleDeleteImage(image)}
-                                className="btn-icon delete-image"
-                                title="Supprimer cette image"
-                                disabled={deletingImage}
-                              >
-                                <X size={14} />
-                              </button>
+                              {/* Two buttons for existing images */}
+                              <div className="image-actions">
+                                {/* Remove button (mark for deletion) */}
+                                <button 
+                                  type="button"
+                                  onClick={() => handleRemoveExistingImage(image)}
+                                  className="btn-icon remove-image-btn"
+                                  title="Retirer de la liste (sera supprimé lors de l'enregistrement)"
+                                  disabled={deletingImage}
+                                >
+                                  <X size={14} />
+                                </button>
+                                
+                                {/* Permanent delete button (instant deletion) */}
+                                <button 
+                                  type="button"
+                                  onClick={() => handleDeleteImage(image)}
+                                  className="btn-icon permanent-delete-btn"
+                                  title="Supprimer définitivement (immédiat)"
+                                  disabled={deletingImage}
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
                             </div>
                           ))
                         ) : (
@@ -952,7 +976,7 @@ export default function AdminBooks() {
 
                 {/* Show removed images count when editing */}
                 {editing && removedImages.length > 0 && (
-                  <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded">
+                  <div className="removed-images-notification">
                     <p className="text-sm text-red-700 font-medium">
                       <span className="font-bold">{removedImages.length}</span> image{removedImages.length !== 1 ? 's' : ''} marquée{removedImages.length !== 1 ? 's' : ''} pour suppression
                     </p>
@@ -980,7 +1004,7 @@ export default function AdminBooks() {
                   </label>
                 </div>
 
-                {/* Image previews */}
+                {/* Image previews for new images */}
                 {imagePreviews.length > 0 && (
                   <div className="image-previews">
                     <p className="section-label">Nouvelles images :</p>
@@ -988,6 +1012,15 @@ export default function AdminBooks() {
                       {imagePreviews.map((preview, index) => (
                         <div key={index} className="image-item preview">
                           <img src={preview} alt={`Preview ${index + 1}`} />
+                          {/* Remove button for new images */}
+                          <button 
+                            type="button"
+                            onClick={() => handleRemoveNewImage(index)}
+                            className="btn-icon remove-image-btn"
+                            title="Retirer cette image"
+                          >
+                            <X size={14} />
+                          </button>
                         </div>
                       ))}
                     </div>

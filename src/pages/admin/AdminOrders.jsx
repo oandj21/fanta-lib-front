@@ -71,6 +71,13 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
           }
         }
       );
+      const copyTrackingLink = (parcelCode) => {
+  const link = `${window.location.origin}/track/${parcelCode}`;
+  navigator.clipboard.writeText(link).then(() => {
+    // You can show a toast notification here
+    alert("Lien de suivi copié !");
+  });
+};
       
       let citiesData = [];
       
@@ -1649,6 +1656,13 @@ export default function AdminOrders() {
                             title="Supprimer"
                           >
                             <Trash2 size={16} />
+                          </button>
+                          <button
+                            onClick={() => copyTrackingLink(order.parcel_code)}
+                            className="btn-icon copy"
+                            title="Copier le lien de suivi"
+                          >
+                            <Copy size={16} />
                           </button>
                         </div>
                       </td>

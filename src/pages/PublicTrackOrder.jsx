@@ -1,4 +1,3 @@
-// client/src/pages/PublicTrackOrder.jsx
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import axios from "axios";
@@ -70,52 +69,55 @@ export default function PublicTrackOrder() {
 
   useEffect(() => {
     if (parcelCode) {
-      fetchOrderAndTracking();
+      fetchTrackingInfo();
     }
   }, [parcelCode]);
 
-  const fetchOrderAndTracking = async () => {
-    setLoading(true);
+  const fetchTrackingInfo = async (isRefreshing = false) => {
+    if (isRefreshing) setRefreshing(true);
+    else setLoading(true);
+    
     setError(null);
     
     try {
-      // First, fetch the order details from public endpoint
-      const orderResponse = await axios.get(`${API_URL}/commandes/public/${parcelCode}`);
-      
-      if (orderResponse.data) {
-        setOrder(orderResponse.data);
-        
-        // Then fetch tracking info
-        await fetchTrackingInfo(parcelCode);
-      }
-    } catch (err) {
-      console.error("Error fetching order:", err);
-      setError("Commande introuvable. Vérifiez le code de suivi.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchTrackingInfo = async (code, isRefreshing = false) => {
-    if (isRefreshing) setRefreshing(true);
-    
-    try {
-      // Public tracking endpoint doesn't need authentication
-      const response = await axios.get(`${API_URL}/public/track/${code}`);
+      // Use the public tracking endpoint
+      const response = await axios.get(`${API_URL}/public/track/${parcelCode}`);
       
       if (response.data.success && response.data.data) {
         setTrackingInfo(response.data.data);
+        
+        // Create order object from tracking data
+        if (response.data.data.parcel) {
+          const trackingOrder = {
+            parcel_code: response.data.data.parcel.code || parcelCode,
+            parcel_receiver: response.data.data.parcel.receiver || 'Client',
+            parcel_phone: response.data.data.parcel.phone || '',
+            parcel_prd_qty: response.data.data.parcel.product?.quantity || 1,
+            parcel_city: response.data.data.parcel.city?.name || response.data.data.parcel.city || '',
+            parcel_address: response.data.data.parcel.address || '',
+            parcel_price: response.data.data.parcel.price || 0,
+            parcel_open: response.data.data.parcel.can_open || 0,
+            parcel_note: response.data.data.parcel.note || '',
+            statut: response.data.data.parcel.delivery_status || 'En attente',
+            date: response.data.data.parcel.created_date || new Date().toISOString().split('T')[0],
+            livres: [] // You might want to fetch this separately if needed
+          };
+          setOrder(trackingOrder);
+        }
+      } else {
+        setError("Commande introuvable. Vérifiez le code de suivi.");
       }
     } catch (err) {
       console.error("Error fetching tracking:", err);
-      // Don't show error for tracking, just use order data
+      setError("Commande introuvable. Vérifiez le code de suivi.");
     } finally {
-      if (isRefreshing) setRefreshing(false);
+      setLoading(false);
+      setRefreshing(false);
     }
   };
 
   const handleRefresh = () => {
-    fetchTrackingInfo(parcelCode, true);
+    fetchTrackingInfo(true);
   };
 
   const copyTrackingLink = () => {
@@ -328,32 +330,6 @@ export default function PublicTrackOrder() {
             </div>
           </div>
         </div>
-
-        {/* Books section */}
-        {order.livres && order.livres.length > 0 && (
-          <div className="books-section">
-            <div className="books-header">
-              <BookOpen size={18} />
-              <h3>Livres commandés</h3>
-            </div>
-            
-            <div className="books-grid">
-              {order.livres.map((book, index) => (
-                <div key={index} className="book-card">
-                  <h4 className="book-title">{book.titre}</h4>
-                  <p className="book-author">{book.auteur || 'Auteur non spécifié'}</p>
-                  <div className="book-details">
-                    <span className="book-quantity">Qté: {book.quantity}</span>
-                    <span className="book-price">{book.price} MAD</span>
-                  </div>
-                  <div className="book-total">
-                    Total: {book.quantity * book.price} MAD
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Note */}
         {order.parcel_note && (

@@ -659,6 +659,7 @@
 
 /* Ensure all content stays within viewport */
 * {
+  max-width: 100%;
   box-sizing: border-box;
 }
 

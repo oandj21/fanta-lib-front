@@ -28,8 +28,7 @@ import {
   Info,
   Filter,
   Bell,
-  Download,
-  PlusCircle
+  Download
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell } from "recharts";
 import axios from "axios";
@@ -184,8 +183,10 @@ export default function AdminDashboard() {
   
   // Notification state
   const [notifications, setNotifications] = useState([]);
+  const [lastOrderCount, setLastOrderCount] = useState(0);
+  const [notifiedOrderIds, setNotifiedOrderIds] = useState(new Set());
 
-  // Load notifications from localStorage on mount
+  // Load notifications and notified IDs from localStorage on mount
   useEffect(() => {
     const savedNotifications = localStorage.getItem('dashboard_notifications');
     if (savedNotifications) {
@@ -194,40 +195,15 @@ export default function AdminDashboard() {
       } catch (e) {
         console.error('Error loading notifications:', e);
       }
-    } else {
-      // Add some demo notifications if none exist
-      const demoNotifications = [
-        {
-          id: Date.now() - 3600000,
-          type: 'commande',
-          action: 'create',
-          message: '📦 Nouvelle commande en cours',
-          details: 'Ahmed Benani • NEW_PARCEL',
-          timestamp: new Date(Date.now() - 3600000).toISOString(),
-          read: false,
-          user: 'Système',
-          status: 'NEW_PARCEL',
-          orderId: 123,
-          orderCode: 'PC-2024-001',
-          clientName: 'Ahmed Benani'
-        },
-        {
-          id: Date.now() - 7200000,
-          type: 'commande',
-          action: 'status_change',
-          message: '🔄 Statut de commande modifié',
-          details: 'Fatima Zahra: CONFIRMED → DISTRIBUTION',
-          timestamp: new Date(Date.now() - 7200000).toISOString(),
-          read: true,
-          user: 'Admin',
-          status: 'DISTRIBUTION',
-          orderId: 124,
-          orderCode: 'PC-2024-002',
-          clientName: 'Fatima Zahra'
-        }
-      ];
-      setNotifications(demoNotifications);
-      localStorage.setItem('dashboard_notifications', JSON.stringify(demoNotifications));
+    }
+    
+    const savedNotifiedIds = localStorage.getItem('notified_order_ids');
+    if (savedNotifiedIds) {
+      try {
+        setNotifiedOrderIds(new Set(JSON.parse(savedNotifiedIds)));
+      } catch (e) {
+        console.error('Error loading notified IDs:', e);
+      }
     }
   }, []);
 
@@ -236,39 +212,94 @@ export default function AdminDashboard() {
     localStorage.setItem('dashboard_notifications', JSON.stringify(notifications));
   }, [notifications]);
 
-  // TEST FUNCTION: Add a test notification manually
-  const addTestNotification = () => {
-    const testStatuses = ['NEW_PARCEL', 'DISTRIBUTION', 'IN_PROGRESS', 'PICKED_UP'];
-    const randomStatus = testStatuses[Math.floor(Math.random() * testStatuses.length)];
-    const randomNames = ['Mohammed Ali', 'Sara El Amrani', 'Youssef Benjelloun', 'Khadija El Fassi'];
-    const randomName = randomNames[Math.floor(Math.random() * randomNames.length)];
-    
-    const testNotification = {
-      id: Date.now() + Math.random(),
-      type: 'commande',
-      action: 'create',
-      message: `📦 Nouvelle commande en cours`,
-      details: `${randomName} • ${randomStatus}`,
-      timestamp: new Date().toISOString(),
-      read: false,
-      user: 'Test Système',
-      status: randomStatus,
-      orderId: Math.floor(Math.random() * 1000),
-      orderCode: `TEST-${Math.floor(Math.random() * 1000)}`,
-      clientName: randomName
-    };
+  // Save notified IDs to localStorage
+  useEffect(() => {
+    localStorage.setItem('notified_order_ids', JSON.stringify(Array.from(notifiedOrderIds)));
+  }, [notifiedOrderIds]);
 
-    setNotifications(prev => [testNotification, ...prev].slice(0, 50));
-  };
+  // AUTO-DETECT NEW ORDERS FROM API DATA
+  // This runs whenever commandes data changes (after API fetches)
+  useEffect(() => {
+    if (commandes && commandes.length > 0) {
+      // Set initial count on first load
+      if (lastOrderCount === 0) {
+        setLastOrderCount(commandes.length);
+        return;
+      }
+      
+      // Check if we have new orders (count increased)
+      if (commandes.length > lastOrderCount) {
+        // Find which orders are new (not in our notified set)
+        const newOrders = commandes.filter(order => !notifiedOrderIds.has(order.id));
+        
+        newOrders.forEach(order => {
+          // Check if the status is "in progress" or similar
+          const status = order.statut || order.status || order.deliveryStatus || '';
+          const statusLower = status.toLowerCase();
+          
+          // Define in-progress statuses (all statuses except final states)
+          const inProgressStatuses = [
+            'in_progress', 'en cours', 'distribution', 'picked_up', 
+            'ramassé', 'sent', 'expédié', 'waiting_pickup', 'en attente',
+            'deux', '2ème', 'trois', '3ème', 'programmer', 'programmé',
+            'envg', 'en voyage', 'postponed', 'reporté', 'new_parcel', 
+            'nouveau', 'parcel_confirmed', 'confirmé', 'picked_up', 'ramassé',
+            'refuse', 'refusé', 'noanswer', 'pas de réponse', 'unreachable',
+            'injoignable', 'hors_zone', 'hors zone'
+          ];
+          
+          // Final states that should NOT trigger notifications
+          const finalStatuses = [
+            'delivered', 'livré', 'returned', 'retourné', 
+            'cancelled', 'annulé', 'return_by_amana', 'retour amana'
+          ];
+          
+          // Check if current status is in progress (not a final state)
+          const isInProgress = inProgressStatuses.some(s => statusLower.includes(s)) && 
+                              !finalStatuses.some(s => statusLower.includes(s));
+          
+          if (isInProgress) {
+            // Create notification for new order
+            const newNotification = {
+              id: Date.now() + Math.random(),
+              type: 'commande',
+              action: 'create',
+              message: `📦 Nouvelle commande en cours`,
+              details: `${order.parcel_receiver || 'Client'} • ${statusLabels[status] || status}`,
+              timestamp: new Date().toISOString(),
+              read: false,
+              user: 'Système',
+              status: status,
+              orderId: order.id,
+              orderCode: order.parcel_code,
+              clientName: order.parcel_receiver
+            };
 
-  // Listen for CRUD events
+            setNotifications(prev => [newNotification, ...prev].slice(0, 50));
+          }
+          
+          // Mark this order as notified
+          setNotifiedOrderIds(prev => new Set([...Array.from(prev), order.id]));
+        });
+      }
+      
+      // Update the order count
+      setLastOrderCount(commandes.length);
+    }
+  }, [commandes]); // Runs whenever commandes data changes
+
+  // Listen for CRUD events (keeping your existing listener for updates)
   useEffect(() => {
     const handleCrudEvent = (event) => {
-      console.log('CRUD Event received:', event.detail);
       const { type, action, item, user } = event.detail;
       
       // Only show notifications for commandes (orders)
       if (type !== 'commande') {
+        return;
+      }
+      
+      // Skip if this is a create event (we already handle creates with auto-detection)
+      if (action === 'create') {
         return;
       }
       
@@ -306,10 +337,6 @@ export default function AdminDashboard() {
       let details = '';
       
       switch(action) {
-        case 'create':
-          message = `📦 Nouvelle commande en cours`;
-          details = `${item.parcel_receiver || 'Client'} • ${statusLabels[status] || status}`;
-          break;
         case 'update':
           message = `✏️ Commande mise à jour`;
           details = `${item.parcel_receiver || `#${item.id}`} • ${statusLabels[status] || status}`;
@@ -344,26 +371,6 @@ export default function AdminDashboard() {
     return () => window.removeEventListener('crud-event', handleCrudEvent);
   }, []);
 
-  // Function to manually dispatch a test event
-  const dispatchTestEvent = () => {
-    const testItem = {
-      id: 999,
-      parcel_receiver: 'Test Client',
-      parcel_code: 'TEST-123',
-      statut: 'NEW_PARCEL'
-    };
-    
-    const event = new CustomEvent('crud-event', {
-      detail: {
-        type: 'commande',
-        action: 'create',
-        item: testItem,
-        user: 'Test User'
-      }
-    });
-    window.dispatchEvent(event);
-  };
-
   // Notification handlers
   const handleMarkAsRead = (id) => {
     setNotifications(prev => 
@@ -379,7 +386,6 @@ export default function AdminDashboard() {
 
   const handleClearAll = () => {
     setNotifications([]);
-    localStorage.removeItem('dashboard_notifications');
   };
 
   const handleDeleteNotification = (id) => {
@@ -1166,27 +1172,6 @@ export default function AdminDashboard() {
 
           {/* Download Button */}
           <DownloadMenu onDownload={handleDownload} />
-
-          {/* TEST BUTTONS - Remove these after testing */}
-          <button 
-            onClick={addTestNotification}
-            className="filters-toggle"
-            style={{ background: '#10b981', color: 'white', borderColor: '#10b981' }}
-            title="Ajouter une notification de test"
-          >
-            <PlusCircle size={16} />
-            Test Notif
-          </button>
-
-          <button 
-            onClick={dispatchTestEvent}
-            className="filters-toggle"
-            style={{ background: '#f59e0b', color: 'white', borderColor: '#f59e0b', marginLeft: '8px' }}
-            title="Déclencher un événement test"
-          >
-            <RefreshCw size={16} />
-            Test Event
-          </button>
 
           <button 
             className={`filters-toggle ${showFilters ? 'active' : ''}`}

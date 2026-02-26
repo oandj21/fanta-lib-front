@@ -19,6 +19,7 @@ import {
   fetchLivres
 } from "../../store/store";
 import "../../css/AdminOrders.css";
+import { dispatchOrderNotification } from "../../utils/notificationUtils";
 
 // 🔔 WEBHOOK AUTO-SYNC: Webhook secret from your .env
 const WEBHOOK_SECRET = 'UQgtnYMZ/rjBsUcmJ7fm93L+ITsrvALqETNALBTQJ7E=';
@@ -1314,139 +1315,165 @@ export default function AdminOrders() {
   }, [dispatch]);
 
   // OPTIMIZED: Fetch all tracking info in a single batch when orders are loaded
-  useEffect(() => {
-    const fetchAllTrackingInfo = async () => {
-      // Don't fetch if already done or no orders or fetch in progress
-      if (initialFetchDone.current || orderList.length === 0 || fetchInProgress.current) {
+  // OPTIMIZED: Fetch all tracking info in a single batch when orders are loaded
+useEffect(() => {
+  const fetchAllTrackingInfo = async () => {
+    // Don't fetch if already done or no orders or fetch in progress
+    if (initialFetchDone.current || orderList.length === 0 || fetchInProgress.current) {
+      return;
+    }
+    
+    fetchInProgress.current = true;
+    setLoadingTracking(true);
+    
+    try {
+      const token = localStorage.getItem("token");
+      const trackingPromises = [];
+      const validOrders = [];
+      
+      // Collect all valid parcel codes
+      for (const order of orderList) {
+        if (order.parcel_code) {
+          trackingPromises.push(
+            axios.get(
+              `https://fanta-lib-back-production.up.railway.app/api/welivexpress/trackparcel`,
+              {
+                params: { parcel_code: order.parcel_code },
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Accept': 'application/json'
+                }
+              }
+            ).catch(err => {
+              console.error(`Error fetching tracking for ${order.parcel_code}:`, err);
+              return null; // Return null for failed requests
+            })
+          );
+          validOrders.push(order);
+        }
+      }
+
+      if (trackingPromises.length === 0) {
+        initialFetchDone.current = true;
+        setLoadingTracking(false);
+        fetchInProgress.current = false;
         return;
       }
+
+      // Execute all promises in parallel (SINGLE REFRESH)
+      const results = await Promise.all(trackingPromises);
       
-      fetchInProgress.current = true;
-      setLoadingTracking(true);
-      
-      try {
-        const token = localStorage.getItem("token");
-        const trackingPromises = [];
-        const validOrders = [];
-        
-        // Collect all valid parcel codes
-        for (const order of orderList) {
-          if (order.parcel_code) {
-            trackingPromises.push(
-              axios.get(
-                `https://fanta-lib-back-production.up.railway.app/api/welivexpress/trackparcel`,
-                {
-                  params: { parcel_code: order.parcel_code },
-                  headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/json'
-                  }
-                }
-              ).catch(err => {
-                console.error(`Error fetching tracking for ${order.parcel_code}:`, err);
-                return null; // Return null for failed requests
-              })
-            );
-            validOrders.push(order);
-          }
-        }
+      const newTrackingMap = {};
+      const updatesToDispatch = [];
 
-        if (trackingPromises.length === 0) {
-          initialFetchDone.current = true;
-          setLoadingTracking(false);
-          fetchInProgress.current = false;
-          return;
-        }
-
-        // Execute all promises in parallel (SINGLE REFRESH)
-        const results = await Promise.all(trackingPromises);
-        
-        const newTrackingMap = {};
-        const updatesToDispatch = [];
-
-        // Process results
-        results.forEach((response, index) => {
-          const order = validOrders[index];
-          if (response && response.data && response.data.success && response.data.data) {
-            const trackingData = response.data.data;
-            newTrackingMap[order.parcel_code] = trackingData;
+      // Process results
+      results.forEach((response, index) => {
+        const order = validOrders[index];
+        if (response && response.data && response.data.success && response.data.data) {
+          const trackingData = response.data.data;
+          newTrackingMap[order.parcel_code] = trackingData;
+          
+          // Check for status changes
+          if (trackingData.parcel?.delivery_status) {
+            const deliveryStatus = trackingData.parcel.delivery_status;
+            const secondaryStatus = trackingData.parcel.status_second;
+            const paymentStatus = trackingData.parcel.payment_status;
+            const paymentStatusText = trackingData.parcel.payment_status_text;
+            const displayStatus = secondaryStatus 
+              ? `${deliveryStatus} - ${secondaryStatus}`
+              : deliveryStatus;
             
-            // Check for status changes
-            if (trackingData.parcel?.delivery_status) {
-              const deliveryStatus = trackingData.parcel.delivery_status;
-              const secondaryStatus = trackingData.parcel.status_second;
-              const paymentStatus = trackingData.parcel.payment_status;
-              const paymentStatusText = trackingData.parcel.payment_status_text;
-              const displayStatus = secondaryStatus 
-                ? `${deliveryStatus} - ${secondaryStatus}`
-                : deliveryStatus;
+            // If status changed, prepare update
+            if (order.statut !== deliveryStatus || 
+                order.statut_second !== secondaryStatus || 
+                order.payment_status !== paymentStatus) {
               
-              // If status changed, prepare update
-              if (order.statut !== deliveryStatus || 
-                  order.statut_second !== secondaryStatus || 
-                  order.payment_status !== paymentStatus) {
-                
-                console.log(`🔔 Status changed for ${order.parcel_code}:`, {
-                  old: { 
-                    statut: order.statut, 
-                    secondary: order.statut_second,
-                    payment: order.payment_status 
-                  },
-                  new: { 
-                    statut: deliveryStatus, 
-                    secondary: secondaryStatus,
-                    payment: paymentStatus 
+              console.log(`🔔 Status changed for ${order.parcel_code}:`, {
+                old: { 
+                  statut: order.statut, 
+                  secondary: order.statut_second,
+                  payment: order.payment_status 
+                },
+                new: { 
+                  statut: deliveryStatus, 
+                  secondary: secondaryStatus,
+                  payment: paymentStatus 
+                }
+              });
+              
+              // Send webhook update
+              const payload = {
+                parcel: {
+                  code: order.parcel_code,
+                  status: deliveryStatus,
+                  status_second: secondaryStatus,
+                  payment_status: paymentStatus,
+                  payment_status_text: paymentStatusText
+                }
+              };
+              
+              sendWebhookUpdate(payload);
+              
+              // 🔔 DISPATCH NOTIFICATION FOR STATUS CHANGE FROM TRACKING
+              try {
+                const event = new CustomEvent('crud-event', {
+                  detail: {
+                    type: 'commande',
+                    action: 'status_change',
+                    item: {
+                      id: order.id,
+                      parcel_receiver: order.parcel_receiver,
+                      parcel_code: order.parcel_code,
+                      statut: deliveryStatus,
+                      statut_second: secondaryStatus,
+                      old_status: order.statut,
+                      new_status: deliveryStatus
+                    },
+                    user: JSON.parse(localStorage.getItem('utilisateur'))?.name || 'Système'
                   }
                 });
-                
-                // Send webhook update
-                const payload = {
-                  parcel: {
-                    code: order.parcel_code,
-                    status: deliveryStatus,
-                    status_second: secondaryStatus,
-                    payment_status: paymentStatus,
-                    payment_status_text: paymentStatusText
-                  }
-                };
-                
-                sendWebhookUpdate(payload);
-                
-                // Prepare Redux update
-                updatesToDispatch.push(
-                  dispatch(updateCommande({ 
-                    id: order.id, 
-                    statut: deliveryStatus,
-                    statut_second: secondaryStatus,
-                    statut_display: displayStatus,
-                    payment_status: paymentStatus,
-                    payment_status_text: paymentStatusText
-                  }))
-                );
+                window.dispatchEvent(event);
+                console.log('✅ Dispatched status change notification for:', order.parcel_code);
+              } catch (notifError) {
+                console.error('Error dispatching notification:', notifError);
               }
+              
+              // Prepare Redux update
+              updatesToDispatch.push(
+                dispatch(updateCommande({ 
+                  id: order.id, 
+                  statut: deliveryStatus,
+                  statut_second: secondaryStatus,
+                  statut_display: displayStatus,
+                  payment_status: paymentStatus,
+                  payment_status_text: paymentStatusText
+                }))
+              );
             }
           }
-        });
-
-        // Update tracking map
-        setTrackingInfoMap(newTrackingMap);
-        
-        // Execute all Redux updates in parallel
-        if (updatesToDispatch.length > 0) {
-          await Promise.all(updatesToDispatch);
         }
-        
-      } catch (error) {
-        console.error("Error fetching tracking info:", error);
-      } finally {
-        setLoadingTracking(false);
-        initialFetchDone.current = true;
-        fetchInProgress.current = false;
-      }
-    };
+      });
 
-    fetchAllTrackingInfo();
-  }, [orderList, dispatch]); // Removed trackingFetched from dependencies, using ref instead
+      // Update tracking map
+      setTrackingInfoMap(newTrackingMap);
+      
+      // Execute all Redux updates in parallel
+      if (updatesToDispatch.length > 0) {
+        await Promise.all(updatesToDispatch);
+        console.log(`✅ Updated ${updatesToDispatch.length} orders with new statuses`);
+      }
+      
+    } catch (error) {
+      console.error("Error fetching tracking info:", error);
+    } finally {
+      setLoadingTracking(false);
+      initialFetchDone.current = true;
+      fetchInProgress.current = false;
+    }
+  };
+
+  fetchAllTrackingInfo();
+}, [orderList, dispatch]); // Removed trackingFetched from dependencies, using ref instead
 
   // Reset to first page when filters change
   useEffect(() => {
@@ -1666,13 +1693,17 @@ export default function AdminOrders() {
   };
 
   const handleUpdateSubmit = async (e) => {
-    e.preventDefault();
-    if (!selectedOrder) return;
+  e.preventDefault();
+  if (!selectedOrder) return;
 
-    setUpdateLoading(true);
-    setUpdateError(null);
+  setUpdateLoading(true);
+  setUpdateError(null);
 
-    try {
+  try {
+      // Store old status before update
+      const oldStatus = selectedOrder.statut;
+      const oldSecondaryStatus = selectedOrder.statut_second;
+
       const updateData = {};
       Object.keys(formData).forEach(key => {
         if (formData[key] !== selectedOrder[key] && formData[key] !== "") {
@@ -1694,86 +1725,122 @@ export default function AdminOrders() {
         ...updateData 
       })).unwrap();
 
+      // 🔔 DISPATCH NOTIFICATION FOR UPDATED ORDER
+      const updatedOrder = result.data || result;
+      
+      // Check if status changed
+      const newStatus = updatedOrder.statut || formData.statut || selectedOrder.statut;
+      const newSecondaryStatus = updatedOrder.statut_second || formData.statut_second || selectedOrder.statut_second;
+      
+      if (oldStatus !== newStatus || oldSecondaryStatus !== newSecondaryStatus) {
+        // Status change notification
+        dispatchOrderNotification('status_change', {
+          ...updatedOrder,
+          id: selectedOrder.id,
+          parcel_receiver: updatedOrder.parcel_receiver || selectedOrder.parcel_receiver,
+          parcel_code: updatedOrder.parcel_code || selectedOrder.parcel_code,
+          statut: newStatus,
+          statut_second: newSecondaryStatus,
+          old_status: oldStatus,
+          new_status: newStatus
+        });
+      } else {
+        // Regular update notification
+        dispatchOrderNotification('update', {
+          ...updatedOrder,
+          id: selectedOrder.id,
+          parcel_receiver: updatedOrder.parcel_receiver || selectedOrder.parcel_receiver,
+          parcel_code: updatedOrder.parcel_code || selectedOrder.parcel_code,
+          statut: newStatus,
+          statut_second: newSecondaryStatus
+        });
+      }
+
       await dispatch(fetchCommandes());
       closeUpdateModal();
       
-    } catch (error) {
+  } catch (error) {
       console.error("Update failed:", error);
       setUpdateError(
         error?.message || 
         "Erreur lors de la mise à jour. Veuillez réessayer."
       );
-    } finally {
+  } finally {
       setUpdateLoading(false);
-    }
-  };
+  }
+};
 
   const handleAddSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!newOrderData.parcel_receiver || !newOrderData.parcel_city) {
-        setAddError("Veuillez remplir tous les champs obligatoires (client, ville)");
-        return;
-    }
+  e.preventDefault();
+  
+  if (!newOrderData.parcel_receiver || !newOrderData.parcel_city) {
+      setAddError("Veuillez remplir tous les champs obligatoires (client, ville)");
+      return;
+  }
 
-    if (newOrderData.livres.length === 0) {
-        setAddError("Veuillez sélectionner au moins un livre");
-        return;
-    }
+  if (newOrderData.livres.length === 0) {
+      setAddError("Veuillez sélectionner au moins un livre");
+      return;
+  }
 
-    const delivery = parseFloat(newOrderData.frais_livraison) || 0;
-    const packaging = parseFloat(newOrderData.frais_packaging) || 0;
-    const total = parseFloat(newOrderData.total) || 0;
-    const parcelPrice = total + delivery + packaging;
-    const profit = total - (delivery + packaging);
+  const delivery = parseFloat(newOrderData.frais_livraison) || 0;
+  const packaging = parseFloat(newOrderData.frais_packaging) || 0;
+  const total = parseFloat(newOrderData.total) || 0;
+  const parcelPrice = total + delivery + packaging;
+  const profit = total - (delivery + packaging);
 
-    const formattedLivres = newOrderData.livres.map(book => ({
-        id: book.id,
-        titre: book.titre,
-        auteur: book.auteur || '',
-        quantity: parseInt(book.quantity),
-        price: parseFloat(book.prix_achat),
-        total: parseFloat(book.prix_achat) * parseInt(book.quantity)
-    }));
+  const formattedLivres = newOrderData.livres.map(book => ({
+      id: book.id,
+      titre: book.titre,
+      auteur: book.auteur || '',
+      quantity: parseInt(book.quantity),
+      price: parseFloat(book.prix_achat),
+      total: parseFloat(book.prix_achat) * parseInt(book.quantity)
+  }));
 
-    const orderToCreate = {
-        parcel_code: newOrderData.parcel_code,
-        parcel_receiver: newOrderData.parcel_receiver,
-        parcel_phone: newOrderData.parcel_phone || "",
-        parcel_prd_qty: newOrderData.parcel_prd_qty,
-        parcel_city: newOrderData.parcel_city,
-        parcel_address: newOrderData.parcel_address || "",
-        parcel_price: parseFloat(parcelPrice.toFixed(2)),
-        frais_livraison: parseFloat(delivery.toFixed(2)),
-        frais_packaging: parseFloat(packaging.toFixed(2)),
-        total: parseFloat(total.toFixed(2)),
-        profit: parseFloat(profit.toFixed(2)),
-        parcel_note: newOrderData.parcel_note || "",
-        parcel_open: newOrderData.parcel_open ? 1 : 0,
-        livres: formattedLivres,
-        date: newOrderData.date
-    };
-
-    console.log("📦 Order to create:", orderToCreate);
-
-    setAddLoading(true);
-    setAddError(null);
-
-    try {
-        const result = await dispatch(createCommande(orderToCreate)).unwrap();
-        console.log("✅ Create successful:", result);
-        await dispatch(fetchCommandes());
-        closeAddModal();
-    } catch (error) {
-        console.error("❌ Create failed:", error);
-        setAddError(
-            error?.message || 
-            "Erreur lors de la création de la commande. Veuillez réessayer."
-        );
-    } finally {
-        setAddLoading(false);
-    }
+  const orderToCreate = {
+      parcel_code: newOrderData.parcel_code,
+      parcel_receiver: newOrderData.parcel_receiver,
+      parcel_phone: newOrderData.parcel_phone || "",
+      parcel_prd_qty: newOrderData.parcel_prd_qty,
+      parcel_city: newOrderData.parcel_city,
+      parcel_address: newOrderData.parcel_address || "",
+      parcel_price: parseFloat(parcelPrice.toFixed(2)),
+      frais_livraison: parseFloat(delivery.toFixed(2)),
+      frais_packaging: parseFloat(packaging.toFixed(2)),
+      total: parseFloat(total.toFixed(2)),
+      profit: parseFloat(profit.toFixed(2)),
+      parcel_note: newOrderData.parcel_note || "",
+      parcel_open: newOrderData.parcel_open ? 1 : 0,
+      livres: formattedLivres,
+      date: newOrderData.date
   };
+
+  console.log("📦 Order to create:", orderToCreate);
+
+  setAddLoading(true);
+  setAddError(null);
+
+  try {
+      const result = await dispatch(createCommande(orderToCreate)).unwrap();
+      console.log("✅ Create successful:", result);
+      
+      // 🔔 DISPATCH NOTIFICATION FOR NEW ORDER
+      const newOrder = result.data || result;
+      dispatchOrderNotification('create', newOrder);
+      
+      await dispatch(fetchCommandes());
+      closeAddModal();
+  } catch (error) {
+      console.error("❌ Create failed:", error);
+      setAddError(
+          error?.message || 
+          "Erreur lors de la création de la commande. Veuillez réessayer."
+      );
+  } finally {
+      setAddLoading(false);
+  }
+};
 
   const filteredOrders = useMemo(() => {
     return orderList.filter(order => {

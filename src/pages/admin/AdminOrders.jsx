@@ -20,6 +20,54 @@ import {
 } from "../../store/store";
 import "../../css/AdminOrders.css";
 
+// 🔔 WEBHOOK AUTO-SYNC: Webhook secret from your .env
+const WEBHOOK_SECRET = 'UQgtnYMZ/rjBsUcmJ7fm93L+ITsrvALqETNALBTQJ7E=';
+
+// 🔔 WEBHOOK AUTO-SYNC: Helper function to send webhook-style updates
+const sendWebhookUpdate = async (payload) => {
+  try {
+    const payloadString = JSON.stringify(payload);
+    const encoder = new TextEncoder();
+    
+    // Import the secret key
+    const key = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(WEBHOOK_SECRET),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    
+    // Generate signature
+    const signature = await crypto.subtle.sign(
+      'HMAC',
+      key,
+      encoder.encode(payloadString)
+    );
+    
+    // Convert to hex
+    const signatureHex = Array.from(new Uint8Array(signature))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+    
+    // Send to your own webhook endpoint
+    const response = await fetch('https://fanta-lib-back-production.up.railway.app/api/welivexpress/webhook', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Webhook-Signature': signatureHex
+      },
+      body: payloadString
+    });
+    
+    const result = await response.json();
+    console.log('✅ Webhook auto-update sent:', result);
+    return result;
+  } catch (error) {
+    console.error('❌ Error sending webhook update:', error);
+  }
+};
+
 // Helper to get status color based on status text
 const getStatusColor = (status) => {
   if (!status) return '#6b7280';
@@ -1199,7 +1247,7 @@ export default function AdminOrders() {
     dispatch(fetchCommandes());
   }, [dispatch]);
 
-  // Fetch tracking info for all orders and update Redux when status changes
+  // 🔔 WEBHOOK AUTO-SYNC: Enhanced tracking fetch with webhook auto-update
   useEffect(() => {
     if (orderList.length > 0) {
       const fetchAllTrackingInfo = async () => {
@@ -1222,24 +1270,47 @@ export default function AdminOrders() {
               );
 
               if (response.data.success && response.data.data) {
+                const trackingData = response.data.data;
                 setTrackingInfoMap(prev => ({
                   ...prev,
-                  [order.parcel_code]: response.data.data
+                  [order.parcel_code]: trackingData
                 }));
                 
-                // Update Redux if status changed (including secondary)
-                if (response.data.data.parcel?.delivery_status) {
-                  const deliveryStatus = response.data.data.parcel.delivery_status;
-                  const secondaryStatus = response.data.data.parcel.status_second;
-                  const paymentStatus = response.data.data.parcel.payment_status;
-                  const paymentStatusText = response.data.data.parcel.payment_status_text;
+                // 🔔 WEBHOOK AUTO-SYNC: Check if status changed (including secondary)
+                if (trackingData.parcel?.delivery_status) {
+                  const deliveryStatus = trackingData.parcel.delivery_status;
+                  const secondaryStatus = trackingData.parcel.status_second;
+                  const paymentStatus = trackingData.parcel.payment_status;
+                  const paymentStatusText = trackingData.parcel.payment_status_text;
                   const displayStatus = secondaryStatus 
                     ? `${deliveryStatus} - ${secondaryStatus}`
                     : deliveryStatus;
                   
+                  // 🔔 WEBHOOK AUTO-SYNC: If status changed, trigger webhook-style update
                   if (order.statut !== deliveryStatus || 
                       order.statut_second !== secondaryStatus || 
                       order.payment_status !== paymentStatus) {
+                    
+                    console.log(`🔔 Status changed for ${order.parcel_code}:`, {
+                      old: { statut: order.statut, secondary: order.statut_second },
+                      new: { statut: deliveryStatus, secondary: secondaryStatus }
+                    });
+                    
+                    // 🔔 WEBHOOK AUTO-SYNC: Create and send webhook payload
+                    const payload = {
+                      parcel: {
+                        code: order.parcel_code,
+                        status: deliveryStatus,
+                        status_second: secondaryStatus,
+                        payment_status: paymentStatus,
+                        payment_status_text: paymentStatusText
+                      }
+                    };
+                    
+                    // Send to webhook endpoint
+                    await sendWebhookUpdate(payload);
+                    
+                    // Also update Redux directly for immediate UI update
                     dispatch(updateCommande({ 
                       id: order.id, 
                       statut: deliveryStatus,
@@ -1262,7 +1333,7 @@ export default function AdminOrders() {
 
       fetchAllTrackingInfo();
     }
-  }, [orderList, dispatch]);
+  }, [orderList, dispatch, trackingInfoMap]);
 
   // Reset to first page when filters change
   useEffect(() => {

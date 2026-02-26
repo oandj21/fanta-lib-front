@@ -46,6 +46,9 @@ export default function NotificationCenter({
   const [selectedOrder, setSelectedOrder] = useState(null);
   const notificationRef = useRef(null);
 
+  // Track processed notification IDs to prevent duplicates in UI
+  const processedIds = useRef(new Set());
+
   // Update unread count
   useEffect(() => {
     const count = notifications.filter(n => !n.read).length;
@@ -64,11 +67,34 @@ export default function NotificationCenter({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Filter notifications to show only in-progress orders
+  // Filter notifications to show only in-progress orders and remove duplicates
   const filteredNotifications = useMemo(() => {
-    if (!showOnlyInProgress) return notifications;
+    // First, deduplicate notifications by orderId
+    const uniqueNotifications = [];
+    const seenOrderIds = new Set();
     
-    return notifications.filter(notif => {
+    // Sort by timestamp (newest first) to keep the most recent
+    const sortedNotifications = [...notifications].sort((a, b) => 
+      new Date(b.timestamp) - new Date(a.timestamp)
+    );
+    
+    sortedNotifications.forEach(notif => {
+      // For commande type, deduplicate by orderId
+      if (notif.type === 'commande' && notif.orderId) {
+        if (!seenOrderIds.has(notif.orderId)) {
+          seenOrderIds.add(notif.orderId);
+          uniqueNotifications.push(notif);
+        }
+      } else {
+        // For other types, keep all
+        uniqueNotifications.push(notif);
+      }
+    });
+
+    // Then apply in-progress filter if enabled
+    if (!showOnlyInProgress) return uniqueNotifications;
+    
+    return uniqueNotifications.filter(notif => {
       // Only filter commande type notifications
       if (notif.type !== 'commande') return false;
       
@@ -227,6 +253,24 @@ export default function NotificationCenter({
     navigate('/admin/orders');
   };
 
+  // Handle mark as read with cleanup
+  const handleMarkAsRead = (id) => {
+    onMarkAsRead(id);
+  };
+
+  // Handle delete with cleanup
+  const handleDelete = (id, orderId) => {
+    // Remove from processed set when deleting
+    processedIds.current.delete(id);
+    onDeleteNotification(id);
+  };
+
+  // Handle clear all
+  const handleClearAll = () => {
+    processedIds.current.clear();
+    onClearAll();
+  };
+
   return (
     <div className="notification-wrapper" ref={notificationRef}>
       <button 
@@ -261,7 +305,7 @@ export default function NotificationCenter({
                   </button>
                 )}
                 {notifications.length > 0 && (
-                  <button onClick={onClearAll} title="Tout effacer">
+                  <button onClick={handleClearAll} title="Tout effacer">
                     <Trash2 size={16} />
                   </button>
                 )}
@@ -325,7 +369,10 @@ export default function NotificationCenter({
                               color: statusColor,
                               border: `1px solid ${statusColor}30`
                             }}>
-                              {notif.status}
+                              {statusColor === getStatusBadgeColor('DELIVERED') ? 'Livré' : 
+                               statusColor === getStatusBadgeColor('RETURNED') ? 'Retourné' :
+                               statusColor === getStatusBadgeColor('CANCELLED') ? 'Annulé' :
+                               notif.status}
                               {notif.secondaryStatus && notif.secondaryStatus !== '' && (
                                 <span className="secondary-status"> - {notif.secondaryStatus}</span>
                               )}
@@ -389,7 +436,7 @@ export default function NotificationCenter({
                       
                       {!notif.read && (
                         <button 
-                          onClick={() => onMarkAsRead(notif.id)}
+                          onClick={() => handleMarkAsRead(notif.id)}
                           className="mark-read"
                           title="Marquer comme lu"
                         >
@@ -397,7 +444,7 @@ export default function NotificationCenter({
                         </button>
                       )}
                       <button 
-                        onClick={() => onDeleteNotification(notif.id)}
+                        onClick={() => handleDelete(notif.id, notif.orderId)}
                         className="delete-notification"
                         title="Supprimer"
                       >
@@ -460,7 +507,10 @@ export default function NotificationCenter({
                         border: `1px solid ${getStatusBadgeColor(selectedOrder.status)}30`
                       }}
                     >
-                      {selectedOrder.status}
+                      {getStatusBadgeColor(selectedOrder.status) === getStatusBadgeColor('DELIVERED') ? 'Livré' :
+                       getStatusBadgeColor(selectedOrder.status) === getStatusBadgeColor('RETURNED') ? 'Retourné' :
+                       getStatusBadgeColor(selectedOrder.status) === getStatusBadgeColor('CANCELLED') ? 'Annulé' :
+                       selectedOrder.status}
                       {selectedOrder.secondaryStatus && (
                         <span className="secondary-status"> - {selectedOrder.secondaryStatus}</span>
                       )}

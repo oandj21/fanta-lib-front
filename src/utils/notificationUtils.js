@@ -1,5 +1,9 @@
 // src/utils/orderNotificationUtils.js
 
+// Track dispatched notifications to prevent duplicates
+const dispatchedOrderIds = new Set();
+const dispatchedNotificationIds = new Set();
+
 // Utility function to dispatch CRUD events for notifications
 export const dispatchCrudEvent = (type, action, item, user = null) => {
   // For commandes, we want to check the status
@@ -32,6 +36,23 @@ export const dispatchCrudEvent = (type, action, item, user = null) => {
       console.log('Skipping notification for non-in-progress order:', status);
       return; // Don't dispatch for non-in-progress orders
     }
+
+    // Generate a unique key for this order+action to prevent duplicates
+    const uniqueKey = `${item.id}_${action}`;
+    
+    // Check if we've already dispatched this notification
+    if (dispatchedOrderIds.has(uniqueKey)) {
+      console.log('Skipping duplicate notification for order:', item.id, action);
+      return;
+    }
+    
+    // Mark as dispatched
+    dispatchedOrderIds.add(uniqueKey);
+    
+    // Clean up old entries after 1 hour to prevent memory leaks
+    setTimeout(() => {
+      dispatchedOrderIds.delete(uniqueKey);
+    }, 60 * 60 * 1000);
   }
   
   const event = new CustomEvent('crud-event', {
@@ -39,7 +60,10 @@ export const dispatchCrudEvent = (type, action, item, user = null) => {
       type,
       action,
       item,
-      user: user || getCurrentUser()
+      user: user || getCurrentUser(),
+      timestamp: new Date().toISOString(),
+      // Add a unique ID to help with deduplication on the receiving end
+      notificationId: `${type}_${action}_${item.id}_${Date.now()}`
     }
   });
   window.dispatchEvent(event);
@@ -75,6 +99,23 @@ export const dispatchOrderNotification = (action, order, user = null) => {
     console.log('Order not in progress, skipping notification:', status);
     return; // Don't dispatch for non-in-progress orders
   }
+
+  // Generate a unique key for this order+action to prevent duplicates
+  const uniqueKey = `${order.id}_${action}`;
+  
+  // Check if we've already dispatched this notification
+  if (dispatchedOrderIds.has(uniqueKey)) {
+    console.log('Skipping duplicate notification for order:', order.id, action);
+    return;
+  }
+  
+  // Mark as dispatched
+  dispatchedOrderIds.add(uniqueKey);
+  
+  // Clean up old entries after 1 hour
+  setTimeout(() => {
+    dispatchedOrderIds.delete(uniqueKey);
+  }, 60 * 60 * 1000);
   
   const event = new CustomEvent('crud-event', {
     detail: {
@@ -85,7 +126,9 @@ export const dispatchOrderNotification = (action, order, user = null) => {
         // Ensure status is properly passed
         statut: order.statut || order.status || order.deliveryStatus
       },
-      user: user || getCurrentUser()
+      user: user || getCurrentUser(),
+      timestamp: new Date().toISOString(),
+      notificationId: `commande_${action}_${order.id}_${Date.now()}`
     }
   });
   window.dispatchEvent(event);
@@ -103,6 +146,12 @@ const getCurrentUser = () => {
     console.error('Error getting current user:', e);
   }
   return 'Système';
+};
+
+// Function to clear dispatched notifications (useful for testing or logout)
+export const clearDispatchedNotifications = () => {
+  dispatchedOrderIds.clear();
+  dispatchedNotificationIds.clear();
 };
 
 // Usage examples:

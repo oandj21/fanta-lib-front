@@ -40,38 +40,14 @@ export default function NotificationCenter({
 }) {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [showOnlyInProgress, setShowOnlyInProgress] = useState(true);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const notificationRef = useRef(null);
 
-  // Track processed notification IDs to prevent duplicates in UI
-  const processedIds = useRef(new Set());
-
-  // Update unread count
-  useEffect(() => {
-    const count = notifications.filter(n => !n.read).length;
-    setUnreadCount(count);
-  }, [notifications]);
-
-  // Close on click outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  // Filter notifications to show only in-progress orders and remove duplicates
-  const filteredNotifications = useMemo(() => {
-    // First, deduplicate notifications by orderId
-    const uniqueNotifications = [];
-    const seenOrderIds = new Set();
+  // Calculate unique notifications first (deduplicate by orderId)
+  const uniqueNotifications = useMemo(() => {
+    const uniqueMap = new Map(); // Use Map to keep the latest notification per orderId
     
     // Sort by timestamp (newest first) to keep the most recent
     const sortedNotifications = [...notifications].sort((a, b) => 
@@ -81,17 +57,29 @@ export default function NotificationCenter({
     sortedNotifications.forEach(notif => {
       // For commande type, deduplicate by orderId
       if (notif.type === 'commande' && notif.orderId) {
-        if (!seenOrderIds.has(notif.orderId)) {
-          seenOrderIds.add(notif.orderId);
-          uniqueNotifications.push(notif);
+        // Only keep if we haven't seen this orderId yet (since we're iterating newest first)
+        if (!uniqueMap.has(notif.orderId)) {
+          uniqueMap.set(notif.orderId, notif);
         }
       } else {
-        // For other types, keep all
-        uniqueNotifications.push(notif);
+        // For other types, use a combination of id and type as key
+        const key = `${notif.type}_${notif.id}`;
+        if (!uniqueMap.has(key)) {
+          uniqueMap.set(key, notif);
+        }
       }
     });
+    
+    return Array.from(uniqueMap.values());
+  }, [notifications]);
 
-    // Then apply in-progress filter if enabled
+  // Calculate unread count from unique notifications
+  const unreadCount = useMemo(() => {
+    return uniqueNotifications.filter(n => !n.read).length;
+  }, [uniqueNotifications]);
+
+  // Filter notifications to show only in-progress orders (using unique notifications)
+  const filteredNotifications = useMemo(() => {
     if (!showOnlyInProgress) return uniqueNotifications;
     
     return uniqueNotifications.filter(notif => {
@@ -138,7 +126,19 @@ export default function NotificationCenter({
       
       return isInProgress && !isFinal;
     });
-  }, [notifications, showOnlyInProgress]);
+  }, [uniqueNotifications, showOnlyInProgress]);
+
+  // Close on click outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Get icon based on notification type
   const getNotificationIcon = (type, action, status) => {
@@ -253,22 +253,24 @@ export default function NotificationCenter({
     navigate('/admin/orders');
   };
 
-  // Handle mark as read with cleanup
+  // Handle mark as read
   const handleMarkAsRead = (id) => {
     onMarkAsRead(id);
   };
 
-  // Handle delete with cleanup
-  const handleDelete = (id, orderId) => {
-    // Remove from processed set when deleting
-    processedIds.current.delete(id);
-    onDeleteNotification(id);
+  // Handle mark all as read
+  const handleMarkAllAsRead = () => {
+    onMarkAllAsRead();
   };
 
   // Handle clear all
   const handleClearAll = () => {
-    processedIds.current.clear();
     onClearAll();
+  };
+
+  // Handle delete
+  const handleDelete = (id) => {
+    onDeleteNotification(id);
   };
 
   return (
@@ -300,11 +302,11 @@ export default function NotificationCenter({
               </div>
               <div className="notification-actions">
                 {unreadCount > 0 && (
-                  <button onClick={onMarkAllAsRead} title="Tout marquer comme lu">
+                  <button onClick={handleMarkAllAsRead} title="Tout marquer comme lu">
                     <CheckCheck size={16} />
                   </button>
                 )}
-                {notifications.length > 0 && (
+                {uniqueNotifications.length > 0 && (
                   <button onClick={handleClearAll} title="Tout effacer">
                     <Trash2 size={16} />
                   </button>
@@ -318,13 +320,13 @@ export default function NotificationCenter({
               <div className="notification-empty">
                 <Bell size={32} />
                 <p>Aucune notification</p>
-                {notifications.length > 0 && showOnlyInProgress && (
+                {uniqueNotifications.length > 0 && showOnlyInProgress && (
                   <p className="empty-hint">
                     <Filter size={12} />
                     Filtre "En cours" activé
                   </p>
                 )}
-                {notifications.length === 0 && (
+                {uniqueNotifications.length === 0 && (
                   <p className="empty-sub">Les notifications apparaîtront ici</p>
                 )}
               </div>
@@ -444,7 +446,7 @@ export default function NotificationCenter({
                         </button>
                       )}
                       <button 
-                        onClick={() => handleDelete(notif.id, notif.orderId)}
+                        onClick={() => handleDelete(notif.id)}
                         className="delete-notification"
                         title="Supprimer"
                       >
@@ -461,7 +463,8 @@ export default function NotificationCenter({
             <div className="notification-footer">
               <div className="footer-left">
                 <span className="notification-count">
-                  {filteredNotifications.length} commande{filteredNotifications.length > 1 ? 's' : ''} en cours
+                  {filteredNotifications.length} notification{filteredNotifications.length > 1 ? 's' : ''}
+                  {showOnlyInProgress && ' en cours'}
                 </span>
               </div>
               <button 

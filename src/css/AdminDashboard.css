@@ -679,3 +679,335 @@
     margin: 0.75rem;
   }
 }
+/* Additional styles for AdminDashboard to match AdminOrders */
+
+/* Filter Panel for Dashboard */
+.dashboard-filter {
+  margin-bottom: 1.5rem;
+  background: white;
+  border-radius: 1rem;
+  padding: 1rem;
+  border: 1px solid #e0d6cc;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.filter-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  flex: 1;
+  min-width: 250px;
+}
+
+.filter-group label {
+  display: block;
+  font-family: 'Lato', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6b5752;
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.filter-select {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e0d6cc;
+  border-radius: 0.5rem;
+  font-family: 'Lato', sans-serif;
+  font-size: 0.875rem;
+  color: #5c0202;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-select:hover {
+  border-color: #b8a79e;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #5c0202;
+  box-shadow: 0 0 0 2px rgba(92, 2, 2, 0.1);
+}
+
+.btn-clear-filters {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid #e0d6cc;
+  border-radius: 0.5rem;
+  background: white;
+  font-family: 'Lato', sans-serif;
+  font-size: 0.875rem;
+  color: #6b5752;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-clear-filters:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+  background: #fff5f5;
+}
+
+/* Stats Grid for Status Cards */
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+/* Status Badge Rows in Recent Orders */
+.status-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.status-badge-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.7rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.status-badge-row.secondary {
+  opacity: 0.9;
+}
+
+.status-badge-row.payment {
+  font-weight: 600;
+}
+
+/* Filter Badge in Section Title */
+.filter-badge {
+  display: inline-block;
+  margin-left: 1rem;
+  padding: 0.25rem 0.75rem;
+  background: #f8f4f0;
+  border-radius: 2rem;
+  font-family: 'Lato', sans-serif;
+  font-size: 0.75rem;
+  color: #5c0202;
+  border: 1px solid #e0d6cc;
+  vertical-align: middle;
+}
+
+/* Stat Card Variants - Complete List */
+.stat-card.info .stat-icon {
+  background-color: rgba(0, 123, 255, 0.1);
+  color: #007bff;
+}
+
+.stat-card.success .stat-icon {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+.stat-card.danger .stat-icon {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.stat-card.primary .stat-icon {
+  background-color: rgba(92, 2, 2, 0.1);
+  color: #5c0202;
+}
+
+.stat-card.purple .stat-icon {
+  background-color: rgba(139, 92, 246, 0.1);
+  color: #8b5cf6;
+}
+
+.stat-card.warning .stat-icon {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+}
+
+.stat-card.secondary .stat-icon {
+  background-color: rgba(107, 114, 128, 0.1);
+  color: #6b7280;
+}
+
+.stat-card.info .stat-value {
+  color: #007bff;
+}
+
+.stat-card.success .stat-value {
+  color: #10b981;
+}
+
+.stat-card.danger .stat-value {
+  color: #ef4444;
+}
+
+.stat-card.primary .stat-value {
+  color: #5c0202;
+}
+
+.stat-card.purple .stat-value {
+  color: #8b5cf6;
+}
+
+.stat-card.warning .stat-value {
+  color: #f59e0b;
+}
+
+.stat-card.secondary .stat-value {
+  color: #6b7280;
+}
+
+/* Filters Toggle Button in Header */
+.filters-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid #e0d6cc;
+  border-radius: 2rem;
+  background: white;
+  font-family: 'Lato', sans-serif;
+  font-size: 0.875rem;
+  color: #6b5752;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filters-toggle:hover {
+  border-color: #5c0202;
+  color: #5c0202;
+}
+
+.filters-toggle.active {
+  background: #5c0202;
+  color: white;
+  border-color: #5c0202;
+}
+
+.filters-toggle.active svg {
+  color: white;
+}
+
+/* Order Client in Recent Orders */
+.order-client {
+  font-weight: 600;
+  margin-bottom: 0.125rem;
+}
+
+.order-details {
+  font-size: 0.7rem;
+  color: #8b7a75;
+}
+
+.order-total {
+  font-weight: 600;
+  color: #5c0202;
+  white-space: nowrap;
+}
+
+/* Copy Button */
+.btn-icon.copy {
+  color: #6b5752;
+  background: #f8f4f0;
+  border: 1px solid #e0d6cc;
+  padding: 0.25rem;
+  border-radius: 0.375rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-icon.copy:hover {
+  background: #5c0202;
+  color: white;
+  border-color: #5c0202;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .filter-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .filter-group {
+    min-width: 100%;
+  }
+  
+  .btn-clear-filters {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .status-badges {
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+  }
+  
+  .status-badge-row {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .filter-badge {
+    display: block;
+    margin-left: 0;
+    margin-top: 0.5rem;
+    text-align: center;
+  }
+  
+  .status-grid {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .filters-toggle {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .status-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .order-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .btn-icon.copy {
+    align-self: flex-end;
+  }
+}

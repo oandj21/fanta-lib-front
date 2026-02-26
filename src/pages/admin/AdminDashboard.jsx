@@ -19,8 +19,14 @@ import {
   PackageX,
   PackageCheck,
   MapPin,
-  Filter,
-  Copy
+  User,
+  Layers,
+  FileText,
+  Calendar,
+  Copy,
+  Eye,
+  Info,
+  Filter
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell } from "recharts";
 import axios from "axios";
@@ -36,64 +42,147 @@ import {
 } from "../../store/store";
 import "../../css/AdminDashboard.css";
 
-// Helper to get status color
+// Helper to get status color based on status text (same as AdminOrders)
 const getStatusColor = (status) => {
   if (!status) return '#6b7280';
   
   const statusLower = status.toLowerCase();
   
+  // Primary delivery statuses
+  if (status === 'NEW_PARCEL' || statusLower.includes('nouveau')) return '#3b82f6';
+  if (status === 'PARCEL_CONFIRMED' || statusLower.includes('confirm')) return '#007bff';
+  if (status === 'PICKED_UP' || statusLower.includes('ramassé')) return '#8b5cf6';
+  if (status === 'DISTRIBUTION' || statusLower.includes('distribution')) return '#f59e0b';
+  if (status === 'IN_PROGRESS' || statusLower.includes('en cours')) return '#f97316';
+  if (status === 'SENT' || statusLower.includes('expédié')) return '#0891b2';
   if (status === 'DELIVERED' || statusLower.includes('livré')) return '#10b981';
   if (status === 'RETURNED' || statusLower.includes('retourné')) return '#ef4444';
   if (status === 'CANCELLED' || statusLower.includes('annulé')) return '#6b7280';
-  if (status === 'IN_PROGRESS' || statusLower.includes('en cours')) return '#f97316';
-  if (status === 'SENT' || statusLower.includes('expédié')) return '#0891b2';
+  if (status === 'WAITING_PICKUP' || statusLower.includes('attente')) return '#f59e0b';
+  if (status === 'RECEIVED' || statusLower.includes('reçu')) return '#10b981';
+  
+  // Secondary statuses (specific)
   if (status === 'REFUSE' || statusLower.includes('refusé')) return '#dc2626';
   if (status === 'NOANSWER' || statusLower.includes('pas de réponse')) return '#f59e0b';
+  if (status === 'UNREACHABLE' || statusLower.includes('injoignable')) return '#d97706';
+  if (status === 'HORS_ZONE' || statusLower.includes('hors zone')) return '#7c3aed';
+  if (status === 'POSTPONED' || statusLower.includes('reporté')) return '#8b5cf6';
+  if (status === 'PROGRAMMER' || statusLower.includes('programmé')) return '#2563eb';
+  if (status === 'DEUX' || statusLower.includes('2ème')) return '#f97316';
+  if (status === 'TROIS' || statusLower.includes('3ème')) return '#ea580c';
+  if (status === 'ENVG' || statusLower.includes('en voyage')) return '#0891b2';
+  if (status === 'RETURN_BY_AMANA' || statusLower.includes('retour amana')) return '#b91c1c';
+  if (status === 'SENT_BY_AMANA' || statusLower.includes('envoyé amana')) return '#1e40af';
+  
+  // Payment statuses
+  if (statusLower.includes('payé') || statusLower.includes('paid')) return '#10b981';
+  if (statusLower.includes('non payé') || statusLower.includes('not_paid')) return '#ef4444';
+  if (statusLower.includes('facturé') || statusLower.includes('invoiced')) return '#8b5cf6';
   
   return '#6b7280';
 };
 
-// Status labels
+// Status labels for display
 const statusLabels = {
+  'NEW_PARCEL': 'Nouveau',
+  'PARCEL_CONFIRMED': 'Confirmé',
+  'PICKED_UP': 'Ramassé',
+  'DISTRIBUTION': 'Distribution',
+  'IN_PROGRESS': 'En cours',
+  'SENT': 'Expédié',
   'DELIVERED': 'Livré',
   'RETURNED': 'Retourné',
   'CANCELLED': 'Annulé',
-  'IN_PROGRESS': 'En cours',
-  'SENT': 'Expédié',
+  'WAITING_PICKUP': 'En attente',
+  'RECEIVED': 'Reçu',
   'REFUSE': 'Refusé',
-  'NOANSWER': 'Pas de réponse'
+  'NOANSWER': 'Pas de réponse',
+  'UNREACHABLE': 'Injoignable',
+  'HORS_ZONE': 'Hors zone',
+  'POSTPONED': 'Reporté',
+  'PROGRAMMER': 'Programmé',
+  'DEUX': '2ème tentative',
+  'TROIS': '3ème tentative',
+  'ENVG': 'En voyage',
+  'RETURN_BY_AMANA': 'Retour Amana',
+  'SENT_BY_AMANA': 'Envoyé Amana'
+};
+
+// Status icons mapping
+const statusIcons = {
+  'NEW_PARCEL': Clock,
+  'PARCEL_CONFIRMED': CheckCircle,
+  'PICKED_UP': Package,
+  'DISTRIBUTION': Truck,
+  'IN_PROGRESS': RefreshCw,
+  'SENT': Truck,
+  'DELIVERED': PackageCheck,
+  'RETURNED': PackageX,
+  'CANCELLED': XCircle,
+  'WAITING_PICKUP': Clock,
+  'RECEIVED': PackageCheck,
+  'REFUSE': XCircle,
+  'NOANSWER': Clock,
+  'UNREACHABLE': AlertCircle,
+  'HORS_ZONE': MapPin,
+  'POSTPONED': Clock,
+  'PROGRAMMER': Calendar,
+  'DEUX': RefreshCw,
+  'TROIS': RefreshCw,
+  'ENVG': Truck,
+  'RETURN_BY_AMANA': PackageX,
+  'SENT_BY_AMANA': Package
 };
 
 // Colors for pie chart
 const PIE_COLORS = {
+  'NEW_PARCEL': '#3b82f6',
+  'PARCEL_CONFIRMED': '#007bff',
+  'PICKED_UP': '#8b5cf6',
+  'DISTRIBUTION': '#f59e0b',
+  'IN_PROGRESS': '#f97316',
+  'SENT': '#0891b2',
   'DELIVERED': '#10b981',
   'RETURNED': '#ef4444',
   'CANCELLED': '#6b7280',
-  'IN_PROGRESS': '#f97316',
-  'SENT': '#0891b2',
+  'WAITING_PICKUP': '#f59e0b',
+  'RECEIVED': '#10b981',
   'REFUSE': '#dc2626',
-  'NOANSWER': '#f59e0b'
+  'NOANSWER': '#f59e0b',
+  'UNREACHABLE': '#d97706',
+  'HORS_ZONE': '#7c3aed',
+  'POSTPONED': '#8b5cf6',
+  'PROGRAMMER': '#2563eb',
+  'DEUX': '#f97316',
+  'TROIS': '#ea580c',
+  'ENVG': '#0891b2',
+  'RETURN_BY_AMANA': '#b91c1c',
+  'SENT_BY_AMANA': '#1e40af'
 };
 
 export default function AdminDashboard() {
   const dispatch = useDispatch();
   
+  // Use selectors instead of direct state access (better practice)
   const stats = useSelector(selectDashboardStats);
   const monthlyStats = useSelector(selectMonthlyStats);
   const commandes = useSelector(selectCommandes);
   const depenses = useSelector(selectDepenses);
 
   const [trackingInfoMap, setTrackingInfoMap] = useState({});
+  const [loadingTracking, setLoadingTracking] = useState({});
+  const [showFilters, setShowFilters] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
 
   useEffect(() => {
+    // Fetch all dashboard data
     dispatch(fetchDashboardStats());
     dispatch(fetchMonthlyStats());
     dispatch(fetchCommandes());
     dispatch(fetchDepenses());
   }, [dispatch]);
 
-  // Fetch tracking info
+  // Fetch tracking info for real-time status updates
   useEffect(() => {
     if (commandes.length > 0) {
       const fetchAllTrackingInfo = async () => {
@@ -101,23 +190,31 @@ export default function AdminDashboard() {
         
         for (const order of commandes) {
           if (order.parcel_code && !trackingInfoMap[order.parcel_code]) {
+            setLoadingTracking(prev => ({ ...prev, [order.parcel_code]: true }));
+            
             try {
               const response = await axios.get(
                 `https://fanta-lib-back-production.up.railway.app/api/welivexpress/trackparcel`,
                 {
                   params: { parcel_code: order.parcel_code },
-                  headers: { 'Authorization': `Bearer ${token}` }
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
+                  }
                 }
               );
 
               if (response.data.success && response.data.data) {
+                const trackingData = response.data.data;
                 setTrackingInfoMap(prev => ({
                   ...prev,
-                  [order.parcel_code]: response.data.data
+                  [order.parcel_code]: trackingData
                 }));
               }
             } catch (err) {
               console.error(`Error fetching tracking for ${order.parcel_code}:`, err);
+            } finally {
+              setLoadingTracking(prev => ({ ...prev, [order.parcel_code]: false }));
             }
           }
         }
@@ -127,7 +224,7 @@ export default function AdminDashboard() {
     }
   }, [commandes]);
 
-  // Get tracking status
+  // Helper to get tracking info for an order
   const getTrackingStatus = (parcelCode) => {
     if (!parcelCode) return null;
     const info = trackingInfoMap[parcelCode];
@@ -135,23 +232,46 @@ export default function AdminDashboard() {
     return {
       deliveryStatus: info.parcel.delivery_status,
       secondaryStatus: info.parcel.status_second,
-      paymentStatus: info.parcel.payment_status
+      paymentStatus: info.parcel.payment_status,
+      paymentText: info.parcel.payment_status_text,
+      displayStatus: info.parcel.status_second 
+        ? `${info.parcel.delivery_status} - ${info.parcel.status_second}`
+        : info.parcel.delivery_status
     };
   };
 
-  // Calculate commandes statistics
+  // Calculate all commandes statistics with real-time status updates
   const commandesStats = useMemo(() => {
     if (!commandes || commandes.length === 0) {
       return {
         total: 0,
+        // Primary status counts
+        new_parcel: 0,
+        parcel_confirmed: 0,
+        picked_up: 0,
+        distribution: 0,
+        in_progress: 0,
+        sent: 0,
         delivered: 0,
         returned: 0,
         cancelled: 0,
-        in_progress: 0,
-        sent: 0,
+        waiting_pickup: 0,
+        received: 0,
+        // Secondary status counts
         refuse: 0,
         noanswer: 0,
+        unreachable: 0,
+        hors_zone: 0,
+        postponed: 0,
+        programmer: 0,
+        deux: 0,
+        trois: 0,
+        envg: 0,
+        return_by_amana: 0,
+        sent_by_amana: 0,
+        // Summary stats
         pending: 0,
+        completed: 0,
         totalSales: 0,
         totalProfit: 0,
         revenue: 0,
@@ -161,14 +281,33 @@ export default function AdminDashboard() {
 
     const stats = {
       total: commandes.length,
+      // Primary status counts
+      new_parcel: 0,
+      parcel_confirmed: 0,
+      picked_up: 0,
+      distribution: 0,
+      in_progress: 0,
+      sent: 0,
       delivered: 0,
       returned: 0,
       cancelled: 0,
-      in_progress: 0,
-      sent: 0,
+      waiting_pickup: 0,
+      received: 0,
+      // Secondary status counts
       refuse: 0,
       noanswer: 0,
+      unreachable: 0,
+      hors_zone: 0,
+      postponed: 0,
+      programmer: 0,
+      deux: 0,
+      trois: 0,
+      envg: 0,
+      return_by_amana: 0,
+      sent_by_amana: 0,
+      // Summary stats
       pending: 0,
+      completed: 0,
       totalSales: 0,
       totalProfit: 0,
       revenue: 0,
@@ -183,122 +322,128 @@ export default function AdminDashboard() {
       const statusUpper = deliveryStatus.toUpperCase();
       const secondaryUpper = secondaryStatus.toUpperCase();
       
-      // Count by status
-      if (statusUpper === 'DELIVERED' || statusUpper.includes('LIVR')) stats.delivered++;
-      else if (statusUpper === 'RETURNED' || statusUpper.includes('RETOUR')) stats.returned++;
-      else if (statusUpper === 'CANCELLED' || statusUpper.includes('ANNUL')) stats.cancelled++;
-      else if (statusUpper === 'IN_PROGRESS' || statusUpper.includes('COURS')) stats.in_progress++;
-      else if (statusUpper === 'SENT' || statusUpper.includes('EXPÉDI')) stats.sent++;
+      // Count primary statuses
+      if (statusUpper === 'NEW_PARCEL' || statusUpper.includes('NOUVEAU')) stats.new_parcel++;
+      else if (statusUpper === 'PARCEL_CONFIRMED' || statusUpper.includes('CONFIRM')) stats.parcel_confirmed++;
+      else if (statusUpper === 'PICKED_UP' || statusUpper.includes('RAMASSÉ')) stats.picked_up++;
+      else if (statusUpper === 'DISTRIBUTION' || statusUpper.includes('DISTRIBUTION')) stats.distribution++;
+      else if (statusUpper === 'IN_PROGRESS' || statusUpper.includes('EN COURS')) stats.in_progress++;
+      else if (statusUpper === 'SENT' || statusUpper.includes('EXPÉDIÉ')) stats.sent++;
+      else if (statusUpper === 'DELIVERED' || statusUpper.includes('LIVRÉ')) stats.delivered++;
+      else if (statusUpper === 'RETURNED' || statusUpper.includes('RETOURNÉ')) stats.returned++;
+      else if (statusUpper === 'CANCELLED' || statusUpper.includes('ANNULÉ')) stats.cancelled++;
+      else if (statusUpper === 'WAITING_PICKUP' || statusUpper.includes('ATTENTE')) stats.waiting_pickup++;
+      else if (statusUpper === 'RECEIVED' || statusUpper.includes('REÇU')) stats.received++;
       
       // Count secondary statuses
-      if (secondaryUpper === 'REFUSE' || secondaryUpper.includes('REFUS')) stats.refuse++;
-      else if (secondaryUpper === 'NOANSWER' || secondaryUpper.includes('RÉPONSE')) stats.noanswer++;
+      if (secondaryUpper === 'REFUSE' || secondaryUpper.includes('REFUSÉ')) stats.refuse++;
+      else if (secondaryUpper === 'NOANSWER' || secondaryUpper.includes('PAS DE RÉPONSE')) stats.noanswer++;
+      else if (secondaryUpper === 'UNREACHABLE' || secondaryUpper.includes('INJOIGNABLE')) stats.unreachable++;
+      else if (secondaryUpper === 'HORS_ZONE' || secondaryUpper.includes('HORS ZONE')) stats.hors_zone++;
+      else if (secondaryUpper === 'POSTPONED' || secondaryUpper.includes('REPORTÉ')) stats.postponed++;
+      else if (secondaryUpper === 'PROGRAMMER' || secondaryUpper.includes('PROGRAMMÉ')) stats.programmer++;
+      else if (secondaryUpper === 'DEUX' || secondaryUpper.includes('2ÈME')) stats.deux++;
+      else if (secondaryUpper === 'TROIS' || secondaryUpper.includes('3ÈME')) stats.trois++;
+      else if (secondaryUpper === 'ENVG' || secondaryUpper.includes('EN VOYAGE')) stats.envg++;
+      else if (secondaryUpper === 'RETURN_BY_AMANA' || secondaryUpper.includes('RETOUR AMANA')) stats.return_by_amana++;
+      else if (secondaryUpper === 'SENT_BY_AMANA' || secondaryUpper.includes('ENVOYÉ AMANA')) stats.sent_by_amana++;
 
-      // Count pending orders
-      const finalStates = ['DELIVERED', 'LIVR', 'RETURNED', 'RETOUR', 'CANCELLED', 'ANNUL'];
-      const isFinal = finalStates.some(state => statusUpper.includes(state));
-      if (!isFinal) {
+      // Count pending orders (not in final state)
+      const finalStates = ['DELIVERED', 'LIVRÉ', 'RETURNED', 'RETOURNÉ', 'CANCELLED', 'ANNULÉ'];
+      if (!finalStates.includes(statusUpper)) {
         stats.pending++;
       }
 
       // Count completed orders
-      if (statusUpper === 'DELIVERED' || statusUpper.includes('LIVR')) {
-        stats.completed = (stats.completed || 0) + 1;
-        stats.revenue += Number(commande.parcel_price || commande.total || 0);
+      if (statusUpper === 'DELIVERED' || statusUpper.includes('LIVRÉ')) {
+        stats.completed++;
+        stats.revenue += Number(commande.total || 0);
       }
 
-      // Calculate totals from ALL orders (not just delivered)
-      stats.totalSales += Number(commande.parcel_price || commande.total || 0);
-      stats.totalProfit += Number(commande.profit || 0);
+      // Calculate total sales from all commandes (using parcel_price)
+      const parcelPrice = Number(commande.parcel_price || commande.total || 0);
+      stats.totalSales += parcelPrice;
+
+      // Calculate total profit from all commandes
+      const profit = Number(commande.profit || 0);
+      stats.totalProfit += profit;
     });
 
+    // Calculate conversion rate
     stats.conversionRate = stats.total > 0 ? (stats.delivered / stats.total) * 100 : 0;
 
     return stats;
   }, [commandes, trackingInfoMap]);
 
-  // CRITICAL FIX: Calculate monthly data DIRECTLY from commandes and depenses
+  // Calculate monthly data directly from commandes
   const monthlyData = useMemo(() => {
-    console.log("Calculating monthly data from:", {
-      commandesCount: commandes?.length || 0,
-      depensesCount: depenses?.length || 0
-    });
-
-    if (!commandes || commandes.length === 0) {
-      return [];
-    }
-
-    // Get last 6 months
-    const months = [];
+    const last6Months = [];
     const now = new Date();
     
+    // Create array of last 6 months
     for (let i = 5; i >= 0; i--) {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      months.push({
-        month: date.toLocaleDateString('fr-FR', { month: 'short' }),
-        year: date.getFullYear(),
-        monthNum: date.getMonth() + 1,
-        key: `${date.getFullYear()}-${date.getMonth() + 1}`
+      const monthName = date.toLocaleDateString('fr-FR', { month: 'short' });
+      const year = date.getFullYear();
+      const month = date.getMonth() + 1;
+      
+      last6Months.push({
+        month: monthName,
+        monthNumber: month,
+        year: year,
+        key: `${year}-${month}`
       });
     }
 
     // Calculate totals for each month
-    return months.map(monthData => {
+    return last6Months.map(monthData => {
       // Filter commandes for this month
       const monthCommandes = commandes.filter(commande => {
-        if (!commande.date && !commande.created_at) return false;
         const commandeDate = new Date(commande.date || commande.created_at);
-        return commandeDate.getMonth() + 1 === monthData.monthNum && 
+        return commandeDate.getMonth() + 1 === monthData.monthNumber && 
                commandeDate.getFullYear() === monthData.year;
       });
 
       // Filter depenses for this month
       const monthDepenses = depenses.filter(depense => {
-        if (!depense.date && !depense.created_at) return false;
         const depenseDate = new Date(depense.date || depense.created_at);
-        return depenseDate.getMonth() + 1 === monthData.monthNum && 
+        return depenseDate.getMonth() + 1 === monthData.monthNumber && 
                depenseDate.getFullYear() === monthData.year;
       });
 
       // Calculate totals
-      const totalDepenses = monthDepenses.reduce((sum, d) => {
-        return sum + (Number(d.montant) || 0);
-      }, 0);
-
-      // Calculate profit from ALL commandes this month (not just delivered)
-      const totalProfit = monthCommandes.reduce((sum, c) => {
-        return sum + (Number(c.profit) || 0);
-      }, 0);
-
-      // Calculate sales from ALL commandes this month
-      const totalVentes = monthCommandes.reduce((sum, c) => {
-        return sum + (Number(c.parcel_price || c.total || 0));
-      }, 0);
-
-      // Log each month for debugging
-      console.log(`Month ${monthData.month} ${monthData.year}:`, {
-        commandesCount: monthCommandes.length,
-        depensesCount: monthDepenses.length,
-        totalDepenses,
-        totalProfit,
-        totalVentes,
-        sampleCommande: monthCommandes[0] ? {
-          profit: monthCommandes[0].profit,
-          parcel_price: monthCommandes[0].parcel_price,
-          statut: monthCommandes[0].statut
-        } : null
+      const totalDepenses = monthDepenses.reduce((sum, d) => sum + (Number(d.montant) || 0), 0);
+      
+      // For sales and profit, only count delivered orders
+      const deliveredCommandes = monthCommandes.filter(c => {
+        const status = (c.statut || '').toUpperCase();
+        return status === 'DELIVERED' || status.includes('LIVRÉ');
       });
+      
+      const totalSales = deliveredCommandes.reduce((sum, c) => sum + (Number(c.parcel_price || c.total || 0)), 0);
+      const totalProfit = deliveredCommandes.reduce((sum, c) => sum + (Number(c.profit || 0)), 0);
 
       return {
         month: monthData.month,
-        depenses: totalDepenses,      // First bar - Total dépenses
-        profit: totalProfit,           // Second bar - Profit total
-        ventes: totalVentes            // Third bar - Total des ventes
+        monthNumber: monthData.monthNumber,
+        year: monthData.year,
+        depenses: totalDepenses,      // First bar - Dépenses
+        profit: totalProfit,           // Second bar - Profit
+        ventes: totalSales             // Third bar - Ventes
       };
     });
   }, [commandes, depenses]);
 
-  // Financial cards
+  // Get recent orders (last 5)
+  const recentOrders = useMemo(() => {
+    if (!commandes || commandes.length === 0) return [];
+    
+    return [...commandes]
+      .sort((a, b) => new Date(b.date || b.created_at) - new Date(a.date || a.created_at))
+      .slice(0, 5);
+  }, [commandes]);
+
+  // Main financial cards - Reordered: Total dépenses, Profit total, Total des ventes, Revenu net
   const financialCards = [
     { 
       title: "Total dépenses", 
@@ -325,23 +470,194 @@ export default function AdminDashboard() {
       title: "Revenu net", 
       value: commandesStats.totalProfit - Number(stats?.total_expenses || 0),
       icon: BookOpen,
-      color: (commandesStats.totalProfit - Number(stats?.total_expenses || 0)) >= 0 ? "success" : "danger"
+      color: (commandesStats.totalProfit - Number(stats?.total_expenses || 0)) >= 0 ? "success" : "danger",
+      trend: (commandesStats.totalProfit - Number(stats?.total_expenses || 0)) >= 0 ? "Positif" : "Négatif"
     },
   ];
 
-  // Status cards
+  // All Commandes Status Cards - Complete list from API
   const commandesStatusCards = [
-    { title: "Total Commandes", value: commandesStats.total, icon: ShoppingCart, color: "primary" },
-    { title: "Livrés", value: commandesStats.delivered, icon: PackageCheck, color: "success" },
-    { title: "En cours", value: commandesStats.in_progress + commandesStats.sent, icon: RefreshCw, color: "warning" },
-    { title: "Retournés", value: commandesStats.returned, icon: PackageX, color: "danger" },
-    { title: "Annulés", value: commandesStats.cancelled, icon: XCircle, color: "secondary" },
-    { title: "Refusés", value: commandesStats.refuse, icon: XCircle, color: "danger" },
-    { title: "Pas de réponse", value: commandesStats.noanswer, icon: Clock, color: "warning" },
-    { title: "En attente", value: commandesStats.pending, icon: Clock, color: "warning" }
-  ].filter(card => card.value > 0);
+    {
+      title: "Total Commandes",
+      value: commandesStats.total,
+      icon: ShoppingCart,
+      color: "primary"
+    },
+    {
+      title: "Nouveaux",
+      value: commandesStats.new_parcel,
+      icon: Clock,
+      color: "info"
+    },
+    {
+      title: "Confirmés",
+      value: commandesStats.parcel_confirmed,
+      icon: CheckCircle,
+      color: "success"
+    },
+    {
+      title: "Ramassés",
+      value: commandesStats.picked_up,
+      icon: Package,
+      color: "purple"
+    },
+    {
+      title: "Distribution",
+      value: commandesStats.distribution,
+      icon: Truck,
+      color: "warning"
+    },
+    {
+      title: "En cours",
+      value: commandesStats.in_progress,
+      icon: RefreshCw,
+      color: "warning"
+    },
+    {
+      title: "Expédiés",
+      value: commandesStats.sent,
+      icon: Truck,
+      color: "info"
+    },
+    {
+      title: "Livrés",
+      value: commandesStats.delivered,
+      icon: PackageCheck,
+      color: "success"
+    },
+    {
+      title: "Retournés",
+      value: commandesStats.returned,
+      icon: PackageX,
+      color: "danger"
+    },
+    {
+      title: "Annulés",
+      value: commandesStats.cancelled,
+      icon: XCircle,
+      color: "secondary"
+    },
+    {
+      title: "En attente",
+      value: commandesStats.waiting_pickup,
+      icon: Clock,
+      color: "warning"
+    },
+    {
+      title: "Reçus",
+      value: commandesStats.received,
+      icon: PackageCheck,
+      color: "success"
+    },
+    {
+      title: "Refusés",
+      value: commandesStats.refuse,
+      icon: XCircle,
+      color: "danger"
+    },
+    {
+      title: "Pas de réponse",
+      value: commandesStats.noanswer,
+      icon: Clock,
+      color: "warning"
+    },
+    {
+      title: "Injoignables",
+      value: commandesStats.unreachable,
+      icon: AlertCircle,
+      color: "danger"
+    },
+    {
+      title: "Hors zone",
+      value: commandesStats.hors_zone,
+      icon: MapPin,
+      color: "purple"
+    },
+    {
+      title: "Reportés",
+      value: commandesStats.postponed,
+      icon: Clock,
+      color: "warning"
+    },
+    {
+      title: "Programmés",
+      value: commandesStats.programmer,
+      icon: Calendar,
+      color: "info"
+    },
+    {
+      title: "2ème tentative",
+      value: commandesStats.deux,
+      icon: RefreshCw,
+      color: "warning"
+    },
+    {
+      title: "3ème tentative",
+      value: commandesStats.trois,
+      icon: RefreshCw,
+      color: "warning"
+    },
+    {
+      title: "En voyage",
+      value: commandesStats.envg,
+      icon: Truck,
+      color: "info"
+    },
+    {
+      title: "Retour Amana",
+      value: commandesStats.return_by_amana,
+      icon: PackageX,
+      color: "danger"
+    },
+    {
+      title: "Envoyé Amana",
+      value: commandesStats.sent_by_amana,
+      icon: Package,
+      color: "purple"
+    },
+    {
+      title: "En attente (total)",
+      value: commandesStats.pending,
+      icon: Clock,
+      color: "warning"
+    }
+  ].filter(card => card.value > 0); // Only show statuses that have orders
 
-  // Pie chart data
+  // Format month data for chart display - Use calculated monthlyData instead of monthlyStats
+  const chartData = monthlyData;
+
+  // Get unique statuses from orders for filter dropdown
+  const uniqueStatuses = useMemo(() => {
+    const statuses = new Set();
+    commandes.forEach(order => {
+      const tracking = getTrackingStatus(order.parcel_code);
+      const deliveryStatus = tracking?.deliveryStatus || order.statut;
+      const secondaryStatus = tracking?.secondaryStatus || order.statut_second;
+      
+      if (deliveryStatus) {
+        statuses.add(deliveryStatus);
+      }
+      if (secondaryStatus && secondaryStatus !== '') {
+        statuses.add(secondaryStatus);
+      }
+    });
+    return Array.from(statuses).sort();
+  }, [commandes, trackingInfoMap]);
+
+  // Filtered orders for recent orders
+  const filteredRecentOrders = useMemo(() => {
+    if (statusFilter === "all") return recentOrders;
+    
+    return recentOrders.filter(order => {
+      const tracking = getTrackingStatus(order.parcel_code);
+      const deliveryStatus = tracking?.deliveryStatus || order.statut;
+      const secondaryStatus = tracking?.secondaryStatus || order.statut_second;
+      
+      return deliveryStatus === statusFilter || secondaryStatus === statusFilter;
+    });
+  }, [recentOrders, statusFilter, trackingInfoMap]);
+
+  // Pie chart data for status distribution - Now shows all statuses with counts
   const pieChartData = useMemo(() => {
     const statusCounts = {};
     
@@ -350,11 +666,12 @@ export default function AdminDashboard() {
       const deliveryStatus = tracking?.deliveryStatus || commande.statut;
       const secondaryStatus = tracking?.secondaryStatus || commande.statut_second;
       
-      if (deliveryStatus) {
+      if (deliveryStatus && deliveryStatus !== '') {
         statusCounts[deliveryStatus] = (statusCounts[deliveryStatus] || 0) + 1;
       }
       if (secondaryStatus && secondaryStatus !== '') {
-        statusCounts[secondaryStatus] = (statusCounts[secondaryStatus] || 0) + 1;
+        const statusKey = `${secondaryStatus} (secondaire)`;
+        statusCounts[statusKey] = (statusCounts[statusKey] || 0) + 1;
       }
     });
     
@@ -362,11 +679,11 @@ export default function AdminDashboard() {
       .map(([name, value]) => ({
         name,
         value,
-        color: PIE_COLORS[name] || getStatusColor(name)
+        color: PIE_COLORS[name.split(' ')[0]] || getStatusColor(name.split(' ')[0])
       }))
       .filter(item => item.value > 0)
       .sort((a, b) => b.value - a.value)
-      .slice(0, 8);
+      .slice(0, 8); // Show top 8 statuses for readability
   }, [commandes, trackingInfoMap]);
 
   // Format currency
@@ -377,6 +694,13 @@ export default function AdminDashboard() {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
     }).format(value).replace('MAD', '').trim();
+  };
+
+  const copyTrackingLink = (parcelCode) => {
+    const link = `${window.location.origin}/track/${parcelCode}`;
+    navigator.clipboard.writeText(link).then(() => {
+      alert("Lien de suivi copié !");
+    });
   };
 
   return (
@@ -391,10 +715,47 @@ export default function AdminDashboard() {
             <Clock size={14} />
             {commandesStats.total} commandes • {formatCurrency(commandesStats.totalSales)} DH de ventes
           </span>
+          <button 
+            className={`filters-toggle ${showFilters ? 'active' : ''}`}
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <Filter size={16} />
+            Filtres statuts
+          </button>
         </div>
       </div>
 
-      {/* Financial Stats Cards */}
+      {/* Filter Panel */}
+      {showFilters && (
+        <div className="filter-panel dashboard-filter">
+          <div className="filter-row">
+            <div className="filter-group">
+              <label>Filtrer par statut</label>
+              <select 
+                value={statusFilter} 
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="filter-select"
+              >
+                <option value="all">Tous les statuts</option>
+                {uniqueStatuses.map(status => (
+                  <option key={status} value={status}>
+                    {statusLabels[status] || status}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button 
+              onClick={() => setStatusFilter("all")} 
+              className="btn-clear-filters"
+            >
+              <XCircle size={16} />
+              Réinitialiser
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Financial Stats Cards - Reordered */}
       <div className="section-title">
         <h3>Aperçu financier</h3>
       </div>
@@ -418,9 +779,10 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      {/* Status Cards */}
+      {/* Commandes Status Cards - All Statuses from API */}
       <div className="section-title" style={{ marginTop: '2rem' }}>
         <h3>Statistiques des commandes</h3>
+        <p>Tous les statuts en temps réel</p>
       </div>
       <div className="stats-grid status-grid">
         {commandesStatusCards.map((card) => (
@@ -428,6 +790,17 @@ export default function AdminDashboard() {
             <div className="stat-content">
               <p className="stat-title">{card.title}</p>
               <h3 className="stat-value">{card.value}</h3>
+              {card.title === "Livrés" && card.value > 0 && (
+                <span className="stat-trend">
+                  <ArrowUpRight size={12} />
+                  {formatCurrency(commandesStats.revenue)} DH
+                </span>
+              )}
+              {card.title === "Total Commandes" && commandesStats.total > 0 && (
+                <span className="stat-trend">
+                  {commandesStats.conversionRate.toFixed(1)}% converties
+                </span>
+              )}
             </div>
             <div className="stat-icon">
               <card.icon size={24} />
@@ -436,18 +809,18 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      {/* Charts Section */}
+      {/* Charts Section - Bar Chart and Pie Chart */}
       <div className="charts-grid">
-        {/* Monthly Evolution Bar Chart */}
+        {/* Monthly Evolution Bar Chart - Reordered: Dépenses, Profit, Ventes */}
         <div className="chart-card">
           <div className="chart-header">
             <BarChart3 size={18} />
             <h3>Évolution mensuelle</h3>
           </div>
           <div className="chart-container">
-            {monthlyData.length > 0 ? (
+            {chartData.length > 0 ? (
               <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={monthlyData} barGap={4} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
+                <BarChart data={chartData} barGap={4} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e0d6cc" />
                   <XAxis 
                     dataKey="month" 
@@ -466,7 +839,8 @@ export default function AdminDashboard() {
                       fontFamily: "Lato", 
                       borderRadius: 8, 
                       border: "1px solid #e0d6cc", 
-                      background: "white"
+                      background: "white",
+                      boxShadow: "0 4px 6px rgba(0,0,0,0.1)"
                     }}
                     formatter={(value, name) => {
                       const labels = {
@@ -498,10 +872,7 @@ export default function AdminDashboard() {
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="no-data">
-                <AlertCircle size={24} />
-                <p>Aucune donnée mensuelle disponible</p>
-              </div>
+              <div className="no-data">Aucune donnée mensuelle disponible</div>
             )}
           </div>
         </div>
@@ -535,7 +906,11 @@ export default function AdminDashboard() {
                     ))}
                   </Pie>
                   <Tooltip 
-                    formatter={(value) => [`${value} commande${value > 1 ? 's' : ''}`, '']}
+                    formatter={(value, name, props) => {
+                      const statusName = props.payload.name;
+                      const displayName = statusLabels[statusName.split(' ')[0]] || statusName;
+                      return [`${value} commande${value > 1 ? 's' : ''}`, displayName];
+                    }}
                     contentStyle={{ 
                       fontFamily: "Lato", 
                       borderRadius: 8, 
@@ -549,6 +924,111 @@ export default function AdminDashboard() {
               <div className="no-data">
                 <PieChartIcon size={24} />
                 <p>Aucune donnée de statut disponible</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Orders with Status Badges */}
+      <div className="recent-orders-section">
+        <div className="section-title">
+          <h3>Commandes récentes</h3>
+          {statusFilter !== "all" && (
+            <span className="filter-badge">
+              Filtré par: {statusLabels[statusFilter] || statusFilter}
+            </span>
+          )}
+        </div>
+        <div className="recent-orders-card full-width">
+          <div className="orders-list">
+            {filteredRecentOrders.length > 0 ? (
+              filteredRecentOrders.map((order) => {
+                const tracking = getTrackingStatus(order.parcel_code);
+                const deliveryStatus = tracking?.deliveryStatus || order.statut;
+                const secondaryStatus = tracking?.secondaryStatus || order.statut_second;
+                const paymentStatus = tracking?.paymentStatus || order.payment_status;
+                const paymentText = tracking?.paymentText || order.payment_status_text;
+                const StatusIcon = statusIcons[deliveryStatus] || statusIcons[secondaryStatus] || Package;
+                
+                return (
+                  <div key={order.id} className="order-item">
+                    <div className="order-info">
+                      <div className="order-main">
+                        {/* Status Circle */}
+                        <span 
+                          className="status-circle" 
+                          style={{ backgroundColor: getStatusColor(deliveryStatus) }}
+                        ></span>
+                        <div>
+                          <p className="order-client">{order.parcel_receiver || "Client"}</p>
+                          <p className="order-details">
+                            {order.parcel_code || `#${order.id}`} • {new Date(order.date || order.created_at).toLocaleDateString('fr-FR')}
+                          </p>
+                        </div>
+                      </div>
+                      <p className="order-total">{formatCurrency(order.parcel_price || 0)} DH</p>
+                    </div>
+                    <div className="order-footer">
+                      <div className="status-badges">
+                        <div 
+                          className="status-badge-row"
+                          style={{ 
+                            backgroundColor: `${getStatusColor(deliveryStatus)}15`,
+                            border: `1px solid ${getStatusColor(deliveryStatus)}30`
+                          }}
+                        >
+                          <StatusIcon size={14} style={{ color: getStatusColor(deliveryStatus) }} />
+                          <span style={{ color: getStatusColor(deliveryStatus) }}>
+                            {statusLabels[deliveryStatus] || deliveryStatus}
+                          </span>
+                        </div>
+                        {secondaryStatus && secondaryStatus !== '' && (
+                          <div 
+                            className="status-badge-row secondary"
+                            style={{ 
+                              backgroundColor: `${getStatusColor(secondaryStatus)}15`,
+                              border: `1px solid ${getStatusColor(secondaryStatus)}30`,
+                              marginLeft: '4px'
+                            }}
+                          >
+                            <AlertCircle size={14} style={{ color: getStatusColor(secondaryStatus) }} />
+                            <span style={{ color: getStatusColor(secondaryStatus) }}>
+                              {statusLabels[secondaryStatus] || secondaryStatus}
+                            </span>
+                          </div>
+                        )}
+                        {paymentText && paymentText !== '' && (
+                          <div 
+                            className="status-badge-row payment"
+                            style={{ 
+                              backgroundColor: `${getStatusColor(paymentStatus)}15`,
+                              border: `1px solid ${getStatusColor(paymentStatus)}30`,
+                              marginLeft: '4px'
+                            }}
+                          >
+                            <CreditCard size={14} style={{ color: getStatusColor(paymentStatus) }} />
+                            <span style={{ color: getStatusColor(paymentStatus) }}>
+                              {paymentText}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => copyTrackingLink(order.parcel_code)}
+                        className="btn-icon copy"
+                        title="Copier le lien de suivi"
+                      >
+                        <Copy size={14} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="no-data">
+                <AlertCircle size={24} />
+                <p>Aucune commande récente</p>
               </div>
             )}
           </div>

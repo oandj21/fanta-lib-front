@@ -950,19 +950,10 @@ export default function AdminBooks() {
                                   title="Retirer de la liste (sera supprimé lors de l'enregistrement)"
                                   disabled={deletingImage}
                                 >
-                                  <X size={14} />
-                                </button>
-                                
-                                {/* Permanent delete button (instant deletion) */}
-                                <button 
-                                  type="button"
-                                  onClick={() => handleDeleteImage(image)}
-                                  className="btn-icon permanent-delete-btn"
-                                  title="Supprimer définitivement (immédiat)"
-                                  disabled={deletingImage}
-                                >
                                   <Trash2 size={14} />
                                 </button>
+                                
+                                
                               </div>
                             </div>
                           ))

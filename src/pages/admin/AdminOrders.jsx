@@ -7,7 +7,7 @@ import {
   Loader, ChevronDown, BookOpen, Minus, Plus as PlusIcon,
   Eye, RefreshCw, AlertCircle, CheckCircle, Box, Layers,
   Clock, CreditCard, Calendar, PackageCheck, PackageX,
-  Info, Copy
+  Info,Copy
 } from "lucide-react";
 import axios from "axios";
 import { 
@@ -16,56 +16,32 @@ import {
   deleteCommande, 
   markCommandeAsDelivered,
   createCommande,
-  fetchLivres,
-  fetchWelivexpressStatuses // Add this import
+  fetchLivres
 } from "../../store/store";
 import "../../css/AdminOrders.css";
 
-// Dynamic status helper using Welivexpress statuses
-const getStatusColor = (status, statusesList = []) => {
+// REMOVED: statusLabels and statusColors - now using API values directly
+
+// Helper to get status color based on status text
+const getStatusColor = (status) => {
   if (!status) return '#6b7280';
   
-  // First try to find in Welivexpress statuses list
-  if (statusesList && statusesList.length > 0) {
-    const found = statusesList.find(s => 
-      s.code === status || 
-      s.name === status ||
-      s.code?.toLowerCase() === status.toLowerCase() ||
-      s.name?.toLowerCase() === status.toLowerCase()
-    );
-    
-    if (found && found.color) {
-      return found.color;
-    }
-  }
-  
-  // Fallback colors for common statuses
-  const fallbackColors = {
-    'new_parcel': '#25a0d7',
-    'waiting_pickup': '#ff9300',
-    'picked_up': '#00a3d7',
-    'sent': '#0080ff',
-    'received': '#069d40',
-    'distribution': '#606060',
-    'in_progress': '#ff8040',
-    'returned': '#bb0707',
-    'delivered': '#00fa00',
-    'postponed': '#53d5fd',
-    'noanswer': '#ff9300',
-    'unreachable': '#25a0d7',
-    'out_of_area': '#94e3fe',
-    'canceled': '#f41515',
-    'refuse': '#EB1A00',
-    'err': '#831000'
-  };
-  
   const statusLower = status.toLowerCase();
-  for (const [code, color] of Object.entries(fallbackColors)) {
-    if (statusLower.includes(code)) {
-      return color;
-    }
-  }
   
+  // Welivexpress statuses
+  if (status === 'NEW_PARCEL' || statusLower.includes('nouveau')) return '#3b82f6';
+  if (status === 'PARCEL_CONFIRMED' || statusLower.includes('confirm')) return '#007bff';
+  if (status === 'PARCEL_IN_TRANSIT' || statusLower.includes('transit') || statusLower.includes('expéd')) return '#ffc107';
+  if (status === 'PARCEL_DELIVERED' || statusLower.includes('livré') || statusLower.includes('delivered')) return '#10b981';
+  if (status === 'PARCEL_CANCELLED' || statusLower.includes('annulé') || statusLower.includes('cancelled')) return '#6b7280';
+  if (status === 'PARCEL_RETURNED' || statusLower.includes('retour') || statusLower.includes('returned')) return '#ef4444';
+  
+  // Payment statuses
+  if (statusLower.includes('payé') || statusLower.includes('paid')) return '#10b981';
+  if (statusLower.includes('non payé') || statusLower.includes('not_paid')) return '#ef4444';
+  if (statusLower.includes('facturé') || statusLower.includes('invoiced')) return '#8b5cf6';
+  
+  // Default
   return '#6b7280';
 };
 
@@ -78,6 +54,7 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
   const [cities, setCities] = useState([]);
   const [error, setError] = useState(null);
 
+  // Fetch cities from Welivexpress API
   const fetchCities = useCallback(async () => {
     try {
       setLoading(true);
@@ -95,6 +72,7 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
         }
       );
 
+      
       let citiesData = [];
       
       if (response.data && response.data.data && Array.isArray(response.data.data)) {
@@ -124,6 +102,7 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
     }
   }, []);
 
+  // Fallback cities with IDs
   const getFallbackCities = () => {
     return [
       { id: "15769", name: "Casablanca" },
@@ -246,6 +225,7 @@ const BookSelector = ({ selectedBooks, onBooksChange, onTotalQuantityChange }) =
     );
   }, [booksList, searchTerm]);
 
+  // Update total quantity whenever selected books change
   useEffect(() => {
     if (selectedBooks.length > 0) {
       const totalQty = selectedBooks.reduce((sum, book) => sum + book.quantity, 0);
@@ -409,7 +389,7 @@ const BookSelector = ({ selectedBooks, onBooksChange, onTotalQuantityChange }) =
 };
 
 // Order Details Modal Component with complete tracking information
-const OrderDetailsModal = ({ order, onClose, statuses = [] }) => {
+const OrderDetailsModal = ({ order, onClose }) => {
   const [trackingInfo, setTrackingInfo] = useState(null);
   const [loadingTracking, setLoadingTracking] = useState(false);
   const [trackingError, setTrackingError] = useState(null);
@@ -438,6 +418,8 @@ const OrderDetailsModal = ({ order, onClose, statuses = [] }) => {
         }
       );
 
+      console.log("Tracking response in order details:", response.data);
+
       if (response.data.success && response.data.data) {
         setTrackingInfo(response.data.data);
       }
@@ -462,6 +444,7 @@ const OrderDetailsModal = ({ order, onClose, statuses = [] }) => {
 
   if (!order) return null;
 
+  // Get the delivery status from tracking info
   const deliveryStatus = trackingInfo?.parcel?.delivery_status || order.statut;
 
   return (
@@ -475,9 +458,11 @@ const OrderDetailsModal = ({ order, onClose, statuses = [] }) => {
         </div>
 
         <div className="modal-body">
+          {/* Two column layout for tracking and order info */}
           <div className="details-two-column">
             {/* Left Column - Suivi Welivexpress */}
             <div className="details-left-column">
+              {/* Real-time tracking information - ALL FIELDS FROM API */}
               {loadingTracking && (
                 <div className="tracking-loading">
                   <RefreshCw size={20} className="spinning" />
@@ -500,6 +485,7 @@ const OrderDetailsModal = ({ order, onClose, statuses = [] }) => {
                     <span className="tracking-live-badge">LIVE</span>
                   </div>
                   
+                  {/* Status Cards */}
                   <div className="tracking-status-grid">
                     <div className="tracking-status-card">
                       <div className="tracking-status-label">
@@ -509,9 +495,9 @@ const OrderDetailsModal = ({ order, onClose, statuses = [] }) => {
                       <div 
                         className="tracking-status-badge large"
                         style={{ 
-                          backgroundColor: `${getStatusColor(trackingInfo.parcel.delivery_status, statuses)}15`,
-                          color: getStatusColor(trackingInfo.parcel.delivery_status, statuses),
-                          border: `1px solid ${getStatusColor(trackingInfo.parcel.delivery_status, statuses)}30`
+                          backgroundColor: `${getStatusColor(trackingInfo.parcel.delivery_status)}15`,
+                          color: getStatusColor(trackingInfo.parcel.delivery_status),
+                          border: `1px solid ${getStatusColor(trackingInfo.parcel.delivery_status)}30`
                         }}
                       >
                         {trackingInfo.parcel.delivery_status || 'Inconnu'}
@@ -531,9 +517,9 @@ const OrderDetailsModal = ({ order, onClose, statuses = [] }) => {
                       <div 
                         className="tracking-status-badge"
                         style={{ 
-                          backgroundColor: `${getStatusColor(trackingInfo.parcel.payment_status, statuses)}15`,
-                          color: getStatusColor(trackingInfo.parcel.payment_status, statuses),
-                          border: `1px solid ${getStatusColor(trackingInfo.parcel.payment_status, statuses)}30`
+                          backgroundColor: `${getStatusColor(trackingInfo.parcel.payment_status)}15`,
+                          color: getStatusColor(trackingInfo.parcel.payment_status),
+                          border: `1px solid ${getStatusColor(trackingInfo.parcel.payment_status)}30`
                         }}
                       >
                         {trackingInfo.parcel.payment_status || 'Inconnu'}
@@ -544,7 +530,9 @@ const OrderDetailsModal = ({ order, onClose, statuses = [] }) => {
                     </div>
                   </div>
 
+                  {/* Complete Parcel Information - All fields from API */}
                   <div className="tracking-details-grid">
+                    {/* Client Information */}
                     <div className="tracking-detail-card">
                       <div className="tracking-detail-header">
                         <User size={16} />
@@ -566,6 +554,7 @@ const OrderDetailsModal = ({ order, onClose, statuses = [] }) => {
                       </div>
                     </div>
 
+                    {/* Address Information */}
                     <div className="tracking-detail-card">
                       <div className="tracking-detail-header">
                         <MapPin size={16} />
@@ -593,6 +582,7 @@ const OrderDetailsModal = ({ order, onClose, statuses = [] }) => {
                       </div>
                     </div>
 
+                    {/* Product Information */}
                     <div className="tracking-detail-card">
                       <div className="tracking-detail-header">
                         <Package size={16} />
@@ -626,6 +616,7 @@ const OrderDetailsModal = ({ order, onClose, statuses = [] }) => {
                       </div>
                     </div>
 
+                    {/* Dates Information */}
                     <div className="tracking-detail-card">
                       <div className="tracking-detail-header">
                         <Calendar size={16} />
@@ -660,6 +651,7 @@ const OrderDetailsModal = ({ order, onClose, statuses = [] }) => {
                     </div>
                   </div>
 
+                  {/* Note if exists */}
                   {trackingInfo.parcel.note && (
                     <div className="tracking-note">
                       <FileText size={16} />
@@ -670,6 +662,7 @@ const OrderDetailsModal = ({ order, onClose, statuses = [] }) => {
                     </div>
                   )}
 
+                  {/* Can Open Status */}
                   <div className="tracking-can-open">
                     {trackingInfo.parcel.can_open === 1 ? (
                       <div className="can-open-badge allowed">
@@ -684,6 +677,7 @@ const OrderDetailsModal = ({ order, onClose, statuses = [] }) => {
                     )}
                   </div>
 
+                  {/* Query Time */}
                   {trackingInfo.query_time && (
                     <div className="tracking-query-time">
                       <Clock size={14} />
@@ -694,7 +688,7 @@ const OrderDetailsModal = ({ order, onClose, statuses = [] }) => {
               )}
             </div>
 
-            {/* Right Column - Informations de la commande */}
+            {/* Right Column - Informations de la commande (styled like tracking) */}
             <div className="details-right-column">
               <div className="order-info-section">
                 <div className="order-info-header">
@@ -703,6 +697,7 @@ const OrderDetailsModal = ({ order, onClose, statuses = [] }) => {
                   <span className="order-info-badge">DÉTAILS</span>
                 </div>
 
+                {/* Order Information Cards */}
                 <div className="order-info-grid">
                   <div className="order-info-card">
                     <div className="order-info-label">
@@ -776,9 +771,9 @@ const OrderDetailsModal = ({ order, onClose, statuses = [] }) => {
                         <span 
                           className="status-bad"
                           style={{ 
-                            backgroundColor: `${getStatusColor(deliveryStatus, statuses)}15`,
-                            color: getStatusColor(deliveryStatus, statuses),
-                            border: `1px solid ${getStatusColor(deliveryStatus, statuses)}30`
+                            backgroundColor: `${getStatusColor(deliveryStatus)}15`,
+                            color: getStatusColor(deliveryStatus),
+                            border: `1px solid ${getStatusColor(deliveryStatus)}30`
                           }}
                         >
                           {deliveryStatus}
@@ -788,6 +783,7 @@ const OrderDetailsModal = ({ order, onClose, statuses = [] }) => {
                   </div>
                 </div>
 
+                {/* Financial Summary */}
                 <div className="order-financial-summary">
                   <h5>Résumé financier</h5>
                   <div className="financial-row">
@@ -812,6 +808,7 @@ const OrderDetailsModal = ({ order, onClose, statuses = [] }) => {
                   </div>
                 </div>
 
+                {/* Order Note */}
                 {order.parcel_note && (
                   <div className="order-note">
                     <FileText size={16} />
@@ -825,6 +822,7 @@ const OrderDetailsModal = ({ order, onClose, statuses = [] }) => {
             </div>
           </div>
 
+          {/* Books Section - Full Width Below */}
           <div className="details-section full-width">
             <h4>Livres commandés</h4>
             {order.livres && Array.isArray(order.livres) && order.livres.length > 0 ? (
@@ -870,8 +868,6 @@ const OrderDetailsModal = ({ order, onClose, statuses = [] }) => {
 export default function AdminOrders() {
   const dispatch = useDispatch();
   const { list: orderList = [], loading } = useSelector((state) => state.commandes);
-  // Get statuses from Redux
-  const { statuses = [], statusesLoading } = useSelector((state) => state.commandes);
   
   // Search and filter states
   const [searchTerm, setSearchTerm] = useState("");
@@ -930,21 +926,18 @@ export default function AdminOrders() {
     livres: [],
     date: new Date().toISOString().split('T')[0]
   });
-
-  const copyTrackingLink = (parcelCode) => {
-    const link = `${window.location.origin}/track/${parcelCode}`;
-    navigator.clipboard.writeText(link).then(() => {
-      alert("Lien de suivi copié !");
-    });
-  };
-
-  // Fetch initial data
+      const copyTrackingLink = (parcelCode) => {
+  const link = `${window.location.origin}/track/${parcelCode}`;
+  navigator.clipboard.writeText(link).then(() => {
+    // You can show a toast notification here
+    alert("Lien de suivi copié !");
+  });
+};
   useEffect(() => {
     dispatch(fetchCommandes());
-    dispatch(fetchWelivexpressStatuses()); // Fetch statuses dynamically
   }, [dispatch]);
 
-  // Fetch tracking info for all orders
+  // Fetch tracking info for all orders and update Redux when status changes
   useEffect(() => {
     if (orderList.length > 0) {
       const fetchAllTrackingInfo = async () => {
@@ -994,12 +987,14 @@ export default function AdminOrders() {
 
       fetchAllTrackingInfo();
     }
-  }, [orderList, dispatch, trackingInfoMap]);
+  }, [orderList, dispatch]);
 
+  // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, statusFilter]);
 
+  // Update form data when selected order changes
   useEffect(() => {
     if (selectedOrder) {
       setFormData({
@@ -1016,6 +1011,7 @@ export default function AdminOrders() {
     }
   }, [selectedOrder]);
 
+  // Reset manual edit flag when books change
   useEffect(() => {
     setTotalManuallyEdited(false);
   }, [newOrderData.livres]);
@@ -1288,15 +1284,19 @@ export default function AdminOrders() {
         profit: parseFloat(profit.toFixed(2)),
         parcel_note: newOrderData.parcel_note || "",
         parcel_open: newOrderData.parcel_open ? 1 : 0,
+        // REMOVED: statut: "new", // Don't set default status
         livres: formattedLivres,
         date: newOrderData.date
     };
+
+    console.log("📦 Order to create:", orderToCreate);
 
     setAddLoading(true);
     setAddError(null);
 
     try {
         const result = await dispatch(createCommande(orderToCreate)).unwrap();
+        console.log("✅ Create successful:", result);
         await dispatch(fetchCommandes());
         closeAddModal();
     } catch (error) {
@@ -1308,7 +1308,7 @@ export default function AdminOrders() {
     } finally {
         setAddLoading(false);
     }
-  };
+};
 
   const filteredOrders = useMemo(() => {
     return orderList.filter(order => {
@@ -1334,16 +1334,18 @@ export default function AdminOrders() {
 
   const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
 
+  // Get unique statuses from orders for filter dropdown
   const uniqueStatuses = useMemo(() => {
-    const statusesSet = new Set();
+    const statuses = new Set();
     orderList.forEach(order => {
       if (order.statut) {
-        statusesSet.add(order.statut);
+        statuses.add(order.statut);
       }
     });
-    return Array.from(statusesSet).sort();
+    return Array.from(statuses).sort();
   }, [orderList]);
 
+  // Calculate stats dynamically from orderList
   const stats = useMemo(() => {
     const statsMap = {};
     orderList.forEach(order => {
@@ -1433,6 +1435,7 @@ export default function AdminOrders() {
     );
   };
 
+  // Helper to get tracking info for an order
   const getTrackingStatus = (parcelCode) => {
     if (!parcelCode) return null;
     const info = trackingInfoMap[parcelCode];
@@ -1440,12 +1443,11 @@ export default function AdminOrders() {
     return {
       deliveryStatus: info.parcel.delivery_status,
       paymentStatus: info.parcel.payment_status,
-      paymentText: info.parcel.payment_status_text,
-      deliveryColor: getStatusColor(info.parcel.delivery_status, statuses)
+      paymentText: info.parcel.payment_status_text
     };
   };
 
-  if (loading || statusesLoading) {
+  if (loading) {
     return <div className="admin-loading">Chargement des commandes...</div>;
   }
 
@@ -1481,7 +1483,7 @@ export default function AdminOrders() {
             <div className="order-stat-content">
               <span 
                 className="order-stat-label" 
-                style={{ color: getStatusColor(status, statuses) }}
+                style={{ color: getStatusColor(status) }}
               >
                 {status}
               </span>
@@ -1592,9 +1594,9 @@ export default function AdminOrders() {
                           <span 
                             className="status-bad"
                             style={{ 
-                              backgroundColor: `${getStatusColor(tracking.deliveryStatus, statuses)}15`,
-                              color: getStatusColor(tracking.deliveryStatus, statuses),
-                              border: `1px solid ${getStatusColor(tracking.deliveryStatus, statuses)}30`
+                              backgroundColor: `${getStatusColor(tracking.deliveryStatus)}15`,
+                              color: getStatusColor(tracking.deliveryStatus),
+                              border: `1px solid ${getStatusColor(tracking.deliveryStatus)}30`
                             }}
                           >
                             {tracking.deliveryStatus || '-'}
@@ -1603,9 +1605,9 @@ export default function AdminOrders() {
                           <span 
                             className="status-bad"
                             style={{ 
-                              backgroundColor: `${getStatusColor(order.statut, statuses)}15`,
-                              color: getStatusColor(order.statut, statuses),
-                              border: `1px solid ${getStatusColor(order.statut, statuses)}30`
+                              backgroundColor: `${getStatusColor(order.statut)}15`,
+                              color: getStatusColor(order.statut),
+                              border: `1px solid ${getStatusColor(order.statut)}30`
                             }}
                           >
                             {order.statut || '-'}
@@ -1619,9 +1621,9 @@ export default function AdminOrders() {
                           <span 
                             className="status-bad"
                             style={{ 
-                              backgroundColor: `${getStatusColor(tracking.paymentStatus, statuses)}15`,
-                              color: getStatusColor(tracking.paymentStatus, statuses),
-                              border: `1px solid ${getStatusColor(tracking.paymentStatus, statuses)}30`
+                              backgroundColor: `${getStatusColor(tracking.paymentStatus)}15`,
+                              color: getStatusColor(tracking.paymentStatus),
+                              border: `1px solid ${getStatusColor(tracking.paymentStatus)}30`
                             }}
                           >
                             {tracking.paymentText || tracking.paymentStatus || '-'}
@@ -1679,8 +1681,7 @@ export default function AdminOrders() {
       {showDetailsModal && (
         <OrderDetailsModal 
           order={selectedOrder} 
-          onClose={closeDetailsModal}
-          statuses={statuses} 
+          onClose={closeDetailsModal} 
         />
       )}
 
@@ -1754,6 +1755,7 @@ export default function AdminOrders() {
                   </div>
                 </div>
 
+                {/* Welivexpress fields - only quantity now */}
                 <div className="form-row">
                   <div className="form-group">
                     <label>Quantité totale <span className="required">*</span></label>

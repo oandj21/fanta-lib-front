@@ -320,49 +320,6 @@ export const markCommandeAsDelivered = createAsyncThunk(
 );
 
 // ==============================================
-// 🚚 WELIVEXPRESS STATUSES ACTIONS (ADD THIS)
-// ==============================================
-
-export const fetchWelivexpressStatuses = createAsyncThunk(
-  "welivexpress/fetchStatuses",
-  async (_, thunkAPI) => {
-    try {
-      const response = await api.get("/welivexpress/liststatuses");
-      // The API returns { success: true, statuses: [...] }
-      return response.data.statuses || [];
-    } catch (error) {
-      return handleApiError(error, thunkAPI);
-    }
-  }
-);
-
-export const fetchWelivexpressCities = createAsyncThunk(
-  "welivexpress/fetchCities",
-  async (_, thunkAPI) => {
-    try {
-      const response = await api.get("/welivexpress/listcities");
-      return response.data;
-    } catch (error) {
-      return handleApiError(error, thunkAPI);
-    }
-  }
-);
-
-export const trackParcel = createAsyncThunk(
-  "welivexpress/trackParcel",
-  async (parcelCode, thunkAPI) => {
-    try {
-      const response = await api.get("/welivexpress/trackparcel", {
-        params: { parcel_code: parcelCode }
-      });
-      return response.data;
-    } catch (error) {
-      return handleApiError(error, thunkAPI);
-    }
-  }
-);
-
-// ==============================================
 // 💰 DEPENSES ACTIONS
 // ==============================================
 
@@ -491,7 +448,7 @@ export const deleteFinance = createAsyncThunk(
 );
 
 // ==============================================
-// 📚 BOOKS TOTAL VALUE ACTION
+// 📚 BOOKS TOTAL VALUE ACTION (ADD THIS)
 // ==============================================
 
 export const fetchBooksTotalValue = createAsyncThunk(
@@ -979,74 +936,6 @@ const commandesSlice = createSlice({
 });
 
 // ==============================================
-// 🚚 WELIVEXPRESS STATUSES SLICE (ADD THIS)
-// ==============================================
-
-const welivexpressSlice = createSlice({
-  name: "welivexpress",
-  initialState: {
-    statuses: [], // Store all Welivexpress statuses
-    cities: [],
-    trackingInfo: {},
-    loading: false,
-    error: null
-  },
-  reducers: {
-    clearWelivexpressError: (state) => {
-      state.error = null;
-    },
-    clearTrackingInfo: (state) => {
-      state.trackingInfo = {};
-    }
-  },
-  extraReducers: (builder) => {
-    builder
-      // Fetch statuses
-      .addCase(fetchWelivexpressStatuses.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(fetchWelivexpressStatuses.fulfilled, (state, action) => {
-        state.loading = false;
-        state.statuses = action.payload;
-      })
-      .addCase(fetchWelivexpressStatuses.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-        state.statuses = [];
-      })
-      // Fetch cities
-      .addCase(fetchWelivexpressCities.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(fetchWelivexpressCities.fulfilled, (state, action) => {
-        state.loading = false;
-        state.cities = action.payload;
-      })
-      .addCase(fetchWelivexpressCities.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-        state.cities = [];
-      })
-      // Track parcel
-      .addCase(trackParcel.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(trackParcel.fulfilled, (state, action) => {
-        state.loading = false;
-        const parcelCode = action.meta.arg;
-        state.trackingInfo[parcelCode] = action.payload;
-      })
-      .addCase(trackParcel.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      });
-  }
-});
-
-// ==============================================
 // 💰 DEPENSES SLICE
 // ==============================================
 
@@ -1144,7 +1033,7 @@ const financesSlice = createSlice({
   initialState: {
     list: [],
     currentFinance: null,
-    totalBooksValue: 0,
+    totalBooksValue: 0, // ADD THIS
     loading: false,
     error: null
   },
@@ -1166,8 +1055,9 @@ const financesSlice = createSlice({
       .addCase(fetchFinances.fulfilled, (state, action) => {
         state.loading = false;
         state.list = action.payload;
+        // Get the latest finance record for capital
         if (action.payload && action.payload.length > 0) {
-          state.currentFinance = action.payload[0];
+          state.currentFinance = action.payload[0]; // Assuming you want the latest
         }
       })
       .addCase(fetchFinances.rejected, (state, action) => {
@@ -1231,7 +1121,7 @@ const financesSlice = createSlice({
           state.currentFinance = null;
         }
       })
-      // Fetch books total value
+      // ADD THIS: Fetch books total value
       .addCase(fetchBooksTotalValue.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -1516,7 +1406,6 @@ const store = configureStore({
     auth: authSlice.reducer,
     livres: livresSlice.reducer,
     commandes: commandesSlice.reducer,
-    welivexpress: welivexpressSlice.reducer, // ADD THIS
     depenses: depensesSlice.reducer,
     finances: financesSlice.reducer,
     utilisateurs: utilisateursSlice.reducer,
@@ -1544,9 +1433,6 @@ export const { clearLivreError, clearCurrentLivre } = livresSlice.actions;
 
 // Commandes actions
 export const { clearCommandeError, clearCurrentCommande } = commandesSlice.actions;
-
-// Welivexpress actions (ADD THIS)
-export const { clearWelivexpressError, clearTrackingInfo } = welivexpressSlice.actions;
 
 // Depenses actions
 export const { clearDepenseError, clearCurrentDepense } = depensesSlice.actions;
@@ -1587,13 +1473,6 @@ export const selectCurrentCommande = (state) => state.commandes.currentCommande;
 export const selectCommandesLoading = (state) => state.commandes.loading;
 export const selectCommandesError = (state) => state.commandes.error;
 
-// Welivexpress selectors (ADD THIS)
-export const selectWelivexpressStatuses = (state) => state.welivexpress.statuses;
-export const selectWelivexpressCities = (state) => state.welivexpress.cities;
-export const selectWelivexpressTrackingInfo = (state) => state.welivexpress.trackingInfo;
-export const selectWelivexpressLoading = (state) => state.welivexpress.loading;
-export const selectWelivexpressError = (state) => state.welivexpress.error;
-
 // Depenses selectors
 export const selectDepenses = (state) => state.depenses.list;
 export const selectCurrentDepense = (state) => state.depenses.currentDepense;
@@ -1603,7 +1482,7 @@ export const selectDepensesError = (state) => state.depenses.error;
 // Finances selectors
 export const selectFinances = (state) => state.finances.list;
 export const selectCurrentFinance = (state) => state.finances.currentFinance;
-export const selectTotalBooksValue = (state) => state.finances.totalBooksValue;
+export const selectTotalBooksValue = (state) => state.finances.totalBooksValue; // ADD THIS
 export const selectFinancesLoading = (state) => state.finances.loading;
 export const selectFinancesError = (state) => state.finances.error;
 

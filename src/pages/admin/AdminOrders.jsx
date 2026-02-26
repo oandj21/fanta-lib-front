@@ -33,7 +33,7 @@ const getStatusColor = (status) => {
   if (status === 'PARCEL_CONFIRMED' || statusLower.includes('confirm')) return '#007bff';
   if (status === 'PARCEL_IN_TRANSIT' || statusLower.includes('transit') || statusLower.includes('expéd')) return '#ffc107';
   if (status === 'PARCEL_DELIVERED' || statusLower.includes('livré') || statusLower.includes('delivered')) return '#10b981';
-  if (status === 'PARCEL_CANCELLED' || statusLower.includes('annul') || statusLower.includes('cancelled')) return '#6b7280';
+  if (status === 'PARCEL_CANCELLED' || statusLower.includes('annulé') || statusLower.includes('cancelled')) return '#6b7280';
   if (status === 'PARCEL_RETURNED' || statusLower.includes('retour') || statusLower.includes('returned')) return '#ef4444';
   
   // Payment statuses

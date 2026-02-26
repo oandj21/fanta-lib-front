@@ -1191,13 +1191,7 @@ export default function AdminDashboard() {
           </span>
           
           {/* Notification Bell */}
-          <NotificationCenter 
-            notifications={notifications}
-            onMarkAsRead={handleMarkAsRead}
-            onMarkAllAsRead={handleMarkAllAsRead}
-            onClearAll={handleClearAll}
-            onDeleteNotification={handleDeleteNotification}
-          />
+      
 
           {/* Download Button */}
           <DownloadMenu onDownload={handleDownload} />

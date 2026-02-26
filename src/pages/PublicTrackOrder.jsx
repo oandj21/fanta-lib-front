@@ -23,7 +23,7 @@ import {
   Home,
   Info
 } from "lucide-react";
-import "../../css/PublicTrackOrder.css";
+import "../css/PublicTrackOrder.css";
 
 // Helper to get status color
 const getStatusColor = (status) => {

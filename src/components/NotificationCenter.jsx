@@ -46,11 +46,21 @@ export default function NotificationCenter({
   const [selectedOrder, setSelectedOrder] = useState(null);
   const notificationRef = useRef(null);
 
-  // Update unread count
+  // Use a Set to track notified order IDs to prevent duplicates
+  const [notifiedOrderIds] = useState(() => new Set());
+
+  // Update unread count and track notified orders
   useEffect(() => {
     const count = notifications.filter(n => !n.read).length;
     setUnreadCount(count);
-  }, [notifications]);
+    
+    // Add all existing notification order IDs to the Set
+    notifications.forEach(notif => {
+      if (notif.orderId) {
+        notifiedOrderIds.add(notif.orderId);
+      }
+    });
+  }, [notifications, notifiedOrderIds]);
 
   // Close on click outside
   useEffect(() => {
@@ -227,6 +237,20 @@ export default function NotificationCenter({
     navigate('/admin/orders');
   };
 
+  // Handle marking as read with proper state update
+  const handleMarkAsRead = (id) => {
+    onMarkAsRead(id);
+  };
+
+  // Handle delete with proper cleanup
+  const handleDelete = (id, orderId) => {
+    // Remove from notified set when deleting
+    if (orderId) {
+      notifiedOrderIds.delete(orderId);
+    }
+    onDeleteNotification(id);
+  };
+
   return (
     <div className="notification-wrapper" ref={notificationRef}>
       <button 
@@ -325,7 +349,10 @@ export default function NotificationCenter({
                               color: statusColor,
                               border: `1px solid ${statusColor}30`
                             }}>
-                              {notif.status}
+                              {statusColor === getStatusBadgeColor('DELIVERED') ? 'Livré' : 
+                               statusColor === getStatusBadgeColor('RETURNED') ? 'Retourné' :
+                               statusColor === getStatusBadgeColor('CANCELLED') ? 'Annulé' :
+                               notif.status}
                               {notif.secondaryStatus && notif.secondaryStatus !== '' && (
                                 <span className="secondary-status"> - {notif.secondaryStatus}</span>
                               )}
@@ -389,7 +416,7 @@ export default function NotificationCenter({
                       
                       {!notif.read && (
                         <button 
-                          onClick={() => onMarkAsRead(notif.id)}
+                          onClick={() => handleMarkAsRead(notif.id)}
                           className="mark-read"
                           title="Marquer comme lu"
                         >
@@ -397,7 +424,7 @@ export default function NotificationCenter({
                         </button>
                       )}
                       <button 
-                        onClick={() => onDeleteNotification(notif.id)}
+                        onClick={() => handleDelete(notif.id, notif.orderId)}
                         className="delete-notification"
                         title="Supprimer"
                       >
@@ -460,7 +487,10 @@ export default function NotificationCenter({
                         border: `1px solid ${getStatusBadgeColor(selectedOrder.status)}30`
                       }}
                     >
-                      {selectedOrder.status}
+                      {getStatusBadgeColor(selectedOrder.status) === getStatusBadgeColor('DELIVERED') ? 'Livré' :
+                       getStatusBadgeColor(selectedOrder.status) === getStatusBadgeColor('RETURNED') ? 'Retourné' :
+                       getStatusBadgeColor(selectedOrder.status) === getStatusBadgeColor('CANCELLED') ? 'Annulé' :
+                       selectedOrder.status}
                       {selectedOrder.secondaryStatus && (
                         <span className="secondary-status"> - {selectedOrder.secondaryStatus}</span>
                       )}

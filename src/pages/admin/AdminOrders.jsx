@@ -23,18 +23,53 @@ import "../../css/AdminOrders.css";
 // REMOVED: statusLabels and statusColors - now using API values directly
 
 // Helper to get status color based on status text
+// Helper to get status color based on status text from Welivexpress
 const getStatusColor = (status) => {
   if (!status) return '#6b7280';
   
   const statusLower = status.toLowerCase();
   
-  // Welivexpress statuses
-  if (status === 'NEW_PARCEL' || statusLower.includes('nouveau')) return '#3b82f6';
-  if (status === 'PARCEL_CONFIRMED' || statusLower.includes('confirm')) return '#007bff';
-  if (status === 'PARCEL_IN_TRANSIT' || statusLower.includes('transit') || statusLower.includes('expéd')) return '#ffc107';
-  if (status === 'PARCEL_DELIVERED' || statusLower.includes('livré') || statusLower.includes('delivered')) return '#10b981';
-  if (status === 'PARCEL_CANCELLED' || statusLower.includes('annulé') || statusLower.includes('cancelled')) return '#6b7280';
-  if (status === 'PARCEL_RETURNED' || statusLower.includes('retour') || statusLower.includes('returned')) return '#ef4444';
+  // Welivexpress statuses - exact codes from API
+  if (status === 'NEW_PARCEL' || statusLower.includes('nouveau')) return '#3b82f6'; // Blue
+  if (status === 'WAITING_PICKUP' || statusLower.includes('attente')) return '#ff9300'; // Orange
+  if (status === 'PICKED_UP' || statusLower.includes('ramassé')) return '#00a3d7'; // Light blue
+  if (status === 'SENT' || statusLower.includes('expédié')) return '#0080ff'; // Blue
+  if (status === 'RECEIVED' || statusLower.includes('reçu')) return '#069d40'; // Green
+  if (status === 'DISTRIBUTION' || statusLower.includes('distribution')) return '#606060'; // Gray
+  if (status === 'IN_PROGRESS' || statusLower.includes('en cours')) return '#ff8040'; // Orange-red
+  if (status === 'RETURNED' || statusLower.includes('retourné')) return '#bb0707'; // Dark red
+  if (status === 'DELIVERED' || statusLower.includes('livré')) return '#00fa00'; // Bright green
+  if (status === 'POSTPONED' || statusLower.includes('reporté')) return '#53d5fd'; // Light blue
+  if (status === 'NOANSWER' || statusLower.includes('pas de réponse')) return '#ff9300'; // Orange
+  if (status === 'UNREACHABLE' || statusLower.includes('injoignable')) return '#25a0d7'; // Blue
+  if (status === 'OUT_OF_AREA' || statusLower.includes('hors-zone')) return '#94e3fe'; // Very light blue
+  if (status === 'CANCELED' || status === 'CANCELLED' || statusLower.includes('annulé')) return '#f41515'; // Red
+  if (status === 'REFUSE' || statusLower.includes('refusé')) return '#EB1A00'; // Red
+  if (status === 'SENT_BY_AMANA') return '#eb1a00'; // Red
+  if (status === 'RETURN_BY_AMANA') return '#eb1a00'; // Red
+  if (status === 'ERR' || statusLower.includes('incorrect')) return '#831000'; // Dark red
+  if (status === 'DEUX' || statusLower.includes('deuxième')) return '#3a88fe'; // Blue
+  if (status === 'TROIS' || statusLower.includes('troisième')) return '#0042aa'; // Dark blue
+  if (status === 'CANCELED_BY_VENDEUR') return '#db5151'; // Light red
+  if (status === 'CLIENT_INTERESE' || statusLower.includes('intéressé')) return '#000000'; // Black
+  if (status === 'PROGRAMMER' || statusLower.includes('programmé')) return '#74a7fe'; // Light blue
+  if (status === 'EN_VOYAGE' || statusLower.includes('voyage')) return '#6e6bff'; // Purple-blue
+  if (status === 'RELENCE_NEW_CLIENT' || statusLower.includes('relancé')) return '#919191'; // Gray
+  if (status === 'WAIT_RELANCE' || statusLower.includes('attende de relancer')) return '#ff781f'; // Orange
+  if (status === 'BV' || statusLower.includes('boite vocal')) return '#4bcffb'; // Light blue
+  if (status === 'CPC' || statusLower.includes('client pas commande')) return '#ef0101'; // Red
+  if (status === 'CPI' || status === 'CNI' || statusLower.includes('pas intéressé')) return '#f80d0d'; // Red
+  if (status === 'RETURN_REQUESTED' || statusLower.includes('demande de retour')) return '#aa5cf6'; // Purple
+  if (status === 'PLTR' || statusLower.includes('plus tard')) return '#d88e0e'; // Orange-brown
+  if (status === 'CONFIRMED' || statusLower.includes('confirmé')) return '#00f900'; // Green
+  if (status === 'INJO' || statusLower.includes('injoignable')) return '#53d5fd'; // Light blue
+  if (status === 'INJ_SUIV' || statusLower.includes('injoignable avec sms')) return '#00c7fc'; // Light blue
+  if (status === 'PDR_SUIV' || statusLower.includes('pas de réponse avec sms')) return '#ff9300'; // Orange
+  if (status === 'BT_SUIV' || statusLower.includes('boite vocal avec sms')) return '#53d5fd'; // Light blue
+  if (status === 'REP_SUIV' || statusLower.includes('annuler suivie')) return '#ff2600'; // Red
+  if (status === 'PAS_SER' || statusLower.includes('pas sérieux')) return '#ff2600'; // Red
+  if (status === 'ERROR_DISTINATION' || statusLower.includes('error distination')) return '#fa0000'; // Red
+  if (status === 'MDK') return '#000000'; // Black
   
   // Payment statuses
   if (statusLower.includes('payé') || statusLower.includes('paid')) return '#10b981';

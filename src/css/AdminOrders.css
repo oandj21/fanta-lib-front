@@ -2461,3 +2461,300 @@ textarea:focus-visible {
     margin: 0.5rem;
   }
 }
+/* Webhook Panel Styles */
+.webhook-modal {
+  max-width: 500px;
+  width: 90%;
+}
+
+.webhook-test-panel {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.webhook-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.webhook-header h3 {
+  margin: 0;
+  flex: 1;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.webhook-header .close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6c757d;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.webhook-header .close-btn:hover {
+  background: #e9ecef;
+  color: #1e293b;
+}
+
+.webhook-content {
+  padding: 20px;
+}
+
+.webhook-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: #fef2f2;
+  border: 1px solid #fee2e2;
+  border-radius: 6px;
+  color: #dc2626;
+  margin-bottom: 16px;
+}
+
+.webhook-config {
+  background: #f8f9fa;
+  border-radius: 6px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.config-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.config-item:last-child {
+  border-bottom: none;
+}
+
+.config-label {
+  width: 100px;
+  font-weight: 500;
+  color: #6c757d;
+  font-size: 13px;
+}
+
+.config-value {
+  flex: 1;
+  color: #1e293b;
+  font-size: 13px;
+  word-break: break-all;
+}
+
+.config-value.success {
+  color: #10b981;
+  font-weight: 600;
+}
+
+.webhook-actions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.webhook-actions button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-danger {
+  background: #dc2626;
+  color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
+.webhook-info {
+  background: #e8f4fd;
+  border-radius: 6px;
+  padding: 16px;
+}
+
+.webhook-info h4 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0369a1;
+}
+
+.webhook-info p {
+  margin: 0 0 12px 0;
+  font-size: 13px;
+  color: #075985;
+  line-height: 1.5;
+}
+
+.webhook-info ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.webhook-info li {
+  font-size: 13px;
+  color: #075985;
+  margin-bottom: 4px;
+}
+
+/* Header Actions */
+.header-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-webhook {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #4b5563;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-webhook:hover {
+  background: #f8f9fa;
+  border-color: #cbd5e1;
+}
+
+/* Status Badge Container */
+.status-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.status-badge.secondary {
+  opacity: 0.9;
+}
+
+.status-badge.large {
+  padding: 6px 12px;
+  font-size: 14px;
+}
+
+/* Tracking Status Grid Updates */
+.tracking-status-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.status-badge-container {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.tracking-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.tracking-status-badge.large {
+  padding: 8px 16px;
+  font-size: 14px;
+}
+
+.tracking-status-description {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #6c757d;
+}
+
+/* Webhook Status Banner */
+.webhook-status-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #e8f4fd;
+  border: 1px solid #b8dff0;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  color: #0369a1;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.live-badge {
+  background: #10b981;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-left: auto;
+}
+
+/* Spinning animation */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+/* Order Stat Card Total */
+.order-stat-card.total {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: white;
+}
+
+.order-stat-card.total .order-stat-label {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.order-stat-card.total .order-stat-value {
+  color: white;
+}

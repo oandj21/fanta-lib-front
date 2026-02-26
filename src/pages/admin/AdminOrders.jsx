@@ -1305,6 +1305,7 @@ export default function AdminOrders() {
     });
   };
 
+  // Initial fetch of orders
   useEffect(() => {
     dispatch(fetchCommandes());
   }, [dispatch]);
@@ -1350,7 +1351,7 @@ export default function AdminOrders() {
           return;
         }
 
-        // Execute all promises in parallel
+        // Execute all promises in parallel (SINGLE REFRESH)
         const results = await Promise.all(trackingPromises);
         
         const newTrackingMap = {};
@@ -1437,7 +1438,7 @@ export default function AdminOrders() {
     };
 
     fetchAllTrackingInfo();
-  }, [orderList, dispatch, trackingFetched]);
+  }, [orderList, dispatch, trackingFetched]); // Only runs when orderList changes and not fetched yet
 
   // Reset to first page when filters change
   useEffect(() => {

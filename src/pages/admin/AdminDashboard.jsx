@@ -167,6 +167,43 @@ const PIE_COLORS = {
   'SENT_BY_AMANA': '#1e40af'
 };
 
+// Helper to check if a status is "in progress" (not final)
+const isStatusInProgress = (status) => {
+  if (!status) return false;
+  
+  const statusLower = status.toLowerCase();
+  
+  // Define in-progress statuses (all statuses except final states)
+  const inProgressKeywords = [
+    'en cours', 'distribution', 'ramassé', 'expédié', 'attente',
+    'nouveau', 'confirmé', 'programmé', 'reporté', 'voyage',
+    'in_progress', 'picked_up', 'sent', 'waiting', 'new_parcel',
+    'parcel_confirmed', 'programmer', 'postponed', 'envg',
+    'deux', 'trois', '2ème', '3ème', 'refusé', 'noanswer',
+    'pas de réponse', 'injoignable', 'hors zone',
+    'PICKED_UP', 'DISTRIBUTION', 'IN_PROGRESS', 'SENT', 
+    'WAITING_PICKUP', 'NEW_PARCEL', 'PARCEL_CONFIRMED', 
+    'PROGRAMMER', 'POSTPONED', 'ENVG', 'DEUX', 'TROIS', 
+    'REFUSE', 'NOANSWER', 'UNREACHABLE', 'HORS_ZONE'
+  ];
+  
+  // Final states that should NOT trigger notifications
+  const finalKeywords = [
+    'livré', 'delivered', 'retourné', 'returned', 'annulé', 'cancelled',
+    'DELIVERED', 'RETURNED', 'CANCELLED', 'RETURN_BY_AMANA', 'SENT_BY_AMANA'
+  ];
+  
+  const isInProgress = inProgressKeywords.some(keyword => 
+    statusLower.includes(keyword.toLowerCase())
+  );
+  
+  const isFinal = finalKeywords.some(keyword => 
+    statusLower.includes(keyword.toLowerCase())
+  );
+  
+  return isInProgress && !isFinal;
+};
+
 export default function AdminDashboard() {
   const dispatch = useDispatch();
   
@@ -183,7 +220,6 @@ export default function AdminDashboard() {
   
   // Notification state
   const [notifications, setNotifications] = useState([]);
-  const [lastOrderCount, setLastOrderCount] = useState(0);
   const [notifiedOrderIds, setNotifiedOrderIds] = useState(new Set());
 
   // Load notifications and notified IDs from localStorage on mount
@@ -217,74 +253,50 @@ export default function AdminDashboard() {
     localStorage.setItem('notified_order_ids', JSON.stringify(Array.from(notifiedOrderIds)));
   }, [notifiedOrderIds]);
 
-  // AUTO-DETECT NEW ORDERS FROM API DATA
-  // This runs whenever commandes data changes (after API fetches)
+  // SHOW ALL COMMANDS WITH STATUS IN PROGRESS IN NOTIFICATIONS
+  // This runs whenever commandes data changes and shows ALL in-progress orders
   useEffect(() => {
     if (commandes && commandes.length > 0) {
-      // Set initial count on first load
-      if (lastOrderCount === 0) {
-        setLastOrderCount(commandes.length);
-        return;
-      }
+      // Find all orders that are in progress and not yet notified
+      const inProgressOrders = commandes.filter(order => {
+        const status = order.statut || order.status || '';
+        return isStatusInProgress(status) && !notifiedOrderIds.has(order.id);
+      });
       
-      // Check if we have new orders (count increased)
-      if (commandes.length > lastOrderCount) {
-        // Find which orders are new (not in our notified set)
-        const newOrders = commandes.filter(order => !notifiedOrderIds.has(order.id));
+      if (inProgressOrders.length > 0) {
+        console.log(`Found ${inProgressOrders.length} new in-progress orders to notify`);
         
-        newOrders.forEach(order => {
-          // Check if the status is "in progress" or similar
-          const status = order.statut || order.status || order.deliveryStatus || '';
-          const statusLower = status.toLowerCase();
+        // Create notifications for each in-progress order
+        inProgressOrders.forEach(order => {
+          const status = order.statut || order.status || '';
           
-          // Define in-progress statuses (all statuses except final states)
-          const inProgressStatuses = [
-            'in_progress', 'en cours', 'distribution', 'picked_up', 
-            'ramassé', 'sent', 'expédié', 'waiting_pickup', 'en attente',
-            'deux', '2ème', 'trois', '3ème', 'programmer', 'programmé',
-            'envg', 'en voyage', 'postponed', 'reporté', 'new_parcel', 
-            'nouveau', 'parcel_confirmed', 'confirmé', 'picked_up', 'ramassé',
-            'refuse', 'refusé', 'noanswer', 'pas de réponse', 'unreachable',
-            'injoignable', 'hors_zone', 'hors zone'
-          ];
-          
-          // Final states that should NOT trigger notifications
-          const finalStatuses = [
-            'delivered', 'livré', 'returned', 'retourné', 
-            'cancelled', 'annulé', 'return_by_amana', 'retour amana'
-          ];
-          
-          // Check if current status is in progress (not a final state)
-          const isInProgress = inProgressStatuses.some(s => statusLower.includes(s)) && 
-                              !finalStatuses.some(s => statusLower.includes(s));
-          
-          if (isInProgress) {
-            // Create notification for new order
-            const newNotification = {
-              id: Date.now() + Math.random(),
-              type: 'commande',
-              action: 'create',
-              message: `📦 Nouvelle commande en cours`,
-              details: `${order.parcel_receiver || 'Client'} • ${statusLabels[status] || status}`,
-              timestamp: new Date().toISOString(),
-              read: false,
-              user: 'Système',
-              status: status,
-              orderId: order.id,
-              orderCode: order.parcel_code,
-              clientName: order.parcel_receiver
-            };
+          // Create notification for in-progress order
+          const newNotification = {
+            id: Date.now() + Math.random(),
+            type: 'commande',
+            action: 'status_change',
+            message: `🔄 Commande en cours`,
+            details: `${order.parcel_receiver || 'Client'} • ${statusLabels[status] || status}`,
+            timestamp: new Date().toISOString(),
+            read: false,
+            user: 'Système',
+            status: status,
+            orderId: order.id,
+            parcelCode: order.parcel_code,
+            clientName: order.parcel_receiver,
+            clientPhone: order.parcel_phone,
+            city: order.parcel_city,
+            address: order.parcel_address,
+            parcelPrice: order.parcel_price,
+            quantity: order.parcel_prd_qty
+          };
 
-            setNotifications(prev => [newNotification, ...prev].slice(0, 50));
-          }
+          setNotifications(prev => [newNotification, ...prev].slice(0, 50));
           
           // Mark this order as notified
           setNotifiedOrderIds(prev => new Set([...Array.from(prev), order.id]));
         });
       }
-      
-      // Update the order count
-      setLastOrderCount(commandes.length);
     }
   }, [commandes]); // Runs whenever commandes data changes
 
@@ -298,45 +310,28 @@ export default function AdminDashboard() {
         return;
       }
       
-      // Skip if this is a create event (we already handle creates with auto-detection)
-      if (action === 'create') {
+      // Check if the status is in progress
+      const status = item.statut || item.status || item.deliveryStatus || '';
+      
+      // Skip if status is not in progress
+      if (!isStatusInProgress(status)) {
+        console.log('Skipping notification for non-in-progress order:', status);
         return;
       }
       
-      // Check if the status is "in progress" or similar
-      const status = item.statut || item.status || item.deliveryStatus || '';
-      const statusLower = status.toLowerCase();
-      
-      // Define in-progress statuses (all statuses except final states)
-      const inProgressStatuses = [
-        'in_progress', 'en cours', 'distribution', 'picked_up', 
-        'ramassé', 'sent', 'expédié', 'waiting_pickup', 'en attente',
-        'deux', '2ème', 'trois', '3ème', 'programmer', 'programmé',
-        'envg', 'en voyage', 'postponed', 'reporté', 'new_parcel', 
-        'nouveau', 'parcel_confirmed', 'confirmé', 'picked_up', 'ramassé',
-        'refuse', 'refusé', 'noanswer', 'pas de réponse', 'unreachable',
-        'injoignable', 'hors_zone', 'hors zone'
-      ];
-      
-      // Final states that should NOT trigger notifications
-      const finalStatuses = [
-        'delivered', 'livré', 'returned', 'retourné', 
-        'cancelled', 'annulé', 'return_by_amana', 'retour amana'
-      ];
-      
-      // Check if current status is in progress (not a final state)
-      const isInProgress = inProgressStatuses.some(s => statusLower.includes(s)) && 
-                          !finalStatuses.some(s => statusLower.includes(s));
-      
-      if (!isInProgress) {
-        console.log('Skipping notification for non-in-progress order:', status);
-        return; // Don't create notification if not in progress
+      // Skip if this order was already notified
+      if (notifiedOrderIds.has(item.id)) {
+        return;
       }
       
       let message = '';
       let details = '';
       
       switch(action) {
+        case 'create':
+          message = `📦 Nouvelle commande en cours`;
+          details = `${item.parcel_receiver || 'Client'} • ${statusLabels[status] || status}`;
+          break;
         case 'update':
           message = `✏️ Commande mise à jour`;
           details = `${item.parcel_receiver || `#${item.id}`} • ${statusLabels[status] || status}`;
@@ -360,16 +355,24 @@ export default function AdminDashboard() {
         user: user || 'Système',
         status: status,
         orderId: item.id,
-        orderCode: item.parcel_code,
-        clientName: item.parcel_receiver
+        parcelCode: item.parcel_code,
+        clientName: item.parcel_receiver,
+        clientPhone: item.parcel_phone,
+        city: item.parcel_city,
+        address: item.parcel_address,
+        parcelPrice: item.parcel_price,
+        quantity: item.parcel_prd_qty
       };
 
-      setNotifications(prev => [newNotification, ...prev].slice(0, 50)); // Keep last 50
+      setNotifications(prev => [newNotification, ...prev].slice(0, 50));
+      
+      // Mark this order as notified
+      setNotifiedOrderIds(prev => new Set([...Array.from(prev), item.id]));
     };
 
     window.addEventListener('crud-event', handleCrudEvent);
     return () => window.removeEventListener('crud-event', handleCrudEvent);
-  }, []);
+  }, [notifiedOrderIds]);
 
   // Notification handlers
   const handleMarkAsRead = (id) => {
@@ -386,6 +389,8 @@ export default function AdminDashboard() {
 
   const handleClearAll = () => {
     setNotifications([]);
+    // Also clear notified IDs when clearing all notifications
+    setNotifiedOrderIds(new Set());
   };
 
   const handleDeleteNotification = (id) => {

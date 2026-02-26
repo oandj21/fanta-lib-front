@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { 
   Pencil, Trash2, Check, Search, XCircle, Filter, 
@@ -1258,8 +1258,11 @@ export default function AdminOrders() {
   
   // Tracking info for all orders - OPTIMIZED: Single object to store all tracking data
   const [trackingInfoMap, setTrackingInfoMap] = useState({});
-  const [loadingTracking, setLoadingTracking] = useState(false); // Single loading state for all tracking
-  const [trackingFetched, setTrackingFetched] = useState(false); // Flag to prevent multiple fetches
+  const [loadingTracking, setLoadingTracking] = useState(false);
+  
+  // Use ref to track if initial fetch has been done (prevents multiple fetches)
+  const initialFetchDone = useRef(false);
+  const fetchInProgress = useRef(false);
   
   // Track if total was manually edited
   const [totalManuallyEdited, setTotalManuallyEdited] = useState(false);
@@ -1313,9 +1316,12 @@ export default function AdminOrders() {
   // OPTIMIZED: Fetch all tracking info in a single batch when orders are loaded
   useEffect(() => {
     const fetchAllTrackingInfo = async () => {
-      // Don't fetch if already fetched or no orders
-      if (trackingFetched || orderList.length === 0) return;
+      // Don't fetch if already done or no orders or fetch in progress
+      if (initialFetchDone.current || orderList.length === 0 || fetchInProgress.current) {
+        return;
+      }
       
+      fetchInProgress.current = true;
       setLoadingTracking(true);
       
       try {
@@ -1346,8 +1352,9 @@ export default function AdminOrders() {
         }
 
         if (trackingPromises.length === 0) {
-          setTrackingFetched(true);
+          initialFetchDone.current = true;
           setLoadingTracking(false);
+          fetchInProgress.current = false;
           return;
         }
 
@@ -1433,12 +1440,13 @@ export default function AdminOrders() {
         console.error("Error fetching tracking info:", error);
       } finally {
         setLoadingTracking(false);
-        setTrackingFetched(true);
+        initialFetchDone.current = true;
+        fetchInProgress.current = false;
       }
     };
 
     fetchAllTrackingInfo();
-  }, [orderList, dispatch, trackingFetched]); // Only runs when orderList changes and not fetched yet
+  }, [orderList, dispatch]); // Removed trackingFetched from dependencies, using ref instead
 
   // Reset to first page when filters change
   useEffect(() => {

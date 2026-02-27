@@ -54,7 +54,7 @@ export default function Livres() {
     <div className="livres-page">
       <Header />
 
-      <section className="page-hero">
+      <section className="page-her">
         <div className="page-hero-content">
           <BookOpen />
           <h1>قائمة الكتب المتوفرة</h1>

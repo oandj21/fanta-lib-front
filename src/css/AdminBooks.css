@@ -1625,7 +1625,7 @@ textarea:focus-visible {
   width: 24px;
   height: 24px;
   border-radius: 12px;
-  background-color: #f59e0b;
+  background-color: #f50b0b;
   color: white;
   border: 2px solid white;
   display: flex;
@@ -1637,10 +1637,6 @@ textarea:focus-visible {
   transform: scale(0.8);
 }
 
-.remove-image-btn:hover:not(:disabled) {
-  background-color: #d97706;
-  transform: scale(1.1);
-}
 
 /* Permanent delete button */
 .permanent-delete-btn {

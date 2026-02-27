@@ -442,3 +442,78 @@
 [dir="rtl"] .mobile-actions {
   flex-direction: row-reverse;
 }
+/* Mobile search bar - always visible */
+.mobile-search-bar {
+  padding: 0.75rem 1rem;
+  background-color: var(--primary);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: block;
+}
+
+@media (min-width: 769px) {
+  .mobile-search-bar {
+    display: none;
+  }
+}
+
+.mobile-search-bar .search-dropdown {
+  width: 100%;
+}
+
+.mobile-search-bar .search-input {
+  background-color: rgba(255, 255, 255, 0.95);
+  border-color: transparent;
+  width: 100%;
+  padding: 12px 40px 12px 40px;
+}
+
+.mobile-search-bar .search-input:focus {
+  background-color: white;
+  border-color: white;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
+}
+
+.mobile-search-bar .search-icon {
+  right: 12px;
+}
+
+[dir="rtl"] .mobile-search-bar .search-icon {
+  right: auto;
+  left: 12px;
+}
+
+.mobile-search-bar .clear-search {
+  left: 12px;
+}
+
+[dir="rtl"] .mobile-search-bar .clear-search {
+  left: auto;
+  right: 12px;
+}
+
+/* Ensure search results appear above other content */
+.mobile-search-bar .search-results {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* Adjust header container for mobile */
+@media (max-width: 768px) {
+  .header-container {
+    padding: 0 0.75rem;
+  }
+  
+  .logo span {
+    font-size: 1.2rem;
+  }
+  
+  .logo-image {
+    width: 2rem;
+    height: 2rem;
+  }
+}

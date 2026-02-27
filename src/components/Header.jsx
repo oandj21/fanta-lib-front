@@ -10,7 +10,6 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showAdminLink, setShowAdminLink] = useState(false);
   const [typedSequence, setTypedSequence] = useState("");
-  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const location = useLocation();
   
   // Secret code: "fantasia"
@@ -82,17 +81,10 @@ export default function Header() {
   // Close mobile menu when navigating
   useEffect(() => {
     setMenuOpen(false);
-    setMobileSearchOpen(false);
   }, [location.pathname]);
 
   // Use either context count or localStorage count
   const displayCount = totalCount || localCartCount;
-
-  // Toggle mobile search
-  const toggleMobileSearch = () => {
-    setMobileSearchOpen(!mobileSearchOpen);
-    if (menuOpen) setMenuOpen(false);
-  };
 
   return (
     <header className="header">
@@ -134,15 +126,6 @@ export default function Header() {
         </nav>
 
         <div className="mobile-actions">
-          {/* Mobile search toggle button */}
-          <button
-            onClick={toggleMobileSearch}
-            className="mobile-search-toggle"
-            aria-label="بحث"
-          >
-            <Search size={20} />
-          </button>
-          
           <Link to="/cart" className="mobile-cart-link">
             <ShoppingCart className="cart-icon" />
             {displayCount > 0 && (
@@ -151,10 +134,7 @@ export default function Header() {
           </Link>
           
           <button
-            onClick={() => {
-              setMenuOpen(!menuOpen);
-              setMobileSearchOpen(false);
-            }}
+            onClick={() => setMenuOpen(!menuOpen)}
             className="menu-button"
             aria-label="القائمة"
           >
@@ -163,12 +143,10 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Mobile Search Bar - appears between header and mobile menu */}
-      {mobileSearchOpen && (
-        <div className="mobile-search-bar">
-          <SearchDropdown isMobile={true} />
-        </div>
-      )}
+      {/* Always visible mobile search bar */}
+      <div className="mobile-search-bar">
+        <SearchDropdown isMobile={true} />
+      </div>
 
       {/* Mobile Menu */}
       {menuOpen && (

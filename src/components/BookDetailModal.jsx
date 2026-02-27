@@ -94,19 +94,21 @@ export default function BookDetailModal({ book, onClose }) {
                 onError={handleImageError}
                 loading="lazy"
               />
-              {/* Category Badge */}
-              <span className="book-category-badge">
-                {book.categorie || "غير مصنف"}
-              </span>
+              {/* Status Badge - Same as BookCard - positioned on image */}
+              {book.status && (
+                <span className={`status-badge ${book.status}`}>
+                  {book.status === "available" ? "متوفر" : "غير متوفر"}
+                </span>
+              )}
             </div>
 
             <div className="book-detail-info">
               <h2 className="book-title">{book.titre || "عنوان غير معروف"}</h2>
               <p className="book-author">بقلم {book.auteur || "مؤلف غير معروف"}</p>
-
-              {/* Status Badge - Now with green/red colors */}
-              <span className={`status-badge ${book.status}`}>
-                {book.status === "available" ? "متوفر" : "غير متوفر"}
+              
+              {/* Category Badge - Same as BookCard - between title and author */}
+              <span className="book-category-badge">
+                {book.categorie || "غير مصنف"}
               </span>
 
               {book.status === "available" && (

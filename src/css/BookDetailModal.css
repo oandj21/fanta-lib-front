@@ -80,45 +80,48 @@
   transform: scale(1.02);
 }
 
-/* Category Badge for Modal */
-.book-detail-cover .book-category-badge {
+/* Status Badge - Same as BookCard - positioned on image */
+.book-detail-cover .status-badge {
   position: absolute;
-  top: 20px;
-  right: 20px;
-  background: linear-gradient(135deg, #8B4513, #5c0202);
-  color: white;
-  padding: 8px 16px;
+  top: 15px;
+  right: 15px;
+  padding: 6px 14px;
   border-radius: 25px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
-  box-shadow: 0 4px 15px rgba(92, 2, 2, 0.3);
-  backdrop-filter: blur(10px);
   z-index: 2;
-  max-width: 200px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  max-width: 150px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: white;
 }
 
-/* Status Badge - Updated with green/red colors */
-.status-badge {
+.book-detail-cover .status-badge.available {
+  background: linear-gradient(135deg, #28a745, #218838);
+}
+
+.book-detail-cover .status-badge.out_of_stock {
+  background: linear-gradient(135deg, #dc3545, #c82333);
+}
+
+/* Category Badge - Same as BookCard - in info section */
+.book-detail-info .book-category-badge {
   display: inline-block;
-  padding: 6px 15px;
-  border-radius: 50px;
-  font-size: 13px;
+  background: linear-gradient(135deg, #8B4513, #5c0202);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 25px;
+  font-size: 11px;
   font-weight: 600;
-  text-transform: uppercase;
-  margin-bottom: 15px;
-}
-
-.status-badge.available {
-  background-color: #28a745;
-  color: white;
-}
-
-.status-badge.out_of_stock {
-  background-color: #dc3545;
-  color: white;
+  width: fit-content;
+  margin: 8px 0;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 0 2px 8px rgba(92, 2, 2, 0.2);
 }
 
 .book-detail-info {
@@ -136,7 +139,7 @@
 .book-author {
   font-size: 16px;
   color: #666;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
   font-style: italic;
 }
 
@@ -296,10 +299,10 @@
   left: 15px;
 }
 
-[dir="rtl"] .book-detail-cover .book-category-badge,
-.book-detail-modal.rtl .book-detail-cover .book-category-badge {
+[dir="rtl"] .book-detail-cover .status-badge,
+.book-detail-modal.rtl .book-detail-cover .status-badge {
   right: auto;
-  left: 20px;
+  left: 15px;
 }
 
 /* Responsive Design */
@@ -336,22 +339,17 @@
     height: 280px;
   }
   
-  .book-detail-cover .book-category-badge {
-    top: 15px;
-    right: 15px;
-    padding: 6px 12px;
-    font-size: 11px;
+  .book-detail-cover .status-badge {
+    top: 10px;
+    right: 10px;
+    padding: 4px 10px;
+    font-size: 10px;
   }
   
-  [dir="rtl"] .book-detail-cover .book-category-badge,
-  .book-detail-modal.rtl .book-detail-cover .book-category-badge {
+  [dir="rtl"] .book-detail-cover .status-badge,
+  .book-detail-modal.rtl .book-detail-cover .status-badge {
     right: auto;
-    left: 15px;
-  }
-  
-  .status-badge {
-    padding: 5px 12px;
-    font-size: 12px;
+    left: 10px;
   }
   
   .book-detail-info {
@@ -364,13 +362,20 @@
   
   .book-author {
     font-size: 14px;
-    margin-bottom: 15px;
+    margin-bottom: 10px;
+  }
+  
+  .book-detail-info .book-category-badge {
+    font-size: 10px;
+    padding: 3px 10px;
+    margin: 6px 0;
   }
   
   .stock-info {
     padding: 6px 12px;
     font-size: 12px;
     margin-bottom: 20px;
+    margin-top: 5px;
   }
   
   .book-description h3 {
@@ -422,13 +427,11 @@
   
   .book-author {
     font-size: 13px;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
   }
   
-  .status-badge {
-    margin-bottom: 10px;
-    padding: 4px 10px;
-    font-size: 11px;
+  .book-detail-info .book-category-badge {
+    margin: 4px 0;
   }
   
   .stock-info {

@@ -82,12 +82,11 @@
 }
 
 /* Filters Section */
-.filters-section {
+.filters-sectio {
   padding: 1.5rem 1.5rem;
   background-color: #ffffff;
   border-bottom: 1px solid #e8e0d8;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-  position: sticky;
   top: 0;
   z-index: 90;
 }

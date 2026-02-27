@@ -57,12 +57,11 @@ export default function Livres() {
       <section className="page-hero">
         <div className="page-hero-content">
           <BookOpen />
-          <h1>كتالوجنا</h1>
+          <h1>قائمة الكتب المتوفرة</h1>
         </div>
-        <p>اكتشف مجموعتنا الكاملة من الكتب المختارة بعناية</p>
       </section>
 
-      <section className="filters-section">
+      <section className="filters-sectio">
         <div className="filters-container">
           <input
             type="text"

@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Header from "../components/Header";
 import WhatsAppFloat from "../components/WhatsAppFloat";
-import { ShoppingCart, Trash2, Plus, Minus, ArrowLeft, BookOpen, Check } from "lucide-react";
+import { ShoppingCart, Trash2, Plus, Minus, ArrowLeft, BookOpen, Check, X, AlertTriangle } from "lucide-react";
 import "../css/Cart.css";
 
 export default function Cart() {
@@ -11,6 +11,7 @@ export default function Cart() {
   const [loading, setLoading] = useState(true);
   const [removingId, setRemovingId] = useState(null);
   const [orderPlaced, setOrderPlaced] = useState(false);
+  const [showClearModal, setShowClearModal] = useState(false); // State for clear cart modal
 
   const WHATSAPP_NUMBER = "212625854078";
 
@@ -110,13 +111,20 @@ export default function Cart() {
     }, 300);
   };
 
-  // Clear entire cart
-  const clearCart = () => {
-    if (window.confirm('هل تريد تفريغ السلة؟')) {
-      localStorage.setItem('cart', JSON.stringify([]));
-      setCartItems([]);
-      window.dispatchEvent(new Event('storage'));
-    }
+  // Clear entire cart with styled modal
+  const handleClearCart = () => {
+    setShowClearModal(true);
+  };
+
+  const confirmClearCart = () => {
+    localStorage.setItem('cart', JSON.stringify([]));
+    setCartItems([]);
+    setShowClearModal(false);
+    window.dispatchEvent(new Event('storage'));
+  };
+
+  const cancelClearCart = () => {
+    setShowClearModal(false);
   };
 
   // Calculate total items only (no prices)
@@ -147,7 +155,7 @@ ${itemsList}
 العنوان الكامل: 
 المدينة: 
 
-يرجى تأكيد التوفر والسعر الإجمالي.`;
+يرجى تأكيد التوفر.`;
   };
 
   const handleWhatsAppOrder = () => {
@@ -176,6 +184,39 @@ ${itemsList}
     <div className="cart-page">
       <Header />
 
+      {/* Clear Cart Confirmation Modal */}
+      {showClearModal && (
+        <div className="modal-overlay" onClick={cancelClearCart}>
+          <div className="modal-content confirmation-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={cancelClearCart}>
+              <X size={20} />
+            </button>
+            
+            <div className="confirmation-icon">
+              <AlertTriangle size={48} />
+            </div>
+            
+            <h3 className="confirmation-title">تفريغ السلة</h3>
+            
+            <p className="confirmation-message">
+              هل أنت متأكد من تفريغ سلة التسوق؟<br />
+              <span>سيتم حذف جميع المنتجات من سلتك.</span>
+            </p>
+            
+            <div className="confirmation-actions">
+              <button onClick={confirmClearCart} className="btn-confirm">
+                <Trash2 size={18} />
+                نعم، قم بالتفريغ
+              </button>
+              <button onClick={cancelClearCart} className="btn-cancel">
+                <X size={18} />
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <section className="page-hero">
         <div className="page-hero-content">
           <ShoppingCart size={48} />
@@ -202,7 +243,7 @@ ${itemsList}
               <div className="cart-items">
                 <div className="cart-header">
                   <h2>المنتجات ({totalItems})</h2>
-                  <button onClick={clearCart} className="btn-clear">
+                  <button onClick={handleClearCart} className="btn-clear">
                     <Trash2 size={16} />
                     تفريغ السلة
                   </button>

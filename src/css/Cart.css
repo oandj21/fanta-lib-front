@@ -866,141 +866,121 @@ html {
   font-size: 1.1rem;
   margin-bottom: 0.25rem;
 }
-/* Delete Confirmation Prompt */
-.delete-prompt-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  animation: fadeIn 0.3s ease;
-}
-
-.delete-prompt {
-  background-color: white;
-  border-radius: 16px;
-  padding: 2rem;
-  max-width: 400px;
-  width: 90%;
-  box-shadow: var(--shadow-lg);
+/* Confirmation Modal Styles */
+.confirmation-modal {
+  max-width: 400px !important;
   text-align: center;
-  animation: slideUp 0.3s ease;
-  border: 1px solid var(--border);
+  padding: 2rem !important;
 }
 
-.delete-prompt-icon {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  background-color: var(--danger-light);
-  color: var(--danger);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 1.5rem;
+.confirmation-icon {
+  margin-bottom: 1.5rem;
+  color: #ff9800;
+  animation: pulse 2s infinite;
 }
 
-.delete-prompt-icon svg {
-  width: 32px;
-  height: 32px;
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
-.delete-prompt h3 {
+.confirmation-icon svg {
+  width: 4rem;
+  height: 4rem;
+}
+
+.confirmation-title {
   font-family: 'Playfair Display', serif;
   font-size: 1.5rem;
-  font-weight: 700;
   color: var(--foreground);
-  margin: 0 0 0.75rem 0;
+  margin-bottom: 1rem;
 }
 
-.delete-prompt p {
+.confirmation-message {
   color: var(--muted-foreground);
   font-size: 1rem;
   line-height: 1.6;
   margin-bottom: 2rem;
 }
 
-.delete-prompt-actions {
+.confirmation-message span {
+  display: block;
+  font-size: 0.9rem;
+  color: #ff9800;
+  margin-top: 0.5rem;
+}
+
+.confirmation-actions {
   display: flex;
   gap: 1rem;
   justify-content: center;
 }
 
-.delete-prompt-btn {
-  flex: 1;
+.btn-confirm,
+.btn-cancel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
   padding: 0.875rem 1.5rem;
+  border: none;
   border-radius: 8px;
+  font-size: 0.95rem;
   font-weight: 600;
-  font-size: 1rem;
   cursor: pointer;
   transition: var(--transition);
-  border: 2px solid transparent;
+  flex: 1;
 }
 
-.delete-prompt-btn.cancel {
+.btn-confirm {
+  background: linear-gradient(135deg, var(--danger), #c82333);
+  color: white;
+  box-shadow: 0 4px 10px rgba(220, 53, 69, 0.3);
+}
+
+.btn-confirm:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(220, 53, 69, 0.4);
+}
+
+.btn-confirm:active {
+  transform: translateY(0);
+}
+
+.btn-cancel {
   background-color: var(--muted);
   color: var(--foreground);
+  border: 1px solid var(--border);
 }
 
-.delete-prompt-btn.cancel:hover {
-  background-color: var(--border);
-}
-
-.delete-prompt-btn.confirm {
-  background-color: var(--danger);
-  color: white;
-}
-
-.delete-prompt-btn.confirm:hover {
-  background-color: #c82333;
+.btn-cancel:hover {
+  background-color: #e0d6cc;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
 }
 
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-  .delete-prompt {
-    background-color: #2a2a2a;
-  }
-
-  .delete-prompt h3 {
-    color: #f0f0f0;
-  }
-
-  .delete-prompt p {
-    color: #b0b0b0;
-  }
-
-  .delete-prompt-btn.cancel {
-    background-color: #404040;
-    color: #f0f0f0;
-  }
-
-  .delete-prompt-btn.cancel:hover {
-    background-color: #4a4a4a;
-  }
+.btn-cancel:active {
+  transform: translateY(0);
 }
 
-/* Animations */
-@keyframes fadeIn {
+/* Animation for modal entrance */
+.confirmation-modal {
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
   from {
     opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(-30px);
   }
   to {
     opacity: 1;
@@ -1008,26 +988,33 @@ html {
   }
 }
 
-/* Mobile Responsive */
+/* Mobile responsive */
 @media (max-width: 480px) {
-  .delete-prompt {
-    padding: 1.5rem;
+  .confirmation-modal {
+    width: 90%;
+    padding: 1.5rem !important;
   }
 
-  .delete-prompt h3 {
-    font-size: 1.25rem;
+  .confirmation-icon svg {
+    width: 3rem;
+    height: 3rem;
   }
 
-  .delete-prompt p {
+  .confirmation-title {
+    font-size: 1.3rem;
+  }
+
+  .confirmation-message {
     font-size: 0.95rem;
   }
 
-  .delete-prompt-actions {
-    flex-direction: column-reverse;
+  .confirmation-actions {
+    flex-direction: column;
     gap: 0.75rem;
   }
 
-  .delete-prompt-btn {
-    padding: 0.75rem 1rem;
+  .btn-confirm,
+  .btn-cancel {
+    width: 100%;
   }
 }

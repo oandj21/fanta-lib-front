@@ -74,19 +74,20 @@ export default function BookCard({ book }) {
           />
           {/* Status Badge - Now in the image area */}
           {book.status && (
-            <span className={`status-badge ${book.status}`}>
+            <span className={`status-bad ${book.status}`}>
               {book.status === "available" ? "متوفر" : "غير متوفر"}
             </span>
           )}
         </div>
 
         <div className="book-info">
-          <h3 className="book-title">{book.titre || "عنوان غير معروف"}</h3>
-          
-          {/* Category Badge - Now between title and author */}
           <span className="book-category-badge">
             {book.categorie || "غير مصنف"}
           </span>
+          <h3 className="book-title">{book.titre || "عنوان غير معروف"}</h3>
+          
+          {/* Category Badge - Now between title and author */}
+          
           
           <p className="book-author">{book.auteur || "مؤلف غير معروف"}</p>
 

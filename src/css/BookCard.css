@@ -49,12 +49,12 @@
   text-overflow: ellipsis;
 }
 
-.status-badge.available {
+.status-bad.available {
   background: linear-gradient(135deg, #28a745, #218838);
   color: white;
 }
 
-.status-badge.out_of_stock {
+.status-bad.out_of_stock {
   background: linear-gradient(135deg, #dc3545, #c82333);
   color: white;
 }

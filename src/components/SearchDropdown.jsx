@@ -5,7 +5,7 @@ import { Search, X } from "lucide-react";
 import { selectLivres } from "../store/store";
 import "../css/SearchDropdown.css";
 
-export default function SearchDropdown({ onClose, isMobile = false }) {
+export default function SearchDropdown({ isMobile = false }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [showResults, setShowResults] = useState(false);
   const books = useSelector(selectLivres);
@@ -32,7 +32,6 @@ export default function SearchDropdown({ onClose, isMobile = false }) {
     const handleClickOutside = (event) => {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
         setShowResults(false);
-        if (onClose) onClose();
       }
     };
 
@@ -40,13 +39,6 @@ export default function SearchDropdown({ onClose, isMobile = false }) {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [onClose]);
-
-  // Focus input on mount
-  useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
   }, []);
 
   // Show results when search term changes
@@ -59,20 +51,42 @@ export default function SearchDropdown({ onClose, isMobile = false }) {
   }, [searchTerm]);
 
   const handleBookClick = (book) => {
+    // Navigate to livres page and open the book modal
     navigate(`/livres?book=${book.id}`);
     setSearchTerm("");
     setShowResults(false);
-    if (onClose) onClose();
   };
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    if (searchTerm.trim().length >= 2 && filteredBooks.length > 0) {
+    if (searchTerm.trim().length >= 2) {
       // Navigate to livres page with search query
       navigate(`/livres?search=${encodeURIComponent(searchTerm)}`);
       setShowResults(false);
-      if (onClose) onClose();
     }
+  };
+
+  // Helper function to get image URL
+  const getImageUrl = (images) => {
+    if (!images) return 'https://via.placeholder.com/40x60?text=No+Cover';
+    
+    if (typeof images === 'string') {
+      try {
+        const parsed = JSON.parse(images);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return `https://fanta-lib-back-production.up.railway.app/storage/${parsed[0]}`;
+        }
+      } catch (e) {
+        // If parsing fails, treat as direct filename
+        return `https://fanta-lib-back-production.up.railway.app/storage/${images}`;
+      }
+    }
+    
+    if (Array.isArray(images) && images.length > 0) {
+      return `https://fanta-lib-back-production.up.railway.app/storage/${images[0]}`;
+    }
+    
+    return 'https://via.placeholder.com/40x60?text=No+Cover';
   };
 
   return (
@@ -110,19 +124,11 @@ export default function SearchDropdown({ onClose, isMobile = false }) {
                 >
                   <div className="result-image">
                     <img
-                      src={
-                        book.images
-                          ? `https://fanta-lib-back-production.up.railway.app/storage/${
-                              typeof book.images === "string"
-                                ? JSON.parse(book.images)?.[0] || book.images
-                                : book.images[0]
-                            }`
-                          : "https://via.placeholder.com/40x60"
-                      }
+                      src={getImageUrl(book.images)}
                       alt={book.titre}
                       onError={(e) => {
                         e.target.onerror = null;
-                        e.target.src = "https://via.placeholder.com/40x60";
+                        e.target.src = "https://via.placeholder.com/40x60?text=Error";
                       }}
                     />
                   </div>

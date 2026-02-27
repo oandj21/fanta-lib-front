@@ -9,7 +9,6 @@ import "../css/Header.css";
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showAdminLink, setShowAdminLink] = useState(false);
-  const [showSearch, setShowSearch] = useState(false);
   const [typedSequence, setTypedSequence] = useState("");
   const location = useLocation();
   
@@ -79,9 +78,9 @@ export default function Header() {
     };
   }, [typedSequence, secretCode]);
 
-  // Close search when navigating
+  // Close mobile menu when navigating
   useEffect(() => {
-    setShowSearch(false);
+    setMenuOpen(false);
   }, [location.pathname]);
 
   // Use either context count or localStorage count
@@ -95,19 +94,9 @@ export default function Header() {
           <span>فانتازيا</span>
         </Link>
 
-        {/* Search Bar - Desktop */}
-        <div className="desktop-search">
-          {showSearch ? (
-            <SearchDropdown onClose={() => setShowSearch(false)} />
-          ) : (
-            <button
-              onClick={() => setShowSearch(true)}
-              className="search-toggle"
-              aria-label="بحث"
-            >
-              <Search size={20} />
-            </button>
-          )}
+        {/* Always visible search bar - hidden on mobile */}
+        <div className="header-search">
+          <SearchDropdown />
         </div>
 
         <nav className="desktop-nav">
@@ -137,15 +126,6 @@ export default function Header() {
         </nav>
 
         <div className="mobile-actions">
-          {/* Search Button for Mobile */}
-          <button
-            onClick={() => setShowSearch(!showSearch)}
-            className="mobile-search-toggle"
-            aria-label="بحث"
-          >
-            <Search size={20} />
-          </button>
-
           <Link to="/cart" className="mobile-cart-link">
             <ShoppingCart className="cart-icon" />
             {displayCount > 0 && (
@@ -162,15 +142,9 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Mobile Search */}
-      {showSearch && (
-        <div className="mobile-search-container">
-          <SearchDropdown onClose={() => setShowSearch(false)} isMobile={true} />
-        </div>
-      )}
-
       {menuOpen && (
         <div className="mobile-menu">
+          {/* Mobile Navigation Links */}
           {navLinks.map(({ to, label }) => (
             <Link
               key={to}
@@ -181,6 +155,11 @@ export default function Header() {
               {label}
             </Link>
           ))}
+          
+          {/* Mobile Search */}
+          <div className="mobile-search-wrapper">
+            <SearchDropdown isMobile={true} />
+          </div>
           
           {/* Secret Admin Link in mobile menu */}
           {showAdminLink && (

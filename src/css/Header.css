@@ -33,9 +33,10 @@
   justify-content: space-between;
   height: 4rem;
   padding: 0 1rem;
-  max-width: 1280px;
+  max-width: 1400px;
   margin: 0 auto;
   width: 100%;
+  gap: 1rem;
 }
 
 @media (min-width: 768px) {
@@ -51,6 +52,7 @@
   gap: 0.5rem;
   text-decoration: none;
   transition: var(--transition);
+  flex-shrink: 0;
 }
 
 .logo:hover {
@@ -58,15 +60,18 @@
   transform: translateY(-1px);
 }
 
-.logo svg {
-  width: 1.75rem;
-  height: 1.75rem;
-  color: var(--primary-foreground);
+.logo-image {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.8);
   transition: var(--transition);
 }
 
-.logo:hover svg {
+.logo:hover .logo-image {
   transform: rotate(-5deg);
+  border-color: white;
 }
 
 .logo span {
@@ -79,6 +84,14 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  white-space: nowrap;
+}
+
+/* Header Search - Always visible */
+.header-search {
+  flex: 1;
+  max-width: 400px;
+  min-width: 250px;
 }
 
 /* Desktop Navigation */
@@ -86,6 +99,7 @@
   display: none;
   align-items: center;
   gap: 1.5rem;
+  flex-shrink: 0;
 }
 
 @media (min-width: 768px) {
@@ -105,6 +119,7 @@
   transition: var(--transition);
   position: relative;
   padding: 0.25rem 0;
+  white-space: nowrap;
 }
 
 .nav-link:hover {
@@ -113,13 +128,6 @@
 
 /* Active Link with underline */
 .nav-link.active {
-  color: var(--primary-foreground);
-  border-bottom: 2px solid var(--primary-foreground);
-  padding-bottom: 0.125rem;
-}
-
-/* Alternative active style (for the Tailwind version) */
-.nav-link-active {
   color: var(--primary-foreground);
   border-bottom: 2px solid var(--primary-foreground);
   padding-bottom: 0.125rem;
@@ -195,6 +203,7 @@
   transition: var(--transition);
   background: transparent;
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .admin-link:hover {
@@ -209,6 +218,7 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  flex-shrink: 0;
 }
 
 @media (min-width: 768px) {
@@ -321,515 +331,47 @@
   padding-left: 0.25rem;
 }
 
-/* Utility Classes */
-.container {
-  width: 100%;
-  margin-left: auto;
-  margin-right: auto;
-  padding-left: 1rem;
-  padding-right: 1rem;
-}
-
-@media (min-width: 640px) {
-  .container {
-    max-width: 640px;
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .header-search {
+    max-width: 300px;
   }
 }
 
-@media (min-width: 768px) {
-  .container {
-    max-width: 768px;
-  }
-}
-
-@media (min-width: 1024px) {
-  .container {
-    max-width: 1024px;
-  }
-}
-
-@media (min-width: 1280px) {
-  .container {
-    max-width: 1280px;
-  }
-}
-
-/* Font Classes */
-.font-display {
-  font-family: 'Playfair Display', serif;
-}
-
-.font-body {
-  font-family: 'Lato', sans-serif;
-}
-
-/* Text Colors */
-.text-primary-foreground {
-  color: var(--primary-foreground);
-}
-
-.text-primary-foreground\/80 {
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.text-primary-foreground\/75 {
-  color: rgba(255, 255, 255, 0.75);
-}
-
-.text-primary-foreground\/50 {
-  color: rgba(255, 255, 255, 0.5);
-}
-
-.text-primary-foreground\/40 {
-  color: rgba(255, 255, 255, 0.4);
-}
-
-.text-destructive {
-  color: var(--destructive);
-}
-
-.text-destructive-foreground {
-  color: var(--destructive-foreground);
-}
-
-/* Background Colors */
-.bg-primary {
-  background-color: var(--primary);
-}
-
-.bg-destructive {
-  background-color: var(--destructive);
-}
-
-/* Border Colors */
-.border-primary-foreground {
-  border-color: var(--primary-foreground);
-}
-
-.border-primary-foreground\/20 {
-  border-color: rgba(255, 255, 255, 0.2);
-}
-
-.border-primary-foreground\/10 {
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-/* Animations */
-.animate-fade-in {
-  animation: fadeIn 0.2s ease;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-/* Spacing Utilities */
-.px-4 {
-  padding-left: 1rem;
-  padding-right: 1rem;
-}
-
-.md\:px-6 {
-  padding-left: 1.5rem;
-  padding-right: 1.5rem;
-}
-
-.py-2 {
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
-}
-
-.py-2\.5 {
-  padding-top: 0.625rem;
-  padding-bottom: 0.625rem;
-}
-
-.pb-4 {
-  padding-bottom: 1rem;
-}
-
-.pb-0\.5 {
-  padding-bottom: 0.125rem;
-}
-
-.pt-4 {
-  padding-top: 1rem;
-}
-
-/* Height Utilities */
-.h-16 {
-  height: 4rem;
-}
-
-.h-6 {
-  height: 1.5rem;
-}
-
-.h-7 {
-  height: 1.75rem;
-}
-
-.h-5 {
-  height: 1.25rem;
-}
-
-.h-4 {
-  height: 1rem;
-}
-
-/* Width Utilities */
-.w-6 {
-  width: 1.5rem;
-}
-
-.w-7 {
-  width: 1.75rem;
-}
-
-.w-5 {
-  width: 1.25rem;
-}
-
-.w-4 {
-  width: 1rem;
-}
-
-/* Flex Utilities */
-.flex {
-  display: flex;
-}
-
-.items-center {
-  align-items: center;
-}
-
-.justify-between {
-  justify-content: space-between;
-}
-
-.gap-2 {
-  gap: 0.5rem;
-}
-
-.gap-3 {
-  gap: 0.75rem;
-}
-
-.gap-6 {
-  gap: 1.5rem;
-}
-
-.space-y-1 > * + * {
-  margin-top: 0.25rem;
-}
-
-/* Position Utilities */
-.relative {
-  position: relative;
-}
-
-.absolute {
-  position: absolute;
-}
-
-.sticky {
-  position: sticky;
-}
-
-.top-0 {
-  top: 0;
-}
-
-.-top-2 {
-  top: -0.5rem;
-}
-
-.-right-2 {
-  right: -0.5rem;
-}
-
-.z-50 {
-  z-index: 50;
-}
-
-/* Border Utilities */
-.border {
-  border-width: 1px;
-}
-
-.border-t {
-  border-top-width: 1px;
-}
-
-.border-b-2 {
-  border-bottom-width: 2px;
-}
-
-.rounded-full {
-  border-radius: 9999px;
-}
-
-/* Shadow Utilities */
-.shadow-md {
-  box-shadow: var(--shadow-md);
-}
-
-/* Responsive Utilities */
-.hidden {
-  display: none;
-}
-
-.block {
-  display: block;
-}
-
-@media (min-width: 768px) {
-  .md\:flex {
-    display: flex;
-  }
-  
-  .md\:hidden {
-    display: none;
-  }
-  
-  .md\:px-6 {
-    padding-left: 1.5rem;
-    padding-right: 1.5rem;
-  }
-}
-
-/* Focus Styles */
-button:focus-visible,
-a:focus-visible {
-  outline: 2px solid white;
-  outline-offset: 2px;
-}
-
-/* Hover Effects */
-.hover\:text-primary-foreground:hover {
-  color: var(--primary-foreground);
-}
-
-.hover\:text-primary-foreground\/80:hover {
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.hover\:text-primary-foreground\/70:hover {
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.hover\:border-primary-foreground\/50:hover {
-  border-color: rgba(255, 255, 255, 0.5);
-}
-
-/* Transition Utilities */
-.transition-colors {
-  transition-property: color, background-color, border-color;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 200ms;
-}
-
-/* Responsive Text Sizes */
-.text-xs {
-  font-size: 0.75rem;
-}
-
-.text-sm {
-  font-size: 0.875rem;
-}
-
-.text-2xl {
-  font-size: 1.5rem;
-}
-
-/* Font Weights */
-.font-medium {
-  font-weight: 500;
-}
-
-.font-bold {
-  font-weight: 700;
-}
-
-/* Tracking */
-.tracking-wide {
-  letter-spacing: 0.025em;
-}
-
-/* Prevent text selection on buttons */
-button {
-  user-select: none;
-}
-
-/* Ensure proper box sizing */
-* {
-  box-sizing: border-box;
-}
-
-/* Smooth scrolling for anchor links */
-html {
-  scroll-behavior: smooth;
-}
-
-/* Reduced motion preferences */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-}
-
-/* Print styles */
-@media print {
-  .header {
-    position: static;
-    background: white;
-    box-shadow: none;
-  }
-  
-  .logo span {
-    -webkit-text-fill-color: var(--primary);
-    color: var(--primary);
-  }
-  
-  .cart-link,
-  .admin-link,
-  .menu-button,
-  .mobile-menu {
-    display: none !important;
-  }
-}
-/* Add to your Header.css - replace the existing logo styles */
-
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  text-decoration: none;
-  transition: var(--transition);
-}
-
-.logo:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
-}
-
-.logo-image {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid rgba(255, 255, 255, 0.8);
-  transition: var(--transition);
-}
-
-.logo:hover .logo-image {
-  transform: rotate(-5deg);
-  border-color: white;
-}
-
-.logo span {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--primary-foreground);
-  letter-spacing: 0.025em;
-  background: linear-gradient(135deg, #fff, #f0e8e0);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* Mobile adjustments */
 @media (max-width: 768px) {
-  .logo-image {
-    width: 2rem;
-    height: 2rem;
+  .header-search {
+    display: none; /* Hide search on mobile, it will be in mobile menu */
   }
   
   .logo span {
     font-size: 1.25rem;
   }
-}
-
-/* Remove the old logo svg styles if they exist */
-.logo svg {
-  display: none;
-}
-/* Add to your existing Header.css */
-
-/* Desktop Search */
-.desktop-search {
-  display: none;
-  align-items: center;
-  margin: 0 1rem;
-  flex: 1;
-  max-width: 400px;
-}
-
-@media (min-width: 768px) {
-  .desktop-search {
-    display: flex;
+  
+  .logo-image {
+    width: 2rem;
+    height: 2rem;
   }
 }
 
-.search-toggle {
-  background: none;
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  border-radius: 50px;
-  color: white;
-  padding: 8px 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-size: 14px;
+/* RTL Support */
+[dir="rtl"] .mobile-nav-link.active {
+  border-left: none;
+  border-right: 2px solid var(--primary-foreground);
+  padding-left: 0;
+  padding-right: 0.5rem;
 }
 
-.search-toggle:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.5);
-  transform: translateY(-2px);
+[dir="rtl"] .mobile-nav-link:hover {
+  padding-left: 0;
+  padding-right: 0.25rem;
 }
 
-/* Mobile Search Toggle */
-.mobile-search-toggle {
-  background: none;
-  border: none;
-  color: white;
-  cursor: pointer;
-  padding: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-  border-radius: 50%;
+[dir="rtl"] .mobile-admin-link:hover {
+  padding-left: 0;
+  padding-right: 0.25rem;
 }
 
-.mobile-search-toggle:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-}
-
-/* Mobile Search Container */
-.mobile-search-container {
-  padding: 1rem 1.5rem;
-  background-color: var(--primary);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  animation: slideDown 0.2s ease-out;
-}
-
-@media (min-width: 768px) {
-  .mobile-search-container {
-    display: none;
-  }
+[dir="rtl"] .cart-badge {
+  right: auto;
+  left: -0.5rem;
 }

@@ -32,76 +32,51 @@
   transform: scale(1.05);
 }
 
-/* Category Badge - Takes the place of status badge */
-.book-category-badge {
+/* Status Badge - Now on the image */
+.status-badge {
   position: absolute;
   top: 15px;
   right: 15px;
-  background: linear-gradient(135deg, #8B4513, #5c0202);
-  color: white;
   padding: 6px 14px;
   border-radius: 25px;
   font-size: 11px;
   font-weight: 600;
-  box-shadow: 0 4px 15px rgba(92, 2, 2, 0.3);
-  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
   z-index: 2;
-  max-width: 150px;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* RTL support for category badge */
-[dir="rtl"] .book-category-badge,
-.book-card.rtl .book-category-badge,
-.book-card[data-rtl="true"] .book-category-badge {
-  right: auto;
-  left: 15px;
-}
-
-/* Status Indicator */
-.status-indicator {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 600;
-  margin-bottom: 10px;
-  width: fit-content;
-}
-
-.status-indicator.available {
-  background-color: #28a745;
-  color: white;
-}
-
-.status-indicator.out_of_stock {
-  background-color: #dc3545;
-  color: white;
-}
-
-/* Remove old status-badge styles */
-/* .status-badge {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  padding: 5px 10px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 600;
-  z-index: 1;
 }
 
 .status-badge.available {
-  background-color: rgba(40, 167, 69, 0.9);
+  background: linear-gradient(135deg, #28a745, #20c997);
   color: white;
 }
 
 .status-badge.out_of_stock {
-  background-color: rgba(220, 53, 69, 0.9);
+  background: linear-gradient(135deg, #dc3545, #c82333);
   color: white;
-} */
+}
+
+/* Category Badge - Now between image and title */
+.book-category-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #8B4513, #5c0202);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  width: fit-content;
+  box-shadow: 0 2px 8px rgba(92, 2, 2, 0.2);
+}
+
+/* RTL support for badges */
+[dir="rtl"] .status-badge,
+.book-card.rtl .status-badge,
+.book-card[data-rtl="true"] .status-badge {
+  right: auto;
+  left: 15px;
+}
 
 .book-info {
   padding: 15px;
@@ -192,7 +167,7 @@
   opacity: 0.5;
 }
 
-/* Adjust card sizes for larger screens */
+/* Responsive styles */
 @media (min-width: 1280px) {
   .book-card {
     max-width: 100%;
@@ -242,22 +217,27 @@
     height: 34px;
   }
   
-  .book-category-badge {
+  .status-badge {
     top: 10px;
     right: 10px;
     padding: 4px 10px;
     font-size: 10px;
   }
   
-  [dir="rtl"] .book-category-badge,
-  .book-card.rtl .book-category-badge,
-  .book-card[data-rtl="true"] .book-category-badge {
+  [dir="rtl"] .status-badge,
+  .book-card.rtl .status-badge,
+  .book-card[data-rtl="true"] .status-badge {
     right: auto;
     left: 10px;
   }
+  
+  .book-category-badge {
+    font-size: 9px;
+    padding: 3px 10px;
+  }
 }
 
-/* RTL Support for Arabic text in cards */
+/* RTL Support */
 [dir="rtl"] .book-card,
 .book-card.rtl,
 .book-card[data-rtl="true"] {
@@ -265,40 +245,7 @@
   text-align: right;
 }
 
-[dir="rtl"] .book-title,
-.book-card.rtl .book-title {
-  text-align: right;
-}
-
-[dir="rtl"] .book-author,
-.book-card.rtl .book-author {
-  text-align: right;
-}
-
 [dir="rtl"] .book-footer,
 .book-card.rtl .book-footer {
   flex-direction: row-reverse;
-}
-
-[dir="rtl"] .btn-details svg,
-.book-card.rtl .btn-details svg {
-  margin-left: 0;
-  margin-right: 0;
-  order: 1;
-}
-
-[dir="rtl"] .btn-details span,
-.book-card.rtl .btn-details span {
-  order: 2;
-}
-
-[dir="rtl"] .btn-details,
-.book-card.rtl .btn-details {
-  flex-direction: row;
-}
-
-[dir="rtl"] .status-indicator,
-.book-card.rtl .status-indicator {
-  margin-right: 0;
-  margin-left: auto;
 }

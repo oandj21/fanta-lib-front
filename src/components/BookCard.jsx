@@ -72,23 +72,22 @@ export default function BookCard({ book }) {
               e.target.src = 'https://via.placeholder.com/300x400?text=Image+Error';
             }}
           />
-          {/* Category Badge - Now taking the place of status badge */}
-          <span className="book-category-badge">
-            {book.categorie || "غير مصنف"}
-          </span>
-        </div>
-
-        <div className="book-info">
-          {/* Removed the book-genre line since category is now on the image */}
-          <h3 className="book-title">{book.titre || "عنوان غير معروف"}</h3>
-          <p className="book-author">{book.auteur || "مؤلف غير معروف"}</p>
-
-          {/* Add status indicator here if you want to show availability */}
+          {/* Status Badge - Now on the image */}
           {book.status && (
-            <span className={`status-indicator ${book.status}`}>
+            <span className={`status-badge ${book.status}`}>
               {book.status === "available" ? "متوفر" : "غير متوفر"}
             </span>
           )}
+        </div>
+
+        <div className="book-info">
+          {/* Category Badge - Now between image and title */}
+          <span className="book-category-badge">
+            {book.categorie || "غير مصنف"}
+          </span>
+          
+          <h3 className="book-title">{book.titre || "عنوان غير معروف"}</h3>
+          <p className="book-author">{book.auteur || "مؤلف غير معروف"}</p>
 
           <div className="book-footer">
             <button 

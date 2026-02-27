@@ -1,7 +1,7 @@
 // components/Header.jsx
-import { Link, useLocation } from "react-router-dom";
-import { BookOpen, ShoppingCart, Menu, X } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { BookOpen, ShoppingCart, Menu, X, Search } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 import { useCart } from "../context/CartContext";
 import "../css/Header.css";
 
@@ -9,7 +9,13 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showAdminLink, setShowAdminLink] = useState(false);
   const [typedSequence, setTypedSequence] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [showResults, setShowResults] = useState(false);
+  const [allBooks, setAllBooks] = useState([]);
+  const searchRef = useRef(null);
   const location = useLocation();
+  const navigate = useNavigate();
   
   // Secret code: "fantasia"
   const secretCode = "fantasia";
@@ -25,13 +31,58 @@ export default function Header() {
   
   const { totalCount } = cartData;
 
-  const navLinks = [
-    { to: "/", label: "الرئيسية" },
-    { to: "/livres", label: "الكتب" },
-    { to: "/contact", label: "اتصل بنا" },
-  ];
+  // Load all books for search
+  useEffect(() => {
+    const fetchBooks = async () => {
+      try {
+        const response = await fetch('https://fanta-lib-back-production.up.railway.app/api/livres');
+        const data = await response.json();
+        setAllBooks(data);
+      } catch (error) {
+        console.error('Error fetching books for search:', error);
+      }
+    };
+    fetchBooks();
+  }, []);
 
-  // Also get cart count from localStorage as backup
+  // Search function
+  useEffect(() => {
+    if (searchQuery.trim() === '') {
+      setSearchResults([]);
+      return;
+    }
+
+    const query = searchQuery.toLowerCase();
+    const results = allBooks.filter(book => 
+      (book.titre?.toLowerCase().includes(query) || 
+       book.auteur?.toLowerCase().includes(query))
+    ).slice(0, 5); // Limit to 5 results
+    
+    setSearchResults(results);
+  }, [searchQuery, allBooks]);
+
+  // Close search results when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setShowResults(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Handle search result click
+  const handleResultClick = (bookId) => {
+    setShowResults(false);
+    setSearchQuery("");
+    navigate(`/livres?book=${bookId}`);
+  };
+
+  // Get cart count from localStorage as backup
   const [localCartCount, setLocalCartCount] = useState(0);
   
   useEffect(() => {
@@ -80,6 +131,12 @@ export default function Header() {
   // Use either context count or localStorage count
   const displayCount = totalCount || localCartCount;
 
+  const navLinks = [
+    { to: "/", label: "الرئيسية" },
+    { to: "/livres", label: "الكتب" },
+    { to: "/contact", label: "اتصل بنا" },
+  ];
+
   return (
     <header className="header">
       <div className="header-container">
@@ -87,6 +144,47 @@ export default function Header() {
           <img src="/logo.jpeg" alt="Fantasia Logo" className="logo-image" />
           <span>فانتازيا</span>
         </Link>
+
+        {/* Search Bar - Desktop */}
+        <div className="search-container" ref={searchRef}>
+          <div className="search-wrapper">
+            <input
+              type="text"
+              placeholder="ابحث عن كتاب أو مؤلف..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setShowResults(true);
+              }}
+              onFocus={() => setShowResults(true)}
+              className="search-input"
+            />
+            <Search className="search-icon" size={18} />
+          </div>
+          
+          {/* Search Results Dropdown */}
+          {showResults && searchResults.length > 0 && (
+            <div className="search-results">
+              {searchResults.map(book => (
+                <div
+                  key={book.id}
+                  className="search-result-item"
+                  onClick={() => handleResultClick(book.id)}
+                >
+                  <img 
+                    src={book.images ? `https://fanta-lib-back-production.up.railway.app/storage/${typeof book.images === 'string' ? JSON.parse(book.images)[0] : book.images[0]}` : 'https://via.placeholder.com/50x70'}
+                    alt={book.titre}
+                    className="result-image"
+                  />
+                  <div className="result-info">
+                    <div className="result-title">{book.titre}</div>
+                    <div className="result-author">{book.auteur}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         <nav className="desktop-nav">
           {navLinks.map(({ to, label }) => (
@@ -126,9 +224,50 @@ export default function Header() {
             className="menu-button"
             aria-label="القائمة"
           >
-            {menuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            {menuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
+      </div>
+
+      {/* Mobile Search */}
+      <div className="mobile-search-container">
+        <div className="search-wrapper">
+          <input
+            type="text"
+            placeholder="ابحث عن كتاب أو مؤلف..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setShowResults(true);
+            }}
+            onFocus={() => setShowResults(true)}
+            className="search-input"
+          />
+          <Search className="search-icon" size={18} />
+        </div>
+        
+        {/* Mobile Search Results */}
+        {showResults && searchResults.length > 0 && (
+          <div className="mobile-search-results">
+            {searchResults.map(book => (
+              <div
+                key={book.id}
+                className="search-result-item"
+                onClick={() => handleResultClick(book.id)}
+              >
+                <img 
+                  src={book.images ? `https://fanta-lib-back-production.up.railway.app/storage/${typeof book.images === 'string' ? JSON.parse(book.images)[0] : book.images[0]}` : 'https://via.placeholder.com/50x70'}
+                  alt={book.titre}
+                  className="result-image"
+                />
+                <div className="result-info">
+                  <div className="result-title">{book.titre}</div>
+                  <div className="result-author">{book.auteur}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {menuOpen && (

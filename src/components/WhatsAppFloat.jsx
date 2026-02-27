@@ -41,9 +41,8 @@ export default function WhatsAppFloat() {
       const author = book.auteur || book.author || book.auteure || 'مؤلف غير معروف';
       
       // Try all possible field names for price
-      const price = book.prix_vente || book.prix || book.price || book.prix_achat || 0;
       
-      return `- ${title} للكاتب ${author} (${Number(price).toFixed(2)} درهم)`;
+      return `- ${title} للكاتب ${author}`;
     }).join('\n');
     
     // Calculate total with fallback for missing prices

@@ -7,7 +7,7 @@ import {
   Loader, ChevronDown, BookOpen, Minus, Plus as PlusIcon,
   Eye, RefreshCw, AlertCircle, CheckCircle, Box, Layers,
   Clock, CreditCard, Calendar, PackageCheck, PackageX,
-  Info, Copy, Bell, Webhook
+  Info, Copy, Bell, Webhook, Edit
 } from "lucide-react";
 import axios from "axios";
 import { 
@@ -68,6 +68,76 @@ const sendWebhookUpdate = async (payload) => {
   }
 };
 
+// French translations for statuses
+const statusTranslations = {
+  // Primary delivery statuses
+  'NEW_PARCEL': 'Nouveau colis',
+  'PARCEL_CONFIRMED': 'Colis confirmé',
+  'PICKED_UP': 'Ramassé',
+  'DISTRIBUTION': 'En distribution',
+  'IN_PROGRESS': 'En cours',
+  'SENT': 'Expédié',
+  'DELIVERED': 'Livré',
+  'RETURNED': 'Retourné',
+  'CANCELLED': 'Annulé',
+  'WAITING_PICKUP': 'En attente de ramassage',
+  'RECEIVED': 'Reçu',
+  
+  // Secondary statuses
+  'REFUSE': 'Refusé',
+  'NOANSWER': 'Pas de réponse',
+  'UNREACHABLE': 'Injoignable',
+  'HORS_ZONE': 'Hors zone',
+  'POSTPONED': 'Reporté',
+  'PROGRAMMER': 'Programmé',
+  'DEUX': '2ème tentative',
+  'TROIS': '3ème tentative',
+  'ENVG': 'En voyage',
+  'RETURN_BY_AMANA': 'Retour par Amana',
+  'SENT_BY_AMANA': 'Envoyé par Amana',
+  
+  // Payment statuses
+  'PAID': 'Payé',
+  'NOT_PAID': 'Non payé',
+  'INVOICED': 'Facturé',
+  'PENDING': 'En attente',
+  
+  // Generic fallbacks
+  'nouveau': 'Nouveau',
+  'confirmé': 'Confirmé',
+  'ramassé': 'Ramassé',
+  'distribution': 'En distribution',
+  'en cours': 'En cours',
+  'expédié': 'Expédié',
+  'livré': 'Livré',
+  'retourné': 'Retourné',
+  'annulé': 'Annulé',
+  'attente': 'En attente',
+  'reçu': 'Reçu',
+  'payé': 'Payé',
+  'non payé': 'Non payé',
+  'facturé': 'Facturé'
+};
+
+// Helper to translate status to French
+const translateStatus = (status) => {
+  if (!status) return '';
+  
+  // Check exact match
+  if (statusTranslations[status]) {
+    return statusTranslations[status];
+  }
+  
+  // Check case-insensitive match
+  const statusUpper = status.toUpperCase();
+  if (statusTranslations[statusUpper]) {
+    return statusTranslations[statusUpper];
+  }
+  
+  // Return original if no translation found
+  return status;
+};
+
 // Helper to get status color based on status text
 const getStatusColor = (status) => {
   if (!status) return '#6b7280';
@@ -108,7 +178,7 @@ const getStatusColor = (status) => {
   return '#6b7280';
 };
 
-// Get status description
+// Get status description in French
 const getStatusDescription = (status) => {
   const descriptions = {
     'DELIVERED': 'Colis livré avec succès',
@@ -593,9 +663,15 @@ const OrderDetailsModal = ({ order, onClose }) => {
   const secondaryStatus = trackingInfo?.parcel?.status_second || order.statut_second;
   const paymentStatus = trackingInfo?.parcel?.payment_status || order.payment_status;
   const paymentStatusText = trackingInfo?.parcel?.payment_status_text || order.payment_status_text;
-  const displayStatus = trackingInfo?.parcel?.status_second 
-    ? `${deliveryStatus} - ${secondaryStatus}`
-    : order.statut_display || deliveryStatus;
+  
+  // Translate statuses to French
+  const translatedDeliveryStatus = translateStatus(deliveryStatus);
+  const translatedSecondaryStatus = secondaryStatus ? translateStatus(secondaryStatus) : null;
+  const translatedPaymentStatus = translateStatus(paymentStatus);
+  
+  const displayStatus = secondaryStatus 
+    ? `${translatedDeliveryStatus} - ${translatedSecondaryStatus}`
+    : translatedDeliveryStatus;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -659,7 +735,7 @@ const OrderDetailsModal = ({ order, onClose }) => {
                             border: `1px solid ${getStatusColor(deliveryStatus)}30`
                           }}
                         >
-                          {deliveryStatus || 'Inconnu'}
+                          {translatedDeliveryStatus}
                         </div>
                         {secondaryStatus && secondaryStatus !== '' && (
                           <div 
@@ -671,7 +747,7 @@ const OrderDetailsModal = ({ order, onClose }) => {
                               marginLeft: '8px'
                             }}
                           >
-                            {secondaryStatus}
+                            {translatedSecondaryStatus}
                           </div>
                         )}
                       </div>
@@ -695,7 +771,7 @@ const OrderDetailsModal = ({ order, onClose }) => {
                           border: `1px solid ${getStatusColor(paymentStatus)}30`
                         }}
                       >
-                        {paymentStatus || 'Inconnu'}
+                        {translatedPaymentStatus}
                       </div>
                       <div className="tracking-payment-text">
                         {paymentStatusText || getStatusDescription(paymentStatus)}
@@ -949,7 +1025,7 @@ const OrderDetailsModal = ({ order, onClose }) => {
                             border: `1px solid ${getStatusColor(deliveryStatus)}30`
                           }}
                         >
-                          {deliveryStatus}
+                          {translatedDeliveryStatus}
                         </span>
                       )}
                     </div>
@@ -970,7 +1046,7 @@ const OrderDetailsModal = ({ order, onClose }) => {
                             border: `1px solid ${getStatusColor(secondaryStatus)}30`
                           }}
                         >
-                          {secondaryStatus}
+                          {translatedSecondaryStatus}
                         </span>
                       </div>
                     </div>
@@ -990,7 +1066,7 @@ const OrderDetailsModal = ({ order, onClose }) => {
                           border: `1px solid ${getStatusColor(paymentStatus)}30`
                         }}
                       >
-                        {paymentStatusText || paymentStatus || '-'}
+                        {translatedPaymentStatus}
                       </span>
                     </div>
                   </div>
@@ -1267,6 +1343,9 @@ export default function AdminOrders() {
   // Track if total was manually edited
   const [totalManuallyEdited, setTotalManuallyEdited] = useState(false);
   
+  // Track if price was manually edited for Welivexpress
+  const [priceManuallyEdited, setPriceManuallyEdited] = useState(false);
+  
   // Form state for update
   const [formData, setFormData] = useState({
     parcel_receiver: "",
@@ -1470,9 +1549,10 @@ export default function AdminOrders() {
     }
   }, [selectedOrder]);
 
-  // Reset manual edit flag when books change
+  // Reset manual edit flags when books change
   useEffect(() => {
     setTotalManuallyEdited(false);
+    setPriceManuallyEdited(false);
   }, [newOrderData.livres]);
 
   // Calculate books subtotal, total, and parcel_price
@@ -1491,22 +1571,30 @@ export default function AdminOrders() {
       total = parseFloat(newOrderData.total) || 0;
     }
     
-    const parcelPrice = total + delivery + packaging;
+    // Calculate parcel price - if manually edited, use that value, otherwise calculate
+    let parcelPrice;
+    if (priceManuallyEdited) {
+      parcelPrice = parseFloat(newOrderData.parcel_price) || 0;
+    } else {
+      parcelPrice = total + delivery + packaging;
+    }
+    
     const profit = total - (delivery + packaging);
     
     setNewOrderData(prev => {
-      if (
-        prev.total === total &&
-        prev.parcel_price === parcelPrice &&
-        prev.profit === profit
-      ) {
+      // Only update if values have changed
+      const updates = {};
+      if (prev.total !== total) updates.total = total;
+      if (prev.parcel_price !== parcelPrice) updates.parcel_price = parcelPrice;
+      if (prev.profit !== profit) updates.profit = profit;
+      
+      if (Object.keys(updates).length === 0) {
         return prev;
       }
+      
       return {
         ...prev,
-        total: total,
-        parcel_price: parcelPrice,
-        profit: profit
+        ...updates
       };
     });
   }, [
@@ -1514,7 +1602,9 @@ export default function AdminOrders() {
     newOrderData.frais_livraison, 
     newOrderData.frais_packaging,
     newOrderData.total,
-    totalManuallyEdited
+    newOrderData.parcel_price,
+    totalManuallyEdited,
+    priceManuallyEdited
   ]);
 
   const handleDelete = (order) => {
@@ -1589,6 +1679,7 @@ export default function AdminOrders() {
       date: new Date().toISOString().split('T')[0]
     });
     setTotalManuallyEdited(false);
+    setPriceManuallyEdited(false);
     setAddError(null);
     setShowAddModal(true);
   };
@@ -1613,6 +1704,7 @@ export default function AdminOrders() {
       date: new Date().toISOString().split('T')[0]
     });
     setTotalManuallyEdited(false);
+    setPriceManuallyEdited(false);
     setAddError(null);
   };
 
@@ -1627,13 +1719,19 @@ export default function AdminOrders() {
   const handleNewOrderChange = (e) => {
     const { name, value, type, checked } = e.target;
     
+    // Track manual edits
     if (name === 'total') {
       setTotalManuallyEdited(true);
+    }
+    if (name === 'parcel_price') {
+      setPriceManuallyEdited(true);
     }
     
     setNewOrderData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? (checked ? 1 : 0) : value
+      [name]: type === 'checkbox' ? (checked ? 1 : 0) : 
+               (name === 'parcel_price' || name === 'total' || name === 'frais_livraison' || name === 'frais_packaging') ? 
+               parseFloat(value) || 0 : value
     }));
   };
 
@@ -1724,7 +1822,12 @@ export default function AdminOrders() {
     const delivery = parseFloat(newOrderData.frais_livraison) || 0;
     const packaging = parseFloat(newOrderData.frais_packaging) || 0;
     const total = parseFloat(newOrderData.total) || 0;
-    const parcelPrice = total + delivery + packaging;
+    
+    // Use manually edited price if set, otherwise calculate
+    const parcelPrice = priceManuallyEdited ? 
+      (parseFloat(newOrderData.parcel_price) || 0) : 
+      (total + delivery + packaging);
+    
     const profit = total - (delivery + packaging);
 
     const formattedLivres = newOrderData.livres.map(book => ({
@@ -1755,6 +1858,7 @@ export default function AdminOrders() {
     };
 
     console.log("📦 Order to create:", orderToCreate);
+    console.log("💰 Price sent to Welivexpress:", orderToCreate.parcel_price, "MAD");
 
     setAddLoading(true);
     setAddError(null);
@@ -1762,6 +1866,21 @@ export default function AdminOrders() {
     try {
         const result = await dispatch(createCommande(orderToCreate)).unwrap();
         console.log("✅ Create successful:", result);
+        
+        // Send webhook with the created order data
+        const webhookPayload = {
+          event: 'order_created',
+          parcel: {
+            code: orderToCreate.parcel_code,
+            price: orderToCreate.parcel_price,
+            receiver: orderToCreate.parcel_receiver,
+            city: orderToCreate.parcel_city,
+            address: orderToCreate.parcel_address,
+            total_books: orderToCreate.parcel_prd_qty
+          }
+        };
+        await sendWebhookUpdate(webhookPayload);
+        
         await dispatch(fetchCommandes());
         closeAddModal();
     } catch (error) {
@@ -1774,13 +1893,7 @@ export default function AdminOrders() {
         setAddLoading(false);
     }
   };
-const handleParcelPriceChange = (e) => {
-  const value = e.target.value;
-  setNewOrderData(prev => ({
-    ...prev,
-    parcel_price: value
-  }));
-};
+
   const filteredOrders = useMemo(() => {
     return orderList.filter(order => {
       const matchesSearch = searchTerm === "" || 
@@ -1807,7 +1920,7 @@ const handleParcelPriceChange = (e) => {
 
   const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
 
-  // Get unique statuses from orders for filter dropdown
+  // Get unique statuses from orders for filter dropdown (with French translations)
   const uniqueStatuses = useMemo(() => {
     const statuses = new Set();
     orderList.forEach(order => {
@@ -1821,15 +1934,16 @@ const handleParcelPriceChange = (e) => {
     return Array.from(statuses).sort();
   }, [orderList]);
 
-  // Calculate stats dynamically from orderList
+  // Calculate stats dynamically from orderList (with French translations for display)
   const stats = useMemo(() => {
     const statsMap = {};
     orderList.forEach(order => {
       if (order.statut) {
-        statsMap[order.statut] = (statsMap[order.statut] || 0) + 1;
+        const translated = translateStatus(order.statut);
+        statsMap[translated] = (statsMap[translated] || 0) + 1;
       }
       if (order.statut_second && order.statut_second !== '') {
-        const key = `${order.statut_second} (secondaire)`;
+        const key = `${translateStatus(order.statut_second)} (secondaire)`;
         statsMap[key] = (statsMap[key] || 0) + 1;
       }
     });
@@ -1991,7 +2105,7 @@ const handleParcelPriceChange = (e) => {
         </div>
       )}
 
-      {/* Stats Cards - Dynamic from API */}
+      {/* Stats Cards - Dynamic from API with French translations */}
       <div className="orders-stats-grid">
         <div className="order-stat-card total">
           <div className="order-stat-content">
@@ -2054,7 +2168,9 @@ const handleParcelPriceChange = (e) => {
               >
                 <option value="all">Tous les statuts</option>
                 {uniqueStatuses.map(status => (
-                  <option key={status} value={status}>{status}</option>
+                  <option key={status} value={status}>
+                    {translateStatus(status)}
+                  </option>
                 ))}
               </select>
             </div>
@@ -2105,6 +2221,11 @@ const handleParcelPriceChange = (e) => {
                   const paymentStatus = tracking?.paymentStatus || order.payment_status;
                   const paymentText = tracking?.paymentText || order.payment_status_text;
                   
+                  // Translate statuses for display
+                  const translatedDeliveryStatus = translateStatus(deliveryStatus);
+                  const translatedSecondaryStatus = secondaryStatus ? translateStatus(secondaryStatus) : null;
+                  const translatedPaymentStatus = translateStatus(paymentStatus);
+                  
                   return (
                     <tr key={order.id}>
                       <td className="order-code">{order.parcel_code || "-"}</td>
@@ -2125,7 +2246,7 @@ const handleParcelPriceChange = (e) => {
                                 border: `1px solid ${getStatusColor(deliveryStatus)}30`
                               }}
                             >
-                              {deliveryStatus || '-'}
+                              {translatedDeliveryStatus}
                             </span>
                             {secondaryStatus && secondaryStatus !== '' && (
                               <span 
@@ -2137,7 +2258,7 @@ const handleParcelPriceChange = (e) => {
                                   marginLeft: '4px'
                                 }}
                               >
-                                {secondaryStatus}
+                                {translatedSecondaryStatus}
                               </span>
                             )}
                           </div>
@@ -2155,7 +2276,7 @@ const handleParcelPriceChange = (e) => {
                               border: `1px solid ${getStatusColor(paymentStatus)}30`
                             }}
                           >
-                            {paymentText || paymentStatus || '-'}
+                            {translatedPaymentStatus}
                           </span>
                         )}
                       </td>
@@ -2381,19 +2502,31 @@ const handleParcelPriceChange = (e) => {
                       {totalManuallyEdited ? "Édité manuellement" : "Calculé automatiquement"}
                     </small>
                   </div>
-  <div className="form-group">
-    <label>Prix colis (MAD)</label>
-    <input
-      type="number"
-      name="parcel_price"
-      value={newOrderData.parcel_price}
-      onChange={handleParcelPriceChange}
-      min="0"
-      step="0.01"
-      className={totalManuallyEdited ? "manual-edit-input" : ""}
-    />
-    <small className="field-hint">Total + frais (envoyé à Welivexpress)</small>
-  </div>
+
+                  <div className="form-group">
+                    <label>Prix colis (MAD) <span className="required">*</span></label>
+                    <div className="input-with-icon price-input">
+                      <DollarSign size={16} className="input-icon" />
+                      <input
+                        type="number"
+                        name="parcel_price"
+                        value={newOrderData.parcel_price}
+                        onChange={handleNewOrderChange}
+                        placeholder="0.00"
+                        min="0"
+                        step="0.01"
+                        className={priceManuallyEdited ? "manual-edit-input" : ""}
+                      />
+                      {priceManuallyEdited && (
+                        <span className="manual-edit-badge">Édité</span>
+                      )}
+                    </div>
+                    <small className="field-hint">
+                      {priceManuallyEdited 
+                        ? "Prix modifié manuellement (envoyé à Welivexpress)" 
+                        : "Prix calculé automatiquement (total + frais)"}
+                    </small>
+                  </div>
 
                   <div className="form-group">
                     <label>Profit (MAD)</label>
@@ -2430,6 +2563,15 @@ const handleParcelPriceChange = (e) => {
                     onChange={handleNewOrderChange}
                   />
                   <label htmlFor="parcel_open">Colis ouvert / vérifié</label>
+                </div>
+
+                {/* Display price info for Welivexpress */}
+                <div className="price-info-warning">
+                  <Info size={16} />
+                  <span>
+                    <strong>Important:</strong> Le prix colis de <strong>{newOrderData.parcel_price} MAD</strong> sera envoyé à Welivexpress comme montant à collecter.
+                    {priceManuallyEdited ? " (Prix modifié manuellement)" : " (Prix calculé automatiquement)"}
+                  </span>
                 </div>
               </form>
             </div>
@@ -2552,15 +2694,21 @@ const handleParcelPriceChange = (e) => {
                 <div className="form-row">
                   <div className="form-group">
                     <label>Prix colis (MAD)</label>
-                    <input
-                      type="number"
-                      name="parcel_price"
-                      value={formData.parcel_price}
-                      onChange={handleInputChange}
-                      placeholder="0.00"
-                      min="0"
-                      step="0.01"
-                    />
+                    <div className="input-with-icon price-input">
+                      <DollarSign size={16} className="input-icon" />
+                      <input
+                        type="number"
+                        name="parcel_price"
+                        value={formData.parcel_price}
+                        onChange={handleInputChange}
+                        placeholder="0.00"
+                        min="0"
+                        step="0.01"
+                      />
+                    </div>
+                    <small className="field-hint">
+                      Ce prix sera envoyé à Welivexpress comme montant à collecter
+                    </small>
                   </div>
                 </div>
 
@@ -2584,6 +2732,14 @@ const handleParcelPriceChange = (e) => {
                     onChange={handleInputChange}
                   />
                   <label htmlFor="parcel_open">Colis ouvert / vérifié</label>
+                </div>
+
+                {/* Display price info for Welivexpress */}
+                <div className="price-info-warning">
+                  <Info size={16} />
+                  <span>
+                    <strong>Important:</strong> Le prix colis de <strong>{formData.parcel_price} MAD</strong> sera envoyé à Welivexpress lors des mises à jour.
+                  </span>
                 </div>
               </form>
             </div>

@@ -55,9 +55,7 @@ export default function Index() {
             اكتشف مجموعتنا الحصرية من الكتب
           </p>
           <div className="hero-buttons">
-            <a href="#livres" className="btn-primary">
-              تصفح الكتب
-            </a>
+            
             <Link to="/livres" className="btn-secondary">
               كل الكتب ←
             </Link>

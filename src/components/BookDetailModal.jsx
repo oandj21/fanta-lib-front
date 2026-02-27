@@ -81,7 +81,7 @@ export default function BookDetailModal({ book, onClose }) {
   return (
     <Portal>
       <div className="modal-overlay" onClick={handleOverlayClick}>
-        <div className="modal-content book-detail-modal" data-rtl="true"> {/* Add data-rtl attribute */}
+        <div className="modal-content book-detail-modal" data-rtl="true">
           <button className="modal-close" onClick={onClose} aria-label="Close">
             <X size={20} />
           </button>
@@ -94,15 +94,20 @@ export default function BookDetailModal({ book, onClose }) {
                 onError={handleImageError}
                 loading="lazy"
               />
-              <span className={`status-badge ${book.status}`}>
-                {book.status === "available" ? "متوفر" : "غير متوفر"}
+              {/* Category Badge */}
+              <span className="book-category-badge">
+                {book.categorie || "غير مصنف"}
               </span>
             </div>
 
             <div className="book-detail-info">
-              <p className="book-genre">{book.categorie || "غير مصنف"}</p>
               <h2 className="book-title">{book.titre || "عنوان غير معروف"}</h2>
               <p className="book-author">بقلم {book.auteur || "مؤلف غير معروف"}</p>
+
+              {/* Status Badge - Now with green/red colors */}
+              <span className={`status-badge ${book.status}`}>
+                {book.status === "available" ? "متوفر" : "غير متوفر"}
+              </span>
 
               {book.status === "available" && (
                 <p className="stock-info">

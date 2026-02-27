@@ -64,6 +64,7 @@ export default function PublicTrackOrder() {
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [logoError, setLogoError] = useState(false);
 
   const API_URL = "https://fanta-lib-back-production.up.railway.app/api";
 
@@ -128,6 +129,10 @@ export default function PublicTrackOrder() {
     });
   };
 
+  const handleLogoError = () => {
+    setLogoError(true);
+  };
+
   if (loading) {
     return (
       <div className="public-track-loading">
@@ -160,7 +165,7 @@ export default function PublicTrackOrder() {
 
   return (
     <div className="public-track-container">
-      {/* Header */}
+      {/* Header with Logo */}
       <div className="track-header">
         <Link to="/" className="back-link">
           <ArrowLeft size={16} />
@@ -168,7 +173,20 @@ export default function PublicTrackOrder() {
         </Link>
         
         <div className="track-header-content">
-          <Package size={32} className="header-icon" />
+          {/* Logo Container */}
+          <div className="logo-container">
+            {!logoError ? (
+              <img 
+                src="/logo.jpeg" 
+                alt="Logo" 
+                className="header-logo"
+                onError={handleLogoError}
+              />
+            ) : (
+              <Package size={32} className="header-icon" />
+            )}
+          </div>
+          
           <h1>Suivi de commande</h1>
           <p className="parcel-code-display">Code: <strong>{order.parcel_code}</strong></p>
           

@@ -114,3 +114,23 @@
 .carousel-track.resuming {
   transition: transform 0.3s ease-out;
 }
+/* Add to BookCarousel.css - Hide details button in carousel */
+.carousel-book-card .book-footer .btn-details {
+  display: none !important;
+}
+
+/* Optional: Adjust the footer to only show the cart button */
+.carousel-book-card .book-footer {
+  justify-content: flex-end; /* Align cart button to the right */
+}
+
+/* Make the cart button full width if you want */
+.carousel-book-card .btn-cart {
+  width: 100%; /* Make cart button take full width */
+  border-radius: 6px; /* Adjust border radius if needed */
+}
+
+/* Remove hover effects from the card in carousel if desired */
+.carousel-book-card .book-card:hover {
+  transform: translateY(-3px); /* Slightly reduce hover effect */
+}

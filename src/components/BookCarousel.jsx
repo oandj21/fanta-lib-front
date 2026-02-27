@@ -17,7 +17,7 @@ const BookCarousel = forwardRef(({ onShowDetails }, ref) => {
   const modalOpenRef = useRef(false);
   const containerRef = useRef(null);
   const autoScrollEnabledRef = useRef(true);
-  const clickProcessedRef = useRef(false); // Track if click has been processed
+  const clickProcessedRef = useRef(false);
 
   const loopedBooks = [...books, ...books, ...books];
 
@@ -83,7 +83,7 @@ const BookCarousel = forwardRef(({ onShowDetails }, ref) => {
     startXRef.current = e.pageX - (containerRef.current?.offsetLeft || 0);
     scrollLeftRef.current = posRef.current;
     dragStartTimeRef.current = Date.now();
-    clickProcessedRef.current = false; // Reset click tracking
+    clickProcessedRef.current = false;
   };
 
   const handleMouseMove = (e) => {
@@ -134,7 +134,7 @@ const BookCarousel = forwardRef(({ onShowDetails }, ref) => {
     startXRef.current = e.touches[0].pageX - (containerRef.current?.offsetLeft || 0);
     scrollLeftRef.current = posRef.current;
     dragStartTimeRef.current = Date.now();
-    clickProcessedRef.current = false; // Reset click tracking
+    clickProcessedRef.current = false;
   };
 
   const handleTouchMove = (e) => {
@@ -172,18 +172,16 @@ const BookCarousel = forwardRef(({ onShowDetails }, ref) => {
     autoScrollEnabledRef.current = true;
   };
 
-  // Handle card click with debounce to prevent double triggers
+  // Handle card click to open modal
   const handleCardClick = (book, e) => {
-    e.stopPropagation(); // Stop event from bubbling
+    e.stopPropagation();
     
-    // Prevent double clicks
     if (clickProcessedRef.current) return;
     
     if (!isDraggingRef.current && !modalOpenRef.current) {
       clickProcessedRef.current = true;
       onShowDetails(book);
       
-      // Reset after a short delay
       setTimeout(() => {
         clickProcessedRef.current = false;
       }, 300);
@@ -221,11 +219,10 @@ const BookCarousel = forwardRef(({ onShowDetails }, ref) => {
           {loopedBooks.map((book, index) => (
             <div 
               key={`${book.id}-${index}`} 
-              className="carousel-item"
+              className="carousel-item carousel-book-card" // Added carousel-book-card class
               onClick={(e) => handleCardClick(book, e)}
             >
-              {/* Pass onShowDetails={null} to prevent local modal */}
-              <BookCard book={book} onShowDetails={null} />
+              <BookCard book={book} />
             </div>
           ))}
         </div>

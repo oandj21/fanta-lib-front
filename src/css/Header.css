@@ -375,3 +375,70 @@
   right: auto;
   left: -0.5rem;
 }
+/* Desktop only search */
+.desktop-only {
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .desktop-only {
+    display: none;
+  }
+}
+
+/* Mobile search toggle button */
+.mobile-search-toggle {
+  background: none;
+  border: none;
+  color: var(--primary-foreground);
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+  border-radius: 0.375rem;
+  margin-right: 0.25rem;
+}
+
+.mobile-search-toggle:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.05);
+}
+
+.mobile-search-toggle svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* Mobile search bar */
+.mobile-search-bar {
+  padding: 0.75rem 1rem;
+  background-color: var(--primary);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  animation: slideDown 0.2s ease-out;
+}
+
+.mobile-search-bar .search-dropdown {
+  width: 100%;
+}
+
+.mobile-search-bar .search-input {
+  background-color: rgba(255, 255, 255, 0.95);
+  border-color: transparent;
+}
+
+.mobile-search-bar .search-input:focus {
+  background-color: white;
+  border-color: white;
+}
+
+/* RTL adjustments */
+[dir="rtl"] .mobile-search-toggle {
+  margin-right: 0;
+  margin-left: 0.25rem;
+}
+
+[dir="rtl"] .mobile-actions {
+  flex-direction: row-reverse;
+}

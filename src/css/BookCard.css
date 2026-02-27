@@ -32,7 +32,7 @@
   transform: scale(1.05);
 }
 
-/* Status Badge - Now in the image area (replaces category badge) */
+/* Status Badge - Now with proper colors */
 .status-badge {
   position: absolute;
   top: 15px;
@@ -47,16 +47,15 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: white;
 }
 
-.status-bad.available {
+.status-badge.available {
   background: linear-gradient(135deg, #28a745, #218838);
-  color: white;
 }
 
-.status-bad.out_of_stock {
+.status-badge.out_of_stock {
   background: linear-gradient(135deg, #dc3545, #c82333);
-  color: white;
 }
 
 /* RTL support for status badge */

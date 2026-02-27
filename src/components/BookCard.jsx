@@ -72,9 +72,9 @@ export default function BookCard({ book }) {
               e.target.src = 'https://via.placeholder.com/300x400?text=Image+Error';
             }}
           />
-          {/* Status Badge - Now in the image area */}
+          {/* Status Badge - Now with proper colors */}
           {book.status && (
-            <span className={`status-bad ${book.status}`}>
+            <span className={`status-badge ${book.status}`}>
               {book.status === "available" ? "متوفر" : "غير متوفر"}
             </span>
           )}
@@ -85,9 +85,6 @@ export default function BookCard({ book }) {
             {book.categorie || "غير مصنف"}
           </span>
           <h3 className="book-title">{book.titre || "عنوان غير معروف"}</h3>
-          
-          {/* Category Badge - Now between title and author */}
-          
           
           <p className="book-author">{book.auteur || "مؤلف غير معروف"}</p>
 

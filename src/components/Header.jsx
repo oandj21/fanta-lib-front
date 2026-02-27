@@ -10,6 +10,7 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showAdminLink, setShowAdminLink] = useState(false);
   const [typedSequence, setTypedSequence] = useState("");
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const location = useLocation();
   
   // Secret code: "fantasia"
@@ -81,10 +82,17 @@ export default function Header() {
   // Close mobile menu when navigating
   useEffect(() => {
     setMenuOpen(false);
+    setMobileSearchOpen(false);
   }, [location.pathname]);
 
   // Use either context count or localStorage count
   const displayCount = totalCount || localCartCount;
+
+  // Toggle mobile search
+  const toggleMobileSearch = () => {
+    setMobileSearchOpen(!mobileSearchOpen);
+    if (menuOpen) setMenuOpen(false);
+  };
 
   return (
     <header className="header">
@@ -94,8 +102,8 @@ export default function Header() {
           <span>فانتازيا</span>
         </Link>
 
-        {/* Always visible search bar - hidden on mobile */}
-        <div className="header-search">
+        {/* Desktop search - always visible on desktop */}
+        <div className="header-search desktop-only">
           <SearchDropdown />
         </div>
 
@@ -126,22 +134,43 @@ export default function Header() {
         </nav>
 
         <div className="mobile-actions">
+          {/* Mobile search toggle button */}
+          <button
+            onClick={toggleMobileSearch}
+            className="mobile-search-toggle"
+            aria-label="بحث"
+          >
+            <Search size={20} />
+          </button>
+          
           <Link to="/cart" className="mobile-cart-link">
             <ShoppingCart className="cart-icon" />
             {displayCount > 0 && (
               <span className="cart-badge">{displayCount}</span>
             )}
           </Link>
+          
           <button
-            onClick={() => setMenuOpen(!menuOpen)}
+            onClick={() => {
+              setMenuOpen(!menuOpen);
+              setMobileSearchOpen(false);
+            }}
             className="menu-button"
             aria-label="القائمة"
           >
-            {menuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            {menuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
       </div>
 
+      {/* Mobile Search Bar - appears between header and mobile menu */}
+      {mobileSearchOpen && (
+        <div className="mobile-search-bar">
+          <SearchDropdown isMobile={true} />
+        </div>
+      )}
+
+      {/* Mobile Menu */}
       {menuOpen && (
         <div className="mobile-menu">
           {/* Mobile Navigation Links */}
@@ -155,11 +184,6 @@ export default function Header() {
               {label}
             </Link>
           ))}
-          
-          {/* Mobile Search */}
-          <div className="mobile-search-wrapper">
-            <SearchDropdown isMobile={true} />
-          </div>
           
           {/* Secret Admin Link in mobile menu */}
           {showAdminLink && (

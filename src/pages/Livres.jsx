@@ -85,7 +85,9 @@ export default function Livres() {
         </div>
       </section>
 
-      <section className="filters-sectio">
+     
+
+      <section className="books-section"> <section className="filters-sectio">
         <div className="filters-container">
           <div className="genres-filter">
             {genres.map((g) => (
@@ -100,8 +102,6 @@ export default function Livres() {
           </div>
         </div>
       </section>
-
-      <section className="books-section">
         {loading ? (
           <div className="loading-container">
             <div className="loading-spinner"></div>

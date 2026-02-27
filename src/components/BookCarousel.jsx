@@ -1,23 +1,39 @@
 // BookCarousel.jsx
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, forwardRef, useImperativeHandle } from "react";
 import { useSelector } from "react-redux";
 import BookCard from "./BookCard";
 import "../css/BookCarousel.css";
 
-export default function BookCarousel({ onShowDetails }) {
+const BookCarousel = forwardRef(({ onShowDetails }, ref) => {
   const { list: books } = useSelector((state) => state.livres);
   const trackRef = useRef(null);
   const animRef = useRef(null);
   const posRef = useRef(0);
-  const pausedRef = useRef(false);
   const isHoveringRef = useRef(false);
   const isDraggingRef = useRef(false);
   const startXRef = useRef(0);
   const scrollLeftRef = useRef(0);
   const dragStartTimeRef = useRef(0);
-  const modalOpenRef = useRef(false); // Track if modal is open
+  const modalOpenRef = useRef(false);
+  const containerRef = useRef(null);
 
   const loopedBooks = [...books, ...books, ...books];
+
+  // Expose methods to parent component
+  useImperativeHandle(ref, () => ({
+    onModalOpen: () => {
+      modalOpenRef.current = true;
+      // Reset all interaction states when modal opens
+      isHoveringRef.current = false;
+      isDraggingRef.current = false;
+    },
+    onModalClose: () => {
+      modalOpenRef.current = false;
+      // Reset all interaction states when modal closes
+      isHoveringRef.current = false;
+      isDraggingRef.current = false;
+    }
+  }));
 
   useEffect(() => {
     const track = trackRef.current;
@@ -26,14 +42,14 @@ export default function BookCarousel({ onShowDetails }) {
     const SPEED = 0.8;
 
     const animate = () => {
-      // Only pause if hovering OR dragging, NOT when modal is open
-      // modalOpenRef.current is checked but doesn't pause the animation
-      if (!pausedRef.current && !isHoveringRef.current && !isDraggingRef.current) {
+      // Only animate if not hovering, not dragging, and modal is not open
+      if (!isHoveringRef.current && !isDraggingRef.current && !modalOpenRef.current) {
         posRef.current += SPEED;
         const cardWidth = track.children[0]?.offsetWidth || 220;
         const gap = 20;
         const itemWidth = cardWidth + gap;
         
+        // Reset position when we've scrolled through one set of books
         if (posRef.current >= itemWidth * books.length) {
           posRef.current = 0;
         }
@@ -59,7 +75,7 @@ export default function BookCarousel({ onShowDetails }) {
     
     e.preventDefault();
     isDraggingRef.current = true;
-    startXRef.current = e.pageX - (trackRef.current?.offsetLeft || 0);
+    startXRef.current = e.pageX - (containerRef.current?.offsetLeft || 0);
     scrollLeftRef.current = posRef.current;
     dragStartTimeRef.current = Date.now();
   };
@@ -68,7 +84,7 @@ export default function BookCarousel({ onShowDetails }) {
     if (!isDraggingRef.current || modalOpenRef.current) return;
     e.preventDefault();
     
-    const x = e.pageX - (trackRef.current?.offsetLeft || 0);
+    const x = e.pageX - (containerRef.current?.offsetLeft || 0);
     const walk = (x - startXRef.current) * 1.5;
     const newPos = Math.max(0, scrollLeftRef.current - walk);
     
@@ -79,7 +95,7 @@ export default function BookCarousel({ onShowDetails }) {
   };
 
   const handleMouseUp = (e) => {
-    if (isDraggingRef.current) {
+    if (isDraggingRef.current && !modalOpenRef.current) {
       const dragDuration = Date.now() - dragStartTimeRef.current;
       
       // If it was a quick click (less than 200ms), don't treat as drag
@@ -96,8 +112,11 @@ export default function BookCarousel({ onShowDetails }) {
 
   // Combined mouse leave handler
   const handleMouseLeave = () => {
-    isHoveringRef.current = false;
-    isDraggingRef.current = false;
+    // Only reset if modal is not open
+    if (!modalOpenRef.current) {
+      isHoveringRef.current = false;
+      isDraggingRef.current = false;
+    }
   };
 
   // Touch events for mobile
@@ -107,7 +126,7 @@ export default function BookCarousel({ onShowDetails }) {
     
     e.preventDefault();
     isDraggingRef.current = true;
-    startXRef.current = e.touches[0].pageX - (trackRef.current?.offsetLeft || 0);
+    startXRef.current = e.touches[0].pageX - (containerRef.current?.offsetLeft || 0);
     scrollLeftRef.current = posRef.current;
     dragStartTimeRef.current = Date.now();
   };
@@ -116,7 +135,7 @@ export default function BookCarousel({ onShowDetails }) {
     if (!isDraggingRef.current || modalOpenRef.current) return;
     e.preventDefault();
     
-    const x = e.touches[0].pageX - (trackRef.current?.offsetLeft || 0);
+    const x = e.touches[0].pageX - (containerRef.current?.offsetLeft || 0);
     const walk = (x - startXRef.current) * 1.5;
     const newPos = Math.max(0, scrollLeftRef.current - walk);
     
@@ -127,7 +146,7 @@ export default function BookCarousel({ onShowDetails }) {
   };
 
   const handleTouchEnd = (e) => {
-    if (isDraggingRef.current) {
+    if (isDraggingRef.current && !modalOpenRef.current) {
       const dragDuration = Date.now() - dragStartTimeRef.current;
       
       // If it was a quick tap (less than 200ms), let the click event propagate
@@ -141,30 +160,6 @@ export default function BookCarousel({ onShowDetails }) {
     isDraggingRef.current = false;
   };
 
-  // Handle card click - this will open the modal but won't affect auto-scroll
-  const handleCardClick = (book) => {
-    if (onShowDetails) {
-      // Set modal as open
-      modalOpenRef.current = true;
-      
-      // Call the parent's onShowDetails
-      onShowDetails(book);
-      
-      // Reset hover/drag states when opening modal
-      isHoveringRef.current = false;
-      isDraggingRef.current = false;
-    }
-  };
-
-  // Function to handle modal close (to be called from parent)
-  // This will be exposed through a ref or passed as prop
-  const handleModalClose = () => {
-    modalOpenRef.current = false;
-    // Reset any stuck states
-    isHoveringRef.current = false;
-    isDraggingRef.current = false;
-  };
-
   if (books.length === 0) {
     return null;
   }
@@ -175,6 +170,7 @@ export default function BookCarousel({ onShowDetails }) {
       <div className="carousel-gradient carousel-gradient-right"></div>
       
       <div
+        ref={containerRef}
         className={`carousel-track-container ${isDraggingRef.current ? 'dragging' : ''}`}
         onMouseEnter={() => { 
           // Only set hovering if modal is not open
@@ -198,7 +194,7 @@ export default function BookCarousel({ onShowDetails }) {
               onClick={(e) => {
                 // Only trigger if not dragging and modal is not open
                 if (!isDraggingRef.current && !modalOpenRef.current) {
-                  handleCardClick(book);
+                  onShowDetails(book);
                 }
               }}
             >
@@ -206,7 +202,9 @@ export default function BookCarousel({ onShowDetails }) {
                 book={book} 
                 onShowDetails={(book) => {
                   // This prevents the card's internal state from interfering
-                  handleCardClick(book);
+                  if (!isDraggingRef.current && !modalOpenRef.current) {
+                    onShowDetails(book);
+                  }
                 }} 
               />
             </div>
@@ -215,4 +213,6 @@ export default function BookCarousel({ onShowDetails }) {
       </div>
     </div>
   );
-}
+});
+
+export default BookCarousel;

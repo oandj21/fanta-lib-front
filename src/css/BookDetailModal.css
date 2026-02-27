@@ -62,12 +62,23 @@
   width: 100%;
   height: 350px;
   background-color: #f5f5f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
 }
 
 .book-detail-cover img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain; /* Changed from 'cover' to 'contain' to show full image */
+  background-color: #f0e8e0; /* Background color for letterboxing */
+  transition: transform 0.3s ease;
+}
+
+/* Add a subtle zoom effect on hover */
+.book-detail-cover:hover img {
+  transform: scale(1.02);
 }
 
 .book-detail-cover .status-badge {
@@ -79,15 +90,17 @@
   border-radius: 50px;
   font-weight: 600;
   text-transform: uppercase;
+  z-index: 2;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .status-badge.available {
-  background-color: rgba(40, 167, 69, 0.9);
+  background-color: rgba(40, 167, 69, 0.95);
   color: white;
 }
 
 .status-badge.rupture {
-  background-color: rgba(220, 53, 69, 0.9);
+  background-color: rgba(220, 53, 69, 0.95);
   color: white;
 }
 
@@ -288,5 +301,59 @@
     height: 35px;
     top: 10px;
     right: 10px;
+  }
+}
+
+/* Handle landscape orientation on mobile */
+@media (max-height: 600px) and (orientation: landscape) {
+  .modal-content {
+    max-height: 95vh;
+  }
+  
+  .book-detail-cover {
+    height: 200px;
+  }
+  
+  .book-detail-info {
+    padding: 15px;
+  }
+  
+  .book-detail-info .book-title {
+    font-size: 18px;
+    margin-bottom: 5px;
+  }
+  
+  .book-author {
+    font-size: 13px;
+    margin-bottom: 10px;
+  }
+  
+  .stock-info {
+    padding: 4px 10px;
+    font-size: 11px;
+    margin-bottom: 10px;
+  }
+  
+  .book-description {
+    margin-bottom: 10px;
+  }
+  
+  .book-description h3 {
+    font-size: 13px;
+    margin-bottom: 5px;
+  }
+  
+  .book-description p {
+    font-size: 12px;
+    line-height: 1.4;
+  }
+  
+  .book-detail-footer {
+    padding-top: 10px;
+  }
+  
+  .btn-add {
+    padding: 8px;
+    font-size: 13px;
   }
 }

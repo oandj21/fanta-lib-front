@@ -6,6 +6,7 @@ import "../css/BookDetailModal.css";
 
 export default function BookDetailModal({ book, onClose }) {
   const [added, setAdded] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   const handleAdd = () => {
     const cartItem = {
@@ -33,33 +34,55 @@ export default function BookDetailModal({ book, onClose }) {
     }
   };
 
-  // Helper function to get image URL (copied from BookCard)
+  // Helper function to get image URL with better error handling
   const getImageUrl = (images) => {
-    if (!images) return 'https://via.placeholder.com/300x400?text=No+Cover';
+    // If we already have an error, return placeholder
+    if (imageError) {
+      return 'https://via.placeholder.com/400x500?text=No+Cover';
+    }
     
-    if (typeof images === 'string') {
-      try {
-        const parsed = JSON.parse(images);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return `https://fanta-lib-back-production.up.railway.app/storage/${parsed[0]}`;
+    if (!images) return 'https://via.placeholder.com/400x500?text=No+Cover';
+    
+    try {
+      // If images is a string, try to parse it
+      if (typeof images === 'string') {
+        // Check if it's already a full URL
+        if (images.startsWith('http')) {
+          return images;
         }
-      } catch (e) {
-        console.error('خطأ في تحليل الصور:', e);
+        
+        // Try to parse as JSON
+        try {
+          const parsed = JSON.parse(images);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return `https://fanta-lib-back-production.up.railway.app/storage/${parsed[0]}`;
+          }
+        } catch (e) {
+          // If parsing fails, treat as direct filename
+          return `https://fanta-lib-back-production.up.railway.app/storage/${images}`;
+        }
       }
+      
+      // If images is an array
+      if (Array.isArray(images) && images.length > 0) {
+        return `https://fanta-lib-back-production.up.railway.app/storage/${images[0]}`;
+      }
+    } catch (e) {
+      console.error('Error processing image:', e);
     }
     
-    if (Array.isArray(images) && images.length > 0) {
-      return `https://fanta-lib-back-production.up.railway.app/storage/${images[0]}`;
-    }
-    
-    return 'https://via.placeholder.com/300x400?text=No+Cover';
+    return 'https://via.placeholder.com/400x500?text=No+Cover';
+  };
+
+  const handleImageError = () => {
+    setImageError(true);
   };
 
   return (
     <Portal>
       <div className="modal-overlay" onClick={handleOverlayClick}>
         <div className="modal-content book-detail-modal">
-          <button className="modal-close" onClick={onClose}>
+          <button className="modal-close" onClick={onClose} aria-label="Close">
             <X size={20} />
           </button>
           
@@ -68,10 +91,8 @@ export default function BookDetailModal({ book, onClose }) {
               <img 
                 src={getImageUrl(book.images)} 
                 alt={book.titre || "غلاف الكتاب"}
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = 'https://via.placeholder.com/300x400?text=Image+Error';
-                }}
+                onError={handleImageError}
+                loading="lazy"
               />
               <span className={`status-badge ${book.status}`}>
                 {book.status === "available" ? "متوفر" : "غير متوفر"}

@@ -2382,8 +2382,7 @@ export default function AdminOrders() {
                       type="number"
                       name="parcel_price"
                       value={newOrderData.parcel_price}
-                      readOnly
-                      className="readonly-input"
+                      className={totalManuallyEdited ? "manual-edit-input" : ""}
                     />
                     <small className="field-hint">Total + frais (envoyé à Welivexpress)</small>
                   </div>

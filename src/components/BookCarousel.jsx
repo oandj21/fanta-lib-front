@@ -16,6 +16,7 @@ const BookCarousel = forwardRef(({ onShowDetails }, ref) => {
   const dragStartTimeRef = useRef(0);
   const modalOpenRef = useRef(false);
   const containerRef = useRef(null);
+  const autoScrollEnabledRef = useRef(true); // Track if auto-scroll should be enabled
 
   const loopedBooks = [...books, ...books, ...books];
 
@@ -26,12 +27,20 @@ const BookCarousel = forwardRef(({ onShowDetails }, ref) => {
       // Reset all interaction states when modal opens
       isHoveringRef.current = false;
       isDraggingRef.current = false;
+      autoScrollEnabledRef.current = true; // Keep auto-scroll enabled
     },
     onModalClose: () => {
       modalOpenRef.current = false;
       // Reset all interaction states when modal closes
       isHoveringRef.current = false;
       isDraggingRef.current = false;
+      autoScrollEnabledRef.current = true; // Re-enable auto-scroll
+      
+      // Force a small delay to ensure any lingering touch events are cleared
+      setTimeout(() => {
+        isHoveringRef.current = false;
+        isDraggingRef.current = false;
+      }, 50);
     }
   }));
 
@@ -42,8 +51,8 @@ const BookCarousel = forwardRef(({ onShowDetails }, ref) => {
     const SPEED = 0.8;
 
     const animate = () => {
-      // Only animate if not hovering, not dragging, and modal is not open
-      if (!isHoveringRef.current && !isDraggingRef.current && !modalOpenRef.current) {
+      // Auto-scroll if not hovering, not dragging, and auto-scroll is enabled
+      if (autoScrollEnabledRef.current && !isHoveringRef.current && !isDraggingRef.current) {
         posRef.current += SPEED;
         const cardWidth = track.children[0]?.offsetWidth || 220;
         const gap = 20;
@@ -75,6 +84,7 @@ const BookCarousel = forwardRef(({ onShowDetails }, ref) => {
     
     e.preventDefault();
     isDraggingRef.current = true;
+    autoScrollEnabledRef.current = false; // Disable auto-scroll while dragging
     startXRef.current = e.pageX - (containerRef.current?.offsetLeft || 0);
     scrollLeftRef.current = posRef.current;
     dragStartTimeRef.current = Date.now();
@@ -102,12 +112,14 @@ const BookCarousel = forwardRef(({ onShowDetails }, ref) => {
       if (dragDuration < 200) {
         // Let the click event propagate to BookCard
         isDraggingRef.current = false;
+        autoScrollEnabledRef.current = true; // Re-enable auto-scroll
         return;
       }
       
       e.preventDefault();
     }
     isDraggingRef.current = false;
+    autoScrollEnabledRef.current = true; // Re-enable auto-scroll after drag
   };
 
   // Combined mouse leave handler
@@ -116,6 +128,7 @@ const BookCarousel = forwardRef(({ onShowDetails }, ref) => {
     if (!modalOpenRef.current) {
       isHoveringRef.current = false;
       isDraggingRef.current = false;
+      autoScrollEnabledRef.current = true; // Re-enable auto-scroll
     }
   };
 
@@ -126,6 +139,7 @@ const BookCarousel = forwardRef(({ onShowDetails }, ref) => {
     
     e.preventDefault();
     isDraggingRef.current = true;
+    autoScrollEnabledRef.current = false; // Disable auto-scroll while dragging
     startXRef.current = e.touches[0].pageX - (containerRef.current?.offsetLeft || 0);
     scrollLeftRef.current = posRef.current;
     dragStartTimeRef.current = Date.now();
@@ -152,12 +166,20 @@ const BookCarousel = forwardRef(({ onShowDetails }, ref) => {
       // If it was a quick tap (less than 200ms), let the click event propagate
       if (dragDuration < 200) {
         isDraggingRef.current = false;
+        autoScrollEnabledRef.current = true; // Re-enable auto-scroll
         return;
       }
       
       e.preventDefault();
     }
     isDraggingRef.current = false;
+    autoScrollEnabledRef.current = true; // Re-enable auto-scroll after drag
+  };
+
+  // Handle touch cancel (when gesture is interrupted)
+  const handleTouchCancel = (e) => {
+    isDraggingRef.current = false;
+    autoScrollEnabledRef.current = true; // Re-enable auto-scroll
   };
 
   if (books.length === 0) {
@@ -176,6 +198,7 @@ const BookCarousel = forwardRef(({ onShowDetails }, ref) => {
           // Only set hovering if modal is not open
           if (!modalOpenRef.current) {
             isHoveringRef.current = true; 
+            autoScrollEnabledRef.current = false; // Disable auto-scroll on hover
           }
         }}
         onMouseLeave={handleMouseLeave}
@@ -185,6 +208,7 @@ const BookCarousel = forwardRef(({ onShowDetails }, ref) => {
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchCancel}
       >
         <div ref={trackRef} className="carousel-track">
           {loopedBooks.map((book, index) => (
@@ -194,6 +218,7 @@ const BookCarousel = forwardRef(({ onShowDetails }, ref) => {
               onClick={(e) => {
                 // Only trigger if not dragging and modal is not open
                 if (!isDraggingRef.current && !modalOpenRef.current) {
+                  e.stopPropagation(); // Prevent event bubbling
                   onShowDetails(book);
                 }
               }}

@@ -1,5 +1,5 @@
 // Index.jsx
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { BookOpen } from "lucide-react";
@@ -17,6 +17,7 @@ export default function Index() {
   const books = useSelector(selectLivres);
   const loading = useSelector(selectLivresLoading);
   const [selectedBook, setSelectedBook] = useState(null);
+  const carouselRef = useRef(null);
 
   useEffect(() => {
     dispatch(fetchLivres());
@@ -24,10 +25,18 @@ export default function Index() {
 
   const handleShowDetails = (book) => {
     setSelectedBook(book);
+    // Notify carousel that modal is opening
+    if (carouselRef.current) {
+      carouselRef.current.onModalOpen();
+    }
   };
 
   const handleCloseDetails = () => {
     setSelectedBook(null);
+    // Notify carousel that modal is closing
+    if (carouselRef.current) {
+      carouselRef.current.onModalClose();
+    }
   };
 
   return (
@@ -63,7 +72,10 @@ export default function Index() {
           <h2 className="section-title">مجموعة متجددة</h2>
           <div className="section-divider" />
         </div>
-        <BookCarousel books={books} onShowDetails={handleShowDetails} />
+        <BookCarousel 
+          ref={carouselRef}
+          onShowDetails={handleShowDetails} 
+        />
       </section>
 
       <section id="livres" className="books-section">

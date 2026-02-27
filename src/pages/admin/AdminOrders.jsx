@@ -1774,7 +1774,13 @@ export default function AdminOrders() {
         setAddLoading(false);
     }
   };
-
+const handleParcelPriceChange = (e) => {
+  const value = e.target.value;
+  setNewOrderData(prev => ({
+    ...prev,
+    parcel_price: value
+  }));
+};
   const filteredOrders = useMemo(() => {
     return orderList.filter(order => {
       const matchesSearch = searchTerm === "" || 

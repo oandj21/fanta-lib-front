@@ -1,4 +1,4 @@
-/* PublicTrackOrder.css - Using same color scheme as AdminBooks */
+/* PublicTrackOrder.css - Updated with consistent color scheme */
 
 /* Animations */
 @keyframes fadeUp {
@@ -14,17 +14,6 @@
 
 @keyframes spin {
   to { transform: rotate(360deg); }
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 /* Main Container */
@@ -221,7 +210,7 @@
   padding: 0 2rem;
 }
 
-/* Status Cards */
+/* Status Cards - Updated with beige headers */
 .status-cards {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -253,18 +242,27 @@
   align-items: center;
   gap: 0.75rem;
   margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e0d6cc;
 }
 
 .status-card-header svg {
-  color: #5c0202;
+  color: #5c0202; /* Icons in 5c0202 */
 }
 
 .status-card-header h3 {
   font-family: 'Playfair Display', serif;
-  color: #5c0202;
+  color: #5c0202; /* Titles in 5c0202 */
   font-size: 1.1rem;
   font-weight: 600;
   margin: 0;
+}
+
+/* Status Card Content - All content in 5c0202 */
+.status-card .status-badge,
+.status-card .status-description,
+.status-card .payment-text {
+  color: #5c0202;
 }
 
 .status-badge {
@@ -286,14 +284,14 @@
 }
 
 .status-description {
-  color: #6b5752;
+  color: #5c0202;
   font-size: 0.875rem;
   line-height: 1.5;
   margin: 0.5rem 0 0 0;
 }
 
 .payment-text {
-  color: #6b5752;
+  color: #5c0202;
   font-size: 0.875rem;
   margin-top: 0.5rem;
 }
@@ -339,7 +337,7 @@
   animation: spin 1s linear infinite;
 }
 
-/* Details Grid */
+/* Details Grid - Cards with beige headers */
 .details-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -373,16 +371,16 @@
   gap: 0.75rem;
   margin-bottom: 1.25rem;
   padding-bottom: 0.75rem;
-  border-bottom: 1px solid #e0d6cc;
+  border-bottom: 2px solid #e0d6cc;
 }
 
 .detail-card-header svg {
-  color: #5c0202;
+  color: #5c0202; /* Icons in 5c0202 */
 }
 
 .detail-card-header h3 {
   font-family: 'Playfair Display', serif;
-  color: #5c0202;
+  color: #5c0202; /* Titles in 5c0202 */
   font-size: 1rem;
   font-weight: 600;
   margin: 0;
@@ -390,6 +388,7 @@
   letter-spacing: 0.5px;
 }
 
+/* Card Content - All in 5c0202 */
 .detail-card-content {
   display: flex;
   flex-direction: column;
@@ -404,23 +403,24 @@
 }
 
 .detail-label {
-  color: #6b5752;
+  color: #6b5752; /* Lighter brown for labels */
   min-width: 110px;
   font-weight: 500;
 }
 
 .detail-value {
-  color: #5c0202;
+  color: #5c0202; /* Content in 5c0202 */
   font-weight: 600;
   flex: 1;
   word-break: break-word;
 }
 
 .detail-value.price {
-  color: #059669;
+  color: #059669; /* Keep price green for emphasis */
   font-weight: 700;
 }
 
+/* Can Open Status Colors */
 .can-open-allowed {
   display: inline-flex;
   align-items: center;
@@ -464,22 +464,24 @@
   align-items: center;
   gap: 0.5rem;
   margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #fed7aa;
 }
 
 .note-header svg {
-  color: #f97316;
+  color: #5c0202;
 }
 
 .note-header h4 {
   font-family: 'Playfair Display', serif;
-  color: #9a3412;
+  color: #5c0202;
   font-size: 1rem;
   font-weight: 600;
   margin: 0;
 }
 
 .note-content {
-  color: #7b341e;
+  color: #5c0202;
   font-size: 0.875rem;
   line-height: 1.6;
   margin: 0;
@@ -492,13 +494,13 @@
   align-items: center;
   justify-content: flex-end;
   gap: 0.5rem;
-  color: #a38f89;
+  color: #5c0202;
   font-size: 0.75rem;
   margin-top: 1rem;
 }
 
 .update-time svg {
-  color: #a38f89;
+  color: #5c0202;
 }
 
 /* Footer */
@@ -514,14 +516,14 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  color: #6b5752;
+  color: #5c0202;
   font-size: 0.875rem;
   text-align: center;
   font-family: 'Lato', sans-serif;
 }
 
 .footer-note svg {
-  color: #a38f89;
+  color: #5c0202;
   flex-shrink: 0;
 }
 
@@ -687,6 +689,11 @@ button:focus-visible {
     break-inside: avoid;
   }
 
+  .status-card-header,
+  .detail-card-header {
+    border-bottom: 2px solid #5c0202;
+  }
+
   .can-open-allowed,
   .can-open-not-allowed {
     background: none;
@@ -704,12 +711,12 @@ button:focus-visible {
 }
 
 .public-track-container::-webkit-scrollbar-thumb {
-  background: #c9b9ae;
+  background: #5c0202;
   border-radius: 5px;
 }
 
 .public-track-container::-webkit-scrollbar-thumb:hover {
-  background: #a38f89;
+  background: #7a0303;
 }
 
 /* Utility Classes */

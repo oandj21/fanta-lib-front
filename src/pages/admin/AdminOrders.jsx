@@ -2375,17 +2375,19 @@ export default function AdminOrders() {
                       {totalManuallyEdited ? "Édité manuellement" : "Calculé automatiquement"}
                     </small>
                   </div>
-
-                  <div className="form-group">
-                    <label>Prix colis (MAD)</label>
-                    <input
-                      type="number"
-                      name="parcel_price"
-                      value={newOrderData.parcel_price}
-                      className={totalManuallyEdited ? "manual-edit-input" : ""}
-                    />
-                    <small className="field-hint">Total + frais (envoyé à Welivexpress)</small>
-                  </div>
+  <div className="form-group">
+    <label>Prix colis (MAD)</label>
+    <input
+      type="number"
+      name="parcel_price"
+      value={newOrderData.parcel_price}
+      onChange={handleParcelPriceChange}
+      min="0"
+      step="0.01"
+      className={totalManuallyEdited ? "manual-edit-input" : ""}
+    />
+    <small className="field-hint">Total + frais (envoyé à Welivexpress)</small>
+  </div>
 
                   <div className="form-group">
                     <label>Profit (MAD)</label>

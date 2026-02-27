@@ -74,7 +74,7 @@ export default function BookCard({ book }) {
           />
           {/* Status Badge - Now with proper colors */}
           {book.status && (
-            <span className={`status-badge ${book.status}`}>
+            <span className={`status-bad ${book.status}`}>
               {book.status === "available" ? "متوفر" : "غير متوفر"}
             </span>
           )}

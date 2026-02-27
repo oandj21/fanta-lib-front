@@ -33,7 +33,7 @@
 }
 
 /* Status Badge - Now with proper colors */
-.status-badge {
+.status-bad {
   position: absolute;
   top: 15px;
   right: 15px;
@@ -50,18 +50,18 @@
   color: white;
 }
 
-.status-badge.available {
+.status-bad.available {
   background: linear-gradient(135deg, #28a745, #218838);
 }
 
-.status-badge.out_of_stock {
+.status-bad.out_of_stock {
   background: linear-gradient(135deg, #dc3545, #c82333);
 }
 
 /* RTL support for status badge */
-[dir="rtl"] .status-badge,
-.book-card.rtl .status-badge,
-.book-card[data-rtl="true"] .status-badge {
+[dir="rtl"] .status-bad,
+.book-card.rtl .status-bad,
+.book-card[data-rtl="true"] .status-bad {
   right: auto;
   left: 15px;
 }
@@ -153,7 +153,7 @@
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
-  background-color: #2ef32b;
+  background: linear-gradient(135deg, #25D366, #128C7E);
   color: #f8f4f0;
 }
 
@@ -223,7 +223,7 @@
     height: 34px;
   }
   
-  .status-badge {
+  .status-bad {
     top: 10px;
     right: 10px;
     padding: 4px 10px;
@@ -236,9 +236,9 @@
     margin: 6px 0;
   }
   
-  [dir="rtl"] .status-badge,
-  .book-card.rtl .status-badge,
-  .book-card[data-rtl="true"] .status-badge {
+  [dir="rtl"] .status-bad,
+  .book-card.rtl .status-bad,
+  .book-card[data-rtl="true"] .status-bad {
     right: auto;
     left: 10px;
   }

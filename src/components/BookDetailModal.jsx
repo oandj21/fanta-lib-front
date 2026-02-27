@@ -96,7 +96,7 @@ export default function BookDetailModal({ book, onClose }) {
               />
               {/* Status Badge - Same as BookCard - positioned on image */}
               {book.status && (
-                <span className={`status-badge ${book.status}`}>
+                <span className={`status-bad ${book.status}`}>
                   {book.status === "available" ? "متوفر" : "غير متوفر"}
                 </span>
               )}

@@ -81,7 +81,7 @@
 }
 
 /* Status Badge - Same as BookCard - positioned on image */
-.book-detail-cover .status-badge {
+.book-detail-cover .status-bad {
   position: absolute;
   top: 15px;
   right: 15px;
@@ -98,11 +98,11 @@
   color: white;
 }
 
-.book-detail-cover .status-badge.available {
+.book-detail-cover .status-bad.available {
   background: linear-gradient(135deg, #28a745, #218838);
 }
 
-.book-detail-cover .status-badge.out_of_stock {
+.book-detail-cover .status-bad.out_of_stock {
   background: linear-gradient(135deg, #dc3545, #c82333);
 }
 
@@ -299,8 +299,8 @@
   left: 15px;
 }
 
-[dir="rtl"] .book-detail-cover .status-badge,
-.book-detail-modal.rtl .book-detail-cover .status-badge {
+[dir="rtl"] .book-detail-cover .status-bad,
+.book-detail-modal.rtl .book-detail-cover .status-bad {
   right: auto;
   left: 15px;
 }
@@ -339,15 +339,15 @@
     height: 280px;
   }
   
-  .book-detail-cover .status-badge {
+  .book-detail-cover .status-bad {
     top: 10px;
     right: 10px;
     padding: 4px 10px;
     font-size: 10px;
   }
   
-  [dir="rtl"] .book-detail-cover .status-badge,
-  .book-detail-modal.rtl .book-detail-cover .status-badge {
+  [dir="rtl"] .book-detail-cover .status-bad,
+  .book-detail-modal.rtl .book-detail-cover .status-bad {
     right: auto;
     left: 10px;
   }

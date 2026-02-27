@@ -1,6 +1,7 @@
+import { useEffect } from "react";
 import { Toaster } from "./components/ui/toaster";
 import { TooltipProvider } from "./components/ui/tooltip";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Provider } from "react-redux";
 import store from "./store/store";
 import { CartProvider } from "./context/CartContext";
@@ -8,7 +9,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Index from "./pages/Index";
 import Livres from "./pages/Livres";
 import Contact from "./pages/Contact";
-import Cart from "./pages/Cart"; // Add this import
+import Cart from "./pages/Cart";
 import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/AdminLogin";
 import AdminLayout from "./pages/admin/AdminLayout";
@@ -22,19 +23,55 @@ import AdminMessages from "./pages/admin/AdminMessages";
 import AdminProfile from "./pages/admin/AdminProfile";
 import PublicTrackOrder from "./pages/PublicTrackOrder";
 
+// Title Updater Component - Updates document title based on current route
+const TitleUpdater = () => {
+  const location = useLocation();
+  
+  useEffect(() => {
+    // Map paths to titles
+    const titles = {
+      '/': 'Accueil',
+      '/livres': 'Catalogue',
+      '/contact': 'Contact',
+      '/cart': 'Panier',
+      '/login': 'Connexion',
+      '/dashboard': 'Tableau de bord',
+      '/books': 'Livres',
+      '/orders': 'Commandes',
+      '/expenses': 'Dépenses',
+      '/finance': 'Finance',
+      '/users': 'Utilisateurs',
+      '/messages': 'Messages',
+      '/profile': 'Profil',
+    };
+
+    // Check if it's a tracking page
+    if (location.pathname.startsWith('/track/')) {
+      document.title = 'Suivi de commande - Fantasia';
+    } else {
+      const title = titles[location.pathname] || 'Bibliothèque';
+      document.title = `${title} - Fantasia`;
+    }
+  }, [location]);
+
+  return null;
+};
+
 const App = () => (
   <Provider store={store}>
     <TooltipProvider>
       <CartProvider>
         <Toaster />
         <BrowserRouter>
+          <TitleUpdater />
           <Routes>
             {/* Public routes */}
             <Route path="/" element={<Index />} />
             <Route path="/livres" element={<Livres />} />
             <Route path="/contact" element={<Contact />} />
-            <Route path="/cart" element={<Cart />} /> {/* Add cart route */}
+            <Route path="/cart" element={<Cart />} />
             <Route path="/track/:parcelCode" element={<PublicTrackOrder />} />
+            
             {/* Login route */}
             <Route path="/login" element={<AdminLogin />} />
             
@@ -104,16 +141,18 @@ const App = () => (
             >
               <Route index element={<AdminUsers />} />
             </Route>
+            
             <Route
-  path="/messages"
-  element={
-    <ProtectedRoute>
-      <AdminLayout />
-    </ProtectedRoute>
-  }
->
-  <Route index element={<AdminMessages />} />
-</Route>
+              path="/messages"
+              element={
+                <ProtectedRoute>
+                  <AdminLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<AdminMessages />} />
+            </Route>
+            
             <Route
               path="/profile"
               element={

@@ -30,7 +30,7 @@ export default function AdminLayout() {
 
   // Updated nav items with root paths
   const navItems = [
-    { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+    { to: "/dashboard", icon: LayoutDashboard, label: "Tableau de bord" },
     { to: "/books", icon: BookOpen, label: "Livres" },
     { to: "/orders", icon: ShoppingCart, label: "Commandes" },
     { to: "/expenses", icon: Receipt, label: "Dépenses" },

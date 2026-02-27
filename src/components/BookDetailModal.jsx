@@ -81,7 +81,7 @@ export default function BookDetailModal({ book, onClose }) {
   return (
     <Portal>
       <div className="modal-overlay" onClick={handleOverlayClick}>
-        <div className="modal-content book-detail-modal">
+        <div className="modal-content book-detail-modal" data-rtl="true"> {/* Add data-rtl attribute */}
           <button className="modal-close" onClick={onClose} aria-label="Close">
             <X size={20} />
           </button>

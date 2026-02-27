@@ -62,7 +62,7 @@ export default function BookCard({ book }) {
 
   return (
     <>
-      <div className="book-card">
+      <div className="book-card" data-rtl="true"> {/* Add data-rtl attribute */}
         <div className="book-cover">
           <img 
             src={getImageUrl(book.images)} 

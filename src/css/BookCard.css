@@ -199,3 +199,55 @@
     height: 34px;
   }
 }
+/* BookCard.css - Add these styles at the end */
+
+/* RTL Support for Arabic text in cards */
+[dir="rtl"] .book-card,
+.book-card.rtl,
+.book-card[data-rtl="true"] {
+  direction: rtl;
+  text-align: right;
+}
+
+[dir="rtl"] .book-genre,
+.book-card.rtl .book-genre {
+  text-align: right;
+}
+
+[dir="rtl"] .book-title,
+.book-card.rtl .book-title {
+  text-align: right;
+}
+
+[dir="rtl"] .book-author,
+.book-card.rtl .book-author {
+  text-align: right;
+}
+
+[dir="rtl"] .book-footer,
+.book-card.rtl .book-footer {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .status-badge,
+.book-card.rtl .status-badge {
+  right: auto;
+  left: 10px;
+}
+
+[dir="rtl"] .btn-details svg,
+.book-card.rtl .btn-details svg {
+  margin-left: 0;
+  margin-right: 0;
+  order: 1;
+}
+
+[dir="rtl"] .btn-details span,
+.book-card.rtl .btn-details span {
+  order: 2;
+}
+
+[dir="rtl"] .btn-details,
+.book-card.rtl .btn-details {
+  flex-direction: row;
+}

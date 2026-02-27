@@ -357,3 +357,74 @@
     font-size: 13px;
   }
 }
+/* BookDetailModal.css - Add these styles at the end */
+
+/* RTL Support for Arabic text in modal */
+[dir="rtl"] .book-detail-modal,
+.book-detail-modal.rtl,
+.book-detail-modal[data-rtl="true"] {
+  direction: rtl;
+  text-align: right;
+}
+
+[dir="rtl"] .book-detail-info,
+.book-detail-modal.rtl .book-detail-info {
+  text-align: right;
+}
+
+[dir="rtl"] .book-genre,
+.book-detail-modal.rtl .book-genre {
+  text-align: right;
+}
+
+[dir="rtl"] .book-detail-info .book-title,
+.book-detail-modal.rtl .book-detail-info .book-title {
+  text-align: right;
+}
+
+[dir="rtl"] .book-author,
+.book-detail-modal.rtl .book-author {
+  text-align: right;
+}
+
+[dir="rtl"] .book-description,
+.book-detail-modal.rtl .book-description {
+  text-align: right;
+}
+
+[dir="rtl"] .book-description h3,
+.book-detail-modal.rtl .book-description h3 {
+  text-align: right;
+}
+
+[dir="rtl"] .book-description p,
+.book-detail-modal.rtl .book-description p {
+  text-align: right;
+}
+
+[dir="rtl"] .stock-info,
+.book-detail-modal.rtl .stock-info {
+  text-align: right;
+}
+
+[dir="rtl"] .book-detail-footer,
+.book-detail-modal.rtl .book-detail-footer {
+  text-align: right;
+}
+
+[dir="rtl"] .btn-add,
+.book-detail-modal.rtl .btn-add {
+  flex-direction: row;
+}
+
+[dir="rtl"] .btn-add svg,
+.book-detail-modal.rtl .btn-add svg {
+  margin-left: 0.5rem;
+  margin-right: 0;
+}
+
+[dir="rtl"] .modal-close,
+.book-detail-modal.rtl .modal-close {
+  right: auto;
+  left: 15px;
+}

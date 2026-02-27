@@ -134,3 +134,41 @@
 .carousel-book-card .book-card:hover {
   transform: translateY(-3px); /* Slightly reduce hover effect */
 }
+/* BookCarousel.css - Add these styles at the end */
+
+/* RTL Support for Arabic text in carousel */
+[dir="rtl"] .carousel-item,
+.carousel-item.rtl,
+.carousel-item[data-rtl="true"] {
+  direction: rtl;
+}
+
+/* The carousel itself should maintain LTR for smooth scrolling */
+[dir="rtl"] .carousel-track-container,
+.carousel-track-container.rtl {
+  direction: ltr;
+}
+
+[dir="rtl"] .carousel-track,
+.carousel-track.rtl {
+  direction: ltr;
+}
+
+[dir="rtl"] .carousel-item .book-card,
+.carousel-item.rtl .book-card {
+  direction: rtl;
+  text-align: right;
+}
+
+/* Adjust gradient positions for RTL */
+[dir="rtl"] .carousel-gradient-left {
+  left: auto;
+  right: 0;
+  background: linear-gradient(to left, #f8f4f0, transparent);
+}
+
+[dir="rtl"] .carousel-gradient-right {
+  right: auto;
+  left: 0;
+  background: linear-gradient(to right, #f8f4f0, transparent);
+}

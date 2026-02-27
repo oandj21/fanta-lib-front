@@ -47,9 +47,8 @@ export default function Index() {
         <img src={heroImage} alt="مكتبة فانتازيا" className="hero-image" />
         <div className="hero-overlay" />
         <div className="hero-content">
-          <p className="hero-tagline">مكتبة إلكترونية</p>
           <h1 className="hero-title">
-            مرحباً بكم في<br />
+            مرحباً بكم في مكتبة<br />
             <span>فانتازيا</span>
           </h1>
           <p className="hero-description">

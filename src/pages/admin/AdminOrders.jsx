@@ -2153,7 +2153,7 @@ export default function AdminOrders() {
                           </span>
                         )}
                       </td>
-                      <td className="order-price">{order.parcel_price ? `${order.parcel_price} MAD` : "-"}</td>
+                      <td className="order-pri">{order.parcel_price ? `${order.parcel_price} MAD` : "-"}</td>
                       <td>{order.date ? new Date(order.date).toLocaleDateString('fr-FR') : "-"}</td>
                       <td>
                         <div className="action-buttons">

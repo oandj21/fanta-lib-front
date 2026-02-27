@@ -951,7 +951,7 @@ export default function AdminBooks() {
   title="Retirer de la liste (sera supprimé lors de l'enregistrement)"
   disabled={deletingImage}
   style={{
-    backgroundColor: '#f59e0b',
+    backgroundColor: '#f50b0b',
     color: 'white',
     border: '2px solid white',
     width: '24px',
@@ -965,7 +965,7 @@ export default function AdminBooks() {
     transform: 'scale(1)'
   }}
 >
-  <Trash2 size={14} />
+  <Trash2 size={30} />
 </button>
                                 
                                 

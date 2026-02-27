@@ -29,21 +29,21 @@ export default function WhatsAppFloat() {
     const cart = JSON.parse(localStorage.getItem('cart') || '[]');
     
     if (cart.length === 0) {
-      return "Bonjour Fantasia 📚, j'aimerais avoir des informations sur vos livres.";
+      return "مرحباً فانتازيا 📚، أود الحصول على معلومات حول كتبكم.";
     }
 
     // Map cart items with fallback values for missing data
     const items = cart.map((book, index) => {
       // Try all possible field names for title
-      const title = book.titre || book.title || book.nom || `Livre ${index + 1}`;
+      const title = book.titre || book.title || book.nom || `كتاب ${index + 1}`;
       
       // Try all possible field names for author
-      const author = book.auteur || book.author || book.auteure || 'Auteur inconnu';
+      const author = book.auteur || book.author || book.auteure || 'مؤلف غير معروف';
       
       // Try all possible field names for price
       const price = book.prix_vente || book.prix || book.price || book.prix_achat || 0;
       
-      return `- ${title} par ${author} (${Number(price).toFixed(2)}DH)`;
+      return `- ${title} للكاتب ${author} (${Number(price).toFixed(2)} درهم)`;
     }).join('\n');
     
     // Calculate total with fallback for missing prices
@@ -54,16 +54,17 @@ export default function WhatsAppFloat() {
     
     const totalItems = cart.length;
     
-    return `Bonjour Fantasia 📚,
+    return `مرحباً فانتازيا 📚،
 
-Je souhaite commander les livres suivants :
+أود طلب الكتب التالية :
 
 ${items}
 
-📦 Total : ${totalItems} livre${totalItems > 1 ? 's' : ''}
-💰 Montant total : ${total.toFixed(2)}DH
+📦 المجموع : ${totalItems} كتاب
+💰 المبلغ الإجمالي : ${total.toFixed(2)} درهم
 
-Merci de me confirmer la disponibilité et les modalités de livraison.`;
+يرجى تأكيد توفر الكتب وشروط التوصيل.
+شكراً جزيلاً.`;
   };
 
   const handleClick = () => {
@@ -90,7 +91,7 @@ Merci de me confirmer la disponibilité et les modalités de livraison.`;
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       className="whatsapp-float"
-      aria-label="Commander via WhatsApp"
+      aria-label="اطلب عبر الواتساب"
     >
       <svg 
         className="whatsapp-icon" 
@@ -106,7 +107,7 @@ Merci de me confirmer la disponibilité et les modalités de livraison.`;
       )}
       
       <span className={`whatsapp-tooltip ${isHovered ? 'visible' : ''}`}>
-        Commander via WhatsApp
+        اطلب عبر الواتساب
       </span>
     </button>
   );

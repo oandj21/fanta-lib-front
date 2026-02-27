@@ -15,6 +15,14 @@ export default function Cart() {
 
   const WHATSAPP_NUMBER = "212625854078";
 
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth' // Smooth scrolling animation
+    });
+  }, []); // Empty dependency array means this runs once when component mounts
+
   // Load cart from localStorage
   useEffect(() => {
     loadCart();

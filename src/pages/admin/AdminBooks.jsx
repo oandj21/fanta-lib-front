@@ -965,7 +965,7 @@ export default function AdminBooks() {
     transform: 'scale(1)'
   }}
 >
-  <Trash2 size={120} />
+  <Trash2  size={24} style={{ width: '100%', height: '100%' }} />
 </button>
                                 
                                 

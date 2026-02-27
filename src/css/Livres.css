@@ -462,7 +462,7 @@
 /* Responsive adjustments for smaller screens */
 @media (max-width: 480px) {
   .page-her {
-    padding: 3rem 1rem;
+    padding: 0rem 1rem;
   }
   
   .page-her h1 {

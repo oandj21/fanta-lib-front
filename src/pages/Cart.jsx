@@ -13,7 +13,7 @@ export default function Cart() {
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [showClearModal, setShowClearModal] = useState(false); // State for clear cart modal
 
-  const WHATSAPP_NUMBER = "212625854078";
+  const WHATSAPP_NUMBER = "212688069942";
 
   // Scroll to top when component mounts
   useEffect(() => {

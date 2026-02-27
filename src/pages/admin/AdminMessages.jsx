@@ -1,6 +1,19 @@
 import { useState, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Mail, Trash2, X, ChevronLeft, ChevronRight, Search, Filter, XCircle, User, Calendar } from "lucide-react";
+import { 
+  Mail, 
+  Trash2, 
+  X, 
+  ChevronLeft, 
+  ChevronRight, 
+  Search, 
+  Filter, 
+  XCircle, 
+  User, 
+  Calendar,
+  AlertCircle,
+  Check
+} from "lucide-react";
 import { fetchMessages, deleteMessage } from "../../store/store";
 import "../../css/AdminMessages.css";
 
@@ -19,6 +32,10 @@ export default function AdminMessages() {
   
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  
+  // Delete confirmation state
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [messageToDelete, setMessageToDelete] = useState(null);
 
   useEffect(() => {
     dispatch(fetchMessages());
@@ -29,13 +46,20 @@ export default function AdminMessages() {
     setCurrentPage(1);
   }, [searchTerm, sortOrder]);
 
-  const handleDelete = (id) => {
-    if (window.confirm("Êtes-vous sûr de vouloir supprimer ce message ?")) {
-      dispatch(deleteMessage(id));
-      if (selectedMessage?.id === id) {
+  const handleDeleteClick = (message) => {
+    setMessageToDelete(message);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = () => {
+    if (messageToDelete) {
+      dispatch(deleteMessage(messageToDelete.id));
+      if (selectedMessage?.id === messageToDelete.id) {
         setSelectedMessage(null);
         setShowModal(false);
       }
+      setShowDeleteConfirm(false);
+      setMessageToDelete(null);
     }
   };
 
@@ -218,9 +242,46 @@ export default function AdminMessages() {
 
   return (
     <div className="admin-messages">
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="modal-overlay">
+          <div className="modal-content delete-modal">
+            <div className="delete-confirm-icon">
+              <AlertCircle size={48} />
+            </div>
+            
+            <h3 className="delete-confirm-title">Confirmer la suppression</h3>
+            
+            <p className="delete-confirm-message">
+              Êtes-vous sûr de vouloir supprimer le message de <strong>{messageToDelete?.nom_complet}</strong> ?
+            </p>
+            
+            <p className="delete-confirm-warning">
+              Cette action est irréversible et supprimera définitivement le message.
+            </p>
+            
+            <div className="delete-confirm-actions">
+              <button 
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setMessageToDelete(null);
+                }} 
+                className="btn-secondary"
+              >
+                Annuler
+              </button>
+              <button onClick={confirmDelete} className="btn-delete">
+                <Trash2 size={16} />
+                Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="admin-header">
-        <div>
+        <div className="header-left">
           <h2>Gestion des Messages</h2>
           <p className="admin-subtitle">
             {filteredMessages.length > 0 
@@ -351,7 +412,7 @@ export default function AdminMessages() {
                     className="delete-btn-icon"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleDelete(message.id);
+                      handleDeleteClick(message);
                     }}
                     title="Supprimer"
                   >
@@ -420,7 +481,7 @@ export default function AdminMessages() {
                   Répondre par email
                 </a>
                 <button 
-                  onClick={() => handleDelete(selectedMessage.id)}
+                  onClick={() => handleDeleteClick(selectedMessage)}
                   className="btn-danger"
                 >
                   <Trash2 size={16} />

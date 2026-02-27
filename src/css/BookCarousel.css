@@ -27,15 +27,6 @@
 .carousel-track-container {
   overflow: hidden;
   cursor: grab;
-  user-select: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-}
-
-.carousel-track-container.dragging {
-  cursor: grabbing;
-  cursor: -webkit-grabbing;
 }
 
 .carousel-track-container:active {
@@ -48,40 +39,11 @@
   width: max-content;
   will-change: transform;
   transition: transform 0.05s linear;
-  pointer-events: auto;
 }
 
 .carousel-item {
   width: 220px;
   flex-shrink: 0;
-  pointer-events: auto;
-  transition: transform 0.2s ease;
-}
-
-.carousel-item:hover {
-  transform: translateY(-5px);
-}
-
-/* Ensure book cards are clickable */
-.carousel-item .book-card {
-  pointer-events: auto;
-  cursor: pointer;
-}
-
-/* Prevent text selection during drag */
-.carousel-track-container * {
-  user-select: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-}
-
-/* Allow text selection in book details when not dragging */
-.carousel-track-container:not(.dragging) .book-card {
-  user-select: text;
-  -webkit-user-select: text;
-  -moz-user-select: text;
-  -ms-user-select: text;
 }
 
 @media (max-width: 768px) {
@@ -93,24 +55,4 @@
   .carousel-item {
     width: 180px;
   }
-}
-
-/* Improve touch interaction on mobile */
-@media (max-width: 480px) {
-  .carousel-track-container {
-    touch-action: pan-y pinch-zoom;
-  }
-  
-  .carousel-item {
-    width: 160px;
-  }
-  
-  .carousel-item:hover {
-    transform: none; /* Disable hover transform on mobile */
-  }
-}
-
-/* Smooth scrolling when auto-scrolling resumes */
-.carousel-track.resuming {
-  transition: transform 0.3s ease-out;
 }

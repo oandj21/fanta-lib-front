@@ -1,6 +1,7 @@
 // Livres.jsx
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useLocation } from "react-router-dom";
 import { fetchLivres, selectLivres, selectLivresLoading } from "../store/store";
 import BookCard from "../components/BookCard";
 import BookDetailModal from "../components/BookDetailModal";
@@ -11,6 +12,7 @@ import "../css/Livres.css";
 
 export default function Livres() {
   const dispatch = useDispatch();
+  const location = useLocation();
   const books = useSelector(selectLivres);
   const loading = useSelector(selectLivresLoading);
   const [selectedBook, setSelectedBook] = useState(null);
@@ -21,6 +23,24 @@ export default function Livres() {
   useEffect(() => {
     dispatch(fetchLivres());
   }, [dispatch]);
+
+  // Handle URL parameters
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const searchParam = params.get("search");
+    const bookId = params.get("book");
+
+    if (searchParam) {
+      setSearch(searchParam);
+    }
+
+    if (bookId && books.length > 0) {
+      const book = books.find(b => b.id === parseInt(bookId));
+      if (book) {
+        setSelectedBook(book);
+      }
+    }
+  }, [location.search, books]);
 
   // Get unique genres from books, filtering out empty/null values
   const genres = ["الكل", ...Array.from(new Set(
@@ -48,6 +68,10 @@ export default function Livres() {
 
   const handleCloseDetails = () => {
     setSelectedBook(null);
+    // Remove book param from URL
+    const url = new URL(window.location);
+    url.searchParams.delete("book");
+    window.history.replaceState({}, "", url);
   };
 
   return (
@@ -63,13 +87,6 @@ export default function Livres() {
 
       <section className="filters-sectio">
         <div className="filters-container">
-          <input
-            type="text"
-            placeholder="ابحث عن كتاب أو مؤلف..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="search-input"
-          />
           <div className="genres-filter">
             {genres.map((g) => (
               <button

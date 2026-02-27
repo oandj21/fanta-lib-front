@@ -98,44 +98,15 @@
   flex-direction: column;
   gap: 1.25rem;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
 }
 
 @media (min-width: 640px) {
   .filters-container {
     flex-direction: row;
     gap: 2rem;
+    justify-content: center;
   }
-}
-
-.search-input {
-  width: 100%;
-  padding: 0.875rem 1.25rem;
-  border: 2px solid #e8e0d8;
-  border-radius: 50px;
-  background-color: white;
-  color: #5c0202;
-  font-size: 1rem;
-  font-family: 'Inter', sans-serif;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
-}
-
-@media (min-width: 640px) {
-  .search-input {
-    width: 22rem;
-  }
-}
-
-.search-input:focus {
-  outline: none;
-  border-color: #5c0202;
-  box-shadow: 0 0 0 4px rgba(74, 44, 42, 0.1);
-}
-
-.search-input::placeholder {
-  color: #b8a9a0;
-  font-weight: 300;
 }
 
 .genres-filter {
@@ -539,20 +510,15 @@
     background-color: #1a1a1a;
   }
   
-  .filters-section {
+  .filters-sectio {
     background-color: #2a2a2a;
     border-bottom-color: #404040;
   }
   
-  .search-input,
   .genre-btn {
     background-color: #333;
     border-color: #404040;
     color: #f0f0f0;
-  }
-  
-  .search-input::placeholder {
-    color: #808080;
   }
   
   .genre-btn:hover {
@@ -566,5 +532,81 @@
   
   .results-count {
     color: #c0c0c0;
+  }
+}
+
+/* RTL Support */
+[dir="rtl"] .results-count {
+  padding-left: 0;
+  padding-right: 0.25rem;
+}
+
+[dir="rtl"] .page-hero-content {
+  flex-direction: row;
+}
+
+[dir="rtl"] .filters-container {
+  flex-direction: row;
+}
+
+@media (max-width: 639px) {
+  [dir="rtl"] .filters-container {
+    flex-direction: column;
+  }
+}
+
+/* Focus styles for accessibility */
+.genre-btn:focus-visible {
+  outline: 2px solid #5c0202;
+  outline-offset: 2px;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Selection color */
+::selection {
+  background-color: #5c0202;
+  color: white;
+}
+
+/* Container max-width utility */
+.container {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+  .container {
+    max-width: 640px;
+  }
+}
+
+@media (min-width: 768px) {
+  .container {
+    max-width: 768px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container {
+    max-width: 1024px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .container {
+    max-width: 1280px;
+  }
+}
+
+@media (min-width: 1536px) {
+  .container {
+    max-width: 1536px;
   }
 }

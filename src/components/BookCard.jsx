@@ -3,7 +3,7 @@ import BookDetailModal from "./BookDetailModal";
 import { Eye, ShoppingCart, Check } from "lucide-react";
 import "../css/BookCard.css";
 
-export default function BookCard({ book }) {
+export default function BookCard({ book, onShowDetails }) {
   const [showDetail, setShowDetail] = useState(false);
   const [added, setAdded] = useState(false);
 
@@ -56,8 +56,14 @@ export default function BookCard({ book }) {
   const handleDetailsClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log("فتح التفاصيل للكتاب:", book);
-    setShowDetail(true);
+    
+    if (onShowDetails) {
+      // If parent provided onShowDetails (for carousel), use that
+      onShowDetails(book);
+    } else {
+      // Otherwise use local state (for standalone use in books grid)
+      setShowDetail(true);
+    }
   };
 
   return (
@@ -106,7 +112,8 @@ export default function BookCard({ book }) {
         </div>
       </div>
 
-      {showDetail && (
+      {/* Only show modal if using local state and onShowDetails is not provided */}
+      {!onShowDetails && showDetail && (
         <BookDetailModal 
           book={book} 
           onClose={() => {

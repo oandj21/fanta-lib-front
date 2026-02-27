@@ -224,7 +224,7 @@ const BookCarousel = forwardRef(({ onShowDetails }, ref) => {
               className="carousel-item"
               onClick={(e) => handleCardClick(book, e)}
             >
-              {/* Pass null to onShowDetails to prevent double triggers */}
+              {/* Pass onShowDetails={null} to prevent local modal */}
               <BookCard book={book} onShowDetails={null} />
             </div>
           ))}

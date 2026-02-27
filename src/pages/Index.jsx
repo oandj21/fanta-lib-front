@@ -94,7 +94,8 @@ export default function Index() {
           <div className="books-grid">
             {books.slice(0, 8).map((book, i) => (
               <div key={book.id} style={{ animationDelay: `${i * 80}ms` }} className="animate-fade-up">
-                <BookCard book={book} onShowDetails={handleShowDetails} />
+                {/* Don't pass onShowDetails here - let BookCard use local state */}
+                <BookCard book={book} />
               </div>
             ))}
           </div>

@@ -28,6 +28,12 @@ export default function AdminLayout() {
     setSidebarOpen(false);
   }, [location.pathname]);
 
+  // Update document title based on current route
+  useEffect(() => {
+    const pageTitle = getPageTitle();
+    document.title = `${pageTitle} - Fantasia`;
+  }, [location.pathname]);
+
   // Updated nav items with root paths
   const navItems = [
     { to: "/dashboard", icon: LayoutDashboard, label: "Tableau de bord" },
@@ -77,7 +83,10 @@ export default function AdminLayout() {
       {/* Sidebar */}
       <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
         <div className="sidebar-header">
-          <h2>Fantasia</h2>
+          <div className="logo-container">
+            <img src="/logo.jpeg" alt="Fantasia Logo" className="circular-logo" />
+            <h2>Fantasia</h2>
+          </div>
           <button className="close-sidebar" onClick={() => setSidebarOpen(false)}>
             ✕
           </button>

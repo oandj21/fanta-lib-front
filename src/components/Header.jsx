@@ -84,7 +84,7 @@ export default function Header() {
     <header className="header">
       <div className="header-container">
         <Link to="/" className="logo">
-          <BookOpen />
+          <img src="/logo.jpeg" alt="Fantasia Logo" className="logo-image" />
           <span>فانتازيا</span>
         </Link>
 

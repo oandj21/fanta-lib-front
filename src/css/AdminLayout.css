@@ -257,3 +257,26 @@
     padding: 15px;
   }
 }
+.logo-container {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.circular-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #5c0202;
+}
+@media (max-width: 768px) {
+  .close-sidebar {
+    display: block;
+  }
+  
+  .circular-logo {
+    width: 32px;
+    height: 32px;
+  }
+}

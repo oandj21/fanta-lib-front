@@ -708,3 +708,60 @@ html {
     display: none !important;
   }
 }
+/* Add to your Header.css - replace the existing logo styles */
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  transition: var(--transition);
+}
+
+.logo:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.logo-image {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  transition: var(--transition);
+}
+
+.logo:hover .logo-image {
+  transform: rotate(-5deg);
+  border-color: white;
+}
+
+.logo span {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary-foreground);
+  letter-spacing: 0.025em;
+  background: linear-gradient(135deg, #fff, #f0e8e0);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .logo-image {
+    width: 2rem;
+    height: 2rem;
+  }
+  
+  .logo span {
+    font-size: 1.25rem;
+  }
+}
+
+/* Remove the old logo svg styles if they exist */
+.logo svg {
+  display: none;
+}

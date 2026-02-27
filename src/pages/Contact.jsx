@@ -132,7 +132,7 @@ export default function Contact() {
                 </div>
                 <div className="info-content">
                   <p>البريد الإلكتروني</p>
-                  <a href="mailto:contact@fantasia.fr">contact@fantasia.fr</a>
+                  <a href="mailto:info.fantasia.library@gmail.com">info.fantasia.library@gmail.com</a>
                 </div>
               </div>
 
@@ -142,7 +142,7 @@ export default function Contact() {
                 </div>
                 <div className="info-content">
                   <p>الهاتف</p>
-                  <a href="tel:+212625854078">+212 625 854 078</a>
+                  <a href="tel:+212688069942">+212 688 069 942</a>
                 </div>
               </div>
 

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import "../css/WhatsAppFloat.css";
 
-const WHATSAPP_NUMBER = "212625854078";
+const WHATSAPP_NUMBER = "212688069942";
 
 export default function WhatsAppFloat() {
   const [cartCount, setCartCount] = useState(0);

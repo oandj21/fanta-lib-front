@@ -185,26 +185,26 @@ export default function AdminBooks() {
   };
 
   const handleImageChange = (e) => {
-    const files = Array.from(e.target.files);
-    
-    // Validate file size (max 2MB)
-    const validFiles = files.filter(file => {
-      if (file.size > 2 * 1024 * 1024) {
-        alert(`L'image ${file.name} est trop volumineuse. Maximum 2MB.`);
-        return false;
-      }
-      return true;
-    });
-    
-    setSelectedImages(validFiles);
-    
-    // Create preview URLs
-    const previews = validFiles.map(file => URL.createObjectURL(file));
-    
-    // Clean up previous previews
-    imagePreviews.forEach(url => URL.revokeObjectURL(url));
-    setImagePreviews(previews);
-  };
+  const files = Array.from(e.target.files);
+  
+  // Validate file size (max 10MB)
+  const validFiles = files.filter(file => {
+    if (file.size > 10 * 1024 * 1024) { // Changed from 2MB to 10MB
+      alert(`L'image ${file.name} est trop volumineuse. Maximum 10MB.`); // Updated message
+      return false;
+    }
+    return true;
+  });
+  
+  setSelectedImages(validFiles);
+  
+  // Create preview URLs
+  const previews = validFiles.map(file => URL.createObjectURL(file));
+  
+  // Clean up previous previews
+  imagePreviews.forEach(url => URL.revokeObjectURL(url));
+  setImagePreviews(previews);
+};
 
   // Handle removing a new image preview (not yet uploaded)
   const handleRemoveNewImage = (index) => {
@@ -1005,7 +1005,7 @@ export default function AdminBooks() {
                     <div className="upload-placeholder">
                       <Upload size={24} />
                       <span>Cliquez pour ajouter des images</span>
-                      <small>JPG, PNG (max 2MB)</small>
+                      <small>JPG, PNG (max 10MB)</small>
                     </div>
                   </label>
                 </div>

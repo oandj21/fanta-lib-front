@@ -943,15 +943,30 @@ export default function AdminBooks() {
                               {/* Two buttons for existing images */}
                               <div className="image-actions">
                                 {/* Remove button (mark for deletion) */}
-                                <button 
-                                  type="button"
-                                  onClick={() => handleRemoveExistingImage(image)}
-                                  className="btn-icon remove-image-btn"
-                                  title="Retirer de la liste (sera supprimé lors de l'enregistrement)"
-                                  disabled={deletingImage}
-                                >
-                                  <Trash2 size={14} />
-                                </button>
+                                {/* Remove button (mark for deletion) */}
+<button 
+  type="button"
+  onClick={() => handleRemoveExistingImage(image)}
+  className="btn-icon remove-image-btn"
+  title="Retirer de la liste (sera supprimé lors de l'enregistrement)"
+  disabled={deletingImage}
+  style={{
+    backgroundColor: '#f59e0b',
+    color: 'white',
+    border: '2px solid white',
+    width: '24px',
+    height: '24px',
+    borderRadius: '12px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    opacity: 1,
+    transform: 'scale(1)'
+  }}
+>
+  <Trash2 size={14} />
+</button>
                                 
                                 
                               </div>

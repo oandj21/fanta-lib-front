@@ -1620,23 +1620,21 @@ textarea:focus-visible {
   z-index: 10;
 }
 
-/* Remove image button (mark for deletion) */
 .remove-image-btn {
   width: 24px;
   height: 24px;
   border-radius: 12px;
-  background-color: #f50b0b;
+  background-color: #f59e0b;
   color: white;
   border: 2px solid white;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: none; /* Remove transition since we're removing hover */
   opacity: 1 !important;
-  transform: scale(0.8);
+  transform: scale(1); /* Changed from 0.8 to 1 for consistent size */
 }
-
 
 /* Permanent delete button */
 .permanent-delete-btn {

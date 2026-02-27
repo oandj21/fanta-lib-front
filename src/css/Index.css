@@ -275,7 +275,7 @@ body {
 
 .books-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr) !important; /* Force 2 columns on all screens */
+  grid-template-columns: repeat(2, 1fr) !important;
   gap: 1rem;
   max-width: 1400px;
   margin: 0 auto;
@@ -284,31 +284,40 @@ body {
 /* Override for very small screens if needed */
 @media (max-width: 350px) {
   .books-grid {
-    grid-template-columns: 1fr !important; /* 1 column only on extremely small screens */
+    grid-template-columns: 1fr !important;
   }
 }
 
-/* Tablets and up */
+/* Tablets */
 @media (min-width: 768px) {
   .books-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 2rem;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 1.5rem;
   }
 }
 
 /* Small desktops */
 @media (min-width: 1024px) {
   .books-grid {
-    grid-template-columns: repeat(3, 1fr) !important;
-    gap: 2.5rem;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 2rem;
   }
 }
 
-/* Large desktops */
+/* Large desktops - 5 in a row */
 @media (min-width: 1280px) {
   .books-grid {
-    grid-template-columns: repeat(4, 1fr) !important;
+    grid-template-columns: repeat(5, 1fr) !important;
+    gap: 2rem;
+  }
+}
+
+/* Extra large desktops */
+@media (min-width: 1600px) {
+  .books-grid {
+    grid-template-columns: repeat(5, 1fr) !important;
     gap: 2.5rem;
+    max-width: 1800px;
   }
 }
 
@@ -504,6 +513,43 @@ body {
   font-size: 0.875rem;
   margin: 0;
   letter-spacing: 0.3px;
+}
+
+/* Floating Animation */
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.book-card {
+  animation: float 4s ease-in-out infinite;
+}
+
+/* Stagger the animation for each card */
+.books-grid > div:nth-child(odd) .book-card {
+  animation-delay: 0.2s;
+}
+
+.books-grid > div:nth-child(3n) .book-card {
+  animation-delay: 0.4s;
+}
+
+.books-grid > div:nth-child(5n) .book-card {
+  animation-delay: 0.6s;
+}
+
+/* Pause animation on hover */
+.book-card:hover {
+  animation-play-state: paused;
+  transform: translateY(-5px);
+  transition: transform 0.3s ease;
 }
 
 /* Animation Classes */

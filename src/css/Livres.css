@@ -212,22 +212,33 @@
 
 @media (min-width: 768px) {
   .books-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 2rem;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
   }
 }
 
 @media (min-width: 1024px) {
   .books-grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 2.5rem;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2rem;
   }
 }
 
+/* Large desktops - 5 in a row */
 @media (min-width: 1280px) {
   .books-grid {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
+    gap: 2rem;
+  }
+}
+
+/* Extra large desktops */
+@media (min-width: 1600px) {
+  .books-grid {
+    grid-template-columns: repeat(5, 1fr);
     gap: 2.5rem;
+    max-width: 1800px;
+    margin: 0 auto;
   }
 }
 
@@ -297,6 +308,43 @@
   color: #5c0202;
   font-family: 'Playfair Display', serif;
   margin: 0;
+}
+
+/* Floating Animation */
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.book-card {
+  animation: float 4s ease-in-out infinite;
+}
+
+/* Stagger the animation for each card */
+.books-grid > div:nth-child(odd) .book-card {
+  animation-delay: 0.2s;
+}
+
+.books-grid > div:nth-child(3n) .book-card {
+  animation-delay: 0.4s;
+}
+
+.books-grid > div:nth-child(5n) .book-card {
+  animation-delay: 0.6s;
+}
+
+/* Pause animation on hover */
+.book-card:hover {
+  animation-play-state: paused;
+  transform: translateY(-5px);
+  transition: transform 0.3s ease;
 }
 
 /* Animation */

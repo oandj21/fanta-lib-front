@@ -150,6 +150,36 @@
   opacity: 0.5;
 }
 
+/* Adjust card sizes for larger screens */
+@media (min-width: 1280px) {
+  .book-card {
+    max-width: 100%;
+  }
+  
+  .book-title {
+    font-size: 15px;
+  }
+  
+  .book-author {
+    font-size: 12px;
+  }
+  
+  .btn-details {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+  
+  .btn-details svg {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .btn-cart {
+    width: 36px;
+    height: 36px;
+  }
+}
+
 @media (max-width: 480px) {
   .book-title {
     font-size: 14px;

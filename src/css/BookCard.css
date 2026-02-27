@@ -172,8 +172,8 @@
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
-  background-color: #2ef32b;
-  color: #f8f4f0;
+background: linear-gradient(135deg, #25D366, #128C7E);  
+color: #f8f4f0;
 }
 
 .btn-cart:hover:not(:disabled) {

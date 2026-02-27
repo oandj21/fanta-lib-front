@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import Header from "../components/Header";
 import WhatsAppFloat from "../components/WhatsAppFloat";
-import { BookOpen, Mail, Phone, MapPin, MessageCircle, CheckCircle, AlertCircle } from "lucide-react";
+import { BookOpen, Mail, Phone, MapPin, MessageCircle, CheckCircle, AlertCircle, ExternalLink } from "lucide-react";
 import "../css/Contact.css";
 
 // Import Redux actions and selectors
@@ -38,8 +38,15 @@ export default function Contact() {
 
   const whatsappLink = `https://wa.me/212688069942?text=${encodeURIComponent("مرحباً فانتازيا 📚، لدي سؤال:")}`;
   
-  // Google Maps embed URL for the location
+  // Google Maps URLs
   const googleMapsEmbedUrl = "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3323.144845585287!2d-7.620618924246!3d33.595080573324!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xda7d3731f884cb3%3A0x8c6b2e9e8b3c5f!2sCasablanca%2C%20Morocco!5e0!3m2!1sen!2sus!4v1700000000000!5m2!1sen!2sus";
+  
+  const googleMapsDirectionsUrl = "https://maps.app.goo.gl/4KvFJ4pueR8YJN3V7";
+  
+  // Function to handle map click
+  const handleMapClick = () => {
+    window.open(googleMapsDirectionsUrl, '_blank', 'noopener,noreferrer');
+  };
 
   const handleChange = (e) => {
     const { id, value } = e.target;
@@ -146,32 +153,49 @@ export default function Contact() {
                 </div>
               </div>
 
-              {/* Google Maps Embed - Replacing the address info item */}
+              {/* Google Maps Embed - Clickable Map */}
               <div className="info-item map-embed-item">
                 <div className="info-icon">
                   <MapPin />
                 </div>
                 <div className="info-content map-embed-content">
                   <p>موقعنا على الخريطة</p>
-                  <div className="map-embed-container">
+                  <div 
+                    className="map-embed-container clickable-map"
+                    onClick={handleMapClick}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleMapClick();
+                      }
+                    }}
+                    title="انقر لفتح الموقع في خرائط جوجل"
+                  >
                     <iframe
                       src={googleMapsEmbedUrl}
                       width="100%"
                       height="200"
-                      style={{ border: 0, borderRadius: '8px' }}
+                      style={{ border: 0, borderRadius: '8px', pointerEvents: 'none' }}
                       allowFullScreen=""
                       loading="lazy"
                       referrerPolicy="no-referrer-when-downgrade"
                       title="Fantasia Book Store Location"
                     ></iframe>
+                    <div className="map-overlay">
+                      <ExternalLink size={24} />
+                      <span>انقر لفتح في خرائط جوجل</span>
+                    </div>
                   </div>
                   <a 
-                    href="https://maps.app.goo.gl/4KvFJ4pueR8YJN3V7" 
+                    href={googleMapsDirectionsUrl}
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="map-embed-link"
                   >
                     فتح في خرائط جوجل
+                    <ExternalLink size={14} />
                   </a>
                 </div>
               </div>

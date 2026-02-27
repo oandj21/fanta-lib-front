@@ -15,6 +15,7 @@ export default function BookCarousel({ onShowDetails }) {
   const startXRef = useRef(0);
   const scrollLeftRef = useRef(0);
   const dragStartTimeRef = useRef(0);
+  const modalOpenRef = useRef(false); // Track if modal is open
 
   const loopedBooks = [...books, ...books, ...books];
 
@@ -25,7 +26,8 @@ export default function BookCarousel({ onShowDetails }) {
     const SPEED = 0.8;
 
     const animate = () => {
-      // Only pause if hovering OR dragging, not when modal is open
+      // Only pause if hovering OR dragging, NOT when modal is open
+      // modalOpenRef.current is checked but doesn't pause the animation
       if (!pausedRef.current && !isHoveringRef.current && !isDraggingRef.current) {
         posRef.current += SPEED;
         const cardWidth = track.children[0]?.offsetWidth || 220;
@@ -52,6 +54,9 @@ export default function BookCarousel({ onShowDetails }) {
 
   // Mouse/Touch drag handlers
   const handleMouseDown = (e) => {
+    // Don't start drag if modal is open
+    if (modalOpenRef.current) return;
+    
     e.preventDefault();
     isDraggingRef.current = true;
     startXRef.current = e.pageX - (trackRef.current?.offsetLeft || 0);
@@ -60,7 +65,7 @@ export default function BookCarousel({ onShowDetails }) {
   };
 
   const handleMouseMove = (e) => {
-    if (!isDraggingRef.current) return;
+    if (!isDraggingRef.current || modalOpenRef.current) return;
     e.preventDefault();
     
     const x = e.pageX - (trackRef.current?.offsetLeft || 0);
@@ -97,6 +102,9 @@ export default function BookCarousel({ onShowDetails }) {
 
   // Touch events for mobile
   const handleTouchStart = (e) => {
+    // Don't start drag if modal is open
+    if (modalOpenRef.current) return;
+    
     e.preventDefault();
     isDraggingRef.current = true;
     startXRef.current = e.touches[0].pageX - (trackRef.current?.offsetLeft || 0);
@@ -105,7 +113,7 @@ export default function BookCarousel({ onShowDetails }) {
   };
 
   const handleTouchMove = (e) => {
-    if (!isDraggingRef.current) return;
+    if (!isDraggingRef.current || modalOpenRef.current) return;
     e.preventDefault();
     
     const x = e.touches[0].pageX - (trackRef.current?.offsetLeft || 0);
@@ -136,8 +144,25 @@ export default function BookCarousel({ onShowDetails }) {
   // Handle card click - this will open the modal but won't affect auto-scroll
   const handleCardClick = (book) => {
     if (onShowDetails) {
+      // Set modal as open
+      modalOpenRef.current = true;
+      
+      // Call the parent's onShowDetails
       onShowDetails(book);
+      
+      // Reset hover/drag states when opening modal
+      isHoveringRef.current = false;
+      isDraggingRef.current = false;
     }
+  };
+
+  // Function to handle modal close (to be called from parent)
+  // This will be exposed through a ref or passed as prop
+  const handleModalClose = () => {
+    modalOpenRef.current = false;
+    // Reset any stuck states
+    isHoveringRef.current = false;
+    isDraggingRef.current = false;
   };
 
   if (books.length === 0) {
@@ -152,7 +177,10 @@ export default function BookCarousel({ onShowDetails }) {
       <div
         className={`carousel-track-container ${isDraggingRef.current ? 'dragging' : ''}`}
         onMouseEnter={() => { 
-          isHoveringRef.current = true; 
+          // Only set hovering if modal is not open
+          if (!modalOpenRef.current) {
+            isHoveringRef.current = true; 
+          }
         }}
         onMouseLeave={handleMouseLeave}
         onMouseDown={handleMouseDown}
@@ -168,13 +196,19 @@ export default function BookCarousel({ onShowDetails }) {
               key={`${book.id}-${index}`} 
               className="carousel-item"
               onClick={(e) => {
-                // Only trigger if not dragging
-                if (!isDraggingRef.current) {
+                // Only trigger if not dragging and modal is not open
+                if (!isDraggingRef.current && !modalOpenRef.current) {
                   handleCardClick(book);
                 }
               }}
             >
-              <BookCard book={book} onShowDetails={handleCardClick} />
+              <BookCard 
+                book={book} 
+                onShowDetails={(book) => {
+                  // This prevents the card's internal state from interfering
+                  handleCardClick(book);
+                }} 
+              />
             </div>
           ))}
         </div>

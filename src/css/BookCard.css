@@ -12,7 +12,7 @@
 
 .book-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 15px 30px rgba(74, 44, 42, 0.15);
+  box-shadow: 0 15px 30px rgba(92, 2, 2, 0.15);
 }
 
 .book-cover {
@@ -37,8 +37,8 @@
   position: absolute;
   top: 15px;
   right: 15px;
-  background: linear-gradient(135deg, #8B4513, #5c0202);
-  color: white;
+  background: linear-gradient(135deg, #5c0202, #8d0404);
+  color: #ffead0;
   padding: 6px 14px;
   border-radius: 25px;
   font-size: 11px;
@@ -72,42 +72,21 @@
 }
 
 .status-indicator.available {
-  background-color: #28a745;
-  color: white;
+  background-color: #075601;
+  color: #ffead0;
 }
 
 .status-indicator.out_of_stock {
-  background-color: #dc3545;
-  color: white;
+  background-color: #8d0404;
+  color: #ffead0;
 }
-
-/* Remove old status-badge styles */
-/* .status-badge {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  padding: 5px 10px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 600;
-  z-index: 1;
-}
-
-.status-badge.available {
-  background-color: rgba(40, 167, 69, 0.9);
-  color: white;
-}
-
-.status-badge.out_of_stock {
-  background-color: rgba(220, 53, 69, 0.9);
-  color: white;
-} */
 
 .book-info {
   padding: 15px;
   flex: 1;
   display: flex;
   flex-direction: column;
+  background-color: #ffead0;
 }
 
 .book-title {
@@ -123,9 +102,10 @@
 }
 
 .book-author {
-  color: #666;
+  color: #8d0404;
   font-size: 13px;
   margin-bottom: 10px;
+  opacity: 0.8;
 }
 
 .book-footer {
@@ -144,8 +124,8 @@
   padding: 8px 12px;
   border: none;
   border-radius: 6px;
-  background-color: #f0e8e0;
-  color: #5c0202;
+  background-color: #5c0202;
+  color: #ffead0;
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
@@ -153,12 +133,13 @@
 }
 
 .btn-details:hover {
-  background-color: #e0d6cc;
+  background-color: #8d0404;
   transform: translateY(-2px);
 }
 
 .btn-details svg {
   stroke-width: 2;
+  color: #ffead0;
 }
 
 .btn-cart {
@@ -172,24 +153,29 @@
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
-  background-color: #25ba22;
-  color: #f8f4f0;
+  background-color: #075601;
+  color: #ffead0;
 }
 
 .btn-cart:hover:not(:disabled) {
-  background-color: #27d124;
+  background-color: #0a7a02;
   transform: scale(1.05);
 }
 
 .btn-cart.added {
-  background-color: #22ae43;
-  color: white;
+  background-color: #075601;
+  color: #ffead0;
 }
 
 .btn-cart.disabled {
   background-color: #ccc;
   cursor: not-allowed;
   opacity: 0.5;
+}
+
+.btn-cart svg {
+  color: #ffead0;
+  stroke-width: 2;
 }
 
 /* Adjust card sizes for larger screens */

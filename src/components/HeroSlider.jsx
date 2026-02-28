@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import "../css/HeroSlider.css";
 
@@ -108,21 +108,21 @@ export default function HeroSlider() {
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const sliderInterval = useRef(null);
 
-  const goToSlide = (index) => {
+  const goToSlide = useCallback((index) => {
     setCurrentIndex(index);
-  };
+  }, []);
 
-  const goToPrevSlide = () => {
+  const goToPrevSlide = useCallback(() => {
     setCurrentIndex((prevIndex) => 
       prevIndex === 0 ? slides.length - 1 : prevIndex - 1
     );
-  };
+  }, []);
 
-  const goToNextSlide = () => {
+  const goToNextSlide = useCallback(() => {
     setCurrentIndex((prevIndex) => 
       prevIndex === slides.length - 1 ? 0 : prevIndex + 1
     );
-  };
+  }, []);
 
   useEffect(() => {
     if (isAutoPlaying) {
@@ -136,7 +136,7 @@ export default function HeroSlider() {
         clearInterval(sliderInterval.current);
       }
     };
-  }, [isAutoPlaying]);
+  }, [isAutoPlaying, goToNextSlide]);
 
   const handleMouseEnter = () => {
     setIsAutoPlaying(false);
@@ -159,7 +159,12 @@ export default function HeroSlider() {
         >
           {slides.map((slide) => (
             <div className="slide" key={slide.id}>
-              <img src={slide.image} alt={slide.alt} className="slide-image" />
+              <img 
+                src={slide.image} 
+                alt={slide.alt} 
+                className="slide-image"
+                loading={slides.indexOf(slide) === 0 ? "eager" : "lazy"}
+              />
               <div className="slide-overlay" />
             </div>
           ))}

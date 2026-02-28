@@ -64,7 +64,6 @@
   justify-content: center;
   padding: 4px;
   border-radius: 50%;
-  transition: all 0.2s ease;
 }
 
 [dir="rtl"] .clear-sear {
@@ -217,4 +216,26 @@
   .result-author {
     font-size: 11px;
   }
+}
+/* Remove all hover effects from clear button */
+.clear-sear:hover,
+.clear-sear:focus,
+.clear-sear:active {
+  background: none;
+  transform: none;
+  opacity: 1;
+  color: #5c0202;
+  box-shadow: none;
+  outline: none;
+}
+
+/* If there's any default button styling affecting it */
+button.clear-sear {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+button.clear-sear::-moz-focus-inner {
+  border: 0;
 }

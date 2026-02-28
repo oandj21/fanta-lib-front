@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import "../css/HeroSlider.css";
 
-// Import all hero images (keeping your existing imports)
+// Import all hero images using the exact filenames
 import heroImage696cf7a7eaa50_1768748967 from "../assets/696cf7a7eaa50_1768748967.jpg";
 import heroImage696cf7a3680c9_1768748963 from "../assets/696cf7a3680c9_1768748963.jpg";
 import heroImage696cf7b20a1bb_1768748978 from "../assets/696cf7b20a1bb_1768748978.jpg";
@@ -108,21 +108,21 @@ export default function HeroSlider() {
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const sliderInterval = useRef(null);
 
-  const goToSlide = useCallback((index) => {
+  const goToSlide = (index) => {
     setCurrentIndex(index);
-  }, []);
+  };
 
-  const goToPrevSlide = useCallback(() => {
+  const goToPrevSlide = () => {
     setCurrentIndex((prevIndex) => 
       prevIndex === 0 ? slides.length - 1 : prevIndex - 1
     );
-  }, []);
+  };
 
-  const goToNextSlide = useCallback(() => {
+  const goToNextSlide = () => {
     setCurrentIndex((prevIndex) => 
       prevIndex === slides.length - 1 ? 0 : prevIndex + 1
     );
-  }, []);
+  };
 
   useEffect(() => {
     if (isAutoPlaying) {
@@ -136,7 +136,7 @@ export default function HeroSlider() {
         clearInterval(sliderInterval.current);
       }
     };
-  }, [isAutoPlaying, goToNextSlide]);
+  }, [isAutoPlaying]);
 
   const handleMouseEnter = () => {
     setIsAutoPlaying(false);
@@ -159,12 +159,7 @@ export default function HeroSlider() {
         >
           {slides.map((slide) => (
             <div className="slide" key={slide.id}>
-              <img 
-                src={slide.image} 
-                alt={slide.alt} 
-                className="slide-image"
-                loading={slides.indexOf(slide) === 0 ? "eager" : "lazy"}
-              />
+              <img src={slide.image} alt={slide.alt} className="slide-image" />
               <div className="slide-overlay" />
             </div>
           ))}

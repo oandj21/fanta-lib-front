@@ -123,12 +123,8 @@ const Login = () => {
           <div className="brand-content">
             <div className="brand-logo">
               <img src="/logo.jpeg" alt="Library Logo" className="brand-image" />
-              <span className="brand-text">BIBLIOTHÈQUE</span>
+              <span className="brand-text">FANTASIA BIBLIOTHÈQUE</span>
             </div>
-            <h1 className="brand-title">Gestion de Bibliothèque</h1>
-            <p className="brand-subtitle">
-              Système de gestion de livres, commandes et dépenses
-            </p>
             <div className="brand-features">
               <div className="feature-item">
                 <span>📚 Gestion des Livres</span>

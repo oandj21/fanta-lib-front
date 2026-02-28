@@ -128,7 +128,7 @@ export default function HeroSlider() {
     if (isAutoPlaying) {
       sliderInterval.current = setInterval(() => {
         goToNextSlide();
-      }, 5000); // Change slide every 5 seconds
+      }, 5000);
     }
 
     return () => {
@@ -138,7 +138,6 @@ export default function HeroSlider() {
     };
   }, [isAutoPlaying]);
 
-  // Pause autoplay on hover
   const handleMouseEnter = () => {
     setIsAutoPlaying(false);
   };
@@ -166,7 +165,7 @@ export default function HeroSlider() {
           ))}
         </div>
 
-        {/* Single Button with secondary style */}
+        {/* Single centered button */}
         <div className="hero-content" style={{ textAlign: 'center' }}>
           <a href="#livres" className="btn-secondary">
             استعرض الكتب
@@ -174,10 +173,10 @@ export default function HeroSlider() {
         </div>
 
         {/* Navigation Buttons */}
-        <button className="slider-nav prev" onClick={goToPrevSlide}>
+        <button className="slider-nav prev" onClick={goToPrevSlide} aria-label="Previous slide">
           <ChevronRight size={24} />
         </button>
-        <button className="slider-nav next" onClick={goToNextSlide}>
+        <button className="slider-nav next" onClick={goToNextSlide} aria-label="Next slide">
           <ChevronLeft size={24} />
         </button>
 

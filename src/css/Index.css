@@ -83,10 +83,24 @@ body {
 
 .hero-content {
   position: absolute;
-  top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 2; /* Higher than the slides */
+  transform: translateX(-50%);
+  text-align: center;
+  z-index: 2;
+  width: 100%;
+  max-width: 800px;
+  padding: 0 1rem;
+  direction: rtl;
+  
+  /* Mobile: top 85% */
+  top: 85%;
+}
+
+/* Desktop: top 75% */
+@media (min-width: 768px) {
+  .hero-content {
+    top: 75%;
+  }
 }
 
 @keyframes fadeUp {

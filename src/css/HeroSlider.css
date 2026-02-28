@@ -44,15 +44,24 @@
 /* Hero Content */
 .hero-content {
   position: absolute;
-  top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translateX(-50%);
   text-align: center;
-  color: white;
   z-index: 2;
-  width: 90%;
+  width: 100%;
   max-width: 800px;
+  padding: 0 1rem;
   direction: rtl;
+  
+  /* Mobile: top 85% */
+  top: 85%;
+}
+
+/* Desktop: top 75% */
+@media (min-width: 768px) {
+  .hero-content {
+    top: 75%;
+  }
 }
 
 .hero-title {
@@ -96,7 +105,7 @@
 }
 
 .btn-primary,
-.btn-secondary {
+.btn-secondar {
   padding: 0.75rem 2rem;
   font-size: 1rem;
   font-weight: 600;
@@ -105,6 +114,7 @@
   transition: all 0.3s ease;
   cursor: pointer;
   border: 2px solid transparent;
+  width: 50%;
 }
 
 .btn-primary {
@@ -119,13 +129,13 @@
   transform: scale(1.05);
 }
 
-.btn-secondary {
+.btn-secondar {
   background: transparent;
   border-color: white;
   color: white;
 }
 
-.btn-secondary:hover {
+.btn-secondar:hover {
   background: white;
   color: #000;
   transform: scale(1.05);

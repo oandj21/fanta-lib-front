@@ -1,7 +1,7 @@
 .hero-slider {
   position: relative;
   width: 100%;
-  height: 100vh;
+  height: 73vh;
   overflow: hidden;
   direction: ltr;
 }
@@ -34,7 +34,6 @@
 
 .slide-overlay {
   position: absolute;
-  top: 0;
   left: 0;
   width: 100%;
   height: 100%;

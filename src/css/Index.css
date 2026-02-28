@@ -225,7 +225,7 @@ body {
 
 /* Carousel Section */
 .carousel-section {
-  padding: 4rem 0;
+  padding: 2rem 0;
   background-color: rgba(240, 232, 224, 0.3);
   overflow: hidden;
 }
@@ -620,7 +620,7 @@ body {
   }
   
   .carousel-section {
-    padding: 3rem 0;
+    padding: 1rem 0;
   }
   
   .books-section {

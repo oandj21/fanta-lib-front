@@ -55,7 +55,6 @@ export default function Index() {
 
       <section className="carousel-section">
         <div className="section-header">
-          <p className="section-subtitle">الأكثر مبيعاً</p>
           <h2 className="section-title">مجموعة متجددة</h2>
           <div className="section-divider" />
         </div>

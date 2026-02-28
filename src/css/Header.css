@@ -483,7 +483,7 @@
 }
 
 .mobile-search-bar .clear-sear {
-  left: 250px;
+  left: auto;
 }
 
 [dir="rtl"] .mobile-search-bar .clear-sear {

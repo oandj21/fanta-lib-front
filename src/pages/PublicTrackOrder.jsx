@@ -66,7 +66,7 @@ export default function PublicTrackOrder() {
   const [refreshing, setRefreshing] = useState(false);
   const [logoError, setLogoError] = useState(false);
 
-  const API_URL = "https://fanta-lib-back-production.up.railway.app/api";
+  const API_URL = "https://fanta-lib-back-production-76f4.up.railway.app/api";
 
   useEffect(() => {
     if (parcelCode) {

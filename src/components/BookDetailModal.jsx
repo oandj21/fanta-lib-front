@@ -55,17 +55,17 @@ export default function BookDetailModal({ book, onClose }) {
         try {
           const parsed = JSON.parse(images);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            return `https://fanta-lib-back-production.up.railway.app/storage/${parsed[0]}`;
+            return `https://fanta-lib-back-production-76f4.up.railway.app/storage/${parsed[0]}`;
           }
         } catch (e) {
           // If parsing fails, treat as direct filename
-          return `https://fanta-lib-back-production.up.railway.app/storage/${images}`;
+          return `https://fanta-lib-back-production-76f4.up.railway.app/storage/${images}`;
         }
       }
       
       // If images is an array
       if (Array.isArray(images) && images.length > 0) {
-        return `https://fanta-lib-back-production.up.railway.app/storage/${images[0]}`;
+        return `https://fanta-lib-back-production-76f4.up.railway.app/storage/${images[0]}`;
       }
     } catch (e) {
       console.error('Error processing image:', e);

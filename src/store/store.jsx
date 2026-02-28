@@ -5,7 +5,7 @@ import axios from "axios";
 // 🎯 Axios Configuration
 // ==============================================
 
-const API_URL = "https://fanta-lib-back-production.up.railway.app/api";
+const API_URL = "https://fanta-lib-back-production-76f4.up.railway.app/api";
 
 // ✅ API instance
 const api = axios.create({

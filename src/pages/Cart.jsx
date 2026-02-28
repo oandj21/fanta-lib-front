@@ -72,7 +72,7 @@ export default function Cart() {
       try {
         const parsed = JSON.parse(images);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return `https://fanta-lib-back-production.up.railway.app/storage/${parsed[0]}`;
+          return `https://fanta-lib-back-production-76f4.up.railway.app/storage/${parsed[0]}`;
         }
       } catch (e) {
         console.error('خطأ في تحليل الصور:', e);
@@ -80,7 +80,7 @@ export default function Cart() {
     }
     
     if (Array.isArray(images) && images.length > 0) {
-      return `https://fanta-lib-back-production.up.railway.app/storage/${images[0]}`;
+      return `https://fanta-lib-back-production-76f4.up.railway.app/storage/${images[0]}`;
     }
     
     return 'https://via.placeholder.com/300x400?text=No+Cover';

@@ -51,7 +51,7 @@ const sendWebhookUpdate = async (payload) => {
       .join('');
     
     // Send to your own webhook endpoint
-    const response = await fetch('https://fanta-lib-back-production.up.railway.app/api/welivexpress/webhook', {
+    const response = await fetch('https://fanta-lib-back-production-76f4.up.railway.app/api/welivexpress/webhook', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -278,7 +278,7 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
       const token = localStorage.getItem("token");
       
       const response = await axios.get(
-        "https://fanta-lib-back-production.up.railway.app/api/welivexpress/listcities",
+        "https://fanta-lib-back-production-76f4.up.railway.app/api/welivexpress/listcities",
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -622,7 +622,7 @@ const OrderDetailsModal = ({ order, onClose }) => {
       const token = localStorage.getItem("token");
       
       const response = await axios.get(
-        `https://fanta-lib-back-production.up.railway.app/api/welivexpress/trackparcel`,
+        `https://fanta-lib-back-production-76f4.up.railway.app/api/welivexpress/trackparcel`,
         {
           params: { parcel_code: parcelCode },
           headers: {
@@ -1175,7 +1175,7 @@ const WebhookTestPanel = ({ onClose }) => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.get(
-        "https://fanta-lib-back-production.up.railway.app/api/welivexpress/test-webhook",
+        "https://fanta-lib-back-production-76f4.up.railway.app/api/welivexpress/test-webhook",
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -1204,7 +1204,7 @@ const WebhookTestPanel = ({ onClose }) => {
     try {
       const token = localStorage.getItem("token");
       await axios.delete(
-        "https://fanta-lib-back-production.up.railway.app/api/welivexpress/delete-webhook",
+        "https://fanta-lib-back-production-76f4.up.railway.app/api/welivexpress/delete-webhook",
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -1423,7 +1423,7 @@ export default function AdminOrders() {
           if (order.parcel_code) {
             trackingPromises.push(
               axios.get(
-                `https://fanta-lib-back-production.up.railway.app/api/welivexpress/trackparcel`,
+                `https://fanta-lib-back-production-76f4.up.railway.app/api/welivexpress/trackparcel`,
                 {
                   params: { parcel_code: order.parcel_code },
                   headers: {

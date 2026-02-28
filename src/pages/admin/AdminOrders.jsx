@@ -513,7 +513,6 @@ const BookSelector = ({ selectedBooks, onBooksChange, onTotalQuantityChange }) =
     <div className="book-selector">
       <div className="book-search-container">
         <div className="book-search-input-wrapper">
-          <BookOpen size={16} className="book-search-icon" />
           <input
             type="text"
             placeholder="Rechercher un livre par titre, auteur ou ISBN..."
@@ -1072,7 +1071,7 @@ const OrderDetailsModal = ({ order, onClose }) => {
                   </div>
                 </div>
 
-                {/* Financial Summary */}
+                {/* Financial Summary - FIXED PROFIT CALCULATION */}
                 <div className="order-financial-summary">
                   <h5>Résumé financier</h5>
                   <div className="financial-row">
@@ -1087,21 +1086,28 @@ const OrderDetailsModal = ({ order, onClose }) => {
                     <span>Frais de packaging:</span>
                     <span className="financial-amount">{order.frais_packaging || 0} MAD</span>
                   </div>
-                  <div className="financial-row total">
-                    <span>Total (Welivexpress):</span>
+                  <div className="financial-row">
+                    <span>Total (livres + frais):</span>
+                    <span className="financial-amount">{(order.total || 0) + (order.frais_livraison || 0) + (order.frais_packaging || 0)} MAD</span>
+                  </div>
+                  <div className="financial-row">
+                    <span>Prix colis (Welivexpress):</span>
                     <span className="financial-amount">{order.parcel_price || 0} MAD</span>
                   </div>
-                  <div className={`financial-row profit ${order.profit < 0 ? 'negative' : ''}`}>
-                    <span>Profit:</span>
-                    <span className="financial-amount">
+                  <div className="financial-row total">
+                    <span>Profit (parcel_price - total):</span>
+                    <span className={`financial-amount ${order.profit < 0 ? 'negative' : ''}`}>
                       {order.profit || 0} MAD
                       {order.profit < 0 && ' (Perte)'}
                     </span>
                   </div>
+                  <div className="financial-calculation-hint">
+                    <small>Profit = Prix colis - (Total livres + Frais livraison + Frais packaging)</small>
+                  </div>
                   {order.statut === 'RETURNED' && (
                     <div className="financial-warning">
                       <AlertCircle size={14} />
-                      <span>Commande retournée - Frais de livraison et packaging déduits</span>
+                      <span>Commande retournée - Profit négatif car les frais sont perdus</span>
                     </div>
                   )}
                 </div>
@@ -1368,7 +1374,7 @@ export default function AdminOrders() {
     statut: "new"
   });
 
-  // Form state for new order
+  // Form state for new order - FIXED: Initial values for frais_livraison = 35, no zeros for inputs
   const [newOrderData, setNewOrderData] = useState({
     parcel_code: "",
     parcel_receiver: "",
@@ -1376,11 +1382,11 @@ export default function AdminOrders() {
     parcel_prd_qty: 0,
     parcel_city: "",
     parcel_address: "",
-    parcel_price: 0,
-    frais_livraison: 0,
-    frais_packaging: 0,
-    total: 0,
-    profit: 0,
+    parcel_price: null, // Start with null instead of 0
+    frais_livraison: 35, // Default to 35 MAD
+    frais_packaging: null, // Start with null instead of 0
+    total: null, // Start with null instead of 0
+    profit: null, // Start with null instead of 0
     parcel_note: "",
     parcel_open: 0,
     livres: [],
@@ -1488,15 +1494,8 @@ export default function AdminOrders() {
                   }
                 });
                 
-                // Calculate profit for returned orders
-                let profit = order.profit || 0;
-                if (deliveryStatus === 'RETURNED' && order.statut !== 'RETURNED') {
-                  // If status changed to RETURNED, profit becomes negative (loss of shipping costs)
-                  const delivery = parseFloat(order.frais_livraison) || 0;
-                  const packaging = parseFloat(order.frais_packaging) || 0;
-                  profit = -(delivery + packaging);
-                  console.log(`📊 Profit updated for returned order ${order.parcel_code}:`, profit);
-                }
+                // Calculate profit based on parcel_price - total formula
+                let profit = (order.parcel_price || 0) - ((order.total || 0) + (order.frais_livraison || 0) + (order.frais_packaging || 0));
                 
                 // Send webhook update
                 const payload = {
@@ -1520,7 +1519,7 @@ export default function AdminOrders() {
                     statut_display: displayStatus,
                     payment_status: paymentStatus,
                     payment_status_text: paymentStatusText,
-                    profit: profit // Update profit for returned orders
+                    profit: profit // Update profit with correct calculation
                   }))
                 );
               }
@@ -1576,7 +1575,7 @@ export default function AdminOrders() {
     setPriceManuallyEdited(false);
   }, [newOrderData.livres]);
 
-  // Calculate books subtotal, total, and parcel_price with RETURNED status logic
+  // Calculate books subtotal, total, and parcel_price with RETURNED status logic - FIXED PROFIT CALCULATION
   useEffect(() => {
     const booksSubtotal = (newOrderData.livres || []).reduce(
       (sum, book) => sum + (book.prix_achat * book.quantity), 0
@@ -1600,17 +1599,8 @@ export default function AdminOrders() {
       parcelPrice = total + delivery + packaging;
     }
     
-    // Calculate profit based on status
-    let profit;
-    const currentStatus = newOrderData.statut || '';
-    
-    if (currentStatus.toUpperCase() === 'RETURNED' || currentStatus.toLowerCase().includes('retourné')) {
-      // For returned orders: profit = -(delivery + packaging) (loss of shipping costs)
-      profit = -(delivery + packaging);
-    } else {
-      // For normal orders: profit = total - (delivery + packaging)
-      profit = total - (delivery + packaging);
-    }
+    // FIXED: Calculate profit based on parcel_price - (total + delivery + packaging)
+    let profit = parcelPrice - (total + delivery + packaging);
     
     setNewOrderData(prev => {
       // Only update if values have changed
@@ -1634,7 +1624,6 @@ export default function AdminOrders() {
     newOrderData.frais_packaging,
     newOrderData.total,
     newOrderData.parcel_price,
-    newOrderData.statut, // Add status to dependencies
     totalManuallyEdited,
     priceManuallyEdited
   ]);
@@ -1700,11 +1689,11 @@ export default function AdminOrders() {
       parcel_prd_qty: 0,
       parcel_city: "",
       parcel_address: "",
-      parcel_price: 0,
-      frais_livraison: 0,
-      frais_packaging: 0,
-      total: 0,
-      profit: 0,
+      parcel_price: null, // Start with null
+      frais_livraison: 35, // Default to 35 MAD
+      frais_packaging: null, // Start with null
+      total: null, // Start with null
+      profit: null, // Start with null
       parcel_note: "",
       parcel_open: 0,
       livres: [],
@@ -1726,11 +1715,11 @@ export default function AdminOrders() {
       parcel_prd_qty: 0,
       parcel_city: "",
       parcel_address: "",
-      parcel_price: 0,
-      frais_livraison: 0,
-      frais_packaging: 0,
-      total: 0,
-      profit: 0,
+      parcel_price: null,
+      frais_livraison: 35,
+      frais_packaging: null,
+      total: null,
+      profit: null,
       parcel_note: "",
       parcel_open: 0,
       livres: [],
@@ -1765,7 +1754,7 @@ export default function AdminOrders() {
       ...prev,
       [name]: type === 'checkbox' ? (checked ? 1 : 0) : 
                (name === 'parcel_price' || name === 'total' || name === 'frais_livraison' || name === 'frais_packaging') ? 
-               parseFloat(value) || 0 : value
+               (value === '' ? null : parseFloat(value)) : value
     }));
   };
 
@@ -1816,13 +1805,13 @@ export default function AdminOrders() {
         updateData.statut = formData.statut;
       }
 
-      // If status is being updated to RETURNED, recalculate profit
-      if (updateData.statut === 'RETURNED' && selectedOrder.statut !== 'RETURNED') {
-        const delivery = parseFloat(selectedOrder.frais_livraison) || 0;
-        const packaging = parseFloat(selectedOrder.frais_packaging) || 0;
-        updateData.profit = -(delivery + packaging);
-        console.log(`📊 Profit updated for returned order ${selectedOrder.parcel_code}:`, updateData.profit);
-      }
+      // FIXED: Recalculate profit based on updated data
+      const total = selectedOrder.total || 0;
+      const delivery = parseFloat(updateData.frais_livraison !== undefined ? updateData.frais_livraison : selectedOrder.frais_livraison) || 0;
+      const packaging = parseFloat(updateData.frais_packaging !== undefined ? updateData.frais_packaging : selectedOrder.frais_packaging) || 0;
+      const parcelPrice = parseFloat(updateData.parcel_price !== undefined ? updateData.parcel_price : selectedOrder.parcel_price) || 0;
+      
+      updateData.profit = parcelPrice - (total + delivery + packaging);
 
       if (Object.keys(updateData).length === 0) {
         closeUpdateModal();
@@ -1861,26 +1850,17 @@ export default function AdminOrders() {
         return;
     }
 
-    const delivery = parseFloat(newOrderData.frais_livraison) || 0;
+    const delivery = parseFloat(newOrderData.frais_livraison) || 35; // Default to 35 if empty
     const packaging = parseFloat(newOrderData.frais_packaging) || 0;
     const total = parseFloat(newOrderData.total) || 0;
     
     // Use manually edited price if set, otherwise calculate
     const parcelPrice = priceManuallyEdited ? 
-      (parseFloat(newOrderData.parcel_price) || 0) : 
+      (parseFloat(newOrderData.parcel_price) || total + delivery + packaging) : 
       (total + delivery + packaging);
     
-    // Calculate profit based on status
-    let profit;
-    const currentStatus = newOrderData.statut || '';
-    
-    if (currentStatus.toUpperCase() === 'RETURNED' || currentStatus.toLowerCase().includes('retourné')) {
-      // For returned orders: profit = -(delivery + packaging) (loss of shipping costs)
-      profit = -(delivery + packaging);
-    } else {
-      // For normal orders: profit = total - (delivery + packaging)
-      profit = total - (delivery + packaging);
-    }
+    // FIXED: Calculate profit based on parcel_price - (total + delivery + packaging)
+    let profit = parcelPrice - (total + delivery + packaging);
 
     const formattedLivres = newOrderData.livres.map(book => ({
         id: book.id,
@@ -1913,7 +1893,7 @@ export default function AdminOrders() {
     console.log("📦 Order to create:", orderToCreate);
     console.log("💰 Price sent to Welivexpress:", orderToCreate.parcel_price, "MAD");
     console.log("📊 Profit calculation:", {
-      status: orderToCreate.statut,
+      parcelPrice,
       total,
       delivery,
       packaging,
@@ -2399,7 +2379,7 @@ export default function AdminOrders() {
         />
       )}
 
-      {/* ADD MODAL */}
+      {/* ADD MODAL - FIXED: frais_livraison default 35, total livres readonly, no zeros */}
       {showAddModal && (
         <div className="modal-overlay" onClick={closeAddModal}>
           <div className="modal-content1 add-order-modal" onClick={e => e.stopPropagation()}>
@@ -2552,12 +2532,13 @@ export default function AdminOrders() {
                     <input
                       type="number"
                       name="frais_livraison"
-                      value={newOrderData.frais_livraison}
+                      value={newOrderData.frais_livraison === null ? '' : newOrderData.frais_livraison}
                       onChange={handleNewOrderChange}
-                      placeholder="0.00"
+                      placeholder="35"
                       min="0"
                       step="0.01"
                     />
+                    <small className="field-hint">Valeur par défaut: 35 MAD</small>
                   </div>
 
                   <div className="form-group">
@@ -2565,9 +2546,9 @@ export default function AdminOrders() {
                     <input
                       type="number"
                       name="frais_packaging"
-                      value={newOrderData.frais_packaging}
+                      value={newOrderData.frais_packaging === null ? '' : newOrderData.frais_packaging}
                       onChange={handleNewOrderChange}
-                      placeholder="0.00"
+                      placeholder="0"
                       min="0"
                       step="0.01"
                     />
@@ -2580,14 +2561,13 @@ export default function AdminOrders() {
                     <input
                       type="number"
                       name="total"
-                      value={newOrderData.total}
-                      onChange={handleNewOrderChange}
-                      min="0"
-                      step="0.01"
-                      className={totalManuallyEdited ? "manual-edit-input" : ""}
+                      value={newOrderData.total === null ? '' : newOrderData.total}
+                      readOnly // FIXED: Make total livres readonly
+                      className="readonly-input"
+                      placeholder="Calculé automatiquement"
                     />
                     <small className="field-hint">
-                      {totalManuallyEdited ? "Édité manuellement" : "Calculé automatiquement"}
+                      Calculé automatiquement à partir des livres sélectionnés
                     </small>
                   </div>
 
@@ -2598,9 +2578,9 @@ export default function AdminOrders() {
                       <input
                         type="number"
                         name="parcel_price"
-                        value={newOrderData.parcel_price}
+                        value={newOrderData.parcel_price === null ? '' : newOrderData.parcel_price}
                         onChange={handleNewOrderChange}
-                        placeholder="0.00"
+                        placeholder="Calculé automatiquement"
                         min="0"
                         step="0.01"
                         className={priceManuallyEdited ? "manual-edit-input" : ""}
@@ -2621,15 +2601,14 @@ export default function AdminOrders() {
                     <input
                       type="number"
                       name="profit"
-                      value={newOrderData.profit}
+                      value={newOrderData.profit === null ? '' : newOrderData.profit}
                       readOnly
                       className={`readonly-input ${newOrderData.profit < 0 ? 'negative' : ''}`}
+                      placeholder="Calculé automatiquement"
                     />
-                    {newOrderData.statut === 'RETURNED' && (
-                      <small className="field-hint negative">
-                        Perte: {Math.abs(newOrderData.profit)} MAD (frais de livraison et packaging)
-                      </small>
-                    )}
+                    <small className="field-hint">
+                      Profit = Prix colis - (Total livres + Frais)
+                    </small>
                   </div>
                 </div>
 
@@ -2659,16 +2638,11 @@ export default function AdminOrders() {
                 </div>
 
                 {/* Display price info for Welivexpress */}
-                <div className={`price-info-warning ${newOrderData.statut === 'RETURNED' ? 'returned-warning' : ''}`}>
+                <div className="price-info-warning">
                   <Info size={16} />
                   <span>
-                    <strong>Important:</strong> 
-                    {newOrderData.statut === 'RETURNED' ? (
-                      <> Commande retournée - Profit négatif de {Math.abs(newOrderData.profit)} MAD (frais de livraison et packaging)</>
-                    ) : (
-                      <> Le prix colis de <strong>{newOrderData.parcel_price} MAD</strong> sera envoyé à Welivexpress comme montant à collecter.
-                      {priceManuallyEdited ? " (Prix modifié manuellement)" : " (Prix calculé automatiquement)"}</>
-                    )}
+                    <strong>Important:</strong> Le prix colis de <strong>{newOrderData.parcel_price || 'calculé automatiquement'} MAD</strong> sera envoyé à Welivexpress comme montant à collecter.
+                    {priceManuallyEdited ? " (Prix modifié manuellement)" : " (Prix calculé automatiquement)"}
                   </span>
                 </div>
               </form>
@@ -2769,11 +2743,6 @@ export default function AdminOrders() {
                       <option value="RETURNED">Retourné</option>
                       <option value="CANCELLED">Annulé</option>
                     </select>
-                    {formData.statut === 'RETURNED' && selectedOrder.statut !== 'RETURNED' && (
-                      <small className="field-hint warning">
-                        ⚠️ Changer le statut en "Retourné" rendra le profit négatif (perte des frais)
-                      </small>
-                    )}
                   </div>
 
                   <div className="form-group">
@@ -2860,15 +2829,10 @@ export default function AdminOrders() {
                 </div>
 
                 {/* Display price info for Welivexpress */}
-                <div className={`price-info-warning ${formData.statut === 'RETURNED' ? 'returned-warning' : ''}`}>
+                <div className="price-info-warning">
                   <Info size={16} />
                   <span>
-                    <strong>Important:</strong> 
-                    {formData.statut === 'RETURNED' ? (
-                      <> En marquant cette commande comme retournée, le profit deviendra négatif (perte des frais de livraison et packaging)</>
-                    ) : (
-                      <> Le prix colis de <strong>{formData.parcel_price} MAD</strong> sera envoyé à Welivexpress lors des mises à jour.</>
-                    )}
+                    <strong>Important:</strong> Le prix colis de <strong>{formData.parcel_price} MAD</strong> sera envoyé à Welivexpress lors des mises à jour.
                   </span>
                 </div>
               </form>

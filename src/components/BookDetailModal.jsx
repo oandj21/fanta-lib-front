@@ -1,12 +1,31 @@
 // BookDetailModal.jsx
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Portal from "./Portal";
 import { ShoppingCart, Check, X } from "lucide-react";
+import { getBookDirection, isArabicText } from "../utils/languageDetector";
 import "../css/BookDetailModal.css";
 
 export default function BookDetailModal({ book, onClose }) {
   const [added, setAdded] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const modalRef = useRef(null);
+  
+  // Determine book direction
+  const direction = getBookDirection(book);
+  
+  // Check if specific fields are Arabic
+  const isTitleArabic = isArabicText(book.titre);
+  const isAuthorArabic = isArabicText(book.auteur);
+  const isCategoryArabic = isArabicText(book.categorie);
+  const isDescriptionArabic = isArabicText(book.description);
+
+  useEffect(() => {
+    // Set direction attribute on the modal content
+    if (modalRef.current) {
+      modalRef.current.setAttribute('data-direction', direction);
+      modalRef.current.setAttribute('dir', direction);
+    }
+  }, [direction]);
 
   const handleAdd = () => {
     const cartItem = {
@@ -81,7 +100,12 @@ export default function BookDetailModal({ book, onClose }) {
   return (
     <Portal>
       <div className="modal-overlay" onClick={handleOverlayClick}>
-        <div className="modal-content book-detail-modal" data-rtl="true">
+        <div 
+          ref={modalRef}
+          className="modal-content book-detail-modal" 
+          data-rtl={direction === 'rtl'}
+          dir={direction}
+        >
           <button className="modal-close" onClick={onClose} aria-label="Close">
             <X size={20} />
           </button>
@@ -94,7 +118,7 @@ export default function BookDetailModal({ book, onClose }) {
                 onError={handleImageError}
                 loading="lazy"
               />
-              {/* Status Badge - Same as BookCard - positioned on image */}
+              {/* Status Badge */}
               {book.status && (
                 <span className={`status-bad ${book.status}`}>
                   {book.status === "available" ? "متوفر" : "غير متوفر"}
@@ -103,11 +127,27 @@ export default function BookDetailModal({ book, onClose }) {
             </div>
 
             <div className="book-detail-info">
-              <h2 className="book-title">{book.titre || "عنوان غير معروف"}</h2>
-              <p className="book-author">بقلم {book.auteur || "مؤلف غير معروف"}</p>
+              <h2 
+                className="book-title"
+                dir={isTitleArabic ? 'rtl' : 'ltr'}
+                style={{ textAlign: isTitleArabic ? 'right' : 'left' }}
+              >
+                {book.titre || "عنوان غير معروف"}
+              </h2>
               
-              {/* Category Badge - Same as BookCard - between title and author */}
-              <span className="book-category-badge">
+              <p 
+                className="book-author"
+                dir={isAuthorArabic ? 'rtl' : 'ltr'}
+                style={{ textAlign: isAuthorArabic ? 'right' : 'left' }}
+              >
+                بقلم {book.auteur || "مؤلف غير معروف"}
+              </p>
+              
+              {/* Category Badge */}
+              <span 
+                className="book-category-badge"
+                dir={isCategoryArabic ? 'rtl' : 'ltr'}
+              >
                 {book.categorie || "غير مصنف"}
               </span>
 
@@ -118,8 +158,11 @@ export default function BookDetailModal({ book, onClose }) {
               )}
 
               <div className="book-description">
-                <h3>الوصف</h3>
-                <p>
+                <h3 dir={direction}>الوصف</h3>
+                <p 
+                  dir={isDescriptionArabic ? 'rtl' : 'ltr'}
+                  style={{ textAlign: isDescriptionArabic ? 'right' : 'left' }}
+                >
                   {book.description || `اكتشف "${book.titre || 'هذا الكتاب'}" من تأليف ${book.auteur || 'مؤلفنا'}`}
                 </p>
               </div>
@@ -132,12 +175,12 @@ export default function BookDetailModal({ book, onClose }) {
                 >
                   {added ? (
                     <>
-                      <Check size={18} className="btn-icon" />
+                      <Check size={18} className="btn-icon1" />
                       تمت الإضافة إلى السلة!
                     </>
                   ) : (
                     <>
-                      <ShoppingCart size={18} className="btn-icon" />
+                      <ShoppingCart size={18} className="btn-icon1" />
                       أضف إلى السلة
                     </>
                   )}

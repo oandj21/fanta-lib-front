@@ -8,13 +8,6 @@
   background-color: #f8f4f0;
 }
 
-/* Header Styles - if you need to override header styles */
-/* .header {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-} */
-
 /* Page Hero Section */
 .page-her {
   background: linear-gradient(135deg, #5c0202 0%, #6b3f3c 100%);
@@ -47,6 +40,15 @@
   z-index: 1;
 }
 
+/* Page hero content direction */
+:root[dir="ltr"] .page-hero-content {
+  flex-direction: row;
+}
+
+:root[dir="rtl"] .page-hero-content {
+  flex-direction: row-reverse;
+}
+
 .page-hero-content svg {
   width: 3rem;
   height: 3rem;
@@ -67,6 +69,15 @@
   .page-her h1 {
     font-size: 3.5rem;
   }
+}
+
+/* H1 direction */
+:root[dir="ltr"] .page-her h1 {
+  text-align: left;
+}
+
+:root[dir="rtl"] .page-her h1 {
+  text-align: center;
 }
 
 .page-her p {
@@ -106,6 +117,22 @@
     flex-direction: row;
     gap: 2rem;
     justify-content: center;
+  }
+}
+
+/* Filters direction */
+:root[dir="ltr"] .filters-container {
+  flex-direction: row;
+}
+
+:root[dir="rtl"] .filters-container {
+  flex-direction: row-reverse;
+}
+
+@media (max-width: 639px) {
+  :root[dir="ltr"] .filters-container,
+  :root[dir="rtl"] .filters-container {
+    flex-direction: column;
   }
 }
 
@@ -168,6 +195,19 @@
   letter-spacing: 0.3px;
 }
 
+/* Results count direction */
+:root[dir="ltr"] .results-count {
+  text-align: left;
+  padding-left: 0.25rem;
+  padding-right: 0;
+}
+
+:root[dir="rtl"] .results-count {
+  text-align: right;
+  padding-right: 0.25rem;
+  padding-left: 0;
+}
+
 .books-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -194,7 +234,6 @@
   }
 }
 
-/* Large desktops - 5 in a row */
 @media (min-width: 1280px) {
   .books-grid {
     grid-template-columns: repeat(5, 1fr);
@@ -202,7 +241,6 @@
   }
 }
 
-/* Extra large desktops */
 @media (min-width: 1600px) {
   .books-grid {
     grid-template-columns: repeat(5, 1fr);
@@ -280,7 +318,7 @@
   margin: 0;
 }
 
-/* Wave Float Animation - Cards alternate between close and far */
+/* Wave Float Animation */
 @keyframes waveFloatClose {
   0% {
     transform: translateY(0px) scale(1);
@@ -326,7 +364,6 @@
   animation: waveFloatFar 5s ease-in-out infinite;
 }
 
-/* Create a more complex pattern for larger grids */
 .books-grid > div:nth-child(3n) .book-card {
   animation: waveFloatClose 4.5s ease-in-out infinite;
   animation-delay: 0.2s;
@@ -396,6 +433,15 @@
   margin-bottom: 1rem;
 }
 
+/* Footer brand direction */
+:root[dir="ltr"] .footer-brand {
+  flex-direction: row;
+}
+
+:root[dir="rtl"] .footer-brand {
+  flex-direction: row-reverse;
+}
+
 .footer-brand svg {
   width: 1.75rem;
   height: 1.75rem;
@@ -422,15 +468,34 @@
   color: #c0b0a0;
 }
 
-/* WhatsApp Float positioning adjustment if needed */
+/* WhatsApp Float positioning */
 .whatsapp-float {
   position: fixed;
   bottom: 2rem;
-  right: 2rem;
   z-index: 100;
 }
 
+:root[dir="ltr"] .whatsapp-float {
+  right: 2rem;
+  left: auto;
+}
+
+:root[dir="rtl"] .whatsapp-float {
+  left: 2rem;
+  right: auto;
+}
+
 /* Responsive adjustments for smaller screens */
+@media (max-width: 768px) {
+  :root[dir="ltr"] .whatsapp-float {
+    right: 1rem;
+  }
+  
+  :root[dir="rtl"] .whatsapp-float {
+    left: 1rem;
+  }
+}
+
 @media (max-width: 480px) {
   .page-her {
     padding: 0rem 1rem;
@@ -535,35 +600,10 @@
   }
 }
 
-/* RTL Support */
-[dir="rtl"] .results-count {
-  padding-left: 0;
-  padding-right: 0.25rem;
-}
-
-[dir="rtl"] .page-hero-content {
-  flex-direction: row;
-}
-
-[dir="rtl"] .filters-container {
-  flex-direction: row;
-}
-
-@media (max-width: 639px) {
-  [dir="rtl"] .filters-container {
-    flex-direction: column;
-  }
-}
-
 /* Focus styles for accessibility */
 .genre-btn:focus-visible {
   outline: 2px solid #5c0202;
   outline-offset: 2px;
-}
-
-/* Smooth scrolling */
-html {
-  scroll-behavior: smooth;
 }
 
 /* Selection color */

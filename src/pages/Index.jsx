@@ -55,7 +55,7 @@ export default function Index() {
 
       <section className="carousel-section">
         <div className="section-header">
-          <h2 className="section-title">مجموعة كتبنا</h2>
+          <h2 className="section-title">أحدث الكتب</h2>
           <div className="section-divider" />
         </div>
         <BookCarousel 
@@ -86,19 +86,14 @@ export default function Index() {
           </div>
         )}
         
-        <div className="view-all-container">
-          <Link to="/livres" className="btn-view-all">
-            عرض كل الكتب ←
-          </Link>
-        </div>
       </section>
 
       <section id="contact" className="contact-section">
         <h2 className="section-title">اتصل بنا</h2>
         <div className="contact-info">
-          <p className="contact-item">📧 contact@fantasia.fr</p>
-          <p className="contact-item">📞 +212 625 854 078</p>
-          <p className="contact-item">📍 الدار البيضاء، المغرب</p>
+          <p className="contact-item">📧 info.fantasia.library@gmail.com</p>
+          <p className="contact-item">📞 +212 688 069 942</p>
+          <p className="contact-item">📍 مكناس، المغرب</p>
         </div>
         <Link to="/contact" className="contact-button">
           راسلنا ←

@@ -183,17 +183,12 @@ export default function Contact() {
                       referrerPolicy="no-referrer-when-downgrade"
                       title="Fantasia Book Store Location"
                     ></iframe>
-                    
+                    <div className="map-overlay">
+                      <ExternalLink size={24} />
+                      <span>انقر لفتح في خرائط جوجل</span>
+                    </div>
                   </div>
-                  <a 
-                    href={googleMapsDirectionsUrl}
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="map-embed-link"
-                  >
-                    فتح في خرائط جوجل
-                    <ExternalLink size={14} />
-                  </a>
+                  
                 </div>
               </div>
 

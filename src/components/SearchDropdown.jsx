@@ -105,7 +105,7 @@ export default function SearchDropdown({ isMobile = false }) {
           <button
             type="button"
             onClick={() => setSearchTerm("")}
-            className="clear-search"
+            className="clear-sear"
           >
             <X size={16} />
           </button>

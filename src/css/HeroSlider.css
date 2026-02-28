@@ -1,9 +1,18 @@
 .hero-slider {
   position: relative;
   width: 100%;
-  height: 58vh; /* Keeping your original height */
+  height: 58vh;
   overflow: hidden;
   direction: ltr;
+}
+
+/* Desktop - show full images */
+@media (min-width: 1024px) {
+  .hero-slider {
+    height: auto;
+    min-height: 60vh;
+    max-height: 800px;
+  }
 }
 
 .slider-container {
@@ -29,18 +38,23 @@
 .slide-image {
   width: 100%;
   height: 100%;
-  object-fit: cover; /* This makes images cover the area without distortion */
-  object-position: center; /* Centers the image */
+  object-fit: cover;
 }
 
-/* If you want to ensure the full image is always visible (might leave empty space) */
-/* .slide-image {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  object-position: center;
-  background-color: #000;
-} */
+/* Desktop - show full images without cropping */
+@media (min-width: 1024px) {
+  .slide-image {
+    object-fit: contain;
+    background-color: #1a1a1a; /* Dark background for letterboxing */
+  }
+  
+  /* Optional: Add a subtle pattern to the background */
+  .slide {
+    background-color: #1a1a1a;
+    background-image: radial-gradient(circle at 25% 25%, rgba(255,255,255,0.05) 1px, transparent 1px);
+    background-size: 30px 30px;
+  }
+}
 
 .slide-overlay {
   position: absolute;
@@ -63,15 +77,94 @@
   padding: 0 1rem;
   direction: rtl;
   
-  /* Mobile: top 85% */
+  /* Mobile: top 78% */
   top: 78%;
 }
 
-/* Desktop: top 75% */
-@media (min-width: 768px) {
+/* Desktop: adjust position based on image size */
+@media (min-width: 1024px) {
   .hero-content {
-    top: 65%;
+    bottom: 10%;
+    top: auto;
+    transform: translateX(-50%) translateY(0);
   }
+}
+
+.hero-title {
+  font-size: clamp(2.5rem, 8vw, 4.5rem);
+  font-weight: 800;
+  line-height: 1.2;
+  margin-bottom: 1rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.hero-title span {
+  color: #ffd700;
+  display: inline-block;
+  position: relative;
+}
+
+.hero-title span::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  height: 4px;
+  background: #ffd700;
+  border-radius: 2px;
+}
+
+.hero-description {
+  font-size: clamp(1rem, 3vw, 1.5rem);
+  margin-bottom: 2rem;
+  opacity: 0.9;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.hero-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn-primary,
+.btn-secondary {
+  padding: 0.75rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 50px;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border: 2px solid transparent;
+  width: 50%;
+}
+
+.btn-primary {
+  background: #ffd700;
+  color: #000;
+}
+
+.btn-primary:hover {
+  background: transparent;
+  border-color: #ffd700;
+  color: #ffd700;
+  transform: scale(1.05);
+}
+
+.btn-secondary {
+  background: transparent;
+  border-color: white;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: white;
+  color: #000;
+  transform: scale(1.05);
 }
 
 /* Navigation Buttons */
@@ -106,6 +199,22 @@
 
 .slider-nav.next {
   right: 20px;
+}
+
+/* Larger navigation buttons for desktop */
+@media (min-width: 1024px) {
+  .slider-nav {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .slider-nav.prev {
+    left: 30px;
+  }
+  
+  .slider-nav.next {
+    right: 30px;
+  }
 }
 
 /* Dots Indicator */
@@ -144,10 +253,6 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  .hero-slider {
-    height: 50vh; /* Slightly smaller on mobile if needed */
-  }
-  
   .slider-nav {
     width: 40px;
     height: 40px;
@@ -170,8 +275,14 @@
     height: 10px;
   }
   
+  .hero-buttons {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .btn-primary,
   .btn-secondary {
-    width: 80%; /* Adjust button width on mobile */
-    max-width: 250px;
+    width: 100%;
+    text-align: center;
   }
 }

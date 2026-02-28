@@ -482,11 +482,11 @@
   left: 12px;
 }
 
-.mobile-search-bar .clear-search {
+.mobile-search-bar .clear-sear {
   left: 12px;
 }
 
-[dir="rtl"] .mobile-search-bar .clear-search {
+[dir="rtl"] .mobile-search-bar .clear-sear {
   left: auto;
   right: 12px;
 }

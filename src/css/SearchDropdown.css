@@ -67,7 +67,7 @@
   transition: all 0.2s ease;
 }
 
-[dir="rtl"] .clear-search {
+[dir="rtl"] .clear-sear {
   left: auto;
   right: 0px;
 }

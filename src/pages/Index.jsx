@@ -3,13 +3,13 @@ import { useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { BookOpen } from "lucide-react";
-import heroImage from "../assets/hero-books.jpg";
 import { fetchLivres, selectLivres, selectLivresLoading } from "../store/store";
 import BookCard from "../components/BookCard";
 import BookDetailModal from "../components/BookDetailModal";
 import BookCarousel from "../components/BookCarousel";
 import Header from "../components/Header";
 import WhatsAppFloat from "../components/WhatsAppFloat";
+import HeroSlider from "../components/HeroSlider"; // Import the new HeroSlider component
 import "../css/Index.css";
 
 export default function Index() {
@@ -19,6 +19,13 @@ export default function Index() {
   const [selectedBook, setSelectedBook] = useState(null);
   const carouselRef = useRef(null);
 
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth' // Smooth scrolling animation
+    });
+  }, []);
+  
   useEffect(() => {
     dispatch(fetchLivres());
   }, [dispatch]);
@@ -42,26 +49,9 @@ export default function Index() {
   return (
     <div className="homepage">
       <Header />
-
-      <section className="hero-section">
-        <img src={heroImage} alt="مكتبة فانتازيا" className="hero-image" />
-        <div className="hero-overlay" />
-        <div className="hero-content">
-          <h1 className="hero-title">
-            مرحباً بكم في مكتبة<br />
-            <span>فانتازيا</span>
-          </h1>
-          <p className="hero-description">
-            اكتشف مجموعتنا الحصرية من الكتب
-          </p>
-          <div className="hero-buttons">
-            
-            <Link to="/livres" className="btn-secondary">
-              كل الكتب ←
-            </Link>
-          </div>
-        </div>
-      </section>
+      
+      {/* Replace the old hero section with the new HeroSlider */}
+      <HeroSlider />
 
       <section className="carousel-section">
         <div className="section-header">

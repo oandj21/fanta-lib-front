@@ -11,7 +11,14 @@ import { selectMessagesLoading, selectMessagesError } from "../store/store";
 
 export default function Contact() {
   const dispatch = useDispatch();
-  
+
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth' // Smooth scrolling animation
+    });
+  }, []);
+
   // Redux state
   const loading = useSelector(selectMessagesLoading);
   const error = useSelector(selectMessagesError);

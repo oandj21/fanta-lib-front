@@ -21,6 +21,13 @@ export default function Livres() {
   const [genre, setGenre] = useState("الكل");
 
   useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth' // Smooth scrolling animation
+    });
+  }, []);
+
+  useEffect(() => {
     dispatch(fetchLivres());
   }, [dispatch]);
 

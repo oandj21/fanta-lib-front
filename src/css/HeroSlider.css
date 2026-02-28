@@ -4,6 +4,8 @@
   height: 58vh;
   overflow: hidden;
   direction: ltr;
+  margin: 0;
+  padding: 0;
 }
 
 .slider-container {
@@ -201,6 +203,10 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
+  .hero-slider {
+    height: 50vh;
+  }
+  
   .slider-nav {
     width: 40px;
     height: 40px;
@@ -232,5 +238,11 @@
   .btn-secondary {
     width: 100%;
     text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-slider {
+    height: 45vh;
   }
 }

@@ -54,13 +54,13 @@
   direction: rtl;
   
   /* Mobile: top 85% */
-  top: 85%;
+  top: 78%;
 }
 
 /* Desktop: top 75% */
 @media (min-width: 768px) {
   .hero-content {
-    top: 75%;
+    top: 65%;
   }
 }
 
@@ -105,7 +105,7 @@
 }
 
 .btn-primary,
-.btn-secondar {
+.btn-secondary {
   padding: 0.75rem 2rem;
   font-size: 1rem;
   font-weight: 600;
@@ -129,13 +129,13 @@
   transform: scale(1.05);
 }
 
-.btn-secondar {
+.btn-secondary {
   background: transparent;
   border-color: white;
   color: white;
 }
 
-.btn-secondar:hover {
+.btn-secondary:hover {
   background: white;
   color: #000;
   transform: scale(1.05);

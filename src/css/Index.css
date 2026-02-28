@@ -93,13 +93,13 @@ body {
   direction: rtl;
   
   /* Mobile: top 85% */
-  top: 85%;
+  top: 78%;
 }
 
 /* Desktop: top 75% */
 @media (min-width: 768px) {
   .hero-content {
-    top: 75%;
+    top: 65%;
   }
 }
 
@@ -213,7 +213,7 @@ body {
   box-shadow: 0 15px 30px rgba(74, 44, 42, 0.3);
 }
 
-.btn-secondar {
+.btn-secondary {
   display: inline-block;
   font-family: 'Lato', sans-serif;
   font-weight: 600;
@@ -229,7 +229,7 @@ body {
   background: transparent;
 }
 
-.btn-secondar:hover {
+.btn-secondary:hover {
   background-color: rgba(255, 255, 255, 0.1);
   border-color: white;
   transform: translateY(-2px);
@@ -626,7 +626,7 @@ body {
   }
   
   .btn-primary,
-  .btn-secondar {
+  .btn-secondary {
     padding: 0.875rem 2rem;
     font-size: 0.95rem;
   }
@@ -654,7 +654,7 @@ body {
   }
   
   .btn-primary,
-  .btn-secondar {
+  .btn-secondary {
     width: 100%;
     text-align: center;
     padding: 0.875rem 1.5rem;

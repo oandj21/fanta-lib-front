@@ -6,14 +6,14 @@ import WhatsAppFloat from "../components/WhatsAppFloat";
 import { ShoppingCart, Trash2, Plus, Minus, ArrowLeft, BookOpen, Check, X, AlertTriangle } from "lucide-react";
 import "../css/Cart.css";
 
+const WHATSAPP_NUMBER = "212688069942";
+
 export default function Cart() {
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [removingId, setRemovingId] = useState(null);
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [showClearModal, setShowClearModal] = useState(false); // State for clear cart modal
-
-  const WHATSAPP_NUMBER = "212688069942";
 
   // Scroll to top when component mounts
   useEffect(() => {
@@ -33,9 +33,11 @@ export default function Cart() {
     };
     
     window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('cartUpdated', handleStorageChange);
     
     return () => {
       window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('cartUpdated', handleStorageChange);
     };
   }, []);
 
@@ -101,6 +103,7 @@ export default function Cart() {
       
       // Trigger storage event for header update
       window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new Event('cartUpdated'));
     }, 200);
   };
 
@@ -116,6 +119,7 @@ export default function Cart() {
       
       // Trigger storage event for header update
       window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new Event('cartUpdated'));
     }, 300);
   };
 
@@ -129,6 +133,7 @@ export default function Cart() {
     setCartItems([]);
     setShowClearModal(false);
     window.dispatchEvent(new Event('storage'));
+    window.dispatchEvent(new Event('cartUpdated'));
   };
 
   const cancelClearCart = () => {
@@ -138,41 +143,64 @@ export default function Cart() {
   // Calculate total items only (no prices)
   const totalItems = cartItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
 
-  // Generate WhatsApp message
+  // Generate WhatsApp message with the same format as WhatsAppFloat
   const getWhatsAppMessage = () => {
     if (cartItems.length === 0) {
-      return "مرحباً فانتازيا 📚، أود الحصول على معلومات حول كتبكم.";
+      return "*🛒 طلب جديد من مكتبة فانتازيا*\n━━━━━━━━━━━━━━━━\n\n📚 *قائمة الكتب المطلوبة:*\n\n━━━━━━━━━━━━━━━━\n📊 *إجمالي الكتب:* 0\n\n✅ أرجو تأكيد توفر هذه الكتب وإعلامي بالتفاصيل.\nشكراً لكم! 🙏";
     }
 
-    const itemsList = cartItems.map(item => {
-      const title = item.titre || item.title || "كتاب";
-      const author = item.auteur || item.author || "مؤلف غير معروف";
+    // Map cart items with fallback values for missing data
+    const items = cartItems.map((item, index) => {
+      // Try all possible field names for title
+      const title = item.titre || item.title || item.nom || `كتاب ${index + 1}`;
+      
+      // Try all possible field names for author
+      const author = item.auteur || item.author || item.auteure || 'مؤلف غير معروف';
+      
+      // Try all possible field names for category/language
+      const category = item.categorie || item.category || item.langue || item.language || 'غير محدد';
+      
       const quantity = item.quantity || 1;
-      return `• ${title} - ${author} (الكمية: ${quantity})`;
-    }).join('\n');
+      
+      // If quantity is more than 1, show it
+      if (quantity > 1) {
+        return `${index + 1}. *${title}* (${quantity} نسخ)\n   ✍️ ${author}\n   📂 ${category}`;
+      }
+      
+      return `${index + 1}. *${title}*\n   ✍️ ${author}\n   📂 ${category}`;
+    }).join('\n\n');
+    
+    const totalItemsCount = cartItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
+    
+    return `*🛒 طلب جديد من مكتبة فانتازيا*
+━━━━━━━━━━━━━━━━
 
-    return `مرحباً فانتازيا 📚،
+📚 *قائمة الكتب المطلوبة:*
 
-أرغب في طلب الكتب التالية:
+${items}
 
-${itemsList}
+━━━━━━━━━━━━━━━━
+📊 *إجمالي الكتب:* ${totalItemsCount}
 
-معلومات التوصيل:
-الاسم الكامل: 
-رقم الهاتف: 
-العنوان الكامل: 
-المدينة: 
-
-يرجى تأكيد التوفر.`;
+✅ أرجو تأكيد توفر هذه الكتب وإعلامي بالتفاصيل.
+شكراً لكم! 🙏`;
   };
 
   const handleWhatsAppOrder = () => {
     const message = encodeURIComponent(getWhatsAppMessage());
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${message}`, "_blank");
     
+    // Clear the cart after redirecting to WhatsApp
+    localStorage.removeItem('cart');
+    setCartItems([]);
+    
     // Show success animation
     setOrderPlaced(true);
     setTimeout(() => setOrderPlaced(false), 3000);
+    
+    // Dispatch custom event to notify other components
+    window.dispatchEvent(new Event('storage'));
+    window.dispatchEvent(new Event('cartUpdated'));
   };
 
   if (loading) {

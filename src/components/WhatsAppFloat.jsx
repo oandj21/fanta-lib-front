@@ -29,7 +29,7 @@ export default function WhatsAppFloat() {
     const cart = JSON.parse(localStorage.getItem('cart') || '[]');
     
     if (cart.length === 0) {
-      return "مرحباً فانتازيا 📚، أود الحصول على معلومات حول كتبكم.";
+      return "*🛒 طلب جديد من مكتبة فانتازيا*\n━━━━━━━━━━━━━━━━\n\n📚 *قائمة الكتب المطلوبة:*\n\n━━━━━━━━━━━━━━━━\n📊 *إجمالي الكتب:* 0\n\n✅ أرجو تأكيد توفر هذه الكتب وإعلامي بالتفاصيل.\nشكراً لكم! 🙏";
     }
 
     // Map cart items with fallback values for missing data
@@ -40,29 +40,26 @@ export default function WhatsAppFloat() {
       // Try all possible field names for author
       const author = book.auteur || book.author || book.auteure || 'مؤلف غير معروف';
       
-      // Try all possible field names for price
+      // Try all possible field names for category/language
+      const category = book.categorie || book.category || book.langue || book.language || 'غير محدد';
       
-      return `- ${title} للكاتب ${author}`;
-    }).join('\n');
-    
-    // Calculate total with fallback for missing prices
-    const total = cart.reduce((sum, book) => {
-      const price = book.prix_vente || book.prix || book.price || book.prix_achat || 0;
-      return sum + Number(price);
-    }, 0);
+      return `${index + 1}. *${title}*\n   ✍️ ${author}\n   📂 ${category}`;
+    }).join('\n\n');
     
     const totalItems = cart.length;
     
-    return `مرحباً فانتازيا 📚،
+    return `*🛒 طلب جديد من مكتبة فانتازيا*
+━━━━━━━━━━━━━━━━
 
-أود طلب الكتب التالية :
+📚 *قائمة الكتب المطلوبة:*
 
 ${items}
 
-📦 المجموع : ${totalItems} كتب
+━━━━━━━━━━━━━━━━
+📊 *إجمالي الكتب:* ${totalItems}
 
-يرجى تأكيد توفر الكتب وشروط التوصيل.
-شكراً جزيلاً.`;
+✅ أرجو تأكيد توفر هذه الكتب وإعلامي بالتفاصيل.
+شكراً لكم! 🙏`;
   };
 
   const handleClick = () => {

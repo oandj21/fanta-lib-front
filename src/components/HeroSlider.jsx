@@ -166,23 +166,11 @@ export default function HeroSlider() {
           ))}
         </div>
 
-        {/* Hero Content (appears on top of all slides) */}
-        <div className="hero-content">
-          <h1 className="hero-title">
-            مرحباً بكم في مكتبة<br />
-            <span>فانتازيا</span>
-          </h1>
-          <p className="hero-description">
-            اكتشف مجموعتنا الحصرية من الكتب
-          </p>
-          <div className="hero-buttons">
-            <a href="#livres" className="btn-primary">
-              استعرض الكتب
-            </a>
-            <a href="#contact" className="btn-secondary">
-              اتصل بنا
-            </a>
-          </div>
+        {/* Single Button with secondary style */}
+        <div className="hero-content" style={{ textAlign: 'center' }}>
+          <a href="#livres" className="btn-secondary">
+            استعرض الكتب
+          </a>
         </div>
 
         {/* Navigation Buttons */}

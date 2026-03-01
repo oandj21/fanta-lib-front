@@ -14,52 +14,12 @@
   pointer-events: none;
 }
 
-/* Gradient positions based on root direction */
-:root[dir="ltr"] .carousel-gradient-left,
-[dir="ltr"] .carousel-gradient-left {
+.carousel-gradient-left {
   left: 0;
   background: linear-gradient(to right, #f8f4f0, transparent);
 }
 
-:root[dir="ltr"] .carousel-gradient-right,
-[dir="ltr"] .carousel-gradient-right {
-  right: 0;
-  background: linear-gradient(to left, #f8f4f0, transparent);
-}
-
-:root[dir="rtl"] .carousel-gradient-left,
-[dir="rtl"] .carousel-gradient-left {
-  left: auto;
-  right: 0;
-  background: linear-gradient(to left, #f8f4f0, transparent);
-}
-
-:root[dir="rtl"] .carousel-gradient-right,
-[dir="rtl"] .carousel-gradient-right {
-  right: auto;
-  left: 0;
-  background: linear-gradient(to right, #f8f4f0, transparent);
-}
-
-/* Support for data-rtl on root */
-:root[data-rtl="true"] .carousel-gradient-left {
-  left: auto;
-  right: 0;
-  background: linear-gradient(to left, #f8f4f0, transparent);
-}
-
-:root[data-rtl="true"] .carousel-gradient-right {
-  right: auto;
-  left: 0;
-  background: linear-gradient(to right, #f8f4f0, transparent);
-}
-
-:root[data-rtl="false"] .carousel-gradient-left {
-  left: 0;
-  background: linear-gradient(to right, #f8f4f0, transparent);
-}
-
-:root[data-rtl="false"] .carousel-gradient-right {
+.carousel-gradient-right {
   right: 0;
   background: linear-gradient(to left, #f8f4f0, transparent);
 }
@@ -71,8 +31,6 @@
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
-  /* Always keep track container LTR for smooth scrolling */
-  direction: ltr;
 }
 
 .carousel-track-container.dragging {
@@ -91,8 +49,6 @@
   will-change: transform;
   transition: transform 0.05s linear;
   pointer-events: auto;
-  /* Always keep track LTR for smooth scrolling */
-  direction: ltr;
 }
 
 .carousel-item {
@@ -128,43 +84,57 @@
   -ms-user-select: text;
 }
 
-/* Hide details button in carousel */
+@media (max-width: 768px) {
+  .carousel-gradient-left,
+  .carousel-gradient-right {
+    width: 50px;
+  }
+  
+  .carousel-item {
+    width: 180px;
+  }
+}
+
+/* Improve touch interaction on mobile */
+@media (max-width: 480px) {
+  .carousel-track-container {
+    touch-action: pan-y pinch-zoom;
+  }
+  
+  .carousel-item {
+    width: 160px;
+  }
+  
+  .carousel-item:hover {
+    transform: none; /* Disable hover transform on mobile */
+  }
+}
+
+/* Smooth scrolling when auto-scrolling resumes */
+.carousel-track.resuming {
+  transition: transform 0.3s ease-out;
+}
+/* Add to BookCarousel.css - Hide details button in carousel */
 .carousel-book-card .book-footer .btn-details {
   display: none !important;
 }
 
-/* Adjust the footer to only show the cart button */
+/* Optional: Adjust the footer to only show the cart button */
 .carousel-book-card .book-footer {
-  justify-content: flex-end;
+  justify-content: flex-end; /* Align cart button to the right */
 }
 
-/* Make the cart button take full width in carousel */
+/* Make the cart button full width if you want */
 .carousel-book-card .btn-cart {
-  width: 100%;
-  border-radius: 6px;
+  width: 100%; /* Make cart button take full width */
+  border-radius: 6px; /* Adjust border radius if needed */
 }
 
-/* Reduce hover effect in carousel */
+/* Remove hover effects from the card in carousel if desired */
 .carousel-book-card .book-card:hover {
-  transform: translateY(-3px);
+  transform: translateY(-3px); /* Slightly reduce hover effect */
 }
-
-/* Book card direction handling in carousel */
-.carousel-item .book-card[dir="ltr"] {
-  text-align: left;
-}
-
-.carousel-item .book-card[dir="rtl"] {
-  text-align: right;
-}
-
-.carousel-item .book-card[data-rtl="true"] {
-  text-align: right;
-}
-
-.carousel-item .book-card[data-rtl="false"] {
-  text-align: left;
-}
+/* BookCarousel.css - Add these styles at the end */
 
 /* RTL Support for Arabic text in carousel */
 [dir="rtl"] .carousel-item,
@@ -190,34 +160,15 @@
   text-align: right;
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-  .carousel-gradient-left,
-  .carousel-gradient-right {
-    width: 50px;
-  }
-  
-  .carousel-item {
-    width: 180px;
-  }
+/* Adjust gradient positions for RTL */
+[dir="rtl"] .carousel-gradient-left {
+  left: auto;
+  right: 0;
+  background: linear-gradient(to left, #f8f4f0, transparent);
 }
 
-/* Improve touch interaction on mobile */
-@media (max-width: 480px) {
-  .carousel-track-container {
-    touch-action: pan-y pinch-zoom;
-  }
-  
-  .carousel-item {
-    width: 160px;
-  }
-  
-  .carousel-item:hover {
-    transform: none;
-  }
-}
-
-/* Smooth scrolling when auto-scrolling resumes */
-.carousel-track.resuming {
-  transition: transform 0.3s ease-out;
+[dir="rtl"] .carousel-gradient-right {
+  right: auto;
+  left: 0;
+  background: linear-gradient(to right, #f8f4f0, transparent);
 }

@@ -2793,7 +2793,7 @@ export default function AdminOrders() {
                       <input
                         type="number"
                         name="parcel_price"
-                        value={formData.parcel_price}
+                        value={formData.parcel_price || ''}
                         onChange={handleInputChange}
                         placeholder="0.00"
                         min="0"

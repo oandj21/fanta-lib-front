@@ -7,6 +7,9 @@ export default function BookCard({ book }) {
   const [showDetail, setShowDetail] = useState(false);
   const [added, setAdded] = useState(false);
 
+  // Determine language based on book properties or default to Arabic
+  const language = book.langue || 'ar';
+
   // Helper function to get image URL
   const getImageUrl = (images) => {
     if (!images) return 'https://via.placeholder.com/300x400?text=No+Cover';
@@ -62,48 +65,54 @@ export default function BookCard({ book }) {
 
   return (
     <>
-      <div className="book-card" data-rtl="true">
+      <div className="book-card" data-language={language}>
         <div className="book-cover">
           <img 
             src={getImageUrl(book.images)} 
-            alt={book.titre || "غلاف الكتاب"} 
+            alt={book.titre || (language === 'ar' ? "غلاف الكتاب" : "Book Cover")} 
             onError={(e) => {
               e.target.onerror = null;
               e.target.src = 'https://via.placeholder.com/300x400?text=Image+Error';
             }}
           />
-          {/* Status Badge - Now with proper colors */}
+          {/* Status Badge */}
           {book.status && (
             <span className={`status-bad ${book.status}`}>
-              {book.status === "available" ? "متوفر" : "غير متوفر"}
+              {book.status === "available" 
+                ? (language === 'ar' ? "متوفر" : "Available")
+                : (language === 'ar' ? "غير متوفر" : "Out of Stock")}
             </span>
           )}
         </div>
 
         <div className="book-info">
           <span className="book-category-badge">
-            {book.categorie || "غير مصنف"}
+            {book.categorie || (language === 'ar' ? "غير مصنف" : "Uncategorized")}
           </span>
-          <h3 className="book-title">{book.titre || "عنوان غير معروف"}</h3>
+          <h3 className="book-title">{book.titre || (language === 'ar' ? "عنوان غير معروف" : "Unknown Title")}</h3>
           
-          <p className="book-author">{book.auteur || "مؤلف غير معروف"}</p>
+          <p className="book-author">
+            {language === 'ar' 
+              ? `بقلم ${book.auteur || "مؤلف غير معروف"}`
+              : `By ${book.auteur || "Unknown Author"}`}
+          </p>
 
           <div className="book-footer">
             <button 
               onClick={handleDetailsClick}
               className="btn-details"
-              title="عرض التفاصيل"
+              title={language === 'ar' ? "عرض التفاصيل" : "View Details"}
               type="button"
             >
               <Eye size={18} />
-              <span>التفاصيل</span>
+              <span>{language === 'ar' ? "التفاصيل" : "Details"}</span>
             </button>
 
             <button
               onClick={handleAdd}
               disabled={book.status !== "available"}
               className={`btn-cart ${added ? 'added' : ''} ${book.status !== "available" ? 'disabled' : ''}`}
-              title="أضف إلى السلة"
+              title={language === 'ar' ? "أضف إلى السلة" : "Add to Cart"}
               type="button"
             >
               {added ? <Check size={18} /> : <ShoppingCart size={18} />}

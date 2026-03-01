@@ -21,6 +21,9 @@ const BookCarousel = forwardRef(({ onShowDetails }, ref) => {
 
   const loopedBooks = [...books, ...books, ...books];
 
+  // Determine default language from first book or default to Arabic
+  const defaultLanguage = books[0]?.langue || 'ar';
+
   // Expose methods to parent component
   useImperativeHandle(ref, () => ({
     onModalOpen: () => {
@@ -167,7 +170,7 @@ const BookCarousel = forwardRef(({ onShowDetails }, ref) => {
     autoScrollEnabledRef.current = true;
   };
 
-  const handleTouchCancel = (e) => {
+  const handleTouchCancel = () => {
     isDraggingRef.current = false;
     autoScrollEnabledRef.current = true;
   };
@@ -193,7 +196,7 @@ const BookCarousel = forwardRef(({ onShowDetails }, ref) => {
   }
 
   return (
-    <div className="carousel-container">
+    <div className="carousel-container" data-language={defaultLanguage}>
       <div className="carousel-gradient carousel-gradient-left"></div>
       <div className="carousel-gradient carousel-gradient-right"></div>
       
@@ -219,7 +222,8 @@ const BookCarousel = forwardRef(({ onShowDetails }, ref) => {
           {loopedBooks.map((book, index) => (
             <div 
               key={`${book.id}-${index}`} 
-              className="carousel-item carousel-book-card" // Added carousel-book-card class
+              className="carousel-item carousel-book-card"
+              data-language={book.langue || defaultLanguage}
               onClick={(e) => handleCardClick(book, e)}
             >
               <BookCard book={book} />

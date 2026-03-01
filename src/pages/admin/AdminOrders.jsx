@@ -7,7 +7,7 @@ import {
   Loader, ChevronDown, BookOpen, Minus, Plus as PlusIcon,
   Eye, RefreshCw, AlertCircle, CheckCircle, Box, Layers,
   Clock, CreditCard, Calendar, PackageCheck, PackageX,
-  Info, Copy, Bell, Webhook, Edit
+  Info, Copy, Bell, Webhook, Edit, ArrowLeft
 } from "lucide-react";
 import axios from "axios";
 import { 
@@ -211,7 +211,7 @@ const getStatusDescription = (status) => {
 // PROMPT COMPONENTS
 // ==============================================
 
-// Delete Confirmation Modal
+// Delete Confirmation Modal (only modal left as it's a confirmation)
 const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm, orderCode }) => {
   if (!isOpen) return null;
 
@@ -601,8 +601,8 @@ const BookSelector = ({ selectedBooks, onBooksChange, onTotalQuantityChange }) =
   );
 };
 
-// Order Details Modal Component with complete tracking information
-const OrderDetailsModal = ({ order, onClose }) => {
+// Order Details Page Component
+const OrderDetailsPage = ({ order, onBack }) => {
   const [trackingInfo, setTrackingInfo] = useState(null);
   const [loadingTracking, setLoadingTracking] = useState(false);
   const [trackingError, setTrackingError] = useState(null);
@@ -667,502 +667,1301 @@ const OrderDetailsModal = ({ order, onClose }) => {
   const translatedDeliveryStatus = translateStatus(deliveryStatus);
   const translatedSecondaryStatus = secondaryStatus ? translateStatus(secondaryStatus) : null;
   const translatedPaymentStatus = translateStatus(paymentStatus);
-  
-  const displayStatus = secondaryStatus 
-    ? `${translatedDeliveryStatus} - ${translatedSecondaryStatus}`
-    : translatedDeliveryStatus;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content1 details-modal" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
-          <h3>Détails de la commande #{order.parcel_code}</h3>
-          <button onClick={onClose} className="modal-close">
-            <X size={20} />
-          </button>
-        </div>
+    <div className="order-details-page">
+      <div className="page-header">
+        <button onClick={onBack} className="btn-back">
+          <ArrowLeft size={20} />
+          Retour à la liste
+        </button>
+        <h2>Détails de la commande #{order.parcel_code}</h2>
+      </div>
 
-        <div className="modal-body">
-          {/* Webhook Status Banner */}
-          {trackingInfo && (
-            <div className="webhook-status-banner">
-              <Bell size={16} />
-              <span>Mise à jour en temps réel activée</span>
-              <span className="live-bad">LIVE</span>
-            </div>
-          )}
+      <div className="page-content">
+        {/* Webhook Status Banner */}
+        {trackingInfo && (
+          <div className="webhook-status-banner">
+            <Bell size={16} />
+            <span>Mise à jour en temps réel activée</span>
+            <span className="live-bad">LIVE</span>
+          </div>
+        )}
 
-          {/* Two column layout for tracking and order info */}
-          <div className="details-two-column">
-            {/* Left Column - Suivi Welivexpress */}
-            <div className="details-left-column">
-              {loadingTracking && (
-                <div className="tracking-loading">
-                  <RefreshCw size={20} className="spinning" />
-                  <span>Chargement des informations de suivi en temps réel...</span>
+        {/* Two column layout for tracking and order info */}
+        <div className="details-two-column">
+          {/* Left Column - Suivi Welivexpress */}
+          <div className="details-left-column">
+            {loadingTracking && (
+              <div className="tracking-loading">
+                <RefreshCw size={20} className="spinning" />
+                <span>Chargement des informations de suivi en temps réel...</span>
+              </div>
+            )}
+
+            {trackingError && (
+              <div className="tracking-error">
+                <AlertCircle size={20} />
+                <span>{trackingError}</span>
+              </div>
+            )}
+
+            {trackingInfo && trackingInfo.parcel && (
+              <div className="tracking-info-section">
+                <div className="tracking-info-header">
+                  <Truck size={20} />
+                  <h4>Suivi Welivexpress en temps réel</h4>
+                  <span className="tracking-live-badge">LIVE</span>
                 </div>
-              )}
-
-              {trackingError && (
-                <div className="tracking-error">
-                  <AlertCircle size={20} />
-                  <span>{trackingError}</span>
-                </div>
-              )}
-
-              {trackingInfo && trackingInfo.parcel && (
-                <div className="tracking-info-section">
-                  <div className="tracking-info-header">
-                    <Truck size={20} />
-                    <h4>Suivi Welivexpress en temps réel</h4>
-                    <span className="tracking-live-badge">LIVE</span>
-                  </div>
-                  
-                  {/* Status Cards with Secondary Status */}
-                  <div className="tracking-status-grid">
-                    <div className="tracking-status-card">
-                      <div className="tracking-status-label">
-                        <Truck size={14} />
-                        Statut de livraison
+                
+                {/* Status Cards with Secondary Status */}
+                <div className="tracking-status-grid">
+                  <div className="tracking-status-card">
+                    <div className="tracking-status-label">
+                      <Truck size={14} />
+                      Statut de livraison
+                    </div>
+                    <div className="status-badge-container">
+                      <div 
+                        className="tracking-status-badge large"
+                        style={{ 
+                          backgroundColor: `${getStatusColor(deliveryStatus)}15`,
+                          color: getStatusColor(deliveryStatus),
+                          border: `1px solid ${getStatusColor(deliveryStatus)}30`
+                        }}
+                      >
+                        {translatedDeliveryStatus}
                       </div>
-                      <div className="status-badge-container">
+                      {secondaryStatus && secondaryStatus !== '' && (
                         <div 
-                          className="tracking-status-badge large"
+                          className="tracking-status-badge large secondary"
                           style={{ 
-                            backgroundColor: `${getStatusColor(deliveryStatus)}15`,
-                            color: getStatusColor(deliveryStatus),
-                            border: `1px solid ${getStatusColor(deliveryStatus)}30`
+                            backgroundColor: `${getStatusColor(secondaryStatus)}15`,
+                            color: getStatusColor(secondaryStatus),
+                            border: `1px solid ${getStatusColor(secondaryStatus)}30`,
+                            marginLeft: '8px'
                           }}
                         >
-                          {translatedDeliveryStatus}
-                        </div>
-                        {secondaryStatus && secondaryStatus !== '' && (
-                          <div 
-                            className="tracking-status-badge large secondary"
-                            style={{ 
-                              backgroundColor: `${getStatusColor(secondaryStatus)}15`,
-                              color: getStatusColor(secondaryStatus),
-                              border: `1px solid ${getStatusColor(secondaryStatus)}30`,
-                              marginLeft: '8px'
-                            }}
-                          >
-                            {translatedSecondaryStatus}
-                          </div>
-                        )}
-                      </div>
-                      {trackingInfo.tracking && (
-                        <div className="tracking-status-description">
-                          {getStatusDescription(secondaryStatus || deliveryStatus)}
+                          {translatedSecondaryStatus}
                         </div>
                       )}
                     </div>
-
-                    <div className="tracking-status-card">
-                      <div className="tracking-status-label">
-                        <CreditCard size={14} />
-                        Statut de paiement
-                      </div>
-                      <div 
-                        className="tracking-status-badge"
-                        style={{ 
-                          backgroundColor: `${getStatusColor(paymentStatus)}15`,
-                          color: getStatusColor(paymentStatus),
-                          border: `1px solid ${getStatusColor(paymentStatus)}30`
-                        }}
-                      >
-                        {translatedPaymentStatus}
-                      </div>
-                      <div className="tracking-payment-text">
-                        {paymentStatusText || getStatusDescription(paymentStatus)}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Complete Parcel Information */}
-                  <div className="tracking-details-grid">
-                    {/* Client Information */}
-                    <div className="tracking-detail-card">
-                      <div className="tracking-detail-header">
-                        <User size={16} />
-                        <h5>Client</h5>
-                      </div>
-                      <div className="tracking-detail-content">
-                        <div className="tracking-detail-row">
-                          <span className="detail-label">ID:</span>
-                          <span className="detail-value">{trackingInfo.parcel.id || '-'}</span>
-                        </div>
-                        <div className="tracking-detail-row">
-                          <span className="detail-label">Nom:</span>
-                          <span className="detail-value">{trackingInfo.parcel.receiver || '-'}</span>
-                        </div>
-                        <div className="tracking-detail-row">
-                          <span className="detail-label">Téléphone:</span>
-                          <span className="detail-value">{trackingInfo.parcel.phone || '-'}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Address Information */}
-                    <div className="tracking-detail-card">
-                      <div className="tracking-detail-header">
-                        <MapPin size={16} />
-                        <h5>Adresse</h5>
-                      </div>
-                      <div className="tracking-detail-content">
-                        <div className="tracking-detail-row">
-                          <span className="detail-label">Ville ID:</span>
-                          <span className="detail-value">
-                            {trackingInfo.parcel.city?.id || trackingInfo.parcel.city_id || '-'}
-                          </span>
-                        </div>
-                        <div className="tracking-detail-row">
-                          <span className="detail-label">Ville:</span>
-                          <span className="detail-value">
-                            {trackingInfo.parcel.city?.name || trackingInfo.parcel.city || '-'}
-                          </span>
-                        </div>
-                        <div className="tracking-detail-row">
-                          <span className="detail-label">Adresse:</span>
-                          <span className="detail-value address">
-                            {trackingInfo.parcel.address || '-'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Product Information */}
-                    <div className="tracking-detail-card">
-                      <div className="tracking-detail-header">
-                        <Package size={16} />
-                        <h5>Colis</h5>
-                      </div>
-                      <div className="tracking-detail-content">
-                        <div className="tracking-detail-row">
-                          <span className="detail-label">Code:</span>
-                          <span className="detail-value code">
-                            {trackingInfo.parcel.code || '-'}
-                          </span>
-                        </div>
-                        <div className="tracking-detail-row">
-                          <span className="detail-label">Produit:</span>
-                          <span className="detail-value">
-                            {trackingInfo.parcel.product?.name || '-'}
-                          </span>
-                        </div>
-                        <div className="tracking-detail-row">
-                          <span className="detail-label">Quantité:</span>
-                          <span className="detail-value">
-                            {trackingInfo.parcel.product?.quantity || 1}
-                          </span>
-                        </div>
-                        <div className="tracking-detail-row">
-                          <span className="detail-label">Prix:</span>
-                          <span className="detail-value price">
-                            {trackingInfo.parcel.price || 0} MAD
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Dates Information */}
-                    <div className="tracking-detail-card">
-                      <div className="tracking-detail-header">
-                        <Calendar size={16} />
-                        <h5>Dates</h5>
-                      </div>
-                      <div className="tracking-detail-content">
-                        <div className="tracking-detail-row">
-                          <span className="detail-label">Création:</span>
-                          <span className="detail-value">
-                            {formatDate(trackingInfo.parcel.created_at)}
-                          </span>
-                        </div>
-                        <div className="tracking-detail-row">
-                          <span className="detail-label">Créé le:</span>
-                          <span className="detail-value">
-                            {trackingInfo.parcel.created_date || '-'}
-                          </span>
-                        </div>
-                        <div className="tracking-detail-row">
-                          <span className="detail-label">Mise à jour:</span>
-                          <span className="detail-value">
-                            {formatDate(trackingInfo.parcel.updated_at)}
-                          </span>
-                        </div>
-                        <div className="tracking-detail-row">
-                          <span className="detail-label">Mis à jour le:</span>
-                          <span className="detail-value">
-                            {trackingInfo.parcel.updated_date || '-'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Note if exists */}
-                  {trackingInfo.parcel.note && (
-                    <div className="tracking-note">
-                      <FileText size={16} />
-                      <div className="tracking-note-content">
-                        <span className="note-label">Note:</span>
-                        <p>{trackingInfo.parcel.note}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Can Open Status */}
-                  <div className="tracking-can-open">
-                    {trackingInfo.parcel.can_open === 1 ? (
-                      <div className="can-open-badge allowed">
-                        <PackageCheck size={16} />
-                        Colis ouvert / vérifié
-                      </div>
-                    ) : (
-                      <div className="can-open-badge not-allowed">
-                        <PackageX size={16} />
-                        Colis non ouvert
+                    {trackingInfo.tracking && (
+                      <div className="tracking-status-description">
+                        {getStatusDescription(secondaryStatus || deliveryStatus)}
                       </div>
                     )}
                   </div>
 
-                  {/* Query Time */}
-                  {trackingInfo.query_time && (
-                    <div className="tracking-query-time">
-                      <Clock size={14} />
-                      <span>Dernière mise à jour: {formatDate(trackingInfo.query_time)}</span>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Right Column - Informations de la commande */}
-            <div className="details-right-column">
-              <div className="order-info-section">
-                <div className="order-info-header">
-                  <Info size={20} />
-                  <h4>Informations de la commande</h4>
-                  <span className="order-info-badge">DÉTAILS</span>
-                </div>
-
-                {/* Order Information Cards */}
-                <div className="order-info-grid">
-                  <div className="order-info-card">
-                    <div className="order-info-label">
-                      <User size={14} />
-                      Client
-                    </div>
-                    <div className="order-info-value">
-                      {order.parcel_receiver || "-"}
-                    </div>
-                  </div>
-
-                  <div className="order-info-card">
-                    <div className="order-info-label">
-                      <Phone size={14} />
-                      Téléphone
-                    </div>
-                    <div className="order-info-value">
-                      {order.parcel_phone || "-"}
-                    </div>
-                  </div>
-
-                  <div className="order-info-card">
-                    <div className="order-info-label">
-                      <Layers size={14} />
-                      Quantité totale
-                    </div>
-                    <div className="order-info-value">
-                      {order.parcel_prd_qty || 0}
-                    </div>
-                  </div>
-
-                  <div className="order-info-card">
-                    <div className="order-info-label">
-                      <MapPin size={14} />
-                      Ville
-                    </div>
-                    <div className="order-info-value">
-                      {order.parcel_city || "-"}
-                    </div>
-                  </div>
-
-                  <div className="order-info-card full-width">
-                    <div className="order-info-label">
-                      <Map size={14} />
-                      Adresse
-                    </div>
-                    <div className="order-info-value address">
-                      {order.parcel_address || "-"}
-                    </div>
-                  </div>
-
-                  <div className="order-info-card">
-                    <div className="order-info-label">
-                      <Calendar size={14} />
-                      Date
-                    </div>
-                    <div className="order-info-value">
-                      {order.date ? new Date(order.date).toLocaleDateString('fr-FR') : "-"}
-                    </div>
-                  </div>
-
-                  <div className="order-info-card">
-                    <div className="order-info-label">
-                      <Clock size={14} />
-                      Statut principal
-                    </div>
-                    <div className="order-info-value">
-                      {loadingTracking ? (
-                        <RefreshCw size={14} className="spinning" />
-                      ) : (
-                        <span 
-                          className="status-badge"
-                          style={{ 
-                            backgroundColor: `${getStatusColor(deliveryStatus)}15`,
-                            color: getStatusColor(deliveryStatus),
-                            border: `1px solid ${getStatusColor(deliveryStatus)}30`
-                          }}
-                        >
-                          {translatedDeliveryStatus}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {secondaryStatus && secondaryStatus !== '' && (
-                    <div className="order-info-card">
-                      <div className="order-info-label">
-                        <AlertCircle size={14} />
-                        Statut secondaire
-                      </div>
-                      <div className="order-info-value">
-                        <span 
-                          className="status-badge"
-                          style={{ 
-                            backgroundColor: `${getStatusColor(secondaryStatus)}15`,
-                            color: getStatusColor(secondaryStatus),
-                            border: `1px solid ${getStatusColor(secondaryStatus)}30`
-                          }}
-                        >
-                          {translatedSecondaryStatus}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="order-info-card">
-                    <div className="order-info-label">
+                  <div className="tracking-status-card">
+                    <div className="tracking-status-label">
                       <CreditCard size={14} />
-                      Statut paiement
+                      Statut de paiement
+                    </div>
+                    <div 
+                      className="tracking-status-badge"
+                      style={{ 
+                        backgroundColor: `${getStatusColor(paymentStatus)}15`,
+                        color: getStatusColor(paymentStatus),
+                        border: `1px solid ${getStatusColor(paymentStatus)}30`
+                      }}
+                    >
+                      {translatedPaymentStatus}
+                    </div>
+                    <div className="tracking-payment-text">
+                      {paymentStatusText || getStatusDescription(paymentStatus)}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Complete Parcel Information */}
+                <div className="tracking-details-grid">
+                  {/* Client Information */}
+                  <div className="tracking-detail-card">
+                    <div className="tracking-detail-header">
+                      <User size={16} />
+                      <h5>Client</h5>
+                    </div>
+                    <div className="tracking-detail-content">
+                      <div className="tracking-detail-row">
+                        <span className="detail-label">ID:</span>
+                        <span className="detail-value">{trackingInfo.parcel.id || '-'}</span>
+                      </div>
+                      <div className="tracking-detail-row">
+                        <span className="detail-label">Nom:</span>
+                        <span className="detail-value">{trackingInfo.parcel.receiver || '-'}</span>
+                      </div>
+                      <div className="tracking-detail-row">
+                        <span className="detail-label">Téléphone:</span>
+                        <span className="detail-value">{trackingInfo.parcel.phone || '-'}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Address Information */}
+                  <div className="tracking-detail-card">
+                    <div className="tracking-detail-header">
+                      <MapPin size={16} />
+                      <h5>Adresse</h5>
+                    </div>
+                    <div className="tracking-detail-content">
+                      <div className="tracking-detail-row">
+                        <span className="detail-label">Ville ID:</span>
+                        <span className="detail-value">
+                          {trackingInfo.parcel.city?.id || trackingInfo.parcel.city_id || '-'}
+                        </span>
+                      </div>
+                      <div className="tracking-detail-row">
+                        <span className="detail-label">Ville:</span>
+                        <span className="detail-value">
+                          {trackingInfo.parcel.city?.name || trackingInfo.parcel.city || '-'}
+                        </span>
+                      </div>
+                      <div className="tracking-detail-row">
+                        <span className="detail-label">Adresse:</span>
+                        <span className="detail-value address">
+                          {trackingInfo.parcel.address || '-'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Product Information */}
+                  <div className="tracking-detail-card">
+                    <div className="tracking-detail-header">
+                      <Package size={16} />
+                      <h5>Colis</h5>
+                    </div>
+                    <div className="tracking-detail-content">
+                      <div className="tracking-detail-row">
+                        <span className="detail-label">Code:</span>
+                        <span className="detail-value code">
+                          {trackingInfo.parcel.code || '-'}
+                        </span>
+                      </div>
+                      <div className="tracking-detail-row">
+                        <span className="detail-label">Produit:</span>
+                        <span className="detail-value">
+                          {trackingInfo.parcel.product?.name || '-'}
+                        </span>
+                      </div>
+                      <div className="tracking-detail-row">
+                        <span className="detail-label">Quantité:</span>
+                        <span className="detail-value">
+                          {trackingInfo.parcel.product?.quantity || 1}
+                        </span>
+                      </div>
+                      <div className="tracking-detail-row">
+                        <span className="detail-label">Prix:</span>
+                        <span className="detail-value price">
+                          {trackingInfo.parcel.price || 0} MAD
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Dates Information */}
+                  <div className="tracking-detail-card">
+                    <div className="tracking-detail-header">
+                      <Calendar size={16} />
+                      <h5>Dates</h5>
+                    </div>
+                    <div className="tracking-detail-content">
+                      <div className="tracking-detail-row">
+                        <span className="detail-label">Création:</span>
+                        <span className="detail-value">
+                          {formatDate(trackingInfo.parcel.created_at)}
+                        </span>
+                      </div>
+                      <div className="tracking-detail-row">
+                        <span className="detail-label">Créé le:</span>
+                        <span className="detail-value">
+                          {trackingInfo.parcel.created_date || '-'}
+                        </span>
+                      </div>
+                      <div className="tracking-detail-row">
+                        <span className="detail-label">Mise à jour:</span>
+                        <span className="detail-value">
+                          {formatDate(trackingInfo.parcel.updated_at)}
+                        </span>
+                      </div>
+                      <div className="tracking-detail-row">
+                        <span className="detail-label">Mis à jour le:</span>
+                        <span className="detail-value">
+                          {trackingInfo.parcel.updated_date || '-'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Note if exists */}
+                {trackingInfo.parcel.note && (
+                  <div className="tracking-note">
+                    <FileText size={16} />
+                    <div className="tracking-note-content">
+                      <span className="note-label">Note:</span>
+                      <p>{trackingInfo.parcel.note}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Can Open Status */}
+                <div className="tracking-can-open">
+                  {trackingInfo.parcel.can_open === 1 ? (
+                    <div className="can-open-badge allowed">
+                      <PackageCheck size={16} />
+                      Colis ouvert / vérifié
+                    </div>
+                  ) : (
+                    <div className="can-open-badge not-allowed">
+                      <PackageX size={16} />
+                      Colis non ouvert
+                    </div>
+                  )}
+                </div>
+
+                {/* Query Time */}
+                {trackingInfo.query_time && (
+                  <div className="tracking-query-time">
+                    <Clock size={14} />
+                    <span>Dernière mise à jour: {formatDate(trackingInfo.query_time)}</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Right Column - Informations de la commande */}
+          <div className="details-right-column">
+            <div className="order-info-section">
+              <div className="order-info-header">
+                <Info size={20} />
+                <h4>Informations de la commande</h4>
+                <span className="order-info-badge">DÉTAILS</span>
+              </div>
+
+              {/* Order Information Cards */}
+              <div className="order-info-grid">
+                <div className="order-info-card">
+                  <div className="order-info-label">
+                    <User size={14} />
+                    Client
+                  </div>
+                  <div className="order-info-value">
+                    {order.parcel_receiver || "-"}
+                  </div>
+                </div>
+
+                <div className="order-info-card">
+                  <div className="order-info-label">
+                    <Phone size={14} />
+                    Téléphone
+                  </div>
+                  <div className="order-info-value">
+                    {order.parcel_phone || "-"}
+                  </div>
+                </div>
+
+                <div className="order-info-card">
+                  <div className="order-info-label">
+                    <Layers size={14} />
+                    Quantité totale
+                  </div>
+                  <div className="order-info-value">
+                    {order.parcel_prd_qty || 0}
+                  </div>
+                </div>
+
+                <div className="order-info-card">
+                  <div className="order-info-label">
+                    <MapPin size={14} />
+                    Ville
+                  </div>
+                  <div className="order-info-value">
+                    {order.parcel_city || "-"}
+                  </div>
+                </div>
+
+                <div className="order-info-card full-width">
+                  <div className="order-info-label">
+                    <Map size={14} />
+                    Adresse
+                  </div>
+                  <div className="order-info-value address">
+                    {order.parcel_address || "-"}
+                  </div>
+                </div>
+
+                <div className="order-info-card">
+                  <div className="order-info-label">
+                    <Calendar size={14} />
+                    Date
+                  </div>
+                  <div className="order-info-value">
+                    {order.date ? new Date(order.date).toLocaleDateString('fr-FR') : "-"}
+                  </div>
+                </div>
+
+                <div className="order-info-card">
+                  <div className="order-info-label">
+                    <Clock size={14} />
+                    Statut principal
+                  </div>
+                  <div className="order-info-value">
+                    {loadingTracking ? (
+                      <RefreshCw size={14} className="spinning" />
+                    ) : (
+                      <span 
+                        className="status-badge"
+                        style={{ 
+                          backgroundColor: `${getStatusColor(deliveryStatus)}15`,
+                          color: getStatusColor(deliveryStatus),
+                          border: `1px solid ${getStatusColor(deliveryStatus)}30`
+                        }}
+                      >
+                        {translatedDeliveryStatus}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {secondaryStatus && secondaryStatus !== '' && (
+                  <div className="order-info-card">
+                    <div className="order-info-label">
+                      <AlertCircle size={14} />
+                      Statut secondaire
                     </div>
                     <div className="order-info-value">
                       <span 
                         className="status-badge"
                         style={{ 
-                          backgroundColor: `${getStatusColor(paymentStatus)}15`,
-                          color: getStatusColor(paymentStatus),
-                          border: `1px solid ${getStatusColor(paymentStatus)}30`
+                          backgroundColor: `${getStatusColor(secondaryStatus)}15`,
+                          color: getStatusColor(secondaryStatus),
+                          border: `1px solid ${getStatusColor(secondaryStatus)}30`
                         }}
                       >
-                        {translatedPaymentStatus}
+                        {translatedSecondaryStatus}
                       </span>
                     </div>
                   </div>
-                </div>
+                )}
 
-                {/* Financial Summary - FIXED PROFIT CALCULATION */}
-                <div className="order-financial-summary">
-                  <h5>Résumé financier</h5>
-                  <div className="financial-row">
-                    <span>Sous-total livres:</span>
-                    <span className="financial-amount">{order.total || 0} MAD</span>
+                <div className="order-info-card">
+                  <div className="order-info-label">
+                    <CreditCard size={14} />
+                    Statut paiement
                   </div>
-                  <div className="financial-row">
-                    <span>Frais de livraison:</span>
-                    <span className="financial-amount">{order.frais_livraison || 0} MAD</span>
-                  </div>
-                  <div className="financial-row">
-                    <span>Frais de packaging:</span>
-                    <span className="financial-amount">{order.frais_packaging || 0} MAD</span>
-                  </div>
-                  <div className="financial-row">
-                    <span>Total (livres + frais):</span>
-                    <span className="financial-amount">{(order.total || 0) + (order.frais_livraison || 0) + (order.frais_packaging || 0)} MAD</span>
-                  </div>
-                  <div className="financial-row">
-                    <span>Prix colis (Welivexpress):</span>
-                    <span className="financial-amount">{order.parcel_price || 0} MAD</span>
-                  </div>
-                  <div className="financial-row total">
-                    <span>Profit (parcel_price - total):</span>
-                    <span className={`financial-amount ${order.profit < 0 ? 'negative' : ''}`}>
-                      {order.profit || 0} MAD
-                      {order.profit < 0 && ' (Perte)'}
+                  <div className="order-info-value">
+                    <span 
+                      className="status-badge"
+                      style={{ 
+                        backgroundColor: `${getStatusColor(paymentStatus)}15`,
+                        color: getStatusColor(paymentStatus),
+                        border: `1px solid ${getStatusColor(paymentStatus)}30`
+                      }}
+                    >
+                      {translatedPaymentStatus}
                     </span>
                   </div>
-                  <div className="financial-calculation-hint">
-                    <small>Profit = Prix colis - (Total livres + Frais livraison + Frais packaging)</small>
-                  </div>
-                  {order.statut === 'RETURNED' && (
-                    <div className="financial-warning">
-                      <AlertCircle size={14} />
-                      <span>Commande retournée - Profit négatif car les frais sont perdus</span>
-                    </div>
-                  )}
                 </div>
+              </div>
 
-                {/* Order Note */}
-                {order.parcel_note && (
-                  <div className="order-note">
-                    <FileText size={16} />
-                    <div className="order-note-content">
-                      <span className="note-label">Note:</span>
-                      <p>{order.parcel_note}</p>
-                    </div>
+              {/* Financial Summary */}
+              <div className="order-financial-summary">
+                <h5>Résumé financier</h5>
+                <div className="financial-row">
+                  <span>Sous-total livres:</span>
+                  <span className="financial-amount">{order.total || 0} MAD</span>
+                </div>
+                <div className="financial-row">
+                  <span>Frais de livraison:</span>
+                  <span className="financial-amount">{order.frais_livraison || 0} MAD</span>
+                </div>
+                <div className="financial-row">
+                  <span>Frais de packaging:</span>
+                  <span className="financial-amount">{order.frais_packaging || 0} MAD</span>
+                </div>
+                <div className="financial-row">
+                  <span>Total (livres + frais):</span>
+                  <span className="financial-amount">{(order.total || 0) + (order.frais_livraison || 0) + (order.frais_packaging || 0)} MAD</span>
+                </div>
+                <div className="financial-row">
+                  <span>Prix colis (Welivexpress):</span>
+                  <span className="financial-amount">{order.parcel_price || 0} MAD</span>
+                </div>
+                <div className="financial-row total">
+                  <span>Profit (parcel_price - total):</span>
+                  <span className={`financial-amount ${order.profit < 0 ? 'negative' : ''}`}>
+                    {order.profit || 0} MAD
+                    {order.profit < 0 && ' (Perte)'}
+                  </span>
+                </div>
+                <div className="financial-calculation-hint">
+                  <small>Profit = Prix colis - (Total livres + Frais livraison + Frais packaging)</small>
+                </div>
+                {order.statut === 'RETURNED' && (
+                  <div className="financial-warning">
+                    <AlertCircle size={14} />
+                    <span>Commande retournée - Profit négatif car les frais sont perdus</span>
                   </div>
                 )}
+              </div>
+
+              {/* Order Note */}
+              {order.parcel_note && (
+                <div className="order-note">
+                  <FileText size={16} />
+                  <div className="order-note-content">
+                    <span className="note-label">Note:</span>
+                    <p>{order.parcel_note}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Books Section - Full Width Below */}
+        <div className="details-section full-width">
+          <h4>Livres commandés</h4>
+          {order.livres && Array.isArray(order.livres) && order.livres.length > 0 ? (
+            <table className="details-books-table">
+              <thead>
+                <tr>
+                  <th>Titre</th>
+                  <th>Auteur</th>
+                  <th>Prix unitaire</th>
+                  <th>Quantité</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {order.livres.map((book, index) => (
+                  <tr key={index}>
+                    <td>{book.titre || book.title || "-"}</td>
+                    <td>{book.auteur || book.author || "-"}</td>
+                    <td>{book.price || book.prix_achat || 0} MAD</td>
+                    <td>{book.quantity || 1}</td>
+                    <td>{(book.price || book.prix_achat || 0) * (book.quantity || 1)} MAD</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p className="no-books">Aucun livre dans cette commande</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Add Order Page Component
+const AddOrderPage = ({ onBack, onSubmit }) => {
+  const dispatch = useDispatch();
+  const [addLoading, setAddLoading] = useState(false);
+  const [addError, setAddError] = useState(null);
+  
+  // Track if total was manually edited
+  const [totalManuallyEdited, setTotalManuallyEdited] = useState(false);
+  
+  // Track if price was manually edited for Welivexpress
+  const [priceManuallyEdited, setPriceManuallyEdited] = useState(false);
+  
+  // Form state for new order
+  const [newOrderData, setNewOrderData] = useState({
+    parcel_code: `CMD-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    parcel_receiver: "",
+    parcel_phone: "",
+    parcel_prd_qty: 0,
+    parcel_city: "",
+    parcel_address: "",
+    parcel_price: null,
+    frais_livraison: 35,
+    frais_packaging: null,
+    total: null,
+    profit: null,
+    parcel_note: "",
+    parcel_open: 0,
+    livres: [],
+    statut: "NEW_PARCEL",
+    date: new Date().toISOString().split('T')[0]
+  });
+
+  // Reset manual edit flags when books change
+  useEffect(() => {
+    setTotalManuallyEdited(false);
+    setPriceManuallyEdited(false);
+  }, [newOrderData.livres]);
+
+  // Calculate books subtotal, total, and parcel_price with RETURNED status logic
+  useEffect(() => {
+    const booksSubtotal = (newOrderData.livres || []).reduce(
+      (sum, book) => sum + (book.prix_achat * book.quantity), 0
+    );
+    
+    const delivery = parseFloat(newOrderData.frais_livraison) || 0;
+    const packaging = parseFloat(newOrderData.frais_packaging) || 0;
+    
+    let total;
+    if (!totalManuallyEdited || newOrderData.livres.length === 0) {
+      total = booksSubtotal;
+    } else {
+      total = parseFloat(newOrderData.total) || 0;
+    }
+    
+    // Calculate parcel price - if manually edited, use that value, otherwise calculate
+    let parcelPrice;
+    if (priceManuallyEdited) {
+      parcelPrice = parseFloat(newOrderData.parcel_price) || 0;
+    } else {
+      parcelPrice = total + delivery + packaging;
+    }
+    
+    // Calculate profit based on parcel_price - (total + delivery + packaging)
+    let profit = parcelPrice - (total + delivery + packaging);
+    
+    setNewOrderData(prev => {
+      const updates = {};
+      if (prev.total !== total) updates.total = total;
+      if (prev.parcel_price !== parcelPrice) updates.parcel_price = parcelPrice;
+      if (prev.profit !== profit) updates.profit = profit;
+      
+      if (Object.keys(updates).length === 0) {
+        return prev;
+      }
+      
+      return {
+        ...prev,
+        ...updates
+      };
+    });
+  }, [
+    newOrderData.livres, 
+    newOrderData.frais_livraison, 
+    newOrderData.frais_packaging,
+    newOrderData.total,
+    newOrderData.parcel_price,
+    totalManuallyEdited,
+    priceManuallyEdited
+  ]);
+
+  const handleNewOrderChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    
+    // Track manual edits
+    if (name === 'total') {
+      setTotalManuallyEdited(true);
+    }
+    if (name === 'parcel_price') {
+      setPriceManuallyEdited(true);
+    }
+    
+    setNewOrderData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? (checked ? 1 : 0) : 
+               (name === 'parcel_price' || name === 'total' || name === 'frais_livraison' || name === 'frais_packaging') ? 
+               (value === '' ? null : parseFloat(value)) : value
+    }));
+  };
+
+  const handleBooksChange = (books) => {
+    setNewOrderData(prev => ({
+      ...prev,
+      livres: books
+    }));
+  };
+
+  const handleTotalQuantityChange = (qty) => {
+    setNewOrderData(prev => ({
+      ...prev,
+      parcel_prd_qty: qty
+    }));
+  };
+
+  const handleNewCitySelect = (city, cityId) => {
+    setNewOrderData(prev => ({
+      ...prev,
+      parcel_city: city
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!newOrderData.parcel_receiver || !newOrderData.parcel_city) {
+        setAddError("Veuillez remplir tous les champs obligatoires (client, ville)");
+        return;
+    }
+
+    if (newOrderData.livres.length === 0) {
+        setAddError("Veuillez sélectionner au moins un livre");
+        return;
+    }
+
+    const delivery = parseFloat(newOrderData.frais_livraison) || 35;
+    const packaging = parseFloat(newOrderData.frais_packaging) || 0;
+    const total = parseFloat(newOrderData.total) || 0;
+    
+    // Use manually edited price if set, otherwise calculate
+    const parcelPrice = priceManuallyEdited ? 
+      (parseFloat(newOrderData.parcel_price) || total + delivery + packaging) : 
+      (total + delivery + packaging);
+    
+    // Calculate profit based on parcel_price - (total + delivery + packaging)
+    let profit = parcelPrice - (total + delivery + packaging);
+
+    const formattedLivres = newOrderData.livres.map(book => ({
+        id: book.id,
+        titre: book.titre,
+        auteur: book.auteur || '',
+        quantity: parseInt(book.quantity),
+        price: parseFloat(book.prix_achat),
+        total: parseFloat(book.prix_achat) * parseInt(book.quantity)
+    }));
+
+    const orderToCreate = {
+        parcel_code: newOrderData.parcel_code,
+        parcel_receiver: newOrderData.parcel_receiver,
+        parcel_phone: newOrderData.parcel_phone || "",
+        parcel_prd_qty: newOrderData.parcel_prd_qty,
+        parcel_city: newOrderData.parcel_city,
+        parcel_address: newOrderData.parcel_address || "",
+        parcel_price: parseFloat(parcelPrice.toFixed(2)),
+        frais_livraison: parseFloat(delivery.toFixed(2)),
+        frais_packaging: parseFloat(packaging.toFixed(2)),
+        total: parseFloat(total.toFixed(2)),
+        profit: parseFloat(profit.toFixed(2)),
+        parcel_note: newOrderData.parcel_note || "",
+        parcel_open: newOrderData.parcel_open ? 1 : 0,
+        livres: formattedLivres,
+        date: newOrderData.date,
+        statut: newOrderData.statut || "NEW_PARCEL"
+    };
+
+    console.log("📦 Order to create:", orderToCreate);
+
+    setAddLoading(true);
+    setAddError(null);
+
+    try {
+        const result = await onSubmit(orderToCreate);
+        
+        // Send webhook with the created order data
+        const webhookPayload = {
+          event: 'order_created',
+          parcel: {
+            code: orderToCreate.parcel_code,
+            price: orderToCreate.parcel_price,
+            receiver: orderToCreate.parcel_receiver,
+            city: orderToCreate.parcel_city,
+            address: orderToCreate.parcel_address,
+            total_books: orderToCreate.parcel_prd_qty,
+            status: orderToCreate.statut
+          }
+        };
+        await sendWebhookUpdate(webhookPayload);
+        
+        onBack();
+    } catch (error) {
+        console.error("❌ Create failed:", error);
+        setAddError(
+            error?.message || 
+            "Erreur lors de la création de la commande. Veuillez réessayer."
+        );
+    } finally {
+        setAddLoading(false);
+    }
+  };
+
+  return (
+    <div className="add-order-page">
+      <div className="page-header">
+        <button onClick={onBack} className="btn-back">
+          <ArrowLeft size={20} />
+          Retour à la liste
+        </button>
+        <h2>Nouvelle commande</h2>
+      </div>
+
+      <div className="page-content">
+        {addError && (
+          <div className="form-error">
+            <span className="error-icon">⚠️</span>
+            {addError}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="order-form">
+          <div className="form-section">
+            <h3>Informations générales</h3>
+            <div className="form-row">
+              <div className="form-group">
+                <label>Code colis</label>
+                <input
+                  type="text"
+                  name="parcel_code"
+                  value={newOrderData.parcel_code}
+                  onChange={handleNewOrderChange}
+                  readOnly
+                  className="readonly-input"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Date</label>
+                <input
+                  type="date"
+                  name="date"
+                  value={newOrderData.date}
+                  onChange={handleNewOrderChange}
+                  required
+                />
               </div>
             </div>
           </div>
 
-          {/* Books Section - Full Width Below */}
-          <div className="details-section full-width">
-            <h4>Livres commandés</h4>
-            {order.livres && Array.isArray(order.livres) && order.livres.length > 0 ? (
-              <table className="details-books-table">
-                <thead>
-                  <tr>
-                    <th>Titre</th>
-                    <th>Auteur</th>
-                    <th>Prix unitaire</th>
-                    <th>Quantité</th>
-                    <th>Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {order.livres.map((book, index) => (
-                    <tr key={index}>
-                      <td>{book.titre || book.title || "-"}</td>
-                      <td>{book.auteur || book.author || "-"}</td>
-                      <td>{book.price || book.prix_achat || 0} MAD</td>
-                      <td>{book.quantity || 1}</td>
-                      <td>{(book.price || book.prix_achat || 0) * (book.quantity || 1)} MAD</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <p className="no-books">Aucun livre dans cette commande</p>
-            )}
-          </div>
-        </div>
+          <div className="form-section">
+            <h3>Client</h3>
+            <div className="form-row">
+              <div className="form-group">
+                <label>Client <span className="required">*</span></label>
+                <input
+                  type="text"
+                  name="parcel_receiver"
+                  value={newOrderData.parcel_receiver}
+                  onChange={handleNewOrderChange}
+                  placeholder="Nom du client"
+                  required
+                />
+              </div>
 
-        <div className="modal-footer">
-          <button onClick={onClose} className="btn-secondary">
-            Fermer
-          </button>
-        </div>
+              <div className="form-group">
+                <label>Téléphone</label>
+                <input
+                  type="text"
+                  name="parcel_phone"
+                  value={newOrderData.parcel_phone}
+                  onChange={handleNewOrderChange}
+                  placeholder="Numéro de téléphone"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="form-section">
+            <h3>Adresse de livraison</h3>
+            <div className="form-row">
+              <div className="form-group full-width">
+                <label>Ville <span className="required">*</span></label>
+                <CityAutocomplete
+                  value={newOrderData.parcel_city}
+                  onChange={(value) => setNewOrderData(prev => ({ ...prev, parcel_city: value }))}
+                  onSelect={handleNewCitySelect}
+                />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group full-width">
+                <label>Adresse</label>
+                <input
+                  type="text"
+                  name="parcel_address"
+                  value={newOrderData.parcel_address}
+                  onChange={handleNewOrderChange}
+                  placeholder="Adresse complète"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="form-section">
+            <h3>Livres commandés</h3>
+            <div className="form-group full-width">
+              <BookSelector 
+                selectedBooks={newOrderData.livres}
+                onBooksChange={handleBooksChange}
+                onTotalQuantityChange={handleTotalQuantityChange}
+              />
+              <small className="field-hint">
+                La sélection des livres mettra automatiquement à jour la quantité totale
+              </small>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label>Quantité totale</label>
+                <div className="input-with-icon">
+                  <Layers size={16} className="input-icon" />
+                  <input
+                    type="number"
+                    name="parcel_prd_qty"
+                    value={newOrderData.parcel_prd_qty}
+                    onChange={handleNewOrderChange}
+                    placeholder="Quantité totale"
+                    min="1"
+                    required
+                    readOnly
+                    className="readonly-input"
+                  />
+                </div>
+                <small className="field-hint">
+                  Calculée automatiquement à partir des livres sélectionnés
+                </small>
+              </div>
+            </div>
+          </div>
+
+          <div className="form-section">
+            <h3>Frais et prix</h3>
+            <div className="form-row">
+              <div className="form-group">
+                <label>Frais livraison (MAD)</label>
+                <input
+                  type="number"
+                  name="frais_livraison"
+                  value={newOrderData.frais_livraison === null ? '' : newOrderData.frais_livraison}
+                  onChange={handleNewOrderChange}
+                  placeholder="35"
+                  min="0"
+                  step="0.01"
+                />
+                <small className="field-hint">Valeur par défaut: 35 MAD</small>
+              </div>
+
+              <div className="form-group">
+                <label>Frais packaging (MAD)</label>
+                <input
+                  type="number"
+                  name="frais_packaging"
+                  value={newOrderData.frais_packaging === null ? '' : newOrderData.frais_packaging}
+                  onChange={handleNewOrderChange}
+                  placeholder="0"
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label>Total livres (MAD)</label>
+                <input
+                  type="number"
+                  name="total"
+                  value={newOrderData.total === null ? '' : newOrderData.total}
+                  readOnly
+                  className="readonly-input"
+                  placeholder="Calculé automatiquement"
+                />
+                <small className="field-hint">
+                  Calculé automatiquement à partir des livres sélectionnés
+                </small>
+              </div>
+
+              <div className="form-group">
+                <label>Prix colis (MAD) <span className="required">*</span></label>
+                <div className="input-with-icon price-input">
+                  <DollarSign size={16} className="input-icon" />
+                  <input
+                    type="number"
+                    name="parcel_price"
+                    value={newOrderData.parcel_price === null ? '' : newOrderData.parcel_price}
+                    onChange={handleNewOrderChange}
+                    placeholder="Calculé automatiquement"
+                    min="0"
+                    step="0.01"
+                    className={priceManuallyEdited ? "manual-edit-input" : ""}
+                  />
+                  {priceManuallyEdited && (
+                    <span className="manual-edit-badge">Édité</span>
+                  )}
+                </div>
+                <small className="field-hint">
+                  {priceManuallyEdited 
+                    ? "Prix modifié manuellement (envoyé à Welivexpress)" 
+                    : "Prix calculé automatiquement (total + frais)"}
+                </small>
+              </div>
+
+              <div className="form-group">
+                <label>Profit (MAD)</label>
+                <input
+                  type="number"
+                  name="profit"
+                  value={newOrderData.profit === null ? '' : newOrderData.profit}
+                  readOnly
+                  className={`readonly-input ${newOrderData.profit < 0 ? 'negative' : ''}`}
+                  placeholder="Calculé automatiquement"
+                />
+                <small className="field-hint">
+                  Profit = Prix colis - (Total livres + Frais)
+                </small>
+              </div>
+            </div>
+          </div>
+
+          <div className="form-section">
+            <h3>Informations supplémentaires</h3>
+            <div className="form-group full-width">
+              <label>Note supplémentaire</label>
+              <textarea
+                name="parcel_note"
+                value={newOrderData.parcel_note}
+                onChange={handleNewOrderChange}
+                placeholder="Instructions spéciales pour la livraison (sera envoyée à Welivexpress)"
+                rows="3"
+              />
+              <small className="field-hint">
+                Cette note sera envoyée à Welivexpress sans les détails des livres
+              </small>
+            </div>
+
+            <div className="form-checkbox">
+              <input
+                type="checkbox"
+                id="parcel_open"
+                name="parcel_open"
+                checked={newOrderData.parcel_open === 1}
+                onChange={handleNewOrderChange}
+              />
+              <label htmlFor="parcel_open">Colis ouvert / vérifié</label>
+            </div>
+          </div>
+
+          {/* Display price info for Welivexpress */}
+          <div className="price-info-warning">
+            <Info size={16} />
+            <span>
+              <strong>Important:</strong> Le prix colis de <strong>{newOrderData.parcel_price || 'calculé automatiquement'} MAD</strong> sera envoyé à Welivexpress comme montant à collecter.
+              {priceManuallyEdited ? " (Prix modifié manuellement)" : " (Prix calculé automatiquement)"}
+            </span>
+          </div>
+
+          <div className="form-actions">
+            <button 
+              type="button" 
+              onClick={onBack}
+              className="btn-secondary"
+              disabled={addLoading}
+            >
+              Annuler
+            </button>
+            <button 
+              type="submit"
+              className="btn-primary"
+              disabled={addLoading}
+            >
+              {addLoading ? (
+                <>
+                  <span className="spinner-small"></span>
+                  Création...
+                </>
+              ) : (
+                <>
+                  <Save size={16} />
+                  Créer la commande
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// Update Order Page Component
+const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
+  const [updateLoading, setUpdateLoading] = useState(false);
+  const [updateError, setUpdateError] = useState(null);
+  
+  // Form state for update
+  const [formData, setFormData] = useState({
+    parcel_receiver: "",
+    parcel_phone: "",
+    parcel_prd_qty: "",
+    parcel_city: "",
+    parcel_address: "",
+    parcel_price: "",
+    parcel_note: "",
+    parcel_open: 0,
+    statut: ""
+  });
+
+  useEffect(() => {
+    if (order) {
+      setFormData({
+        parcel_receiver: order.parcel_receiver || "",
+        parcel_phone: order.parcel_phone || "",
+        parcel_prd_qty: order.parcel_prd_qty || 0,
+        parcel_city: order.parcel_city || "",
+        parcel_address: order.parcel_address || "",
+        parcel_price: order.parcel_price || "",
+        parcel_note: order.parcel_note || "",
+        parcel_open: order.parcel_open || 0,
+        statut: order.statut || ""
+      });
+    }
+  }, [order]);
+
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? (checked ? 1 : 0) : value
+    }));
+  };
+
+  const handleCitySelect = (city, cityId) => {
+    setFormData(prev => ({
+      ...prev,
+      parcel_city: city
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!order) return;
+
+    setUpdateLoading(true);
+    setUpdateError(null);
+
+    try {
+      const updateData = {};
+      Object.keys(formData).forEach(key => {
+        if (formData[key] !== order[key] && formData[key] !== "") {
+          updateData[key] = formData[key];
+        }
+      });
+
+      if (formData.statut !== order.statut) {
+        updateData.statut = formData.statut;
+      }
+
+      // Recalculate profit based on updated data
+      const total = order.total || 0;
+      const delivery = parseFloat(updateData.frais_livraison !== undefined ? updateData.frais_livraison : order.frais_livraison) || 0;
+      const packaging = parseFloat(updateData.frais_packaging !== undefined ? updateData.frais_packaging : order.frais_packaging) || 0;
+      const parcelPrice = parseFloat(updateData.parcel_price !== undefined ? updateData.parcel_price : order.parcel_price) || 0;
+      
+      updateData.profit = parcelPrice - (total + delivery + packaging);
+
+      if (Object.keys(updateData).length === 0) {
+        onBack();
+        return;
+      }
+
+      await onSubmit(order.id, updateData);
+      onBack();
+      
+    } catch (error) {
+      console.error("Update failed:", error);
+      setUpdateError(
+        error?.message || 
+        "Erreur lors de la mise à jour. Veuillez réessayer."
+      );
+    } finally {
+      setUpdateLoading(false);
+    }
+  };
+
+  if (!order) return null;
+
+  return (
+    <div className="update-order-page">
+      <div className="page-header">
+        <button onClick={onBack} className="btn-back">
+          <ArrowLeft size={20} />
+          Retour à la liste
+        </button>
+        <h2>Modifier la commande #{order.parcel_code}</h2>
+      </div>
+
+      <div className="page-content">
+        {updateError && (
+          <div className="form-error">
+            <span className="error-icon">⚠️</span>
+            {updateError}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="order-form">
+          <div className="form-section">
+            <h3>Informations générales</h3>
+            <div className="form-row">
+              <div className="form-group">
+                <label>Client</label>
+                <input
+                  type="text"
+                  name="parcel_receiver"
+                  value={formData.parcel_receiver}
+                  onChange={handleInputChange}
+                  placeholder="Nom du client"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Téléphone</label>
+                <input
+                  type="text"
+                  name="parcel_phone"
+                  value={formData.parcel_phone}
+                  onChange={handleInputChange}
+                  placeholder="Numéro de téléphone"
+                />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label>Statut</label>
+                <select
+                  name="statut"
+                  value={formData.statut}
+                  onChange={handleInputChange}
+                  className="statut-select"
+                >
+                  <option value="NEW_PARCEL">Nouveau colis</option>
+                  <option value="PARCEL_CONFIRMED">Colis confirmé</option>
+                  <option value="PICKED_UP">Ramassé</option>
+                  <option value="DISTRIBUTION">En distribution</option>
+                  <option value="IN_PROGRESS">En cours</option>
+                  <option value="SENT">Expédié</option>
+                  <option value="DELIVERED">Livré</option>
+                  <option value="RETURNED">Retourné</option>
+                  <option value="CANCELLED">Annulé</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Quantité totale</label>
+                <div className="input-with-icon">
+                  <Layers size={16} className="input-icon" />
+                  <input
+                    type="number"
+                    name="parcel_prd_qty"
+                    value={formData.parcel_prd_qty}
+                    onChange={handleInputChange}
+                    placeholder="Quantité"
+                    min="0"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="form-section">
+            <h3>Adresse de livraison</h3>
+            <div className="form-row">
+              <div className="form-group full-width">
+                <label>Ville</label>
+                <CityAutocomplete
+                  value={formData.parcel_city}
+                  onChange={(value) => setFormData(prev => ({ ...prev, parcel_city: value }))}
+                  onSelect={handleCitySelect}
+                />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group full-width">
+                <label>Adresse</label>
+                <input
+                  type="text"
+                  name="parcel_address"
+                  value={formData.parcel_address}
+                  onChange={handleInputChange}
+                  placeholder="Adresse"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="form-section">
+            <h3>Prix et note</h3>
+            <div className="form-row">
+              <div className="form-group">
+                <label>Prix colis (MAD)</label>
+                <div className="input-with-icon price-input">
+                  <DollarSign size={16} className="input-icon" />
+                  <input
+                    type="number"
+                    name="parcel_price"
+                    value={formData.parcel_price || ''}
+                    onChange={handleInputChange}
+                    placeholder="0.00"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+                <small className="field-hint">
+                  Ce prix sera envoyé à Welivexpress comme montant à collecter
+                </small>
+              </div>
+            </div>
+
+            <div className="form-group full-width">
+              <label>Note</label>
+              <textarea
+                name="parcel_note"
+                value={formData.parcel_note}
+                onChange={handleInputChange}
+                placeholder="Notes ou instructions spéciales"
+                rows="3"
+              />
+            </div>
+
+            <div className="form-checkbox">
+              <input
+                type="checkbox"
+                id="parcel_open"
+                name="parcel_open"
+                checked={formData.parcel_open === 1}
+                onChange={handleInputChange}
+              />
+              <label htmlFor="parcel_open">Colis ouvert / vérifié</label>
+            </div>
+          </div>
+
+          {/* Display price info for Welivexpress */}
+          <div className="price-info-warning">
+            <Info size={16} />
+            <span>
+              <strong>Important:</strong> Le prix colis de <strong>{formData.parcel_price} MAD</strong> sera envoyé à Welivexpress lors des mises à jour.
+            </span>
+          </div>
+
+          <div className="form-actions">
+            <button 
+              type="button" 
+              onClick={onBack}
+              className="btn-secondary"
+              disabled={updateLoading}
+            >
+              Annuler
+            </button>
+            <button 
+              type="submit"
+              className="btn-primary"
+              disabled={updateLoading}
+            >
+              {updateLoading ? (
+                <>
+                  <span className="spinner-small"></span>
+                  Mise à jour...
+                </>
+              ) : (
+                <>
+                  <Save size={16} />
+                  Enregistrer
+                </>
+              )}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
@@ -1321,6 +2120,10 @@ export default function AdminOrders() {
   const dispatch = useDispatch();
   const { list: orderList = [], loading } = useSelector((state) => state.commandes);
   
+  // Page view states
+  const [currentView, setCurrentView] = useState('list'); // 'list', 'add', 'edit', 'details'
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  
   // Search and filter states
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -1331,77 +2134,19 @@ export default function AdminOrders() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(20);
   
-  // Modal states
-  const [showUpdateModal, setShowUpdateModal] = useState(false);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState(null);
-  const [updateLoading, setUpdateLoading] = useState(false);
-  const [addLoading, setAddLoading] = useState(false);
-  const [updateError, setUpdateError] = useState(null);
-  const [addError, setAddError] = useState(null);
-  
   // Prompt states
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState(null);
   const [showCopyNotification, setShowCopyNotification] = useState(false);
   const [copyMessage, setCopyMessage] = useState("");
   
-  // Tracking info for all orders - OPTIMIZED: Single object to store all tracking data
+  // Tracking info for all orders
   const [trackingInfoMap, setTrackingInfoMap] = useState({});
   const [loadingTracking, setLoadingTracking] = useState(false);
   
-  // Use ref to track if initial fetch has been done (prevents multiple fetches)
+  // Use ref to track if initial fetch has been done
   const initialFetchDone = useRef(false);
   const fetchInProgress = useRef(false);
-  
-  // Track if total was manually edited
-  const [totalManuallyEdited, setTotalManuallyEdited] = useState(false);
-  
-  // Track if price was manually edited for Welivexpress
-  const [priceManuallyEdited, setPriceManuallyEdited] = useState(false);
-  
-  // Form state for update
-  const [formData, setFormData] = useState({
-    parcel_receiver: "",
-    parcel_phone: "",
-    parcel_prd_qty: "",
-    parcel_city: "",
-    parcel_address: "",
-    parcel_price: "",
-    parcel_note: "",
-    parcel_open: 0,
-    statut: "new"
-  });
-
-  // Form state for new order - FIXED: Initial values for frais_livraison = 35, no zeros for inputs
-  const [newOrderData, setNewOrderData] = useState({
-    parcel_code: "",
-    parcel_receiver: "",
-    parcel_phone: "",
-    parcel_prd_qty: 0,
-    parcel_city: "",
-    parcel_address: "",
-    parcel_price: null, // Start with null instead of 0
-    frais_livraison: 35, // Default to 35 MAD
-    frais_packaging: null, // Start with null instead of 0
-    total: null, // Start with null instead of 0
-    profit: null, // Start with null instead of 0
-    parcel_note: "",
-    parcel_open: 0,
-    livres: [],
-    statut: "NEW_PARCEL",
-    date: new Date().toISOString().split('T')[0]
-  });
-
-  const copyTrackingLink = (parcelCode) => {
-    const link = `${window.location.origin}/track/${parcelCode}`;
-    navigator.clipboard.writeText(link).then(() => {
-      setCopyMessage(`Lien de suivi copié : ${link}`);
-      setShowCopyNotification(true);
-      setTimeout(() => setShowCopyNotification(false), 3000);
-    });
-  };
 
   // Initial fetch of orders
   useEffect(() => {
@@ -1439,7 +2184,7 @@ export default function AdminOrders() {
                 }
               ).catch(err => {
                 console.error(`Error fetching tracking for ${order.parcel_code}:`, err);
-                return null; // Return null for failed requests
+                return null;
               })
             );
             validOrders.push(order);
@@ -1453,7 +2198,7 @@ export default function AdminOrders() {
           return;
         }
 
-        // Execute all promises in parallel (SINGLE REFRESH)
+        // Execute all promises in parallel
         const results = await Promise.all(trackingPromises);
         
         const newTrackingMap = {};
@@ -1519,7 +2264,7 @@ export default function AdminOrders() {
                     statut_display: displayStatus,
                     payment_status: paymentStatus,
                     payment_status_text: paymentStatusText,
-                    profit: profit // Update profit with correct calculation
+                    profit: profit
                   }))
                 );
               }
@@ -1545,88 +2290,21 @@ export default function AdminOrders() {
     };
 
     fetchAllTrackingInfo();
-  }, [orderList, dispatch]); // Removed trackingFetched from dependencies, using ref instead
+  }, [orderList, dispatch]);
 
   // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, statusFilter]);
 
-  // Update form data when selected order changes
-  useEffect(() => {
-    if (selectedOrder) {
-      setFormData({
-        parcel_receiver: selectedOrder.parcel_receiver || "",
-        parcel_phone: selectedOrder.parcel_phone || "",
-        parcel_prd_qty: selectedOrder.parcel_prd_qty || 0,
-        parcel_city: selectedOrder.parcel_city || "",
-        parcel_address: selectedOrder.parcel_address || "",
-        parcel_price: selectedOrder.parcel_price || "",
-        parcel_note: selectedOrder.parcel_note || "",
-        parcel_open: selectedOrder.parcel_open || 0,
-        statut: selectedOrder.statut || ""
-      });
-    }
-  }, [selectedOrder]);
-
-  // Reset manual edit flags when books change
-  useEffect(() => {
-    setTotalManuallyEdited(false);
-    setPriceManuallyEdited(false);
-  }, [newOrderData.livres]);
-
-  // Calculate books subtotal, total, and parcel_price with RETURNED status logic - FIXED PROFIT CALCULATION
-  useEffect(() => {
-    const booksSubtotal = (newOrderData.livres || []).reduce(
-      (sum, book) => sum + (book.prix_achat * book.quantity), 0
-    );
-    
-    const delivery = parseFloat(newOrderData.frais_livraison) || 0;
-    const packaging = parseFloat(newOrderData.frais_packaging) || 0;
-    
-    let total;
-    if (!totalManuallyEdited || newOrderData.livres.length === 0) {
-      total = booksSubtotal;
-    } else {
-      total = parseFloat(newOrderData.total) || 0;
-    }
-    
-    // Calculate parcel price - if manually edited, use that value, otherwise calculate
-    let parcelPrice;
-    if (priceManuallyEdited) {
-      parcelPrice = parseFloat(newOrderData.parcel_price) || 0;
-    } else {
-      parcelPrice = total + delivery + packaging;
-    }
-    
-    // FIXED: Calculate profit based on parcel_price - (total + delivery + packaging)
-    let profit = parcelPrice - (total + delivery + packaging);
-    
-    setNewOrderData(prev => {
-      // Only update if values have changed
-      const updates = {};
-      if (prev.total !== total) updates.total = total;
-      if (prev.parcel_price !== parcelPrice) updates.parcel_price = parcelPrice;
-      if (prev.profit !== profit) updates.profit = profit;
-      
-      if (Object.keys(updates).length === 0) {
-        return prev;
-      }
-      
-      return {
-        ...prev,
-        ...updates
-      };
+  const copyTrackingLink = (parcelCode) => {
+    const link = `${window.location.origin}/track/${parcelCode}`;
+    navigator.clipboard.writeText(link).then(() => {
+      setCopyMessage(`Lien de suivi copié : ${link}`);
+      setShowCopyNotification(true);
+      setTimeout(() => setShowCopyNotification(false), 3000);
     });
-  }, [
-    newOrderData.livres, 
-    newOrderData.frais_livraison, 
-    newOrderData.frais_packaging,
-    newOrderData.total,
-    newOrderData.parcel_price,
-    totalManuallyEdited,
-    priceManuallyEdited
-  ]);
+  };
 
   const handleDelete = (order) => {
     setOrderToDelete(order);
@@ -1641,298 +2319,33 @@ export default function AdminOrders() {
     }
   };
 
-  const markDelivered = (id) => {
-    if (window.confirm("Marquer cette commande comme livrée ?")) {
-      dispatch(markCommandeAsDelivered(id));
-    }
-  };
-
-  const openDetailsModal = (order) => {
+  const handleViewDetails = (order) => {
     setSelectedOrder(order);
-    setShowDetailsModal(true);
+    setCurrentView('details');
   };
 
-  const closeDetailsModal = () => {
-    setShowDetailsModal(false);
+  const handleEdit = (order) => {
+    setSelectedOrder(order);
+    setCurrentView('edit');
+  };
+
+  const handleAdd = () => {
+    setCurrentView('add');
+  };
+
+  const handleBackToList = () => {
+    setCurrentView('list');
     setSelectedOrder(null);
   };
 
-  const openUpdateModal = (order) => {
-    setSelectedOrder(order);
-    setUpdateError(null);
-    setShowUpdateModal(true);
+  const handleUpdateSubmit = async (id, updateData) => {
+    await dispatch(updateCommande({ id, ...updateData })).unwrap();
+    await dispatch(fetchCommandes());
   };
 
-  const closeUpdateModal = () => {
-    setShowUpdateModal(false);
-    setSelectedOrder(null);
-    setFormData({
-      parcel_receiver: "",
-      parcel_phone: "",
-      parcel_prd_qty: 0,
-      parcel_city: "",
-      parcel_address: "",
-      parcel_price: "",
-      parcel_note: "",
-      parcel_open: 0,
-      statut: ""
-    });
-    setUpdateError(null);
-  };
-
-  const openAddModal = () => {
-    const newParcelCode = `CMD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-    setNewOrderData({
-      parcel_code: newParcelCode,
-      parcel_receiver: "",
-      parcel_phone: "",
-      parcel_prd_qty: 0,
-      parcel_city: "",
-      parcel_address: "",
-      parcel_price: null, // Start with null
-      frais_livraison: 35, // Default to 35 MAD
-      frais_packaging: null, // Start with null
-      total: null, // Start with null
-      profit: null, // Start with null
-      parcel_note: "",
-      parcel_open: 0,
-      livres: [],
-      statut: "NEW_PARCEL",
-      date: new Date().toISOString().split('T')[0]
-    });
-    setTotalManuallyEdited(false);
-    setPriceManuallyEdited(false);
-    setAddError(null);
-    setShowAddModal(true);
-  };
-
-  const closeAddModal = () => {
-    setShowAddModal(false);
-    setNewOrderData({
-      parcel_code: "",
-      parcel_receiver: "",
-      parcel_phone: "",
-      parcel_prd_qty: 0,
-      parcel_city: "",
-      parcel_address: "",
-      parcel_price: null,
-      frais_livraison: 35,
-      frais_packaging: null,
-      total: null,
-      profit: null,
-      parcel_note: "",
-      parcel_open: 0,
-      livres: [],
-      statut: "NEW_PARCEL",
-      date: new Date().toISOString().split('T')[0]
-    });
-    setTotalManuallyEdited(false);
-    setPriceManuallyEdited(false);
-    setAddError(null);
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? (checked ? 1 : 0) : value
-    }));
-  };
-
-  const handleNewOrderChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    
-    // Track manual edits
-    if (name === 'total') {
-      setTotalManuallyEdited(true);
-    }
-    if (name === 'parcel_price') {
-      setPriceManuallyEdited(true);
-    }
-    
-    setNewOrderData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? (checked ? 1 : 0) : 
-               (name === 'parcel_price' || name === 'total' || name === 'frais_livraison' || name === 'frais_packaging') ? 
-               (value === '' ? null : parseFloat(value)) : value
-    }));
-  };
-
-  const handleBooksChange = (books) => {
-    setNewOrderData(prev => ({
-      ...prev,
-      livres: books
-    }));
-  };
-
-  const handleTotalQuantityChange = (qty) => {
-    setNewOrderData(prev => ({
-      ...prev,
-      parcel_prd_qty: qty
-    }));
-  };
-
-  const handleCitySelect = (city, cityId) => {
-    setFormData(prev => ({
-      ...prev,
-      parcel_city: city
-    }));
-  };
-
-  const handleNewCitySelect = (city, cityId) => {
-    setNewOrderData(prev => ({
-      ...prev,
-      parcel_city: city
-    }));
-  };
-
-  const handleUpdateSubmit = async (e) => {
-    e.preventDefault();
-    if (!selectedOrder) return;
-
-    setUpdateLoading(true);
-    setUpdateError(null);
-
-    try {
-      const updateData = {};
-      Object.keys(formData).forEach(key => {
-        if (formData[key] !== selectedOrder[key] && formData[key] !== "") {
-          updateData[key] = formData[key];
-        }
-      });
-
-      if (formData.statut !== selectedOrder.statut) {
-        updateData.statut = formData.statut;
-      }
-
-      // FIXED: Recalculate profit based on updated data
-      const total = selectedOrder.total || 0;
-      const delivery = parseFloat(updateData.frais_livraison !== undefined ? updateData.frais_livraison : selectedOrder.frais_livraison) || 0;
-      const packaging = parseFloat(updateData.frais_packaging !== undefined ? updateData.frais_packaging : selectedOrder.frais_packaging) || 0;
-      const parcelPrice = parseFloat(updateData.parcel_price !== undefined ? updateData.parcel_price : selectedOrder.parcel_price) || 0;
-      
-      updateData.profit = parcelPrice - (total + delivery + packaging);
-
-      if (Object.keys(updateData).length === 0) {
-        closeUpdateModal();
-        return;
-      }
-
-      const result = await dispatch(updateCommande({ 
-        id: selectedOrder.id, 
-        ...updateData 
-      })).unwrap();
-
-      await dispatch(fetchCommandes());
-      closeUpdateModal();
-      
-    } catch (error) {
-      console.error("Update failed:", error);
-      setUpdateError(
-        error?.message || 
-        "Erreur lors de la mise à jour. Veuillez réessayer."
-      );
-    } finally {
-      setUpdateLoading(false);
-    }
-  };
-
-  const handleAddSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!newOrderData.parcel_receiver || !newOrderData.parcel_city) {
-        setAddError("Veuillez remplir tous les champs obligatoires (client, ville)");
-        return;
-    }
-
-    if (newOrderData.livres.length === 0) {
-        setAddError("Veuillez sélectionner au moins un livre");
-        return;
-    }
-
-    const delivery = parseFloat(newOrderData.frais_livraison) || 35; // Default to 35 if empty
-    const packaging = parseFloat(newOrderData.frais_packaging) || 0;
-    const total = parseFloat(newOrderData.total) || 0;
-    
-    // Use manually edited price if set, otherwise calculate
-    const parcelPrice = priceManuallyEdited ? 
-      (parseFloat(newOrderData.parcel_price) || total + delivery + packaging) : 
-      (total + delivery + packaging);
-    
-    // FIXED: Calculate profit based on parcel_price - (total + delivery + packaging)
-    let profit = parcelPrice - (total + delivery + packaging);
-
-    const formattedLivres = newOrderData.livres.map(book => ({
-        id: book.id,
-        titre: book.titre,
-        auteur: book.auteur || '',
-        quantity: parseInt(book.quantity),
-        price: parseFloat(book.prix_achat),
-        total: parseFloat(book.prix_achat) * parseInt(book.quantity)
-    }));
-
-    const orderToCreate = {
-        parcel_code: newOrderData.parcel_code,
-        parcel_receiver: newOrderData.parcel_receiver,
-        parcel_phone: newOrderData.parcel_phone || "",
-        parcel_prd_qty: newOrderData.parcel_prd_qty,
-        parcel_city: newOrderData.parcel_city,
-        parcel_address: newOrderData.parcel_address || "",
-        parcel_price: parseFloat(parcelPrice.toFixed(2)),
-        frais_livraison: parseFloat(delivery.toFixed(2)),
-        frais_packaging: parseFloat(packaging.toFixed(2)),
-        total: parseFloat(total.toFixed(2)),
-        profit: parseFloat(profit.toFixed(2)),
-        parcel_note: newOrderData.parcel_note || "",
-        parcel_open: newOrderData.parcel_open ? 1 : 0,
-        livres: formattedLivres,
-        date: newOrderData.date,
-        statut: newOrderData.statut || "NEW_PARCEL"
-    };
-
-    console.log("📦 Order to create:", orderToCreate);
-    console.log("💰 Price sent to Welivexpress:", orderToCreate.parcel_price, "MAD");
-    console.log("📊 Profit calculation:", {
-      parcelPrice,
-      total,
-      delivery,
-      packaging,
-      profit: orderToCreate.profit
-    });
-
-    setAddLoading(true);
-    setAddError(null);
-
-    try {
-        const result = await dispatch(createCommande(orderToCreate)).unwrap();
-        console.log("✅ Create successful:", result);
-        
-        // Send webhook with the created order data
-        const webhookPayload = {
-          event: 'order_created',
-          parcel: {
-            code: orderToCreate.parcel_code,
-            price: orderToCreate.parcel_price,
-            receiver: orderToCreate.parcel_receiver,
-            city: orderToCreate.parcel_city,
-            address: orderToCreate.parcel_address,
-            total_books: orderToCreate.parcel_prd_qty,
-            status: orderToCreate.statut
-          }
-        };
-        await sendWebhookUpdate(webhookPayload);
-        
-        await dispatch(fetchCommandes());
-        closeAddModal();
-    } catch (error) {
-        console.error("❌ Create failed:", error);
-        setAddError(
-            error?.message || 
-            "Erreur lors de la création de la commande. Veuillez réessayer."
-        );
-    } finally {
-        setAddLoading(false);
-    }
+  const handleCreateSubmit = async (orderToCreate) => {
+    await dispatch(createCommande(orderToCreate)).unwrap();
+    await dispatch(fetchCommandes());
   };
 
   const filteredOrders = useMemo(() => {
@@ -1961,7 +2374,7 @@ export default function AdminOrders() {
 
   const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
 
-  // Get unique statuses from orders for filter dropdown (with French translations)
+  // Get unique statuses from orders for filter dropdown
   const uniqueStatuses = useMemo(() => {
     const statuses = new Set();
     orderList.forEach(order => {
@@ -1975,7 +2388,7 @@ export default function AdminOrders() {
     return Array.from(statuses).sort();
   }, [orderList]);
 
-  // Calculate stats dynamically from orderList (with French translations for display)
+  // Calculate stats dynamically from orderList
   const stats = useMemo(() => {
     const statsMap = {};
     orderList.forEach(order => {
@@ -2090,6 +2503,84 @@ export default function AdminOrders() {
     return <div className="admin-loading">Chargement des commandes...</div>;
   }
 
+  // Render the appropriate view
+  if (currentView === 'details' && selectedOrder) {
+    return (
+      <div className="admin-orders">
+        <DeleteConfirmationModal 
+          isOpen={showDeleteConfirm}
+          onClose={() => {
+            setShowDeleteConfirm(false);
+            setOrderToDelete(null);
+          }}
+          onConfirm={confirmDelete}
+          orderCode={orderToDelete?.parcel_code}
+        />
+        <CopyNotification 
+          message={copyMessage}
+          isVisible={showCopyNotification}
+          onClose={() => setShowCopyNotification(false)}
+        />
+        <OrderDetailsPage 
+          order={selectedOrder} 
+          onBack={handleBackToList} 
+        />
+      </div>
+    );
+  }
+
+  if (currentView === 'edit' && selectedOrder) {
+    return (
+      <div className="admin-orders">
+        <DeleteConfirmationModal 
+          isOpen={showDeleteConfirm}
+          onClose={() => {
+            setShowDeleteConfirm(false);
+            setOrderToDelete(null);
+          }}
+          onConfirm={confirmDelete}
+          orderCode={orderToDelete?.parcel_code}
+        />
+        <CopyNotification 
+          message={copyMessage}
+          isVisible={showCopyNotification}
+          onClose={() => setShowCopyNotification(false)}
+        />
+        <UpdateOrderPage 
+          order={selectedOrder} 
+          onBack={handleBackToList} 
+          onSubmit={handleUpdateSubmit}
+        />
+      </div>
+    );
+  }
+
+  if (currentView === 'add') {
+    return (
+      <div className="admin-orders">
+        <DeleteConfirmationModal 
+          isOpen={showDeleteConfirm}
+          onClose={() => {
+            setShowDeleteConfirm(false);
+            setOrderToDelete(null);
+          }}
+          onConfirm={confirmDelete}
+          orderCode={orderToDelete?.parcel_code}
+        />
+        <CopyNotification 
+          message={copyMessage}
+          isVisible={showCopyNotification}
+          onClose={() => setShowCopyNotification(false)}
+        />
+        <AddOrderPage 
+          onBack={handleBackToList} 
+          onSubmit={handleCreateSubmit}
+        />
+      </div>
+    );
+  }
+
+  // Default: List view
   return (
     <div className="admin-orders">
       {/* Delete Confirmation Modal */}
@@ -2130,7 +2621,7 @@ export default function AdminOrders() {
             <Bell size={20} />
             Webhook
           </button>
-          <button onClick={openAddModal} className="btn-add-order">
+          <button onClick={handleAdd} className="btn-add-order">
             <Plus size={20} />
             Nouvelle commande
           </button>
@@ -2146,7 +2637,7 @@ export default function AdminOrders() {
         </div>
       )}
 
-      {/* Stats Cards - Dynamic from API with French translations */}
+      {/* Stats Cards */}
       <div className="orders-stats-grid">
         <div className="order-stat-card total">
           <div className="order-stat-content">
@@ -2331,14 +2822,14 @@ export default function AdminOrders() {
                       <td>
                         <div className="action-buttons">
                           <button
-                            onClick={() => openDetailsModal(order)}
+                            onClick={() => handleViewDetails(order)}
                             className="btn-icon view"
                             title="Voir détails avec suivi en temps réel"
                           >
                             <Eye size={16} />
                           </button>
                           <button
-                            onClick={() => openUpdateModal(order)}
+                            onClick={() => handleEdit(order)}
                             className="btn-icon edit"
                             title="Modifier la commande"
                           >
@@ -2369,487 +2860,6 @@ export default function AdminOrders() {
           
           <Pagination />
         </>
-      )}
-
-      {/* Details Modal */}
-      {showDetailsModal && (
-        <OrderDetailsModal 
-          order={selectedOrder} 
-          onClose={closeDetailsModal} 
-        />
-      )}
-
-      {/* ADD MODAL - FIXED: frais_livraison default 35, total livres readonly, no zeros */}
-      {showAddModal && (
-        <div className="modal-overlay" onClick={closeAddModal}>
-          <div className="modal-content1 add-order-modal" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Nouvelle commande</h3>
-              <button onClick={closeAddModal} className="modal-close">
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="modal-body">
-              {addError && (
-                <div className="modal-error">
-                  <span className="error-icon">⚠️</span>
-                  {addError}
-                </div>
-              )}
-
-              <form onSubmit={handleAddSubmit} className="compact-form">
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Code colis</label>
-                    <input
-                      type="text"
-                      name="parcel_code"
-                      value={newOrderData.parcel_code}
-                      onChange={handleNewOrderChange}
-                      readOnly
-                      className="readonly-input"
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label>Date</label>
-                    <input
-                      type="date"
-                      name="date"
-                      value={newOrderData.date}
-                      onChange={handleNewOrderChange}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Client <span className="required">*</span></label>
-                    <input
-                      type="text"
-                      name="parcel_receiver"
-                      value={newOrderData.parcel_receiver}
-                      onChange={handleNewOrderChange}
-                      placeholder="Nom du client"
-                      required
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label>Téléphone</label>
-                    <input
-                      type="text"
-                      name="parcel_phone"
-                      value={newOrderData.parcel_phone}
-                      onChange={handleNewOrderChange}
-                      placeholder="Numéro de téléphone"
-                    />
-                  </div>
-                </div>
-
-                <div className="form-row">
-                
-
-                  <div className="form-group">
-                    <label>Quantité totale <span className="required">*</span></label>
-                    <div className="input-with-icon">
-                      <Layers size={16} className="input-icon" />
-                      <input
-                        type="number"
-                        name="parcel_prd_qty"
-                        value={newOrderData.parcel_prd_qty}
-                        onChange={handleNewOrderChange}
-                        placeholder="Quantité totale"
-                        min="1"
-                        required
-                      />
-                    </div>
-                    <small className="field-hint">
-                      Sera automatiquement calculée à partir des livres sélectionnés
-                    </small>
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group full-width">
-                    <label>Ville <span className="required">*</span></label>
-                    <CityAutocomplete
-                      value={newOrderData.parcel_city}
-                      onChange={(value) => setNewOrderData(prev => ({ ...prev, parcel_city: value }))}
-                      onSelect={handleNewCitySelect}
-                    />
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group full-width">
-                    <label>Adresse</label>
-                    <input
-                      type="text"
-                      name="parcel_address"
-                      value={newOrderData.parcel_address}
-                      onChange={handleNewOrderChange}
-                      placeholder="Adresse complète"
-                    />
-                  </div>
-                </div>
-
-                <div className="form-group full-width">
-                  <label>Livres commandés <span className="required">*</span></label>
-                  <BookSelector 
-                    selectedBooks={newOrderData.livres}
-                    onBooksChange={handleBooksChange}
-                    onTotalQuantityChange={handleTotalQuantityChange}
-                  />
-                  <small className="field-hint">
-                    La sélection des livres mettra automatiquement à jour la quantité totale
-                  </small>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Frais livraison (MAD)</label>
-                    <input
-                      type="number"
-                      name="frais_livraison"
-                      value={newOrderData.frais_livraison === null ? '' : newOrderData.frais_livraison}
-                      onChange={handleNewOrderChange}
-                      placeholder="35"
-                      min="0"
-                      step="0.01"
-                    />
-                    <small className="field-hint">Valeur par défaut: 35 MAD</small>
-                  </div>
-
-                  <div className="form-group">
-                    <label>Frais packaging (MAD)</label>
-                    <input
-                      type="number"
-                      name="frais_packaging"
-                      value={newOrderData.frais_packaging === null ? '' : newOrderData.frais_packaging}
-                      onChange={handleNewOrderChange}
-                      placeholder="0"
-                      min="0"
-                      step="0.01"
-                    />
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Total livres (MAD)</label>
-                    <input
-                      type="number"
-                      name="total"
-                      value={newOrderData.total === null ? '' : newOrderData.total}
-                      readOnly // FIXED: Make total livres readonly
-                      className="readonly-input"
-                      placeholder="Calculé automatiquement"
-                    />
-                    <small className="field-hint">
-                      Calculé automatiquement à partir des livres sélectionnés
-                    </small>
-                  </div>
-
-                  <div className="form-group">
-                    <label>Prix colis (MAD) <span className="required">*</span></label>
-                    <div className="input-with-icon price-input">
-                      <DollarSign size={16} className="input-icon" />
-                      <input
-                        type="number"
-                        name="parcel_price"
-                        value={newOrderData.parcel_price === null ? '' : newOrderData.parcel_price}
-                        onChange={handleNewOrderChange}
-                        placeholder="Calculé automatiquement"
-                        min="0"
-                        step="0.01"
-                        className={priceManuallyEdited ? "manual-edit-input" : ""}
-                      />
-                      {priceManuallyEdited && (
-                        <span className="manual-edit-badge">Édité</span>
-                      )}
-                    </div>
-                    <small className="field-hint">
-                      {priceManuallyEdited 
-                        ? "Prix modifié manuellement (envoyé à Welivexpress)" 
-                        : "Prix calculé automatiquement (total + frais)"}
-                    </small>
-                  </div>
-
-                  <div className="form-group">
-                    <label>Profit (MAD)</label>
-                    <input
-                      type="number"
-                      name="profit"
-                      value={newOrderData.profit === null ? '' : newOrderData.profit}
-                      readOnly
-                      className={`readonly-input ${newOrderData.profit < 0 ? 'negative' : ''}`}
-                      placeholder="Calculé automatiquement"
-                    />
-                    <small className="field-hint">
-                      Profit = Prix colis - (Total livres + Frais)
-                    </small>
-                  </div>
-                </div>
-
-                <div className="form-group full-width">
-                  <label>Note supplémentaire</label>
-                  <textarea
-                    name="parcel_note"
-                    value={newOrderData.parcel_note}
-                    onChange={handleNewOrderChange}
-                    placeholder="Instructions spéciales pour la livraison (sera envoyée à Welivexpress)"
-                    rows="2"
-                  />
-                  <small className="field-hint">
-                    Cette note sera envoyée à Welivexpress sans les détails des livres
-                  </small>
-                </div>
-
-                <div className="form-checkbox">
-                  <input
-                    type="checkbox"
-                    id="parcel_open"
-                    name="parcel_open"
-                    checked={newOrderData.parcel_open === 1}
-                    onChange={handleNewOrderChange}
-                  />
-                  <label htmlFor="parcel_open">Colis ouvert / vérifié</label>
-                </div>
-
-                {/* Display price info for Welivexpress */}
-                <div className="price-info-warning">
-                  <Info size={16} />
-                  <span>
-                    <strong>Important:</strong> Le prix colis de <strong>{newOrderData.parcel_price || 'calculé automatiquement'} MAD</strong> sera envoyé à Welivexpress comme montant à collecter.
-                    {priceManuallyEdited ? " (Prix modifié manuellement)" : " (Prix calculé automatiquement)"}
-                  </span>
-                </div>
-              </form>
-            </div>
-
-            <div className="modal-footer">
-              <button 
-                type="button" 
-                onClick={closeAddModal}
-                className="btn-secondary"
-                disabled={addLoading}
-              >
-                Annuler
-              </button>
-              <button 
-                type="submit"
-                onClick={handleAddSubmit}
-                className="btn-primary"
-                disabled={addLoading}
-              >
-                {addLoading ? (
-                  <>
-                    <span className="spinner-small"></span>
-                    Création...
-                  </>
-                ) : (
-                  <>
-                    <Save size={16} />
-                    Créer la commande
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* UPDATE MODAL */}
-      {showUpdateModal && selectedOrder && (
-        <div className="modal-overlay" onClick={closeUpdateModal}>
-          <div className="modal-content1 update-order-modal" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Modifier la commande #{selectedOrder.parcel_code}</h3>
-              <button onClick={closeUpdateModal} className="modal-close">
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="modal-body">
-              {updateError && (
-                <div className="modal-error">
-                  <span className="error-icon">⚠️</span>
-                  {updateError}
-                </div>
-              )}
-
-              <form onSubmit={handleUpdateSubmit} className="compact-form">
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Client</label>
-                    <input
-                      type="text"
-                      name="parcel_receiver"
-                      value={formData.parcel_receiver}
-                      onChange={handleInputChange}
-                      placeholder="Nom du client"
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label>Téléphone</label>
-                    <input
-                      type="text"
-                      name="parcel_phone"
-                      value={formData.parcel_phone}
-                      onChange={handleInputChange}
-                      placeholder="Numéro de téléphone"
-                    />
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Statut</label>
-                    <select
-                      name="statut"
-                      value={formData.statut}
-                      onChange={handleInputChange}
-                      className="statut-select"
-                    >
-                      <option value="NEW_PARCEL">Nouveau colis</option>
-                      <option value="PARCEL_CONFIRMED">Colis confirmé</option>
-                      <option value="PICKED_UP">Ramassé</option>
-                      <option value="DISTRIBUTION">En distribution</option>
-                      <option value="IN_PROGRESS">En cours</option>
-                      <option value="SENT">Expédié</option>
-                      <option value="DELIVERED">Livré</option>
-                      <option value="RETURNED">Retourné</option>
-                      <option value="CANCELLED">Annulé</option>
-                    </select>
-                  </div>
-
-                  <div className="form-group">
-                    <label>Quantité totale</label>
-                    <div className="input-with-icon">
-                      <Layers size={16} className="input-icon" />
-                      <input
-                        type="number"
-                        name="parcel_prd_qty"
-                        value={formData.parcel_prd_qty}
-                        onChange={handleInputChange}
-                        placeholder="Quantité"
-                        min="0"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group full-width">
-                    <label>Ville</label>
-                    <CityAutocomplete
-                      value={formData.parcel_city}
-                      onChange={(value) => setFormData(prev => ({ ...prev, parcel_city: value }))}
-                      onSelect={handleCitySelect}
-                    />
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group full-width">
-                    <label>Adresse</label>
-                    <input
-                      type="text"
-                      name="parcel_address"
-                      value={formData.parcel_address}
-                      onChange={handleInputChange}
-                      placeholder="Adresse"
-                    />
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Prix colis (MAD)</label>
-                    <div className="input-with-icon price-input">
-                      <DollarSign size={16} className="input-icon" />
-                      <input
-                        type="number"
-                        name="parcel_price"
-                        value={formData.parcel_price || ''}
-                        onChange={handleInputChange}
-                        placeholder="0.00"
-                        min="0"
-                        step="0.01"
-                      />
-                    </div>
-                    <small className="field-hint">
-                      Ce prix sera envoyé à Welivexpress comme montant à collecter
-                    </small>
-                  </div>
-                </div>
-
-                <div className="form-group full-width">
-                  <label>Note</label>
-                  <textarea
-                    name="parcel_note"
-                    value={formData.parcel_note}
-                    onChange={handleInputChange}
-                    placeholder="Notes ou instructions spéciales"
-                    rows="2"
-                  />
-                </div>
-
-                <div className="form-checkbox">
-                  <input
-                    type="checkbox"
-                    id="parcel_open"
-                    name="parcel_open"
-                    checked={formData.parcel_open === 1}
-                    onChange={handleInputChange}
-                  />
-                  <label htmlFor="parcel_open">Colis ouvert / vérifié</label>
-                </div>
-
-                {/* Display price info for Welivexpress */}
-                <div className="price-info-warning">
-                  <Info size={16} />
-                  <span>
-                    <strong>Important:</strong> Le prix colis de <strong>{formData.parcel_price} MAD</strong> sera envoyé à Welivexpress lors des mises à jour.
-                  </span>
-                </div>
-              </form>
-            </div>
-
-            <div className="modal-footer">
-              <button 
-                type="button" 
-                onClick={closeUpdateModal}
-                className="btn-secondary"
-                disabled={updateLoading}
-              >
-                Annuler
-              </button>
-              <button 
-                type="submit"
-                onClick={handleUpdateSubmit}
-                className="btn-primary"
-                disabled={updateLoading}
-              >
-                {updateLoading ? (
-                  <>
-                    <span className="spinner-small"></span>
-                    Mise à jour...
-                  </>
-                ) : (
-                  <>
-                    <Save size={16} />
-                    Enregistrer
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
       )}
     </div>
   );

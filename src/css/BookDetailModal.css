@@ -31,6 +31,7 @@
 .modal-close {
   position: absolute;
   top: 15px;
+  right: 15px;
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -79,10 +80,11 @@
   transform: scale(1.02);
 }
 
-/* Status Badge - positioned on image */
+/* Status Badge - Same as BookCard - positioned on image */
 .book-detail-cover .status-bad {
   position: absolute;
   top: 15px;
+  right: 15px;
   padding: 6px 14px;
   border-radius: 25px;
   font-size: 11px;
@@ -104,7 +106,7 @@
   background: linear-gradient(135deg, #dc3545, #c82333);
 }
 
-/* Category Badge */
+/* Category Badge - Same as BookCard - in info section */
 .book-detail-info .book-category-badge {
   display: inline-block;
   background: linear-gradient(135deg, #8B4513, #5c0202);
@@ -214,6 +216,8 @@
 
 .btn-icon1 {
   stroke-width: 2;
+}
+.btn-icon1 {
   background: none;
   border: none;
   cursor: pointer;
@@ -226,60 +230,11 @@
   color: #666;
   font-size: 16px;
 }
+@media (max-width: 640px) {
 
-/* Language-based direction support for modal - CRITICAL PART */
-.book-detail-modal[data-language="ar"] {
-  direction: rtl;
-  text-align: right;
-}
-
-.book-detail-modal[data-language="en"] {
-  direction: ltr;
-  text-align: left;
-}
-
-/* Modal close button positioning */
-.book-detail-modal[data-language="ar"] .modal-close {
-  right: 15px;
-  left: auto;
-}
-
-.book-detail-modal[data-language="en"] .modal-close {
-  left: 15px;
-  right: auto;
-}
-
-/* Status badge positioning */
-.book-detail-modal[data-language="ar"] .book-detail-cover .status-bad {
-  right: 15px;
-  left: auto;
-}
-
-.book-detail-modal[data-language="en"] .book-detail-cover .status-bad {
-  left: 15px;
-  right: auto;
-}
-
-/* Button icon positioning */
-.book-detail-modal[data-language="ar"] .btn-add svg {
-  margin-left: 10px;
-  margin-right: 0;
-}
-
-.book-detail-modal[data-language="en"] .btn-add svg {
-  margin-right: 10px;
-  margin-left: 0;
-}
-
-/* Category badge alignment */
-.book-detail-modal[data-language="ar"] .book-category-badge {
-  margin-right: 0;
-  margin-left: auto;
-}
-
-.book-detail-modal[data-language="en"] .book-category-badge {
-  margin-left: 0;
-  margin-right: auto;
+  .btn-icon1 {
+    padding: 6px;
+  }
 }
 
 @keyframes fadeIn {
@@ -296,6 +251,77 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* RTL Support for Arabic text in modal */
+[dir="rtl"] .book-detail-modal,
+.book-detail-modal.rtl,
+.book-detail-modal[data-rtl="true"] {
+  direction: rtl;
+  text-align: right;
+}
+
+[dir="rtl"] .book-detail-info,
+.book-detail-modal.rtl .book-detail-info {
+  text-align: right;
+}
+
+[dir="rtl"] .book-detail-info .book-title,
+.book-detail-modal.rtl .book-detail-info .book-title {
+  text-align: right;
+}
+
+[dir="rtl"] .book-author,
+.book-detail-modal.rtl .book-author {
+  text-align: right;
+}
+
+[dir="rtl"] .book-description,
+.book-detail-modal.rtl .book-description {
+  text-align: right;
+}
+
+[dir="rtl"] .book-description h3,
+.book-detail-modal.rtl .book-description h3 {
+  text-align: right;
+}
+
+[dir="rtl"] .book-description p,
+.book-detail-modal.rtl .book-description p {
+  text-align: right;
+}
+
+[dir="rtl"] .stock-info,
+.book-detail-modal.rtl .stock-info {
+  text-align: right;
+}
+
+[dir="rtl"] .book-detail-footer,
+.book-detail-modal.rtl .book-detail-footer {
+  text-align: right;
+}
+
+[dir="rtl"] .btn-add,
+.book-detail-modal.rtl .btn-add {
+  flex-direction: row;
+}
+
+[dir="rtl"] .btn-add svg,
+.book-detail-modal.rtl .btn-add svg {
+  margin-left: 0.5rem;
+  margin-right: 0;
+}
+
+[dir="rtl"] .modal-close,
+.book-detail-modal.rtl .modal-close {
+  right: auto;
+  left: 15px;
+}
+
+[dir="rtl"] .book-detail-cover .status-bad,
+.book-detail-modal.rtl .book-detail-cover .status-bad {
+  right: auto;
+  left: 15px;
 }
 
 /* Responsive Design */
@@ -334,28 +360,15 @@
   
   .book-detail-cover .status-bad {
     top: 10px;
+    right: 10px;
     padding: 4px 10px;
     font-size: 10px;
   }
   
-  .book-detail-modal[data-language="ar"] .modal-close {
-    right: 10px;
-    left: auto;
-  }
-  
-  .book-detail-modal[data-language="en"] .modal-close {
-    left: 10px;
+  [dir="rtl"] .book-detail-cover .status-bad,
+  .book-detail-modal.rtl .book-detail-cover .status-bad {
     right: auto;
-  }
-  
-  .book-detail-modal[data-language="ar"] .book-detail-cover .status-bad {
-    right: 10px;
-    left: auto;
-  }
-  
-  .book-detail-modal[data-language="en"] .book-detail-cover .status-bad {
     left: 10px;
-    right: auto;
   }
   
   .book-detail-info {
@@ -402,6 +415,13 @@
     width: 35px;
     height: 35px;
     top: 10px;
+    right: 10px;
+  }
+  
+  [dir="rtl"] .modal-close,
+  .book-detail-modal.rtl .modal-close {
+    right: auto;
+    left: 10px;
   }
 }
 

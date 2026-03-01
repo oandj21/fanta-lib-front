@@ -8,9 +8,6 @@ export default function BookDetailModal({ book, onClose }) {
   const [added, setAdded] = useState(false);
   const [imageError, setImageError] = useState(false);
 
-  // Determine language from book
-  const language = book.langue || 'ar';
-
   const handleAdd = () => {
     const cartItem = {
       id: book.id,
@@ -84,7 +81,7 @@ export default function BookDetailModal({ book, onClose }) {
   return (
     <Portal>
       <div className="modal-overlay" onClick={handleOverlayClick}>
-        <div className="modal-content book-detail-modal" data-language={language}>
+        <div className="modal-content book-detail-modal" data-rtl="true">
           <button className="modal-close" onClick={onClose} aria-label="Close">
             <X size={20} />
           </button>
@@ -93,47 +90,37 @@ export default function BookDetailModal({ book, onClose }) {
             <div className="book-detail-cover">
               <img 
                 src={getImageUrl(book.images)} 
-                alt={book.titre || (language === 'ar' ? "غلاف الكتاب" : "Book Cover")}
+                alt={book.titre || "غلاف الكتاب"}
                 onError={handleImageError}
                 loading="lazy"
               />
-              {/* Status Badge */}
+              {/* Status Badge - Same as BookCard - positioned on image */}
               {book.status && (
                 <span className={`status-bad ${book.status}`}>
-                  {book.status === "available" 
-                    ? (language === 'ar' ? "متوفر" : "Available")
-                    : (language === 'ar' ? "غير متوفر" : "Out of Stock")}
+                  {book.status === "available" ? "متوفر" : "غير متوفر"}
                 </span>
               )}
             </div>
 
             <div className="book-detail-info">
-              <h2 className="book-title">
-                {book.titre || (language === 'ar' ? "عنوان غير معروف" : "Unknown Title")}
-              </h2>
-              <p className="book-author">
-                {language === 'ar' 
-                  ? `بقلم ${book.auteur || "مؤلف غير معروف"}`
-                  : `By ${book.auteur || "Unknown Author"}`}
-              </p>
+              <h2 className="book-title">{book.titre || "عنوان غير معروف"}</h2>
+              <p className="book-author">بقلم {book.auteur || "مؤلف غير معروف"}</p>
               
-              {/* Category Badge */}
+              {/* Category Badge - Same as BookCard - between title and author */}
               <span className="book-category-badge">
-                {book.categorie || (language === 'ar' ? "غير مصنف" : "Uncategorized")}
+                {book.categorie || "غير مصنف"}
               </span>
 
               {book.status === "available" && (
                 <p className="stock-info">
-                  {language === 'ar' ? "📦 متوفر في المخزون" : "📦 In Stock"}
+                  📦 متوفر في المخزون
                 </p>
               )}
 
               <div className="book-description">
-                <h3>{language === 'ar' ? "الوصف" : "Description"}</h3>
+                <h3>الوصف</h3>
                 <p>
-                  {book.description || (language === 'ar' 
-                    ? `اكتشف "${book.titre || 'هذا الكتاب'}" من تأليف ${book.auteur || 'مؤلفنا'}`
-                    : `Discover "${book.titre || 'this book'}" by ${book.auteur || 'our author'}`)}
+                  {book.description || `اكتشف "${book.titre || 'هذا الكتاب'}" من تأليف ${book.auteur || 'مؤلفنا'}`}
                 </p>
               </div>
 
@@ -146,12 +133,12 @@ export default function BookDetailModal({ book, onClose }) {
                   {added ? (
                     <>
                       <Check size={18} className="btn-icon1" />
-                      {language === 'ar' ? "تمت الإضافة إلى السلة!" : "Added to Cart!"}
+                      تمت الإضافة إلى السلة!
                     </>
                   ) : (
                     <>
                       <ShoppingCart size={18} className="btn-icon1" />
-                      {language === 'ar' ? "أضف إلى السلة" : "Add to Cart"}
+                      أضف إلى السلة
                     </>
                   )}
                 </button>

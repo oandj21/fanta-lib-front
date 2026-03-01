@@ -84,51 +84,6 @@
   -ms-user-select: text;
 }
 
-/* Hide details button in carousel */
-.carousel-book-card .book-footer .btn-details {
-  display: none !important;
-}
-
-/* Optional: Adjust the footer to only show the cart button */
-.carousel-book-card .book-footer {
-  justify-content: flex-end;
-}
-
-/* Make the cart button full width if you want */
-.carousel-book-card .btn-cart {
-  width: 100%;
-  border-radius: 6px;
-}
-
-/* Remove hover effects from the card in carousel if desired */
-.carousel-book-card .book-card:hover {
-  transform: translateY(-3px);
-}
-
-/* Language-based direction support for carousel items */
-.carousel-item[data-language="ar"] .book-card {
-  direction: rtl;
-  text-align: right;
-}
-
-.carousel-item[data-language="en"] .book-card {
-  direction: ltr;
-  text-align: left;
-}
-
-/* Gradient positions remain the same for both languages */
-.carousel-gradient-left {
-  left: 0;
-  right: auto;
-  background: linear-gradient(to right, #f8f4f0, transparent);
-}
-
-.carousel-gradient-right {
-  right: 0;
-  left: auto;
-  background: linear-gradient(to left, #f8f4f0, transparent);
-}
-
 @media (max-width: 768px) {
   .carousel-gradient-left,
   .carousel-gradient-right {
@@ -151,16 +106,69 @@
   }
   
   .carousel-item:hover {
-    transform: none;
-  }
-  
-  .carousel-gradient-left,
-  .carousel-gradient-right {
-    width: 30px;
+    transform: none; /* Disable hover transform on mobile */
   }
 }
 
 /* Smooth scrolling when auto-scrolling resumes */
 .carousel-track.resuming {
   transition: transform 0.3s ease-out;
+}
+/* Add to BookCarousel.css - Hide details button in carousel */
+.carousel-book-card .book-footer .btn-details {
+  display: none !important;
+}
+
+/* Optional: Adjust the footer to only show the cart button */
+.carousel-book-card .book-footer {
+  justify-content: flex-end; /* Align cart button to the right */
+}
+
+/* Make the cart button full width if you want */
+.carousel-book-card .btn-cart {
+  width: 100%; /* Make cart button take full width */
+  border-radius: 6px; /* Adjust border radius if needed */
+}
+
+/* Remove hover effects from the card in carousel if desired */
+.carousel-book-card .book-card:hover {
+  transform: translateY(-3px); /* Slightly reduce hover effect */
+}
+/* BookCarousel.css - Add these styles at the end */
+
+/* RTL Support for Arabic text in carousel */
+[dir="rtl"] .carousel-item,
+.carousel-item.rtl,
+.carousel-item[data-rtl="true"] {
+  direction: rtl;
+}
+
+/* The carousel itself should maintain LTR for smooth scrolling */
+[dir="rtl"] .carousel-track-container,
+.carousel-track-container.rtl {
+  direction: ltr;
+}
+
+[dir="rtl"] .carousel-track,
+.carousel-track.rtl {
+  direction: ltr;
+}
+
+[dir="rtl"] .carousel-item .book-card,
+.carousel-item.rtl .book-card {
+  direction: rtl;
+  text-align: right;
+}
+
+/* Adjust gradient positions for RTL */
+[dir="rtl"] .carousel-gradient-left {
+  left: auto;
+  right: 0;
+  background: linear-gradient(to left, #f8f4f0, transparent);
+}
+
+[dir="rtl"] .carousel-gradient-right {
+  right: auto;
+  left: 0;
+  background: linear-gradient(to right, #f8f4f0, transparent);
 }

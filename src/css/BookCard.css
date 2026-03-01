@@ -31,10 +31,11 @@
   transform: scale(1.05);
 }
 
-/* Status Badge */
+/* Status Badge - Now with proper colors */
 .status-bad {
   position: absolute;
   top: 15px;
+  right: 15px;
   padding: 6px 14px;
   border-radius: 25px;
   font-size: 11px;
@@ -56,6 +57,14 @@
   background: linear-gradient(135deg, #dc3545, #c82333);
 }
 
+/* RTL support for status badge */
+[dir="rtl"] .status-bad,
+.book-card.rtl .status-bad,
+.book-card[data-rtl="true"] .status-bad {
+  right: auto;
+  left: 15px;
+}
+
 .book-info {
   padding: 15px;
   flex: 1;
@@ -63,7 +72,7 @@
   flex-direction: column;
 }
 
-/* Category Badge */
+/* Category Badge - Now in the info section between title and author */
 .book-category-badge {
   display: inline-block;
   background: linear-gradient(135deg, #8B4513, #5c0202);
@@ -163,50 +172,6 @@
   opacity: 0.5;
 }
 
-/* Language-based direction support - CRITICAL PART */
-.book-card[data-language="ar"] {
-  direction: rtl;
-  text-align: right;
-}
-
-.book-card[data-language="en"] {
-  direction: ltr;
-  text-align: left;
-}
-
-/* Status badge positioning based on language */
-.book-card[data-language="ar"] .status-bad {
-  right: 15px;
-  left: auto;
-}
-
-.book-card[data-language="en"] .status-bad {
-  left: 15px;
-  right: auto;
-}
-
-/* Button icon positioning based on language */
-.book-card[data-language="ar"] .btn-details svg {
-  margin-left: 6px;
-  margin-right: 0;
-}
-
-.book-card[data-language="en"] .btn-details svg {
-  margin-right: 6px;
-  margin-left: 0;
-}
-
-/* Category badge alignment */
-.book-card[data-language="ar"] .book-category-badge {
-  margin-right: 0;
-  margin-left: auto;
-}
-
-.book-card[data-language="en"] .book-category-badge {
-  margin-left: 0;
-  margin-right: auto;
-}
-
 /* Adjust card sizes for larger screens */
 @media (min-width: 1280px) {
   .book-card {
@@ -259,18 +224,9 @@
   
   .status-bad {
     top: 10px;
+    right: 10px;
     padding: 4px 10px;
     font-size: 10px;
-  }
-  
-  .book-card[data-language="ar"] .status-bad {
-    right: 10px;
-    left: auto;
-  }
-  
-  .book-card[data-language="en"] .status-bad {
-    left: 10px;
-    right: auto;
   }
   
   .book-category-badge {
@@ -278,4 +234,51 @@
     padding: 3px 10px;
     margin: 6px 0;
   }
+  
+  [dir="rtl"] .status-bad,
+  .book-card.rtl .status-bad,
+  .book-card[data-rtl="true"] .status-bad {
+    right: auto;
+    left: 10px;
+  }
+}
+
+/* RTL Support for Arabic text in cards */
+[dir="rtl"] .book-card,
+.book-card.rtl,
+.book-card[data-rtl="true"] {
+  direction: rtl;
+  text-align: right;
+}
+
+[dir="rtl"] .book-title,
+.book-card.rtl .book-title {
+  text-align: right;
+}
+
+[dir="rtl"] .book-author,
+.book-card.rtl .book-author {
+  text-align: right;
+}
+
+[dir="rtl"] .book-footer,
+.book-card.rtl .book-footer {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .btn-details svg,
+.book-card.rtl .btn-details svg {
+  margin-left: 0;
+  margin-right: 0;
+  order: 1;
+}
+
+[dir="rtl"] .btn-details span,
+.book-card.rtl .btn-details span {
+  order: 2;
+}
+
+[dir="rtl"] .btn-details,
+.book-card.rtl .btn-details {
+  flex-direction: row;
 }

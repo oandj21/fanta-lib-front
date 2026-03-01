@@ -945,7 +945,7 @@
 
 .form-group label {
   font-family: 'Lato', sans-serif;
-  font-size: 3rem !important; /* Larger label size */
+  font-size: 1.6rem !important; /* Larger label size */
   font-weight: 700 !important; /* Bolder */
   color: #5c0202;
   letter-spacing: 0.02em;

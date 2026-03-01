@@ -84,57 +84,26 @@
   -ms-user-select: text;
 }
 
-@media (max-width: 768px) {
-  .carousel-gradient-left,
-  .carousel-gradient-right {
-    width: 50px;
-  }
-  
-  .carousel-item {
-    width: 180px;
-  }
-}
-
-/* Improve touch interaction on mobile */
-@media (max-width: 480px) {
-  .carousel-track-container {
-    touch-action: pan-y pinch-zoom;
-  }
-  
-  .carousel-item {
-    width: 160px;
-  }
-  
-  .carousel-item:hover {
-    transform: none; /* Disable hover transform on mobile */
-  }
-}
-
-/* Smooth scrolling when auto-scrolling resumes */
-.carousel-track.resuming {
-  transition: transform 0.3s ease-out;
-}
-/* Add to BookCarousel.css - Hide details button in carousel */
+/* Hide details button in carousel */
 .carousel-book-card .book-footer .btn-details {
   display: none !important;
 }
 
-/* Optional: Adjust the footer to only show the cart button */
+/* Adjust the footer to only show the cart button */
 .carousel-book-card .book-footer {
-  justify-content: flex-end; /* Align cart button to the right */
+  justify-content: flex-end;
 }
 
-/* Make the cart button full width if you want */
+/* Make the cart button full width */
 .carousel-book-card .btn-cart {
-  width: 100%; /* Make cart button take full width */
-  border-radius: 6px; /* Adjust border radius if needed */
+  width: 100%;
+  border-radius: 6px;
 }
 
-/* Remove hover effects from the card in carousel if desired */
+/* Reduce hover effect in carousel */
 .carousel-book-card .book-card:hover {
-  transform: translateY(-3px); /* Slightly reduce hover effect */
+  transform: translateY(-3px);
 }
-/* BookCarousel.css - Add these styles at the end */
 
 /* RTL Support for Arabic text in carousel */
 [dir="rtl"] .carousel-item,
@@ -171,4 +140,35 @@
   right: auto;
   left: 0;
   background: linear-gradient(to right, #f8f4f0, transparent);
+}
+
+@media (max-width: 768px) {
+  .carousel-gradient-left,
+  .carousel-gradient-right {
+    width: 50px;
+  }
+  
+  .carousel-item {
+    width: 180px;
+  }
+}
+
+/* Improve touch interaction on mobile */
+@media (max-width: 480px) {
+  .carousel-track-container {
+    touch-action: pan-y pinch-zoom;
+  }
+  
+  .carousel-item {
+    width: 160px;
+  }
+  
+  .carousel-item:hover {
+    transform: none;
+  }
+}
+
+/* Smooth scrolling when auto-scrolling resumes */
+.carousel-track.resuming {
+  transition: transform 0.3s ease-out;
 }

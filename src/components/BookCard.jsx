@@ -1,11 +1,13 @@
 import { useState } from "react";
 import BookDetailModal from "./BookDetailModal";
 import { Eye, ShoppingCart, Check } from "lucide-react";
+import useLanguageDirection from "../utils/useLanguageDirection";
 import "../css/BookCard.css";
 
 export default function BookCard({ book }) {
   const [showDetail, setShowDetail] = useState(false);
   const [added, setAdded] = useState(false);
+  const { getTextDirection, getClassName } = useLanguageDirection();
 
   // Helper function to get image URL
   const getImageUrl = (images) => {
@@ -72,7 +74,7 @@ export default function BookCard({ book }) {
               e.target.src = 'https://via.placeholder.com/300x400?text=Image+Error';
             }}
           />
-          {/* Status Badge - Now with proper colors */}
+          {/* Status Badge */}
           {book.status && (
             <span className={`status-bad ${book.status}`}>
               {book.status === "available" ? "متوفر" : "غير متوفر"}
@@ -84,9 +86,24 @@ export default function BookCard({ book }) {
           <span className="book-category-badge">
             {book.categorie || "غير مصنف"}
           </span>
-          <h3 className="book-title">{book.titre || "عنوان غير معروف"}</h3>
           
-          <p className="book-author">{book.auteur || "مؤلف غير معروف"}</p>
+          {/* Title with dynamic direction */}
+          <h3 
+            className="book-title"
+            dir={getTextDirection(book.titre)}
+            style={{ textAlign: getTextDirection(book.titre) === 'rtl' ? 'right' : 'left' }}
+          >
+            {book.titre || "عنوان غير معروف"}
+          </h3>
+          
+          {/* Author with dynamic direction */}
+          <p 
+            className="book-author"
+            dir={getTextDirection(book.auteur)}
+            style={{ textAlign: getTextDirection(book.auteur) === 'rtl' ? 'right' : 'left' }}
+          >
+            {book.auteur || "مؤلف غير معروف"}
+          </p>
 
           <div className="book-footer">
             <button 

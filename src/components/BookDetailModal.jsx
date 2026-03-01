@@ -2,11 +2,13 @@
 import { useState } from "react";
 import Portal from "./Portal";
 import { ShoppingCart, Check, X } from "lucide-react";
+import useLanguageDirection from "../utils/useLanguageDirection";
 import "../css/BookDetailModal.css";
 
 export default function BookDetailModal({ book, onClose }) {
   const [added, setAdded] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const { getTextDirection } = useLanguageDirection();
 
   const handleAdd = () => {
     const cartItem = {
@@ -36,7 +38,6 @@ export default function BookDetailModal({ book, onClose }) {
 
   // Helper function to get image URL with better error handling
   const getImageUrl = (images) => {
-    // If we already have an error, return placeholder
     if (imageError) {
       return 'https://via.placeholder.com/400x500?text=No+Cover';
     }
@@ -44,26 +45,21 @@ export default function BookDetailModal({ book, onClose }) {
     if (!images) return 'https://via.placeholder.com/400x500?text=No+Cover';
     
     try {
-      // If images is a string, try to parse it
       if (typeof images === 'string') {
-        // Check if it's already a full URL
         if (images.startsWith('http')) {
           return images;
         }
         
-        // Try to parse as JSON
         try {
           const parsed = JSON.parse(images);
           if (Array.isArray(parsed) && parsed.length > 0) {
             return `https://fanta-lib-back-production-76f4.up.railway.app/storage/${parsed[0]}`;
           }
         } catch (e) {
-          // If parsing fails, treat as direct filename
           return `https://fanta-lib-back-production-76f4.up.railway.app/storage/${images}`;
         }
       }
       
-      // If images is an array
       if (Array.isArray(images) && images.length > 0) {
         return `https://fanta-lib-back-production-76f4.up.railway.app/storage/${images[0]}`;
       }
@@ -94,7 +90,7 @@ export default function BookDetailModal({ book, onClose }) {
                 onError={handleImageError}
                 loading="lazy"
               />
-              {/* Status Badge - Same as BookCard - positioned on image */}
+              {/* Status Badge */}
               {book.status && (
                 <span className={`status-bad ${book.status}`}>
                   {book.status === "available" ? "متوفر" : "غير متوفر"}
@@ -103,10 +99,25 @@ export default function BookDetailModal({ book, onClose }) {
             </div>
 
             <div className="book-detail-info">
-              <h2 className="book-title">{book.titre || "عنوان غير معروف"}</h2>
-              <p className="book-author">بقلم {book.auteur || "مؤلف غير معروف"}</p>
+              {/* Title with dynamic direction */}
+              <h2 
+                className="book-title"
+                dir={getTextDirection(book.titre)}
+                style={{ textAlign: getTextDirection(book.titre) === 'rtl' ? 'right' : 'left' }}
+              >
+                {book.titre || "عنوان غير معروف"}
+              </h2>
               
-              {/* Category Badge - Same as BookCard - between title and author */}
+              {/* Author with dynamic direction */}
+              <p 
+                className="book-author"
+                dir={getTextDirection(book.auteur)}
+                style={{ textAlign: getTextDirection(book.auteur) === 'rtl' ? 'right' : 'left' }}
+              >
+                بقلم {book.auteur || "مؤلف غير معروف"}
+              </p>
+              
+              {/* Category Badge */}
               <span className="book-category-badge">
                 {book.categorie || "غير مصنف"}
               </span>
@@ -119,7 +130,11 @@ export default function BookDetailModal({ book, onClose }) {
 
               <div className="book-description">
                 <h3>الوصف</h3>
-                <p>
+                {/* Description with dynamic direction */}
+                <p 
+                  dir={getTextDirection(book.description)}
+                  style={{ textAlign: getTextDirection(book.description) === 'rtl' ? 'right' : 'left' }}
+                >
                   {book.description || `اكتشف "${book.titre || 'هذا الكتاب'}" من تأليف ${book.auteur || 'مؤلفنا'}`}
                 </p>
               </div>

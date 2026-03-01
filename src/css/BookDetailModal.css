@@ -217,6 +217,7 @@
 .btn-icon1 {
   stroke-width: 2;
 }
+
 .btn-icon1 {
   background: none;
   border: none;
@@ -230,11 +231,21 @@
   color: #666;
   font-size: 16px;
 }
-@media (max-width: 640px) {
 
-  .btn-icon1 {
-    padding: 6px;
-  }
+/* LTR text styles in modal */
+.book-detail-info .book-title.ltr-text,
+.book-detail-info .book-author.ltr-text,
+.book-detail-info .book-description p.ltr-text {
+  direction: ltr;
+  text-align: left;
+}
+
+/* RTL text styles in modal */
+.book-detail-info .book-title.rtl-text,
+.book-detail-info .book-author.rtl-text,
+.book-detail-info .book-description p.rtl-text {
+  direction: rtl;
+  text-align: right;
 }
 
 @keyframes fadeIn {
@@ -345,6 +356,12 @@
   .btn-add {
     padding: 16px;
     font-size: 17px;
+  }
+}
+
+@media (max-width: 640px) {
+  .btn-icon1 {
+    padding: 6px;
   }
 }
 

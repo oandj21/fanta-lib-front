@@ -172,6 +172,20 @@
   opacity: 0.5;
 }
 
+/* LTR text styles */
+.book-title.ltr-text,
+.book-author.ltr-text {
+  direction: ltr;
+  text-align: left;
+}
+
+/* RTL text styles */
+.book-title.rtl-text,
+.book-author.rtl-text {
+  direction: rtl;
+  text-align: right;
+}
+
 /* Adjust card sizes for larger screens */
 @media (min-width: 1280px) {
   .book-card {

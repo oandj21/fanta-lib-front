@@ -1017,7 +1017,7 @@ const OrderDetailsModal = ({ order, onClose }) => {
                         <RefreshCw size={14} className="spinning" />
                       ) : (
                         <span 
-                          className="status-bad"
+                          className="status-badge"
                           style={{ 
                             backgroundColor: `${getStatusColor(deliveryStatus)}15`,
                             color: getStatusColor(deliveryStatus),
@@ -1038,7 +1038,7 @@ const OrderDetailsModal = ({ order, onClose }) => {
                       </div>
                       <div className="order-info-value">
                         <span 
-                          className="status-bad"
+                          className="status-badge"
                           style={{ 
                             backgroundColor: `${getStatusColor(secondaryStatus)}15`,
                             color: getStatusColor(secondaryStatus),
@@ -1058,7 +1058,7 @@ const OrderDetailsModal = ({ order, onClose }) => {
                     </div>
                     <div className="order-info-value">
                       <span 
-                        className="status-bad"
+                        className="status-badge"
                         style={{ 
                           backgroundColor: `${getStatusColor(paymentStatus)}15`,
                           color: getStatusColor(paymentStatus),
@@ -2281,7 +2281,7 @@ export default function AdminOrders() {
                         ) : (
                           <div className="status-container">
                             <span 
-                              className="status-bad"
+                              className="status-badge"
                               style={{ 
                                 backgroundColor: `${getStatusColor(deliveryStatus)}15`,
                                 color: getStatusColor(deliveryStatus),
@@ -2292,7 +2292,7 @@ export default function AdminOrders() {
                             </span>
                             {secondaryStatus && secondaryStatus !== '' && (
                               <span 
-                                className="status-bad secondary"
+                                className="status-badge secondary"
                                 style={{ 
                                   backgroundColor: `${getStatusColor(secondaryStatus)}15`,
                                   color: getStatusColor(secondaryStatus),
@@ -2311,7 +2311,7 @@ export default function AdminOrders() {
                           <RefreshCw size={14} className="spinning" />
                         ) : (
                           <span 
-                            className="status-bad"
+                            className="status-badge"
                             style={{ 
                               backgroundColor: `${getStatusColor(paymentStatus)}15`,
                               color: getStatusColor(paymentStatus),

@@ -504,36 +504,6 @@
   }
 }
 
-/* Dark mode support if needed */
-@media (prefers-color-scheme: dark) {
-  .livres-page {
-    background-color: #1a1a1a;
-  }
-  
-  .filters-sectio {
-    background-color: #2a2a2a;
-    border-bottom-color: #404040;
-  }
-  
-  .genre-btn {
-    background-color: #333;
-    border-color: #404040;
-    color: #f0f0f0;
-  }
-  
-  .genre-btn:hover {
-    background-color: #404040;
-  }
-  
-  .empty-state {
-    background-color: #2a2a2a;
-    border-color: #404040;
-  }
-  
-  .results-count {
-    color: #c0c0c0;
-  }
-}
 
 /* RTL Support */
 [dir="rtl"] .results-count {

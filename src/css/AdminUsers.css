@@ -1332,13 +1332,7 @@ select:focus-visible {
   margin: 0;
 }
 
-/* Dark mode support (optional) */
-@media (prefers-color-scheme: dark) {
-  .modal-confirm-icon {
-    background: linear-gradient(135deg, #5c0202 0%, #3d2a27 100%);
-    border-color: #dc3545;
-  }
-}
+
 
 /* Ensure all content stays within viewport */
 * {

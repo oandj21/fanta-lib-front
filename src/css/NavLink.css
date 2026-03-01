@@ -291,34 +291,6 @@
   }
 }
 
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-  .nav-link-custom:not(.light) {
-    color: #f0f0f0;
-  }
-  
-  .nav-link-custom:not(.light):hover {
-    color: #e8d6c0;
-  }
-  
-  .nav-link-custom:not(.light).active {
-    color: #e8d6c0;
-  }
-  
-  .nav-link-custom:not(.light)::after {
-    background: linear-gradient(90deg, #e8d6c0, #c0a890);
-  }
-  
-  .nav-link-custom:not(.light).button-like:hover {
-    background: rgba(232, 214, 192, 0.1);
-    border-color: #e8d6c0;
-  }
-  
-  .nav-link-custom:not(.light).button-like.active {
-    background: #e8d6c0;
-    color: #5c0202;
-  }
-}
 
 /* Focus styles for accessibility */
 .nav-link-custom:focus-visible {

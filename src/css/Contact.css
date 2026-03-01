@@ -977,62 +977,7 @@ button:focus-visible,
   }
 }
 
-/* Dark mode adjustments */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #1a1a1a;
-    --foreground: #f0f0f0;
-    --card: #2a2a2a;
-    --border: #404040;
-    --muted-foreground: #a0a0a0;
-  }
-  
-  .info-item,
-  .contact-form-card {
-    background: #2a2a2a;
-  }
-  
-  .form-group input,
-  .form-group textarea {
-    background: #333;
-    border-color: #404040;
-    color: #f0f0f0;
-  }
-  
-  .form-group input:focus,
-  .form-group textarea:focus {
-    background: #3a3a3a;
-  }
-  
-  .status-message.success {
-    background: linear-gradient(135deg, rgba(39, 174, 96, 0.2), rgba(46, 204, 113, 0.1));
-    border-color: #2ecc71;
-    color: #2ecc71;
-  }
-  
-  .status-message.error {
-    background: linear-gradient(135deg, rgba(231, 76, 60, 0.2), rgba(192, 57, 43, 0.1));
-    border-color: #e74c3c;
-    color: #e74c3c;
-  }
-  
-  .map-embed-link {
-    background: rgba(255, 255, 255, 0.1);
-  }
-  
-  .map-embed-link:hover {
-    background: var(--primary);
-  }
-  
-  .map-overlay {
-    background: rgba(92, 2, 2, 0.8);
-  }
-  
-  .form-group input:invalid,
-  .form-group textarea:invalid {
-    border-color: #e74c3c;
-  }
-}
+
 
 /* Print styles */
 @media print {

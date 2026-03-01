@@ -8,6 +8,78 @@ import {
 import { fetchLivres, createLivre, updateLivre, deleteLivre, deleteLivreImage } from "../../store/store";
 import "../../css/AdminBooks.css";
 
+// Image compression utility function
+const compressImage = async (file, maxWidth = 1200, quality = 0.8) => {
+  return new Promise((resolve, reject) => {
+    // If file is already webp and small, skip compression
+    if (file.type === 'image/webp' && file.size < 1024 * 1024) {
+      resolve(file);
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        
+        // Calculate new dimensions
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        const ctx = canvas.getContext('2d');
+        
+        // Set white background for transparent PNGs
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw image
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Convert to WebP for better compression
+        canvas.toBlob(
+          (blob) => {
+            const compressedFile = new File([blob], 
+              file.name.replace(/\.[^/.]+$/, "") + '.webp', 
+              {
+                type: 'image/webp',
+                lastModified: Date.now()
+              }
+            );
+            
+            console.log(`Compressed ${file.name}: ${(file.size / 1024 / 1024).toFixed(2)}MB -> ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB`);
+            resolve(compressedFile);
+          },
+          'image/webp',
+          quality
+        );
+      };
+      
+      img.onerror = () => {
+        // If compression fails, return original file
+        console.warn('Image compression failed, using original file');
+        resolve(file);
+      };
+    };
+    
+    reader.onerror = () => {
+      console.warn('File reading failed, using original file');
+      resolve(file);
+    };
+  });
+};
+
 export default function AdminBooks() {
   const dispatch = useDispatch();
   const { list: bookList = [], loading } = useSelector((state) => state.livres);
@@ -35,6 +107,8 @@ export default function AdminBooks() {
   const [showCategorySuggestions, setShowCategorySuggestions] = useState(false);
   // Track removed images
   const [removedImages, setRemovedImages] = useState([]);
+  // Compression state
+  const [compressing, setCompressing] = useState(false);
   
   const [form, setForm] = useState({
     titre: "",
@@ -184,27 +258,58 @@ export default function AdminBooks() {
     setShowDeleteConfirm(null);
   };
 
-  const handleImageChange = (e) => {
-  const files = Array.from(e.target.files);
-  
-  // Validate file size (max 10MB)
-  const validFiles = files.filter(file => {
-    if (file.size > 10 * 1024 * 1024) { // Changed from 2MB to 10MB
-      alert(`L'image ${file.name} est trop volumineuse. Maximum 10MB.`); // Updated message
-      return false;
+  const handleImageChange = async (e) => {
+    const files = Array.from(e.target.files);
+    
+    if (files.length > 10) {
+      alert('Maximum 10 images allowed');
+      return;
     }
-    return true;
-  });
-  
-  setSelectedImages(validFiles);
-  
-  // Create preview URLs
-  const previews = validFiles.map(file => URL.createObjectURL(file));
-  
-  // Clean up previous previews
-  imagePreviews.forEach(url => URL.revokeObjectURL(url));
-  setImagePreviews(previews);
-};
+    
+    setCompressing(true);
+    
+    try {
+      const compressedImages = [];
+      
+      // Show compression progress
+      let processed = 0;
+      
+      // Process images in batches of 3 to avoid freezing
+      const batchSize = 3;
+      for (let i = 0; i < files.length; i += batchSize) {
+        const batch = files.slice(i, i + batchSize);
+        const compressionPromises = batch.map(async (file, index) => {
+          // Validate file size (max 10MB before compression)
+          if (file.size > 10 * 1024 * 1024) {
+            alert(`L'image ${file.name} est trop volumineuse. Maximum 10MB.`);
+            return null;
+          }
+          
+          const compressedFile = await compressImage(file);
+          processed++;
+          return compressedFile;
+        });
+        
+        const compressedBatch = await Promise.all(compressionPromises);
+        compressedImages.push(...compressedBatch.filter(f => f !== null));
+      }
+      
+      setSelectedImages(compressedImages);
+      
+      // Create preview URLs
+      const previews = compressedImages.map(file => URL.createObjectURL(file));
+      
+      // Clean up previous previews
+      imagePreviews.forEach(url => URL.revokeObjectURL(url));
+      setImagePreviews(previews);
+      
+    } catch (error) {
+      console.error('Image compression error:', error);
+      alert('Erreur lors de la compression des images');
+    } finally {
+      setCompressing(false);
+    }
+  };
 
   // Handle removing a new image preview (not yet uploaded)
   const handleRemoveNewImage = (index) => {
@@ -943,32 +1048,29 @@ export default function AdminBooks() {
                               {/* Two buttons for existing images */}
                               <div className="image-actions">
                                 {/* Remove button (mark for deletion) */}
-                                {/* Remove button (mark for deletion) */}
-<button 
-  type="button"
-  onClick={() => handleRemoveExistingImage(image)}
-  className="btn-icon remove-image-btn"
-  title="Retirer de la liste (sera supprimé lors de l'enregistrement)"
-  disabled={deletingImage}
-  style={{
-    backgroundColor: '#f50b0b',
-    color: 'white',
-    border: '2px solid white',
-    width: '24px',
-    height: '24px',
-    borderRadius: '12px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    cursor: 'pointer',
-    opacity: 1,
-    transform: 'scale(1)'
-  }}
->
-  <Trash2  size={24} style={{ width: '100%', height: '100%' }} />
-</button>
-                                
-                                
+                                <button 
+                                  type="button"
+                                  onClick={() => handleRemoveExistingImage(image)}
+                                  className="btn-icon remove-image-btn"
+                                  title="Retirer de la liste (sera supprimé lors de l'enregistrement)"
+                                  disabled={deletingImage}
+                                  style={{
+                                    backgroundColor: '#f50b0b',
+                                    color: 'white',
+                                    border: '2px solid white',
+                                    width: '24px',
+                                    height: '24px',
+                                    borderRadius: '12px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer',
+                                    opacity: 1,
+                                    transform: 'scale(1)'
+                                  }}
+                                >
+                                  <Trash2 size={24} style={{ width: '100%', height: '100%' }} />
+                                </button>
                               </div>
                             </div>
                           ))
@@ -998,14 +1100,23 @@ export default function AdminBooks() {
                     <input
                       type="file"
                       multiple
-                      accept="image/jpeg,image/png,image/jpg"
+                      accept="image/jpeg,image/png,image/jpg,image/webp"
                       onChange={handleImageChange}
-                      disabled={deletingImage}
+                      disabled={compressing || deletingImage}
                     />
                     <div className="upload-placeholder">
-                      <Upload size={24} />
-                      <span>Cliquez pour ajouter des images</span>
-                      <small>JPG, PNG (max 10MB)</small>
+                      {compressing ? (
+                        <>
+                          <Loader size={24} className="spin" />
+                          <span>Compression des images en cours...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Upload size={24} />
+                          <span>Cliquez pour ajouter des images</span>
+                        </>
+                      )}
+                      <small>JPG, PNG, WebP (max 10MB, auto-compressé)</small>
                     </div>
                   </label>
                 </div>
@@ -1013,7 +1124,7 @@ export default function AdminBooks() {
                 {/* Image previews for new images */}
                 {imagePreviews.length > 0 && (
                   <div className="image-previews">
-                    <p className="section-label">Nouvelles images :</p>
+                    <p className="section-label">Nouvelles images (compressées) :</p>
                     <div className="image-grid">
                       {imagePreviews.map((preview, index) => (
                         <div key={index} className="image-item preview">
@@ -1030,6 +1141,9 @@ export default function AdminBooks() {
                         </div>
                       ))}
                     </div>
+                    <p className="text-xs text-gray-500 mt-2">
+                      {selectedImages.length} image(s) sélectionnée(s) - Seront compressées en WebP
+                    </p>
                   </div>
                 )}
               </div>
@@ -1038,12 +1152,21 @@ export default function AdminBooks() {
                 <button type="button" onClick={() => {
                   setShowModal(false);
                   imagePreviews.forEach(url => URL.revokeObjectURL(url));
-                }} className="btn-secondary" disabled={deletingImage}>
+                }} className="btn-secondary" disabled={compressing || deletingImage}>
                   Annuler
                 </button>
-                <button type="submit" className="btn-primary" disabled={deletingImage}>
-                  <Check size={16} />
-                  {editing ? "Modifier" : "Ajouter"}
+                <button type="submit" className="btn-primary" disabled={compressing || deletingImage}>
+                  {compressing ? (
+                    <>
+                      <Loader size={16} className="spin" />
+                      Compression...
+                    </>
+                  ) : (
+                    <>
+                      <Check size={16} />
+                      {editing ? "Modifier" : "Ajouter"}
+                    </>
+                  )}
                 </button>
               </div>
             </form>

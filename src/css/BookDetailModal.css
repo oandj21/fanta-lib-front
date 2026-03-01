@@ -482,3 +482,81 @@
     font-size: 13px;
   }
 }
+/* Language-based direction support for modal */
+.book-detail-modal[data-language="ar"] {
+  direction: rtl;
+  text-align: right;
+}
+
+.book-detail-modal[data-language="en"] {
+  direction: ltr;
+  text-align: left;
+}
+
+.book-detail-modal[data-language="ar"] .book-detail-info {
+  text-align: right;
+}
+
+.book-detail-modal[data-language="en"] .book-detail-info {
+  text-align: left;
+}
+
+.book-detail-modal[data-language="ar"] .modal-close {
+  right: 15px;
+  left: auto;
+}
+
+.book-detail-modal[data-language="en"] .modal-close {
+  left: 15px;
+  right: auto;
+}
+
+.book-detail-modal[data-language="ar"] .book-detail-cover .status-bad {
+  right: 15px;
+  left: auto;
+}
+
+.book-detail-modal[data-language="en"] .book-detail-cover .status-bad {
+  left: 15px;
+  right: auto;
+}
+
+.book-detail-modal[data-language="ar"] .btn-add {
+  flex-direction: row;
+}
+
+.book-detail-modal[data-language="en"] .btn-add {
+  flex-direction: row;
+}
+
+.book-detail-modal[data-language="ar"] .btn-add svg {
+  margin-left: 10px;
+  margin-right: 0;
+}
+
+.book-detail-modal[data-language="en"] .btn-add svg {
+  margin-right: 10px;
+  margin-left: 0;
+}
+
+@media (max-width: 480px) {
+  .book-detail-modal[data-language="ar"] .modal-close {
+    right: 10px;
+    left: auto;
+  }
+  
+  .book-detail-modal[data-language="en"] .modal-close {
+    left: 10px;
+    right: auto;
+  }
+  
+  .book-detail-modal[data-language="ar"] .book-detail-cover .status-bad {
+    right: 10px;
+    left: auto;
+  }
+  
+  .book-detail-modal[data-language="en"] .book-detail-cover .status-bad {
+    left: 10px;
+    right: auto;
+  }
+}

@@ -172,3 +172,38 @@
   left: 0;
   background: linear-gradient(to right, #f8f4f0, transparent);
 }
+/* Language-based direction support for carousel */
+.carousel-item[data-language="ar"] .book-card {
+  direction: rtl;
+  text-align: right;
+}
+
+.carousel-item[data-language="en"] .book-card {
+  direction: ltr;
+  text-align: left;
+}
+
+/* Gradient positions based on language */
+[data-language="ar"] .carousel-gradient-left {
+  left: 0;
+  right: auto;
+  background: linear-gradient(to right, #f8f4f0, transparent);
+}
+
+[data-language="ar"] .carousel-gradient-right {
+  right: 0;
+  left: auto;
+  background: linear-gradient(to left, #f8f4f0, transparent);
+}
+
+[data-language="en"] .carousel-gradient-left {
+  left: 0;
+  right: auto;
+  background: linear-gradient(to right, #f8f4f0, transparent);
+}
+
+[data-language="en"] .carousel-gradient-right {
+  right: 0;
+  left: auto;
+  background: linear-gradient(to left, #f8f4f0, transparent);
+}

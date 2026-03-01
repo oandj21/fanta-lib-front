@@ -282,3 +282,63 @@
 .book-card.rtl .btn-details {
   flex-direction: row;
 }
+/* Language-based direction support */
+.book-card[data-language="ar"] {
+  direction: rtl;
+  text-align: right;
+}
+
+.book-card[data-language="en"] {
+  direction: ltr;
+  text-align: left;
+}
+
+.book-card[data-language="ar"] .book-footer {
+  flex-direction: row;
+}
+
+.book-card[data-language="en"] .book-footer {
+  flex-direction: row;
+}
+
+.book-card[data-language="ar"] .status-bad {
+  right: 15px;
+  left: auto;
+}
+
+.book-card[data-language="en"] .status-bad {
+  left: 15px;
+  right: auto;
+}
+
+.book-card[data-language="ar"] .btn-details {
+  flex-direction: row;
+}
+
+.book-card[data-language="en"] .btn-details {
+  flex-direction: row;
+}
+
+.book-card[data-language="ar"] .btn-details svg {
+  margin-left: 6px;
+  margin-right: 0;
+  order: 0;
+}
+
+.book-card[data-language="en"] .btn-details svg {
+  margin-right: 6px;
+  margin-left: 0;
+  order: 0;
+}
+
+@media (max-width: 480px) {
+  .book-card[data-language="ar"] .status-bad {
+    right: 10px;
+    left: auto;
+  }
+  
+  .book-card[data-language="en"] .status-bad {
+    left: 10px;
+    right: auto;
+  }
+}

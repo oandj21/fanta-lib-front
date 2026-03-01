@@ -31,11 +31,10 @@
   transform: scale(1.05);
 }
 
-/* Status Badge - Now with proper colors */
+/* Status Badge */
 .status-bad {
   position: absolute;
   top: 15px;
-  right: 15px;
   padding: 6px 14px;
   border-radius: 25px;
   font-size: 11px;
@@ -49,20 +48,23 @@
   color: white;
 }
 
+/* RTL/LTR positioning for status badge */
+.book-card[data-direction="rtl"] .status-bad {
+  left: 15px;
+  right: auto;
+}
+
+.book-card[data-direction="ltr"] .status-bad {
+  right: 15px;
+  left: auto;
+}
+
 .status-bad.available {
   background: linear-gradient(135deg, #28a745, #218838);
 }
 
 .status-bad.out_of_stock {
   background: linear-gradient(135deg, #dc3545, #c82333);
-}
-
-/* RTL support for status badge */
-[dir="rtl"] .status-bad,
-.book-card.rtl .status-bad,
-.book-card[data-rtl="true"] .status-bad {
-  right: auto;
-  left: 15px;
 }
 
 .book-info {
@@ -72,7 +74,7 @@
   flex-direction: column;
 }
 
-/* Category Badge - Now in the info section between title and author */
+/* Category Badge */
 .book-category-badge {
   display: inline-block;
   background: linear-gradient(135deg, #8B4513, #5c0202);
@@ -90,6 +92,7 @@
   box-shadow: 0 2px 8px rgba(92, 2, 2, 0.2);
 }
 
+/* Title styling with direction support */
 .book-title {
   font-size: 16px;
   font-weight: 600;
@@ -102,19 +105,51 @@
   overflow: hidden;
 }
 
+.book-card[data-direction="rtl"] .book-title {
+  text-align: right;
+  direction: rtl;
+}
+
+.book-card[data-direction="ltr"] .book-title {
+  text-align: left;
+  direction: ltr;
+}
+
+/* Author styling with direction support */
 .book-author {
   color: #666;
   font-size: 13px;
   margin-bottom: 10px;
 }
 
+.book-card[data-direction="rtl"] .book-author {
+  text-align: right;
+  direction: rtl;
+}
+
+.book-card[data-direction="ltr"] .book-author {
+  text-align: left;
+  direction: ltr;
+}
+
+/* Footer with direction support */
 .book-footer {
   margin-top: auto;
   display: flex;
-  justify-content: space-between;
   align-items: center;
   border-top: 1px solid #e0d6cc;
   padding-top: 12px;
+}
+
+.book-card[data-direction="rtl"] .book-footer {
+  flex-direction: row-reverse;
+  justify-content: flex-start;
+  gap: 10px;
+}
+
+.book-card[data-direction="ltr"] .book-footer {
+  flex-direction: row;
+  justify-content: space-between;
 }
 
 .btn-details {
@@ -130,6 +165,23 @@
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
+}
+
+/* Button order based on direction */
+.book-card[data-direction="rtl"] .btn-details svg {
+  order: 1;
+}
+
+.book-card[data-direction="rtl"] .btn-details span {
+  order: 2;
+}
+
+.book-card[data-direction="ltr"] .btn-details svg {
+  order: 0;
+}
+
+.book-card[data-direction="ltr"] .btn-details span {
+  order: 1;
 }
 
 .btn-details:hover {
@@ -172,7 +224,7 @@
   opacity: 0.5;
 }
 
-/* Adjust card sizes for larger screens */
+/* Responsive styles */
 @media (min-width: 1280px) {
   .book-card {
     max-width: 100%;
@@ -224,9 +276,16 @@
   
   .status-bad {
     top: 10px;
-    right: 10px;
     padding: 4px 10px;
     font-size: 10px;
+  }
+  
+  .book-card[data-direction="rtl"] .status-bad {
+    left: 10px;
+  }
+  
+  .book-card[data-direction="ltr"] .status-bad {
+    right: 10px;
   }
   
   .book-category-badge {
@@ -234,51 +293,4 @@
     padding: 3px 10px;
     margin: 6px 0;
   }
-  
-  [dir="rtl"] .status-bad,
-  .book-card.rtl .status-bad,
-  .book-card[data-rtl="true"] .status-bad {
-    right: auto;
-    left: 10px;
-  }
-}
-
-/* RTL Support for Arabic text in cards */
-[dir="rtl"] .book-card,
-.book-card.rtl,
-.book-card[data-rtl="true"] {
-  direction: rtl;
-  text-align: right;
-}
-
-[dir="rtl"] .book-title,
-.book-card.rtl .book-title {
-  text-align: right;
-}
-
-[dir="rtl"] .book-author,
-.book-card.rtl .book-author {
-  text-align: right;
-}
-
-[dir="rtl"] .book-footer,
-.book-card.rtl .book-footer {
-  flex-direction: row-reverse;
-}
-
-[dir="rtl"] .btn-details svg,
-.book-card.rtl .btn-details svg {
-  margin-left: 0;
-  margin-right: 0;
-  order: 1;
-}
-
-[dir="rtl"] .btn-details span,
-.book-card.rtl .btn-details span {
-  order: 2;
-}
-
-[dir="rtl"] .btn-details,
-.book-card.rtl .btn-details {
-  flex-direction: row;
 }

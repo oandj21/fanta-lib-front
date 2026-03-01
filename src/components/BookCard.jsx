@@ -7,6 +7,16 @@ export default function BookCard({ book }) {
   const [showDetail, setShowDetail] = useState(false);
   const [added, setAdded] = useState(false);
 
+  // Helper function to detect if text is Arabic
+  const isArabicText = (text) => {
+    if (!text) return false;
+    const arabicPattern = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
+    return arabicPattern.test(text);
+  };
+
+  // Determine text direction based on title or author
+  const textDirection = isArabicText(book.titre) || isArabicText(book.auteur) ? 'rtl' : 'ltr';
+
   // Helper function to get image URL
   const getImageUrl = (images) => {
     if (!images) return 'https://via.placeholder.com/300x400?text=No+Cover';
@@ -62,7 +72,7 @@ export default function BookCard({ book }) {
 
   return (
     <>
-      <div className="book-card" data-rtl="true">
+      <div className="book-card" data-direction={textDirection}>
         <div className="book-cover">
           <img 
             src={getImageUrl(book.images)} 
@@ -72,7 +82,7 @@ export default function BookCard({ book }) {
               e.target.src = 'https://via.placeholder.com/300x400?text=Image+Error';
             }}
           />
-          {/* Status Badge - Now with proper colors */}
+          {/* Status Badge */}
           {book.status && (
             <span className={`status-bad ${book.status}`}>
               {book.status === "available" ? "متوفر" : "غير متوفر"}

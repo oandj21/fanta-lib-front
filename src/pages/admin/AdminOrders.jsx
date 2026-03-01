@@ -2450,25 +2450,7 @@ export default function AdminOrders() {
                 </div>
 
                 <div className="form-row">
-                  <div className="form-group">
-                    <label>Statut</label>
-                    <select
-                      name="statut"
-                      value={newOrderData.statut}
-                      onChange={handleNewOrderChange}
-                      className="statut-select"
-                    >
-                      <option value="NEW_PARCEL">Nouveau colis</option>
-                      <option value="PARCEL_CONFIRMED">Colis confirmé</option>
-                      <option value="PICKED_UP">Ramassé</option>
-                      <option value="DISTRIBUTION">En distribution</option>
-                      <option value="IN_PROGRESS">En cours</option>
-                      <option value="SENT">Expédié</option>
-                      <option value="DELIVERED">Livré</option>
-                      <option value="RETURNED">Retourné</option>
-                      <option value="CANCELLED">Annulé</option>
-                    </select>
-                  </div>
+                
 
                   <div className="form-group">
                     <label>Quantité totale <span className="required">*</span></label>

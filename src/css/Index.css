@@ -29,19 +29,6 @@
   box-sizing: border-box;
 }
 
-html {
-  scroll-behavior: smooth;
-}
-
-/* Root direction handling */
-:root {
-  direction: rtl; /* Default to RTL for Arabic site */
-}
-
-:root[dir="ltr"] {
-  direction: ltr;
-}
-
 body {
   font-family: 'Lato', sans-serif;
   background-color: var(--background);
@@ -103,25 +90,17 @@ body {
   width: 100%;
   max-width: 800px;
   padding: 0 1rem;
+  direction: rtl;
+  
+  /* Mobile: top 85% */
   top: 78%;
 }
 
-/* Desktop hero content */
+/* Desktop: top 75% */
 @media (min-width: 768px) {
   .hero-content {
     top: 65%;
   }
-}
-
-/* LTR adjustment for hero content */
-:root[dir="ltr"] .hero-content {
-  text-align: left;
-  direction: ltr;
-}
-
-:root[dir="rtl"] .hero-content {
-  text-align: center;
-  direction: rtl;
 }
 
 @keyframes fadeUp {
@@ -210,15 +189,6 @@ body {
   }
 }
 
-/* Button order for LTR/RTL */
-:root[dir="ltr"] .hero-buttons {
-  flex-direction: row;
-}
-
-:root[dir="rtl"] .hero-buttons {
-  flex-direction: row-reverse;
-}
-
 .btn-primary {
   display: inline-block;
   background-color: var(--primary);
@@ -278,15 +248,6 @@ body {
   padding: 0 1.5rem;
 }
 
-/* Section header direction */
-:root[dir="ltr"] .section-header {
-  text-align: left;
-}
-
-:root[dir="rtl"] .section-header {
-  text-align: center;
-}
-
 .section-subtitle {
   font-family: 'Lato', sans-serif;
   color: var(--muted-foreground);
@@ -333,12 +294,14 @@ body {
   margin: 0 auto;
 }
 
+/* Override for very small screens if needed */
 @media (max-width: 350px) {
   .books-grid {
     grid-template-columns: 1fr !important;
   }
 }
 
+/* Tablets */
 @media (min-width: 768px) {
   .books-grid {
     grid-template-columns: repeat(3, 1fr) !important;
@@ -346,6 +309,7 @@ body {
   }
 }
 
+/* Small desktops */
 @media (min-width: 1024px) {
   .books-grid {
     grid-template-columns: repeat(4, 1fr) !important;
@@ -353,6 +317,7 @@ body {
   }
 }
 
+/* Large desktops - 5 in a row */
 @media (min-width: 1280px) {
   .books-grid {
     grid-template-columns: repeat(5, 1fr) !important;
@@ -360,6 +325,7 @@ body {
   }
 }
 
+/* Extra large desktops */
 @media (min-width: 1600px) {
   .books-grid {
     grid-template-columns: repeat(5, 1fr) !important;
@@ -438,15 +404,6 @@ body {
   text-align: center;
 }
 
-/* Contact section direction */
-:root[dir="ltr"] .contact-section {
-  text-align: left;
-}
-
-:root[dir="rtl"] .contact-section {
-  text-align: center;
-}
-
 .contact-info {
   display: flex;
   flex-direction: column;
@@ -464,15 +421,6 @@ body {
     flex-direction: row;
     gap: 3rem;
   }
-}
-
-/* Contact info direction */
-:root[dir="ltr"] .contact-info {
-  flex-direction: row;
-}
-
-:root[dir="rtl"] .contact-info {
-  flex-direction: row-reverse;
 }
 
 .contact-item {
@@ -548,29 +496,11 @@ body {
   margin: 0 auto;
 }
 
-/* Footer direction */
-:root[dir="ltr"] .footer-content {
-  text-align: left;
-}
-
-:root[dir="rtl"] .footer-content {
-  text-align: center;
-}
-
 .footer-logo {
   display: flex;
   align-items: center;
   gap: 0.75rem;
   margin-bottom: 0.5rem;
-}
-
-/* Footer logo order */
-:root[dir="ltr"] .footer-logo {
-  flex-direction: row;
-}
-
-:root[dir="rtl"] .footer-logo {
-  flex-direction: row-reverse;
 }
 
 .footer-logo svg {
@@ -598,7 +528,7 @@ body {
   letter-spacing: 0.3px;
 }
 
-/* Wave Float Animation */
+/* Wave Float Animation - Cards alternate between close and far */
 @keyframes waveFloatClose {
   0% {
     transform: translateY(0px) scale(1);
@@ -644,6 +574,7 @@ body {
   animation: waveFloatFar 5s ease-in-out infinite;
 }
 
+/* Create a more complex pattern for larger grids */
 .books-grid > div:nth-child(3n) .book-card {
   animation: waveFloatClose 4.5s ease-in-out infinite;
   animation-delay: 0.2s;
@@ -751,6 +682,11 @@ body {
   }
 }
 
+/* Smooth Scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
 /* Selection Color */
 ::selection {
   background-color: var(--primary);
@@ -767,19 +703,9 @@ body {
 .whatsapp-float {
   position: fixed;
   bottom: 2rem;
+  right: 2rem;
   z-index: 100;
   transition: var(--transition);
-}
-
-/* WhatsApp position based on direction */
-:root[dir="ltr"] .whatsapp-float {
-  right: 2rem;
-  left: auto;
-}
-
-:root[dir="rtl"] .whatsapp-float {
-  left: 2rem;
-  right: auto;
 }
 
 .whatsapp-float:hover {
@@ -787,31 +713,8 @@ body {
 }
 
 @media (max-width: 768px) {
-  :root[dir="ltr"] .whatsapp-float {
-    right: 1rem;
-  }
-  
-  :root[dir="rtl"] .whatsapp-float {
-    left: 1rem;
-  }
-}
-
-/* Print styles */
-@media print {
-  .hero-section,
-  .carousel-section,
-  .contact-section,
-  .footer,
   .whatsapp-float {
-    display: none;
-  }
-  
-  .books-section {
-    padding: 1rem;
-  }
-  
-  .books-grid {
-    grid-template-columns: repeat(3, 1fr) !important;
-    gap: 0.5rem;
+    bottom: 1rem;
+    right: 1rem;
   }
 }

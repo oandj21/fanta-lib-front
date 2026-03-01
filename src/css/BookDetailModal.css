@@ -57,6 +57,16 @@
   right: auto;
 }
 
+.book-detail-modal[data-rtl="true"] .modal-close {
+  left: 15px;
+  right: auto;
+}
+
+.book-detail-modal[data-rtl="false"] .modal-close {
+  right: 15px;
+  left: auto;
+}
+
 .modal-close:hover {
   transform: rotate(90deg);
   background-color: #f8f4f0;
@@ -118,6 +128,16 @@
   right: auto;
 }
 
+.book-detail-modal[data-rtl="true"] .book-detail-cover .status-bad {
+  left: 15px;
+  right: auto;
+}
+
+.book-detail-modal[data-rtl="false"] .book-detail-cover .status-bad {
+  right: 15px;
+  left: auto;
+}
+
 .book-detail-cover .status-bad.available {
   background: linear-gradient(135deg, #28a745, #218838);
 }
@@ -160,6 +180,16 @@
   margin-left: auto;
 }
 
+.book-detail-modal[data-rtl="true"] .book-category-badge {
+  margin-right: 0;
+  margin-left: auto;
+}
+
+.book-detail-modal[data-rtl="false"] .book-category-badge {
+  margin-left: 0;
+  margin-right: auto;
+}
+
 .book-detail-info .book-title {
   font-size: 24px;
   margin-bottom: 10px;
@@ -169,14 +199,20 @@
 }
 
 /* Title alignment */
-.book-detail-info .book-title[dir="ltr"] {
+.book-detail-modal[dir="ltr"] .book-title {
   text-align: left;
-  font-family: 'Lato', 'Arial', sans-serif;
 }
 
-.book-detail-info .book-title[dir="rtl"] {
+.book-detail-modal[dir="rtl"] .book-title {
   text-align: right;
-  font-family: 'Playfair Display', 'Traditional Arabic', 'Times New Roman', serif;
+}
+
+.book-detail-modal[data-rtl="true"] .book-title {
+  text-align: right;
+}
+
+.book-detail-modal[data-rtl="false"] .book-title {
+  text-align: left;
 }
 
 .book-author {
@@ -188,14 +224,20 @@
 }
 
 /* Author alignment */
-.book-author[dir="ltr"] {
+.book-detail-modal[dir="ltr"] .book-author {
   text-align: left;
-  font-family: 'Lato', 'Arial', sans-serif;
 }
 
-.book-author[dir="rtl"] {
+.book-detail-modal[dir="rtl"] .book-author {
   text-align: right;
-  font-family: 'Playfair Display', 'Traditional Arabic', 'Times New Roman', serif;
+}
+
+.book-detail-modal[data-rtl="true"] .book-author {
+  text-align: right;
+}
+
+.book-detail-modal[data-rtl="false"] .book-author {
+  text-align: left;
 }
 
 .stock-info {
@@ -229,6 +271,14 @@
   text-align: right;
 }
 
+.book-detail-modal[data-rtl="true"] .book-description h3 {
+  text-align: right;
+}
+
+.book-detail-modal[data-rtl="false"] .book-description h3 {
+  text-align: left;
+}
+
 .book-description p {
   color: #666;
   line-height: 1.7;
@@ -237,14 +287,20 @@
 }
 
 /* Description text alignment */
-.book-description p[dir="ltr"] {
+.book-detail-modal[dir="ltr"] .book-description p {
   text-align: left;
-  font-family: 'Lato', 'Arial', sans-serif;
 }
 
-.book-description p[dir="rtl"] {
+.book-detail-modal[dir="rtl"] .book-description p {
   text-align: right;
-  font-family: 'Playfair Display', 'Traditional Arabic', 'Times New Roman', serif;
+}
+
+.book-detail-modal[data-rtl="true"] .book-description p {
+  text-align: right;
+}
+
+.book-detail-modal[data-rtl="false"] .book-description p {
+  text-align: left;
 }
 
 .book-detail-footer {
@@ -278,12 +334,28 @@
   order: 1;
 }
 
+.book-detail-modal[data-rtl="true"] .btn-add svg {
+  order: 1;
+}
+
+.book-detail-modal[data-rtl="false"] .btn-add svg {
+  order: 0;
+}
+
 .book-detail-modal[dir="ltr"] .btn-add span {
   order: 1;
 }
 
 .book-detail-modal[dir="rtl"] .btn-add span {
   order: 0;
+}
+
+.book-detail-modal[data-rtl="true"] .btn-add span {
+  order: 0;
+}
+
+.book-detail-modal[data-rtl="false"] .btn-add span {
+  order: 1;
 }
 
 .btn-add:hover:not(:disabled) {
@@ -339,6 +411,77 @@
   }
 }
 
+/* RTL Support for Arabic text in modal */
+[dir="rtl"] .book-detail-modal,
+.book-detail-modal.rtl,
+.book-detail-modal[data-rtl="true"] {
+  direction: rtl;
+  text-align: right;
+}
+
+[dir="rtl"] .book-detail-info,
+.book-detail-modal.rtl .book-detail-info {
+  text-align: right;
+}
+
+[dir="rtl"] .book-detail-info .book-title,
+.book-detail-modal.rtl .book-detail-info .book-title {
+  text-align: right;
+}
+
+[dir="rtl"] .book-author,
+.book-detail-modal.rtl .book-author {
+  text-align: right;
+}
+
+[dir="rtl"] .book-description,
+.book-detail-modal.rtl .book-description {
+  text-align: right;
+}
+
+[dir="rtl"] .book-description h3,
+.book-detail-modal.rtl .book-description h3 {
+  text-align: right;
+}
+
+[dir="rtl"] .book-description p,
+.book-detail-modal.rtl .book-description p {
+  text-align: right;
+}
+
+[dir="rtl"] .stock-info,
+.book-detail-modal.rtl .stock-info {
+  text-align: right;
+}
+
+[dir="rtl"] .book-detail-footer,
+.book-detail-modal.rtl .book-detail-footer {
+  text-align: right;
+}
+
+[dir="rtl"] .btn-add,
+.book-detail-modal.rtl .btn-add {
+  flex-direction: row;
+}
+
+[dir="rtl"] .btn-add svg,
+.book-detail-modal.rtl .btn-add svg {
+  margin-left: 0.5rem;
+  margin-right: 0;
+}
+
+[dir="rtl"] .modal-close,
+.book-detail-modal.rtl .modal-close {
+  right: auto;
+  left: 15px;
+}
+
+[dir="rtl"] .book-detail-cover .status-bad,
+.book-detail-modal.rtl .book-detail-cover .status-bad {
+  right: auto;
+  left: 15px;
+}
+
 /* Responsive Design */
 @media (min-width: 769px) {
   .modal-content {
@@ -364,19 +507,23 @@
 }
 
 @media (max-width: 768px) {
-  .book-detail-modal[dir="ltr"] .book-detail-cover .status-bad {
+  .book-detail-modal[dir="ltr"] .book-detail-cover .status-bad,
+  .book-detail-modal[data-rtl="false"] .book-detail-cover .status-bad {
     right: 10px;
   }
   
-  .book-detail-modal[dir="rtl"] .book-detail-cover .status-bad {
+  .book-detail-modal[dir="rtl"] .book-detail-cover .status-bad,
+  .book-detail-modal[data-rtl="true"] .book-detail-cover .status-bad {
     left: 10px;
   }
   
-  .book-detail-modal[dir="ltr"] .modal-close {
+  .book-detail-modal[dir="ltr"] .modal-close,
+  .book-detail-modal[data-rtl="false"] .modal-close {
     right: 10px;
   }
   
-  .book-detail-modal[dir="rtl"] .modal-close {
+  .book-detail-modal[dir="rtl"] .modal-close,
+  .book-detail-modal[data-rtl="true"] .modal-close {
     left: 10px;
   }
 }

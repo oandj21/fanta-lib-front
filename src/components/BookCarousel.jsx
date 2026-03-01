@@ -219,7 +219,7 @@ const BookCarousel = forwardRef(({ onShowDetails }, ref) => {
           {loopedBooks.map((book, index) => (
             <div 
               key={`${book.id}-${index}`} 
-              className="carousel-item carousel-book-card"
+              className="carousel-item carousel-book-card" // Added carousel-book-card class
               onClick={(e) => handleCardClick(book, e)}
             >
               <BookCard book={book} />

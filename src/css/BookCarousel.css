@@ -14,7 +14,7 @@
   pointer-events: none;
 }
 
-/* Gradient positions based on document direction */
+/* Gradient positions based on root direction */
 :root[dir="ltr"] .carousel-gradient-left,
 [dir="ltr"] .carousel-gradient-left {
   left: 0;
@@ -39,6 +39,29 @@
   right: auto;
   left: 0;
   background: linear-gradient(to right, #f8f4f0, transparent);
+}
+
+/* Support for data-rtl on root */
+:root[data-rtl="true"] .carousel-gradient-left {
+  left: auto;
+  right: 0;
+  background: linear-gradient(to left, #f8f4f0, transparent);
+}
+
+:root[data-rtl="true"] .carousel-gradient-right {
+  right: auto;
+  left: 0;
+  background: linear-gradient(to right, #f8f4f0, transparent);
+}
+
+:root[data-rtl="false"] .carousel-gradient-left {
+  left: 0;
+  background: linear-gradient(to right, #f8f4f0, transparent);
+}
+
+:root[data-rtl="false"] .carousel-gradient-right {
+  right: 0;
+  background: linear-gradient(to left, #f8f4f0, transparent);
 }
 
 .carousel-track-container {
@@ -132,6 +155,38 @@
 }
 
 .carousel-item .book-card[dir="rtl"] {
+  text-align: right;
+}
+
+.carousel-item .book-card[data-rtl="true"] {
+  text-align: right;
+}
+
+.carousel-item .book-card[data-rtl="false"] {
+  text-align: left;
+}
+
+/* RTL Support for Arabic text in carousel */
+[dir="rtl"] .carousel-item,
+.carousel-item.rtl,
+.carousel-item[data-rtl="true"] {
+  direction: rtl;
+}
+
+/* The carousel itself should maintain LTR for smooth scrolling */
+[dir="rtl"] .carousel-track-container,
+.carousel-track-container.rtl {
+  direction: ltr;
+}
+
+[dir="rtl"] .carousel-track,
+.carousel-track.rtl {
+  direction: ltr;
+}
+
+[dir="rtl"] .carousel-item .book-card,
+.carousel-item.rtl .book-card {
+  direction: rtl;
   text-align: right;
 }
 

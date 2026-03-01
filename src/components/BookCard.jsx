@@ -1,29 +1,11 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import BookDetailModal from "./BookDetailModal";
 import { Eye, ShoppingCart, Check } from "lucide-react";
-import { getBookDirection, isArabicText } from "../utils/languageDetector";
 import "../css/BookCard.css";
 
 export default function BookCard({ book }) {
   const [showDetail, setShowDetail] = useState(false);
   const [added, setAdded] = useState(false);
-  const cardRef = useRef(null);
-  
-  // Determine book direction
-  const direction = getBookDirection(book);
-  
-  // Check if specific fields are Arabic for potential styling
-  const isTitleArabic = isArabicText(book.titre);
-  const isAuthorArabic = isArabicText(book.auteur);
-  const isCategoryArabic = isArabicText(book.categorie);
-
-  useEffect(() => {
-    // Set direction attribute on the card element
-    if (cardRef.current) {
-      cardRef.current.setAttribute('data-direction', direction);
-      cardRef.current.setAttribute('dir', direction);
-    }
-  }, [direction]);
 
   // Helper function to get image URL
   const getImageUrl = (images) => {
@@ -80,12 +62,7 @@ export default function BookCard({ book }) {
 
   return (
     <>
-      <div 
-        ref={cardRef}
-        className="book-card" 
-        data-rtl={direction === 'rtl'}
-        dir={direction}
-      >
+      <div className="book-card" data-rtl="true">
         <div className="book-cover">
           <img 
             src={getImageUrl(book.images)} 
@@ -95,7 +72,7 @@ export default function BookCard({ book }) {
               e.target.src = 'https://via.placeholder.com/300x400?text=Image+Error';
             }}
           />
-          {/* Status Badge */}
+          {/* Status Badge - Now with proper colors */}
           {book.status && (
             <span className={`status-bad ${book.status}`}>
               {book.status === "available" ? "متوفر" : "غير متوفر"}
@@ -104,27 +81,12 @@ export default function BookCard({ book }) {
         </div>
 
         <div className="book-info">
-          <span 
-            className="book-category-badge"
-            dir={isCategoryArabic ? 'rtl' : 'ltr'}
-          >
+          <span className="book-category-badge">
             {book.categorie || "غير مصنف"}
           </span>
-          <h3 
-            className="book-title"
-            dir={isTitleArabic ? 'rtl' : 'ltr'}
-            style={{ textAlign: isTitleArabic ? 'right' : 'left' }}
-          >
-            {book.titre || "عنوان غير معروف"}
-          </h3>
+          <h3 className="book-title">{book.titre || "عنوان غير معروف"}</h3>
           
-          <p 
-            className="book-author"
-            dir={isAuthorArabic ? 'rtl' : 'ltr'}
-            style={{ textAlign: isAuthorArabic ? 'right' : 'left' }}
-          >
-            {book.auteur || "مؤلف غير معروف"}
-          </p>
+          <p className="book-author">{book.auteur || "مؤلف غير معروف"}</p>
 
           <div className="book-footer">
             <button 

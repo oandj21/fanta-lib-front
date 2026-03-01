@@ -34,17 +34,36 @@ export default function AdminLayout() {
     document.title = `${pageTitle} - Fantasia`;
   }, [location.pathname]);
 
-  // Updated nav items with root paths
-  const navItems = [
-    { to: "/dashboard", icon: LayoutDashboard, label: "Tableau de bord" },
-    { to: "/books", icon: BookOpen, label: "Livres" },
-    { to: "/orders", icon: ShoppingCart, label: "Commandes" },
-    { to: "/expenses", icon: Receipt, label: "Dépenses" },
-    { to: "/finance", icon: TrendingUp, label: "Finance" },
-    { to: "/users", icon: Users, label: "Utilisateurs" },
-    { to: "/messages", icon: Mail, label: "Messages" },
-    { to: "/profile", icon: User, label: "Profil" },
-  ];
+  // Updated nav items with root paths - filter based on user role
+  const getNavItems = () => {
+    const baseItems = [
+      { to: "/dashboard", icon: LayoutDashboard, label: "Tableau de bord" },
+      { to: "/books", icon: BookOpen, label: "Livres" },
+      { to: "/orders", icon: ShoppingCart, label: "Commandes" },
+      { to: "/expenses", icon: Receipt, label: "Dépenses" },
+      { to: "/finance", icon: TrendingUp, label: "Finance" },
+      { to: "/profile", icon: User, label: "Profil" },
+    ];
+
+    // Add Messages for all users
+    const messagesItem = { to: "/messages", icon: Mail, label: "Messages" };
+    
+    // Add Users only for admins and super admins
+    const usersItem = { to: "/users", icon: Users, label: "Utilisateurs" };
+
+    // Check if user is admin or super admin
+    const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'super_admin';
+
+    const items = [...baseItems, messagesItem];
+    
+    if (isAdmin) {
+      items.splice(5, 0, usersItem); // Insert users item before finance (at index 5)
+    }
+    
+    return items;
+  };
+
+  const navItems = getNavItems();
 
   const handleLogout = () => {
     dispatch(logoutFromSlice());

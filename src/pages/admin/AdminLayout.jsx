@@ -11,7 +11,8 @@ import {
   Users,
   Mail, 
   User,
-  LogOut 
+  LogOut,
+  Shield
 } from "lucide-react";
 import { logoutFromSlice, selectAuthUser } from "../../store/store";
 import "../../css/AdminLayout.css";
@@ -22,6 +23,11 @@ export default function AdminLayout() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const currentUser = useSelector(selectAuthUser);
+
+  // Check user role
+  const isSuperAdmin = currentUser?.role === 'super_admin';
+  const isAdmin = currentUser?.role === 'admin';
+  const isUser = currentUser?.role === 'user';
 
   // Close sidebar on route change (mobile)
   useEffect(() => {
@@ -34,9 +40,9 @@ export default function AdminLayout() {
     document.title = `${pageTitle} - Fantasia`;
   }, [location.pathname]);
 
-  // Updated nav items with root paths - filter based on user role
+  // Updated nav items with root paths - filter based on role
   const getNavItems = () => {
-    const baseItems = [
+    const items = [
       { to: "/dashboard", icon: LayoutDashboard, label: "Tableau de bord" },
       { to: "/books", icon: BookOpen, label: "Livres" },
       { to: "/orders", icon: ShoppingCart, label: "Commandes" },
@@ -45,21 +51,16 @@ export default function AdminLayout() {
       { to: "/profile", icon: User, label: "Profil" },
     ];
 
-    // Add Messages for all users
-    const messagesItem = { to: "/messages", icon: Mail, label: "Messages" };
-    
-    // Add Users only for admins and super admins
-    const usersItem = { to: "/users", icon: Users, label: "Utilisateurs" };
-
-    // Check if user is admin or super admin
-    const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'super_admin';
-
-    const items = [...baseItems, messagesItem];
-    
-    if (isAdmin) {
-      items.splice(5, 0, usersItem); // Insert users item before finance (at index 5)
+    // Add Users menu only for Super Admin and Admin
+    if (isSuperAdmin || isAdmin) {
+      items.splice(5, 0, { to: "/users", icon: Users, label: "Utilisateurs" });
     }
-    
+
+    // Add Messages menu only for Super Admin and Admin
+    if (isSuperAdmin || isAdmin) {
+      items.splice(6, 0, { to: "/messages", icon: Mail, label: "Messages" });
+    }
+
     return items;
   };
 
@@ -91,6 +92,21 @@ export default function AdminLayout() {
     const currentItem = navItems.find(item => item.to === location.pathname);
     return currentItem?.label || "Administration";
   };
+
+  // Get role badge
+  const getRoleBadge = () => {
+    switch(currentUser?.role) {
+      case 'super_admin':
+        return { text: 'Super Admin', icon: Shield, color: 'bg-primary' };
+      case 'admin':
+        return { text: 'Admin', icon: Shield, color: 'bg-info-10' };
+      default:
+        return { text: 'Utilisateur', icon: null, color: 'bg-muted' };
+    }
+  };
+
+  const roleInfo = getRoleBadge();
+  const RoleIcon = roleInfo.icon;
 
   return (
     <div className="admin-layout">
@@ -138,6 +154,10 @@ export default function AdminLayout() {
             <div className="user-details">
               <p className="user-name">{currentUser?.name || "Utilisateur"}</p>
               <p className="user-email">{currentUser?.email || "email@exemple.com"}</p>
+              <div className={`role-badge-small ${roleInfo.color}`}>
+                {RoleIcon && <RoleIcon size={12} />}
+                {roleInfo.text}
+              </div>
             </div>
           </div>
           

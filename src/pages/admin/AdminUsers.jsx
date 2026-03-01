@@ -1,12 +1,14 @@
+// pages/admin/AdminUsers.jsx
 import { useState, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Plus, Pencil, Trash2, X, Check, Power, Search, Filter, XCircle, AlertTriangle } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Check, Power, Search, Filter, XCircle, AlertTriangle, Shield, ShieldAlert } from "lucide-react";
 import { 
   fetchUtilisateurs, 
   createUtilisateur, 
   updateUtilisateur, 
   deleteUtilisateur,
-  toggleUtilisateurStatus 
+  toggleUtilisateurStatus,
+  selectAuthUser
 } from "../../store/store";
 import "../../css/AdminUsers.css";
 
@@ -25,6 +27,16 @@ const roleColors = {
 export default function AdminUsers() {
   const dispatch = useDispatch();
   const { list: userList = [], loading } = useSelector((state) => state.utilisateurs);
+  const currentUser = useSelector(selectAuthUser); // Get current logged-in user
+  
+  // Check if current user is super_admin
+  const isSuperAdmin = currentUser?.role === 'super_admin';
+  const isAdmin = currentUser?.role === 'admin';
+  
+  // Filter out system users (is_system: true)
+  const filteredUserList = useMemo(() => {
+    return userList.filter(user => !user.is_system);
+  }, [userList]);
   
   // Search and filter states
   const [searchTerm, setSearchTerm] = useState("");
@@ -55,6 +67,11 @@ export default function AdminUsers() {
   const [userToDelete, setUserToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Toggle status confirmation modal
+  const [showToggleModal, setShowToggleModal] = useState(false);
+  const [userToToggle, setUserToToggle] = useState(null);
+  const [isToggling, setIsToggling] = useState(false);
+
   useEffect(() => {
     dispatch(fetchUtilisateurs());
   }, [dispatch]);
@@ -64,9 +81,9 @@ export default function AdminUsers() {
     setCurrentPage(1);
   }, [searchTerm, roleFilter, statusFilter, sortBy, sortOrder]);
 
-  // Filter and search users
+  // Filter and search users (using filteredUserList)
   const filteredUsers = useMemo(() => {
-    return userList.filter(user => {
+    return filteredUserList.filter(user => {
       // Search filter
       const matchesSearch = searchTerm === "" || 
         user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -108,7 +125,7 @@ export default function AdminUsers() {
         return aVal < bVal ? 1 : -1;
       }
     });
-  }, [userList, searchTerm, roleFilter, statusFilter, sortBy, sortOrder]);
+  }, [filteredUserList, searchTerm, roleFilter, statusFilter, sortBy, sortOrder]);
 
   // Get current page users
   const currentUsers = useMemo(() => {
@@ -120,14 +137,14 @@ export default function AdminUsers() {
   // Calculate total pages
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
 
-  // Calculate statistics
+  // Calculate statistics (using filteredUserList)
   const stats = useMemo(() => {
-    const total = userList.length;
-    const active = userList.filter(u => u.is_active).length;
-    const inactive = userList.filter(u => !u.is_active).length;
-    const superAdmins = userList.filter(u => u.role === "super_admin").length;
-    const admins = userList.filter(u => u.role === "admin").length;
-    const users = userList.filter(u => u.role === "user").length;
+    const total = filteredUserList.length;
+    const active = filteredUserList.filter(u => u.is_active).length;
+    const inactive = filteredUserList.filter(u => !u.is_active).length;
+    const superAdmins = filteredUserList.filter(u => u.role === "super_admin").length;
+    const admins = filteredUserList.filter(u => u.role === "admin").length;
+    const users = filteredUserList.filter(u => u.role === "user").length;
     
     return {
       total,
@@ -137,7 +154,7 @@ export default function AdminUsers() {
       admins,
       users
     };
-  }, [userList]);
+  }, [filteredUserList]);
 
   const openAdd = () => {
     setEditing(null);
@@ -171,9 +188,28 @@ export default function AdminUsers() {
     setShowDeleteModal(true);
   };
 
+  // Open toggle status confirmation modal
+  const openToggleConfirmation = (user) => {
+    // Check if admin is trying to toggle a super_admin
+    if (!isSuperAdmin && user.role === 'super_admin') {
+      alert("Vous ne pouvez pas modifier le statut d'un Super Admin");
+      return;
+    }
+    setUserToToggle(user);
+    setShowToggleModal(true);
+  };
+
   // Handle delete confirmation
   const handleConfirmDelete = async () => {
     if (!userToDelete) return;
+    
+    // Check if admin is trying to delete a super_admin
+    if (!isSuperAdmin && userToDelete.role === 'super_admin') {
+      alert("Vous ne pouvez pas supprimer un Super Admin");
+      setShowDeleteModal(false);
+      setUserToDelete(null);
+      return;
+    }
     
     setIsDeleting(true);
     try {
@@ -193,8 +229,26 @@ export default function AdminUsers() {
     setUserToDelete(null);
   };
 
-  const toggleActive = (id) => {
-    dispatch(toggleUtilisateurStatus(id));
+  // Handle toggle status confirmation
+  const handleConfirmToggle = async () => {
+    if (!userToToggle) return;
+    
+    setIsToggling(true);
+    try {
+      await dispatch(toggleUtilisateurStatus(userToToggle.id)).unwrap();
+      setShowToggleModal(false);
+      setUserToToggle(null);
+    } catch (error) {
+      console.error("Error toggling user status:", error);
+    } finally {
+      setIsToggling(false);
+    }
+  };
+
+  // Cancel toggle
+  const handleCancelToggle = () => {
+    setShowToggleModal(false);
+    setUserToToggle(null);
   };
 
   const validateForm = () => {
@@ -258,6 +312,36 @@ export default function AdminUsers() {
     } catch {
       return "Date invalide";
     }
+  };
+
+  // Check if user can be edited
+  const canEditUser = (user) => {
+    if (isSuperAdmin) return true; // Super admin can edit anyone
+    if (isAdmin) {
+      // Admin cannot edit super_admin
+      return user.role !== 'super_admin';
+    }
+    return false;
+  };
+
+  // Check if user can be toggled
+  const canToggleUser = (user) => {
+    if (isSuperAdmin) return true; // Super admin can toggle anyone
+    if (isAdmin) {
+      // Admin cannot toggle super_admin
+      return user.role !== 'super_admin';
+    }
+    return false;
+  };
+
+  // Check if user can be deleted
+  const canDeleteUser = (user) => {
+    if (isSuperAdmin) return true; // Super admin can delete anyone
+    if (isAdmin) {
+      // Admin cannot delete super_admin
+      return user.role !== 'super_admin';
+    }
+    return false;
   };
 
   // Pagination component
@@ -347,15 +431,18 @@ export default function AdminUsers() {
           <h2>Gestion des Utilisateurs</h2>
           <p className="admin-subtitle">
             {filteredUsers.length > 0 
-              ? `Affichage ${Math.min((currentPage - 1) * itemsPerPage + 1, filteredUsers.length)} - ${Math.min(currentPage * itemsPerPage, filteredUsers.length)} sur ${filteredUsers.length} utilisateur${filteredUsers.length !== 1 ? 's' : ''} (${stats.total} total)`
-              : `0 utilisateur affiché sur ${stats.total} total`
+              ? `Affichage ${Math.min((currentPage - 1) * itemsPerPage + 1, filteredUsers.length)} - ${Math.min(currentPage * itemsPerPage, filteredUsers.length)} sur ${filteredUsers.length} utilisateur${filteredUsers.length !== 1 ? 's' : ''}`
+              : `0 utilisateur affiché`
             }
           </p>
         </div>
-        <button onClick={openAdd} className="btn-primary">
-          <Plus size={18} />
-          Nouvel utilisateur
-        </button>
+        {/* Only show add button if user can create (super_admin or admin) */}
+        {(isSuperAdmin || isAdmin) && (
+          <button onClick={openAdd} className="btn-primary">
+            <Plus size={18} />
+            Nouvel utilisateur
+          </button>
+        )}
       </div>
 
       {/* Stats Cards */}
@@ -566,27 +653,45 @@ export default function AdminUsers() {
                     <td>{formatDate(user.created_at)}</td>
                     <td>
                       <div className="action-buttons">
-                        <button 
-                          onClick={() => openEdit(user)} 
-                          className="btn-icon edit"
-                          title="Modifier"
-                        >
-                          <Pencil size={16} />
-                        </button>
-                        <button 
-                          onClick={() => toggleActive(user.id)} 
-                          className={`btn-icon ${user.is_active ? 'warning' : 'success'}`}
-                          title={user.is_active ? "Désactiver" : "Activer"}
-                        >
-                          <Power size={16} className={user.is_active ? 'text-warning' : 'text-success'} />
-                        </button>
-                        <button 
-                          onClick={() => openDeleteConfirmation(user)} 
-                          className="btn-icon delete"
-                          title="Supprimer"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        {/* Edit button - conditionally enabled */}
+                        {canEditUser(user) && (
+                          <button 
+                            onClick={() => openEdit(user)} 
+                            className="btn-icon edit"
+                            title="Modifier"
+                          >
+                            <Pencil size={16} />
+                          </button>
+                        )}
+                        
+                        {/* Toggle status button - conditionally enabled */}
+                        {canToggleUser(user) && (
+                          <button 
+                            onClick={() => openToggleConfirmation(user)} 
+                            className={`btn-icon ${user.is_active ? 'warning' : 'success'}`}
+                            title={user.is_active ? "Désactiver" : "Activer"}
+                          >
+                            <Power size={16} className={user.is_active ? 'text-warning' : 'text-success'} />
+                          </button>
+                        )}
+                        
+                        {/* Delete button - conditionally enabled */}
+                        {canDeleteUser(user) && (
+                          <button 
+                            onClick={() => openDeleteConfirmation(user)} 
+                            className="btn-icon delete"
+                            title="Supprimer"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
+                        
+                        {/* If no actions available, show disabled message */}
+                        {!canEditUser(user) && !canToggleUser(user) && !canDeleteUser(user) && (
+                          <span className="no-actions" title="Aucune action disponible">
+                            <Shield size={16} />
+                          </span>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -662,7 +767,7 @@ export default function AdminUsers() {
                 </div>
               )}
               
-              {/* Role */}
+              {/* Role - restrict options based on user role */}
               <div className="form-group">
                 <label>Rôle</label>
                 <select
@@ -670,10 +775,28 @@ export default function AdminUsers() {
                   onChange={(e) => setForm({...form, role: e.target.value})}
                   className="form-select"
                 >
-                  <option value="super_admin">Super Admin</option>
-                  <option value="admin">Admin</option>
-                  <option value="user">Utilisateur</option>
+                  {/* Super admin can assign any role */}
+                  {isSuperAdmin && (
+                    <>
+                      <option value="super_admin">Super Admin</option>
+                      <option value="admin">Admin</option>
+                      <option value="user">Utilisateur</option>
+                    </>
+                  )}
+                  
+                  {/* Admin can only assign admin and user (not super_admin) */}
+                  {isAdmin && (
+                    <>
+                      <option value="admin">Admin</option>
+                      <option value="user">Utilisateur</option>
+                    </>
+                  )}
                 </select>
+                {isAdmin && (
+                  <small className="form-help-text">
+                    <ShieldAlert size={12} /> Vous ne pouvez pas créer de Super Admin
+                  </small>
+                )}
               </div>
 
               {/* Active status (only for edit) */}
@@ -742,6 +865,46 @@ export default function AdminUsers() {
                     <Trash2 size={16} />
                     Supprimer
                   </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toggle Status Confirmation Modal */}
+      {showToggleModal && (
+        <div className="modal-overlay">
+          <div className="modal-content modal-confirm">
+            <div className="modal-confirm-icon">
+              <AlertTriangle size={48} />
+            </div>
+            <h3 className="modal-confirm-title">
+              {userToToggle?.is_active ? "Désactiver" : "Activer"} le compte
+            </h3>
+            <p className="modal-confirm-message">
+              Êtes-vous sûr de vouloir {userToToggle?.is_active ? "désactiver" : "activer"} le compte de <strong>{userToToggle?.name}</strong> ?
+            </p>
+            <div className="modal-confirm-actions">
+              <button 
+                onClick={handleCancelToggle} 
+                className="btn-secondary"
+                disabled={isToggling}
+              >
+                Annuler
+              </button>
+              <button 
+                onClick={handleConfirmToggle} 
+                className={`btn-${userToToggle?.is_active ? 'warning' : 'success'}`}
+                disabled={isToggling}
+              >
+                {isToggling ? (
+                  <>
+                    <div className="loading-spinner-small"></div>
+                    Traitement...
+                  </>
+                ) : (
+                  userToToggle?.is_active ? "Désactiver" : "Activer"
                 )}
               </button>
             </div>

@@ -75,7 +75,7 @@ const App = () => (
             {/* Login route */}
             <Route path="/login" element={<AdminLogin />} />
             
-            {/* Admin routes - All protected, but Users page requires admin role */}
+            {/* Admin routes */}
             <Route
               path="/dashboard"
               element={
@@ -131,11 +131,10 @@ const App = () => (
               <Route index element={<AdminFinance />} />
             </Route>
             
-            {/* Users route - Requires admin role */}
             <Route
               path="/users"
               element={
-                <ProtectedRoute requiredRole="admin">
+                <ProtectedRoute>
                   <AdminLayout />
                 </ProtectedRoute>
               }

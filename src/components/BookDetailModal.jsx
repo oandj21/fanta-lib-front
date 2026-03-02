@@ -122,11 +122,7 @@ export default function BookDetailModal({ book, onClose }) {
                 {book.categorie || "غير مصنف"}
               </span>
 
-              {book.status === "available" && (
-                <p className="stock-info">
-                  📦 متوفر في المخزون
-                </p>
-              )}
+              
 
               <div className="book-description">
                 <h3>الوصف</h3>

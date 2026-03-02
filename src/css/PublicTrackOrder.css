@@ -56,7 +56,7 @@
 /* CONTENT */
 .track-content {
   background: white;
-  margin-top: -20px;
+  margin-top: 10px;
   border-radius: 16px;
   padding: 20px;
   box-shadow: var(--shadow-md);

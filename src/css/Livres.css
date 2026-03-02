@@ -109,13 +109,60 @@
   }
 }
 
+/* Updated Genres Filter with Scroll */
 .genres-filter {
   display: flex;
   flex-wrap: wrap;
   gap: 0.625rem;
   justify-content: center;
+  max-height: 5.5rem; /* Approximately 2 lines of buttons with gap */
+  overflow-y: auto;
+  padding: 0.25rem 0.5rem;
+  scrollbar-width: thin; /* For Firefox */
+  scrollbar-color: #5c0202 #e8e0d8; /* For Firefox */
+  position: relative;
+  width: 100%;
 }
 
+/* Custom scrollbar for Webkit browsers (Chrome, Safari, Edge) */
+.genres-filter::-webkit-scrollbar {
+  width: 6px;
+}
+
+.genres-filter::-webkit-scrollbar-track {
+  background: #e8e0d8;
+  border-radius: 10px;
+}
+
+.genres-filter::-webkit-scrollbar-thumb {
+  background: #5c0202;
+  border-radius: 10px;
+}
+
+.genres-filter::-webkit-scrollbar-thumb:hover {
+  background: #7a2e2a;
+}
+
+/* Gradient indicator for scrollability */
+.genres-filter::after {
+  content: '';
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 20px;
+  background: linear-gradient(to top, rgba(255, 255, 255, 0.9), transparent);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  border-radius: 0 0 10px 10px;
+}
+
+.genres-filter.can-scroll::after {
+  opacity: 1;
+}
+
+/* Ensure buttons maintain consistent size */
 .genre-btn {
   padding: 0.625rem 1.25rem;
   border-radius: 50px;
@@ -128,6 +175,8 @@
   cursor: pointer;
   transition: all 0.2s ease;
   letter-spacing: 0.3px;
+  flex-shrink: 0; /* Prevent buttons from shrinking */
+  white-space: nowrap; /* Keep button text on one line */
 }
 
 .genre-btn:hover {
@@ -452,6 +501,10 @@
     padding: 2rem 1rem;
   }
   
+  .genres-filter {
+    max-height: 5rem; /* Slightly smaller on mobile */
+  }
+  
   .genre-btn {
     padding: 0.5rem 1rem;
     font-size: 0.85rem;
@@ -504,7 +557,6 @@
   }
 }
 
-
 /* RTL Support */
 [dir="rtl"] .results-count {
   padding-left: 0;
@@ -517,6 +569,10 @@
 
 [dir="rtl"] .filters-container {
   flex-direction: row;
+}
+
+[dir="rtl"] .genres-filter::-webkit-scrollbar {
+  width: 6px;
 }
 
 @media (max-width: 639px) {

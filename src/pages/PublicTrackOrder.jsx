@@ -26,12 +26,41 @@ const getStatusColor = (status) => {
   const s = status.toLowerCase();
 
   if (s.includes("livré") || s.includes("delivered")) return "#22c55e";
-  if (s.includes("transit")) return "#f59e0b";
-  if (s.includes("ramass")) return "#3b82f6";
-  if (s.includes("attente")) return "#6b7280";
-  if (s.includes("retour")) return "#ef4444";
+  if (s.includes("transit") || s.includes("en cours")) return "#f59e0b";
+  if (s.includes("ramassé") || s.includes("ramass")) return "#3b82f6";
+  if (s.includes("attente") || s.includes("en attente")) return "#6b7280";
+  if (s.includes("retour") || s.includes("retourné")) return "#ef4444";
+  if (s.includes("préparé") || s.includes("preparation")) return "#8b5cf6";
+  if (s.includes("expédié") || s.includes("expedie")) return "#3b82f6";
+  if (s.includes("livraison") || s.includes("en livraison")) return "#f59e0b";
 
   return "#3b82f6";
+};
+
+/* TRADUCTION DU STATUT */
+const translateStatus = (status) => {
+  if (!status) return "Non disponible";
+  
+  const statusLower = status.toLowerCase();
+  
+  // Statuts de livraison
+  if (statusLower.includes("pending") || statusLower.includes("en attente")) return "En attente";
+  if (statusLower.includes("preparation") || statusLower.includes("préparé")) return "Préparé";
+  if (statusLower.includes("picked up") || statusLower.includes("ramassé")) return "Ramassé";
+  if (statusLower.includes("in transit") || statusLower.includes("en transit")) return "En transit";
+  if (statusLower.includes("out for delivery") || statusLower.includes("en livraison")) return "En livraison";
+  if (statusLower.includes("delivered") || statusLower.includes("livré")) return "Livré";
+  if (statusLower.includes("returned") || statusLower.includes("retourné")) return "Retourné";
+  if (statusLower.includes("cancelled") || statusLower.includes("annulé")) return "Annulé";
+  
+  // Statuts de paiement
+  if (statusLower.includes("paid") || statusLower.includes("payé")) return "Payé";
+  if (statusLower.includes("unpaid") || statusLower.includes("non payé")) return "Non payé";
+  if (statusLower.includes("partial") || statusLower.includes("partiel")) return "Paiement partiel";
+  if (statusLower.includes("cash on delivery") || statusLower.includes("contre remboursement")) return "Contre remboursement";
+  
+  // Si aucun match, retourner le statut original
+  return status;
 };
 
 /* FORMAT DATE */
@@ -136,6 +165,10 @@ export default function PublicTrackOrder() {
 
   const deliveryStatus = order.statut;
   const paymentStatus = order.payment_status;
+  
+  // Traduire les statuts
+  const translatedDeliveryStatus = translateStatus(deliveryStatus);
+  const translatedPaymentStatus = translateStatus(paymentStatus);
 
   return (
     <div className="public-track-container">
@@ -182,7 +215,7 @@ export default function PublicTrackOrder() {
                 color: getStatusColor(deliveryStatus)
               }}
             >
-              {deliveryStatus || "En attente"}
+              {translatedDeliveryStatus}
             </div>
           </div>
 
@@ -196,11 +229,11 @@ export default function PublicTrackOrder() {
             <div
               className="status-badge"
               style={{
-                background: "#eef2ff",
-                color: "#1e63d5"
+                background: translatedPaymentStatus === "Payé" ? "#22c55e20" : "#eef2ff",
+                color: translatedPaymentStatus === "Payé" ? "#22c55e" : "#1e63d5"
               }}
             >
-              {paymentStatus || "Non disponible"}
+              {translatedPaymentStatus}
             </div>
           </div>
         </div>
@@ -290,7 +323,7 @@ export default function PublicTrackOrder() {
                     {formatDate(item.date)}
                   </span>
 
-                  <span>{item.status}</span>
+                  <span>{translateStatus(item.status)}</span>
                 </div>
 
               </div>

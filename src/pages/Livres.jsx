@@ -1,5 +1,5 @@
 // Livres.jsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
 import { fetchLivres, selectLivres, selectLivresLoading } from "../store/store";
@@ -19,11 +19,13 @@ export default function Livres() {
   
   const [search, setSearch] = useState("");
   const [genre, setGenre] = useState("الكل");
+  const [canScroll, setCanScroll] = useState(false);
+  const genresFilterRef = useRef(null);
 
   useEffect(() => {
     window.scrollTo({
       top: 0,
-      behavior: 'smooth' // Smooth scrolling animation
+      behavior: 'smooth'
     });
   }, []);
 
@@ -55,6 +57,21 @@ export default function Livres() {
       .map((b) => b.categorie)
       .filter(cat => cat && cat.trim() !== "")
   ))];
+
+  // Check if genres filter can scroll
+  useEffect(() => {
+    const checkScroll = () => {
+      if (genresFilterRef.current) {
+        const { scrollHeight, clientHeight } = genresFilterRef.current;
+        setCanScroll(scrollHeight > clientHeight);
+      }
+    };
+    
+    checkScroll();
+    window.addEventListener('resize', checkScroll);
+    
+    return () => window.removeEventListener('resize', checkScroll);
+  }, [genres]);
 
   const filtered = books.filter((b) => {
     const title = b.titre || "";
@@ -92,23 +109,26 @@ export default function Livres() {
         </div>
       </section>
 
-     
-
-      <section className="books-section"> <section className="filters-sectio">
-        <div className="filters-container">
-          <div className="genres-filter">
-            {genres.map((g) => (
-              <button
-                key={g}
-                onClick={() => setGenre(g)}
-                className={`genre-btn ${genre === g ? "active" : ""}`}
-              >
-                {g}
-              </button>
-            ))}
+      <section className="books-section">
+        <section className="filters-sectio">
+          <div className="filters-container">
+            <div 
+              className={`genres-filter ${canScroll ? 'can-scroll' : ''}`}
+              ref={genresFilterRef}
+            >
+              {genres.map((g) => (
+                <button
+                  key={g}
+                  onClick={() => setGenre(g)}
+                  className={`genre-btn ${genre === g ? "active" : ""}`}
+                >
+                  {g}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+        
         {loading ? (
           <div className="loading-container">
             <div className="loading-spinner"></div>

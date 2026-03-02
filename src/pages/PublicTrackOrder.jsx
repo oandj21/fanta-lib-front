@@ -10,149 +10,105 @@ import {
   Calendar,
   Clock,
   CreditCard,
-  PackageCheck,
-  PackageX,
-  FileText,
-  BookOpen,
-  Copy,
-  Check,
   ArrowLeft,
-  AlertCircle,
   RefreshCw,
   Home,
-  Info
+  Info,
+  AlertCircle
 } from "lucide-react";
+
 import "../css/PublicTrackOrder.css";
 
-// Helper to get status color
+/* STATUS COLOR */
 const getStatusColor = (status) => {
-  if (!status) return '#6b7280';
-  
-  const statusLower = status.toLowerCase();
-  
-  if (status === 'NEW_PARCEL' || statusLower.includes('nouveau')) return '#3b82f6';
-  if (status === 'PARCEL_CONFIRMED' || statusLower.includes('confirm')) return '#007bff';
-  if (status === 'PARCEL_IN_TRANSIT' || statusLower.includes('transit') || statusLower.includes('expéd')) return '#ffc107';
-  if (status === 'PARCEL_DELIVERED' || statusLower.includes('livré') || statusLower.includes('delivered')) return '#10b981';
-  if (status === 'PARCEL_CANCELLED' || statusLower.includes('annul') || statusLower.includes('cancelled')) return '#6b7280';
-  if (status === 'PARCEL_RETURNED' || statusLower.includes('retour') || statusLower.includes('returned')) return '#ef4444';
-  
-  if (statusLower.includes('payé') || statusLower.includes('paid')) return '#10b981';
-  if (statusLower.includes('non payé') || statusLower.includes('not_paid')) return '#ef4444';
-  if (statusLower.includes('facturé') || statusLower.includes('invoiced')) return '#8b5cf6';
-  
-  return '#6b7280';
+  if (!status) return "#6b7280";
+
+  const s = status.toLowerCase();
+
+  if (s.includes("livré") || s.includes("delivered")) return "#22c55e";
+  if (s.includes("transit")) return "#f59e0b";
+  if (s.includes("ramass")) return "#3b82f6";
+  if (s.includes("attente")) return "#6b7280";
+  if (s.includes("retour")) return "#ef4444";
+
+  return "#3b82f6";
 };
 
-// Format date helper
+/* FORMAT DATE */
 const formatDate = (dateString) => {
   if (!dateString) return "-";
-  return new Date(dateString).toLocaleString('fr-FR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
+
+  return new Date(dateString).toLocaleString("fr-FR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
   });
 };
 
 export default function PublicTrackOrder() {
   const { parcelCode } = useParams();
-  const [order, setOrder] = useState(null);
-  const [trackingInfo, setTrackingInfo] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [copied, setCopied] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const [logoError, setLogoError] = useState(false);
 
-  const API_URL = "https://fanta-lib-back-production-76f4.up.railway.app/api";
+  const [trackingInfo, setTrackingInfo] = useState(null);
+  const [order, setOrder] = useState(null);
+
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
+
+  const API_URL =
+    "https://fanta-lib-back-production-76f4.up.railway.app/api";
 
   useEffect(() => {
     if (parcelCode) {
-      fetchTrackingInfo();
+      fetchTracking();
     }
   }, [parcelCode]);
 
-  const fetchTrackingInfo = async (isRefreshing = false) => {
-    if (isRefreshing) setRefreshing(true);
+  /* FETCH TRACKING */
+  const fetchTracking = async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
     else setLoading(true);
-    
+
     setError(null);
-    
+
     try {
-      // Use the public tracking endpoint
-      const response = await axios.get(`${API_URL}/public/track/${parcelCode}`);
-      
-      console.log("Tracking response:", response.data);
-      
-      if (response.data.success && response.data.data) {
-        setTrackingInfo(response.data.data);
-        
-        // Create order object from tracking data
-        if (response.data.data.parcel) {
-          // Get can_open value and ensure it's a number
-          const canOpen = response.data.data.parcel.can_open;
-          console.log("Raw can_open value:", canOpen, "Type:", typeof canOpen);
-          
-          // Convert to number (0 or 1)
-          let parcelOpenValue = 0;
-          if (canOpen !== undefined && canOpen !== null) {
-            if (typeof canOpen === 'number') {
-              parcelOpenValue = canOpen;
-            } else if (typeof canOpen === 'string') {
-              parcelOpenValue = parseInt(canOpen) || 0;
-            } else if (typeof canOpen === 'boolean') {
-              parcelOpenValue = canOpen ? 1 : 0;
-            }
-          }
-          
-          console.log("Parsed parcel_open value:", parcelOpenValue);
-          
-          const trackingOrder = {
-            parcel_code: response.data.data.parcel.code || parcelCode,
-            parcel_receiver: response.data.data.parcel.receiver || 'Client',
-            parcel_phone: response.data.data.parcel.phone || '',
-            parcel_prd_qty: response.data.data.parcel.product?.quantity || 1,
-            parcel_city: response.data.data.parcel.city?.name || response.data.data.parcel.city || '',
-            parcel_address: response.data.data.parcel.address || '',
-            parcel_price: response.data.data.parcel.price || 0,
-            parcel_open: parcelOpenValue, // Use the parsed value
-            parcel_note: response.data.data.parcel.note || '',
-            statut: response.data.data.parcel.delivery_status || 'En attente',
-            date: response.data.data.parcel.created_date || new Date().toISOString().split('T')[0],
-            livres: []
-          };
-          
-          console.log("Final order object:", trackingOrder);
-          setOrder(trackingOrder);
+      const res = await axios.get(
+        `${API_URL}/public/track/${parcelCode}`
+      );
+
+      if (res.data.success && res.data.data) {
+        const data = res.data.data;
+
+        setTrackingInfo(data);
+
+        /* Build order object from API */
+        if (data.parcel) {
+          setOrder({
+            parcel_code: data.parcel.code,
+            parcel_receiver: data.parcel.receiver,
+            parcel_phone: data.parcel.phone,
+            parcel_city:
+              data.parcel.city?.name || data.parcel.city,
+            parcel_address: data.parcel.address,
+            parcel_price: data.parcel.price,
+            parcel_prd_qty: data.parcel.product?.quantity || 1,
+            statut: data.parcel.delivery_status,
+            payment_status: data.parcel.payment_status,
+            date: data.parcel.created_date
+          });
         }
       } else {
-        setError("Commande introuvable. Vérifiez le code de suivi.");
+        setError("Commande introuvable");
       }
     } catch (err) {
-      console.error("Error fetching tracking:", err);
-      setError("Commande introuvable. Vérifiez le code de suivi.");
+      console.error(err);
+      setError("Commande introuvable");
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  };
-
-  const handleRefresh = () => {
-    fetchTrackingInfo(true);
-  };
-
-  const copyTrackingLink = () => {
-    const link = window.location.href;
-    navigator.clipboard.writeText(link).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  };
-
-  const handleLogoError = () => {
-    setLogoError(true);
   };
 
   if (loading) {
@@ -167,237 +123,191 @@ export default function PublicTrackOrder() {
   if (error || !order) {
     return (
       <div className="public-track-error">
-        <div className="error-container">
-          <AlertCircle size={48} />
-          <h2>Commande non trouvée</h2>
-          <p>{error || "Le code de suivi que vous avez fourni est invalide."}</p>
-          <Link to="/" className="btn-home">
-            <Home size={16} />
-            Retour à l'accueil
-          </Link>
-        </div>
+        <AlertCircle size={45} />
+        <h2>Commande non trouvée</h2>
+
+        <Link to="/" className="btn-home">
+          <Home size={16} />
+          Retour accueil
+        </Link>
       </div>
     );
   }
 
-  // Get delivery status from tracking or order
-  const deliveryStatus = trackingInfo?.parcel?.delivery_status || order.statut;
-  const paymentStatus = trackingInfo?.parcel?.payment_status;
-  const paymentText = trackingInfo?.parcel?.payment_status_text;
+  const deliveryStatus = order.statut;
+  const paymentStatus = order.payment_status;
 
   return (
     <div className="public-track-container">
-      {/* Header with Logo */}
+
+      {/* HEADER */}
       <div className="track-header">
         <Link to="/" className="back-link">
           <ArrowLeft size={16} />
-          Retour à l'accueil
+          Retour
         </Link>
-        
-        <div className="track-header-content">
-          {/* Logo Container */}
-          <div className="logo-container">
-            {!logoError ? (
-              <img 
-                src="/logo.jpeg" 
-                alt="Logo" 
-                className="header-logo"
-                onError={handleLogoError}
-              />
-            ) : (
-              <Package size={32} className="header-icon" />
-            )}
-          </div>
-          
-          <h1>Suivi de commande</h1>
-          <p className="parcel-code-display">Code: <strong>{order.parcel_code}</strong></p>
-          
-          <button onClick={copyTrackingLink} className="btn-copy-link">
-            {copied ? <Check size={16} /> : <Copy size={16} />}
-            {copied ? "Lien copié !" : "Copier le lien de suivi"}
-          </button>
-        </div>
+
+        <h1>Suivi des colis</h1>
+        <p className="parcel-code-display">
+          Code : <strong>{order.parcel_code}</strong>
+        </p>
       </div>
 
-      {/* Main content */}
+      {/* CONTENT */}
       <div className="track-content">
-        {/* Status cards */}
+
+        {/* STATUS */}
         <div className="status-cards">
+
+          {/* DELIVERY */}
           <div className="status-card">
             <div className="status-card-header">
               <Truck size={18} />
-              <h3>Statut de livraison</h3>
+              <h3>Statut livraison</h3>
             </div>
-            <div 
+
+            <div
               className="status-badge large"
-              style={{ 
-                backgroundColor: `${getStatusColor(deliveryStatus)}15`,
-                color: getStatusColor(deliveryStatus),
-                border: `1px solid ${getStatusColor(deliveryStatus)}30`
+              style={{
+                background: `${getStatusColor(deliveryStatus)}20`,
+                color: getStatusColor(deliveryStatus)
               }}
             >
-              {deliveryStatus || 'En attente'}
+              {deliveryStatus || "En attente"}
             </div>
-            {trackingInfo?.tracking?.description && (
-              <p className="status-description">{trackingInfo.tracking.description}</p>
-            )}
           </div>
 
+          {/* PAYMENT */}
           <div className="status-card">
             <div className="status-card-header">
               <CreditCard size={18} />
-              <h3>Statut de paiement</h3>
+              <h3>Paiement</h3>
             </div>
-            {paymentStatus ? (
-              <>
-                <div 
-                  className="status-badge"
-                  style={{ 
-                    backgroundColor: `${getStatusColor(paymentStatus)}15`,
-                    color: getStatusColor(paymentStatus),
-                    border: `1px solid ${getStatusColor(paymentStatus)}30`
-                  }}
-                >
-                  {paymentStatus}
-                </div>
-                {paymentText && <p className="payment-text">{paymentText}</p>}
-              </>
-            ) : (
-              <p className="no-info">Information non disponible</p>
-            )}
+
+            <div
+              className="status-badge"
+              style={{
+                background: "#eef2ff",
+                color: "#1e63d5"
+              }}
+            >
+              {paymentStatus || "Non disponible"}
+            </div>
           </div>
         </div>
 
-        {/* Refresh button */}
-        <button 
-          onClick={handleRefresh} 
+        {/* REFRESH */}
+        <button
           className="btn-refresh"
-          disabled={refreshing}
+          onClick={() => fetchTracking(true)}
         >
-          <RefreshCw size={16} className={refreshing ? 'spinning' : ''} />
-          {refreshing ? 'Mise à jour...' : 'Actualiser le statut'}
+          <RefreshCw size={16} />
+          {refreshing ? "Mise à jour..." : "Actualiser"}
         </button>
 
-        {/* Order details grid */}
+        {/* DETAILS */}
         <div className="details-grid">
-          {/* Client info */}
+
           <div className="detail-card">
             <div className="detail-card-header">
               <User size={18} />
-              <h3>Client</h3>
+              Client
             </div>
-            <div className="detail-card-content">
-              <div className="detail-row">
-                <span className="detail-label">Nom:</span>
-                <span className="detail-value">{order.parcel_receiver}</span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Téléphone:</span>
-                <span className="detail-value">{order.parcel_phone || '-'}</span>
-              </div>
+
+            <div className="detail-row">
+              <span>Nom</span>
+              <span>{order.parcel_receiver}</span>
+            </div>
+
+            <div className="detail-row">
+              <span>Téléphone</span>
+              <span>{order.parcel_phone}</span>
             </div>
           </div>
 
-          {/* Address info */}
           <div className="detail-card">
             <div className="detail-card-header">
               <MapPin size={18} />
-              <h3>Adresse de livraison</h3>
+              Adresse
             </div>
-            <div className="detail-card-content">
-              <div className="detail-row">
-                <span className="detail-label">Ville:</span>
-                <span className="detail-value">{order.parcel_city}</span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Adresse:</span>
-                <span className="detail-value address">{order.parcel_address || '-'}</span>
-              </div>
+
+            <div className="detail-row">
+              <span>Ville</span>
+              <span>{order.parcel_city}</span>
+            </div>
+
+            <div className="detail-row">
+              <span>Adresse</span>
+              <span>{order.parcel_address}</span>
             </div>
           </div>
 
-          {/* Package info */}
           <div className="detail-card">
             <div className="detail-card-header">
               <Package size={18} />
-              <h3>Colis</h3>
+              Colis
             </div>
-            <div className="detail-card-content">
-              <div className="detail-row">
-                <span className="detail-label">Quantité totale:</span>
-                <span className="detail-value">{order.parcel_prd_qty || 1}</span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Prix du colis:</span>
-                <span className="detail-value price">{order.parcel_price} MAD</span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Colis ouvert:</span>
-                <span className="detail-value">
-                  {order.parcel_open === 1 || order.parcel_open === true ? (
-                    <span className="can-open-allowed">
-                      <PackageCheck size={14} /> Oui
-                    </span>
-                  ) : (
-                    <span className="can-open-not-allowed">
-                      <PackageX size={14} /> Non
-                    </span>
-                  )}
-                </span>
-              </div>
+
+            <div className="detail-row">
+              <span>Quantité</span>
+              <span>{order.parcel_prd_qty}</span>
+            </div>
+
+            <div className="detail-row">
+              <span>Prix</span>
+              <span>{order.parcel_price} MAD</span>
             </div>
           </div>
 
-          {/* Dates */}
           <div className="detail-card">
             <div className="detail-card-header">
               <Calendar size={18} />
-              <h3>Dates</h3>
+              Date
             </div>
-            <div className="detail-card-content">
-              <div className="detail-row">
-                <span className="detail-label">Date de commande:</span>
-                <span className="detail-value">
-                  {order.date ? new Date(order.date).toLocaleDateString('fr-FR') : '-'}
-                </span>
-              </div>
-              {trackingInfo?.parcel?.updated_at && (
-                <div className="detail-row">
-                  <span className="detail-label">Dernière mise à jour:</span>
-                  <span className="detail-value">{formatDate(trackingInfo.parcel.updated_at)}</span>
-                </div>
-              )}
+
+            <div className="detail-row">
+              <span>Commande</span>
+              <span>{formatDate(order.date)}</span>
             </div>
           </div>
+
         </div>
 
-        {/* Note */}
-        {order.parcel_note && (
-          <div className="note-section">
-            <div className="note-header">
-              <FileText size={16} />
-              <h4>Note supplémentaire</h4>
-            </div>
-            <p className="note-content">{order.parcel_note}</p>
+        {/* TIMELINE HISTORY */}
+        {trackingInfo?.tracking?.history?.length > 0 && (
+          <div className="timeline">
+            <h3 style={{ marginBottom: 15 }}>
+              Historique du colis
+            </h3>
+
+            {trackingInfo.tracking.history.map((item, index) => (
+              <div key={index} className="timeline-item">
+
+                <div className="timeline-dot"></div>
+
+                <div className="timeline-content">
+                  <span className="timeline-time">
+                    {formatDate(item.date)}
+                  </span>
+
+                  <span>{item.status}</span>
+                </div>
+
+              </div>
+            ))}
           </div>
         )}
 
-        {/* Tracking timestamps */}
-        {trackingInfo?.query_time && (
-          <div className="update-time">
-            <Clock size={14} />
-            <span>Dernière mise à jour: {formatDate(trackingInfo.query_time)}</span>
-          </div>
-        )}
       </div>
 
-      {/* Footer */}
+      {/* FOOTER */}
       <div className="track-footer">
-        <p className="footer-note">
+        <p>
           <Info size={14} />
-          Pour toute question concernant votre commande, contactez notre service client.
+          Pour toute information contactez le support.
         </p>
       </div>
+
     </div>
   );
 }

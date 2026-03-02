@@ -15,7 +15,8 @@ import {
   Home,
   Info,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  History
 } from "lucide-react";
 
 import "../css/PublicTrackOrder.css";
@@ -127,6 +128,7 @@ const statusOrder = [
 
 export default function PublicTrackOrder() {
   const { parcelCode } = useParams();
+  const [activeTab, setActiveTab] = useState('suivi'); // 'suivi' or 'livre'
 
   const [trackingInfo, setTrackingInfo] = useState(null);
   const [order, setOrder] = useState(null);
@@ -307,207 +309,231 @@ export default function PublicTrackOrder() {
         </p>
       </div>
 
-      {/* CONTENU */}
-      <div className="track-content">
+      {/* Tabs Navigation - Like finance-tabs */}
+      <div className="track-tabs">
+        <button 
+          className={`track-tab ${activeTab === 'suivi' ? 'active' : ''}`}
+          onClick={() => setActiveTab('suivi')}
+        >
+          <Truck size={18} />
+          Suivi des colis
+        </button>
+        <button 
+          className={`track-tab ${activeTab === 'livre' ? 'active' : ''}`}
+          onClick={() => setActiveTab('livre')}
+        >
+          <Package size={18} />
+          Livré
+        </button>
+      </div>
 
-        {/* STATUTS */}
-        <div className="status-cards">
+      {/* CONTENU - Suivi des colis Tab */}
+      {activeTab === 'suivi' && (
+        <div className="track-content">
 
-          {/* LIVRAISON */}
-          <div className="status-card">
-            <div className="status-card-header">
-              <Truck size={18} />
-              <h3>Statut livraison</h3>
+          {/* STATUTS */}
+          <div className="status-cards">
+
+            {/* LIVRAISON */}
+            <div className="status-card">
+              <div className="status-card-header">
+                <Truck size={18} />
+                <h3>Statut livraison</h3>
+              </div>
+
+              <div className="status-badge-container">
+                <div
+                  className="status-badge large"
+                  style={{
+                    background: `${getStatusColor(deliveryStatus)}20`,
+                    color: getStatusColor(deliveryStatus),
+                    border: `1px solid ${getStatusColor(deliveryStatus)}30`
+                  }}
+                >
+                  {translatedDeliveryStatus || "En attente"}
+                </div>
+                
+                {secondaryStatus && secondaryStatus !== '' && (
+                  <div
+                    className="status-badge large secondary"
+                    style={{
+                      background: `${getStatusColor(secondaryStatus)}20`,
+                      color: getStatusColor(secondaryStatus),
+                      border: `1px solid ${getStatusColor(secondaryStatus)}30`,
+                      marginLeft: '8px'
+                    }}
+                  >
+                    {translatedSecondaryStatus}
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="status-badge-container">
+            {/* PAIEMENT */}
+            <div className="status-card">
+              <div className="status-card-header">
+                <CreditCard size={18} />
+                <h3>Paiement</h3>
+              </div>
+
               <div
-                className="status-badge large"
+                className="status-badge"
                 style={{
-                  background: `${getStatusColor(deliveryStatus)}20`,
-                  color: getStatusColor(deliveryStatus),
-                  border: `1px solid ${getStatusColor(deliveryStatus)}30`
+                  background: translatedPaymentStatus === "Payé" ? "#22c55e20" : 
+                              translatedPaymentStatus === "Non payé" ? "#ef444420" : "#eef2ff",
+                  color: translatedPaymentStatus === "Payé" ? "#22c55e" : 
+                         translatedPaymentStatus === "Non payé" ? "#ef4444" : "#1e63d5"
                 }}
               >
-                {translatedDeliveryStatus || "En attente"}
+                {translatedPaymentStatus || "Non disponible"}
               </div>
-              
-              {secondaryStatus && secondaryStatus !== '' && (
-                <div
-                  className="status-badge large secondary"
-                  style={{
-                    background: `${getStatusColor(secondaryStatus)}20`,
-                    color: getStatusColor(secondaryStatus),
-                    border: `1px solid ${getStatusColor(secondaryStatus)}30`,
-                    marginLeft: '8px'
-                  }}
-                >
-                  {translatedSecondaryStatus}
-                </div>
-              )}
             </div>
           </div>
 
-          {/* PAIEMENT */}
-          <div className="status-card">
-            <div className="status-card-header">
-              <CreditCard size={18} />
-              <h3>Paiement</h3>
+          {/* DÉTAILS */}
+          <div className="details-grid">
+
+            <div className="detail-card">
+              <div className="detail-card-header">
+                <User size={18} />
+                Client
+              </div>
+
+              <div className="detail-row">
+                <span>Nom</span>
+                <span>{order.parcel_receiver}</span>
+              </div>
+
+              <div className="detail-row">
+                <span>Téléphone</span>
+                <span>{order.parcel_phone}</span>
+              </div>
             </div>
 
-            <div
-              className="status-badge"
-              style={{
-                background: translatedPaymentStatus === "Payé" ? "#22c55e20" : 
-                            translatedPaymentStatus === "Non payé" ? "#ef444420" : "#eef2ff",
-                color: translatedPaymentStatus === "Payé" ? "#22c55e" : 
-                       translatedPaymentStatus === "Non payé" ? "#ef4444" : "#1e63d5"
-              }}
-            >
-              {translatedPaymentStatus || "Non disponible"}
+            <div className="detail-card">
+              <div className="detail-card-header">
+                <MapPin size={18} />
+                Adresse
+              </div>
+
+              <div className="detail-row">
+                <span>Ville</span>
+                <span>{order.parcel_city}</span>
+              </div>
+
+              <div className="detail-row">
+                <span>Adresse</span>
+                <span>{order.parcel_address}</span>
+              </div>
             </div>
+
+            <div className="detail-card">
+              <div className="detail-card-header">
+                <Package size={18} />
+                Colis
+              </div>
+
+              <div className="detail-row">
+                <span>Quantité</span>
+                <span>{order.parcel_prd_qty}</span>
+              </div>
+
+              <div className="detail-row">
+                <span>Prix</span>
+                <span>{order.parcel_price} MAD</span>
+              </div>
+            </div>
+
+            <div className="detail-card">
+              <div className="detail-card-header">
+                <Calendar size={18} />
+                Date
+              </div>
+
+              <div className="detail-row">
+                <span>Commande</span>
+                <span>{formatDate(order.date)}</span>
+              </div>
+            </div>
+
           </div>
         </div>
+      )}
 
-        {/* DÉTAILS */}
-        <div className="details-grid">
+      {/* CONTENU - Livré Tab */}
+      {activeTab === 'livre' && (
+        <div className="track-content">
+          {/* HISTORIQUE COMPLET DU COLIS */}
+          {allStatuses.length > 0 && (
+            <div className="timeline">
+              <h3 style={{ marginBottom: 15 }}>
+                Historique du colis
+              </h3>
 
-          <div className="detail-card">
-            <div className="detail-card-header">
-              <User size={18} />
-              Client
+              {allStatuses.map((status, index) => (
+                <div key={index} className="timeline-item">
+                  <div 
+                    className={`timeline-dot ${status.isCompleted ? 'completed' : ''} ${status.isCurrent ? 'current' : ''}`}
+                    style={{
+                      background: status.isCompleted ? status.color : 
+                                 status.isCurrent ? status.color : '#e0e0e0',
+                      border: status.isCompleted ? `4px solid ${status.color}30` : 
+                             status.isCurrent ? `4px solid ${status.color}30` : '4px solid #f0f0f0'
+                    }}
+                  >
+                    {status.isCompleted && <CheckCircle size={12} color="white" />}
+                  </div>
+
+                  <div 
+                    className={`timeline-content ${status.isCompleted ? 'completed' : ''} ${status.isCurrent ? 'current' : ''}`}
+                    style={{
+                      borderLeft: status.isCompleted ? `3px solid ${status.color}` : 
+                                 status.isCurrent ? `3px solid ${status.color}` : '3px solid #e0e0e0'
+                    }}
+                  >
+                    <span className="timeline-time">
+                      {status.date ? formatDate(status.date) : 
+                       status.isCurrent ? 'En cours' : 'À venir'}
+                    </span>
+                    <span style={{ 
+                      fontWeight: status.isCurrent ? 'bold' : 'normal',
+                      color: status.isCompleted ? status.color : 
+                            status.isCurrent ? status.color : '#666'
+                    }}>
+                      {status.label}
+                      {status.isCurrent && ' (Actuel)'}
+                    </span>
+                  </div>
+                </div>
+              ))}
             </div>
+          )}
 
-            <div className="detail-row">
-              <span>Nom</span>
-              <span>{order.parcel_receiver}</span>
+          {/* Original history from API (if available) */}
+          {trackingInfo?.tracking?.history?.length > 0 && (
+            <div className="timeline original-history">
+              <h3 style={{ marginBottom: 15, marginTop: 30 }}>
+                Historique détaillé
+              </h3>
+
+              {trackingInfo.tracking.history.map((item, index) => (
+                <div key={index} className="timeline-item">
+                  <div className="timeline-dot completed" style={{ background: getStatusColor(item.status) }}>
+                    <CheckCircle size={12} color="white" />
+                  </div>
+
+                  <div className="timeline-content completed">
+                    <span className="timeline-time">
+                      {formatDate(item.date)}
+                    </span>
+                    <span>{translateStatus(item.status)}</span>
+                  </div>
+                </div>
+              ))}
             </div>
-
-            <div className="detail-row">
-              <span>Téléphone</span>
-              <span>{order.parcel_phone}</span>
-            </div>
-          </div>
-
-          <div className="detail-card">
-            <div className="detail-card-header">
-              <MapPin size={18} />
-              Adresse
-            </div>
-
-            <div className="detail-row">
-              <span>Ville</span>
-              <span>{order.parcel_city}</span>
-            </div>
-
-            <div className="detail-row">
-              <span>Adresse</span>
-              <span>{order.parcel_address}</span>
-            </div>
-          </div>
-
-          <div className="detail-card">
-            <div className="detail-card-header">
-              <Package size={18} />
-              Colis
-            </div>
-
-            <div className="detail-row">
-              <span>Quantité</span>
-              <span>{order.parcel_prd_qty}</span>
-            </div>
-
-            <div className="detail-row">
-              <span>Prix</span>
-              <span>{order.parcel_price} MAD</span>
-            </div>
-          </div>
-
-          <div className="detail-card">
-            <div className="detail-card-header">
-              <Calendar size={18} />
-              Date
-            </div>
-
-            <div className="detail-row">
-              <span>Commande</span>
-              <span>{formatDate(order.date)}</span>
-            </div>
-          </div>
-
+          )}
         </div>
-
-        {/* HISTORIQUE COMPLET DU COLIS - Only specified statuses */}
-        {allStatuses.length > 0 && (
-          <div className="timeline">
-            <h3 style={{ marginBottom: 15 }}>
-              Historique du colis
-            </h3>
-
-            {allStatuses.map((status, index) => (
-              <div key={index} className="timeline-item">
-                <div 
-                  className={`timeline-dot ${status.isCompleted ? 'completed' : ''} ${status.isCurrent ? 'current' : ''}`}
-                  style={{
-                    background: status.isCompleted ? status.color : 
-                               status.isCurrent ? status.color : '#e0e0e0',
-                    border: status.isCompleted ? `4px solid ${status.color}30` : 
-                           status.isCurrent ? `4px solid ${status.color}30` : '4px solid #f0f0f0'
-                  }}
-                >
-                  {status.isCompleted && <CheckCircle size={12} color="white" />}
-                </div>
-
-                <div 
-                  className={`timeline-content ${status.isCompleted ? 'completed' : ''} ${status.isCurrent ? 'current' : ''}`}
-                  style={{
-                    borderLeft: status.isCompleted ? `3px solid ${status.color}` : 
-                               status.isCurrent ? `3px solid ${status.color}` : '3px solid #e0e0e0'
-                  }}
-                >
-                  <span className="timeline-time">
-                    {status.date ? formatDate(status.date) : 
-                     status.isCurrent ? 'En cours' : 'À venir'}
-                  </span>
-                  <span style={{ 
-                    fontWeight: status.isCurrent ? 'bold' : 'normal',
-                    color: status.isCompleted ? status.color : 
-                          status.isCurrent ? status.color : '#666'
-                  }}>
-                    {status.label}
-                    {status.isCurrent && ' (Actuel)'}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Original history from API (if available) */}
-        {trackingInfo?.tracking?.history?.length > 0 && (
-          <div className="timeline original-history">
-            <h3 style={{ marginBottom: 15, marginTop: 30 }}>
-              Historique détaillé
-            </h3>
-
-            {trackingInfo.tracking.history.map((item, index) => (
-              <div key={index} className="timeline-item">
-                <div className="timeline-dot completed" style={{ background: getStatusColor(item.status) }}>
-                  <CheckCircle size={12} color="white" />
-                </div>
-
-                <div className="timeline-content completed">
-                  <span className="timeline-time">
-                    {formatDate(item.date)}
-                  </span>
-                  <span>{translateStatus(item.status)}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-      </div>
+      )}
 
       {/* PIED DE PAGE */}
       <div className="track-footer">

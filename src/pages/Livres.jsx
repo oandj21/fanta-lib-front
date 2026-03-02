@@ -19,7 +19,7 @@ export default function Livres() {
   
   const [search, setSearch] = useState("");
   const [genre, setGenre] = useState("الكل");
-  const [canScroll, setCanScroll] = useState(false);
+  const [canScroll, setCanScroll] = useState({ top: false, bottom: false });
   const genresFilterRef = useRef(null);
 
   useEffect(() => {
@@ -58,12 +58,20 @@ export default function Livres() {
       .filter(cat => cat && cat.trim() !== "")
   ))];
 
-  // Check if genres filter can scroll horizontally
+  // Split genres into two rows
+  const midIndex = Math.ceil(genres.length / 2);
+  const topRowGenres = genres.slice(0, midIndex);
+  const bottomRowGenres = genres.slice(midIndex);
+
+  // Check if genres filter can scroll vertically
   useEffect(() => {
     const checkScroll = () => {
       if (genresFilterRef.current) {
-        const { scrollWidth, clientWidth } = genresFilterRef.current;
-        setCanScroll(scrollWidth > clientWidth);
+        const { scrollHeight, clientHeight } = genresFilterRef.current;
+        setCanScroll({
+          top: scrollHeight > clientHeight,
+          bottom: scrollHeight > clientHeight
+        });
       }
     };
     
@@ -98,15 +106,15 @@ export default function Livres() {
     window.history.replaceState({}, "", url);
   };
 
-  const scrollLeft = () => {
+  const scrollUp = () => {
     if (genresFilterRef.current) {
-      genresFilterRef.current.scrollBy({ left: -200, behavior: 'smooth' });
+      genresFilterRef.current.scrollBy({ top: -100, behavior: 'smooth' });
     }
   };
 
-  const scrollRight = () => {
+  const scrollDown = () => {
     if (genresFilterRef.current) {
-      genresFilterRef.current.scrollBy({ left: 200, behavior: 'smooth' });
+      genresFilterRef.current.scrollBy({ top: 100, behavior: 'smooth' });
     }
   };
 
@@ -124,37 +132,50 @@ export default function Livres() {
       <section className="books-section">
         <section className="filters-sectio">
           <div className="filters-container">
-            <div className="genres-filter-wrapper">
-              {canScroll && (
+            <div className="genres-filter-wrapper-vertical">
+              {canScroll.top && (
                 <button 
-                  className="scroll-btn scroll-left" 
-                  onClick={scrollLeft}
-                  aria-label="Scroll left"
+                  className="scroll-btn scroll-up" 
+                  onClick={scrollUp}
+                  aria-label="Scroll up"
                 >
-                  ‹
+                  ↑
                 </button>
               )}
               <div 
-                className={`genres-filter ${canScroll ? 'can-scroll' : ''}`}
+                className={`genres-filter-vertical ${canScroll.top || canScroll.bottom ? 'can-scroll' : ''}`}
                 ref={genresFilterRef}
               >
-                {genres.map((g) => (
-                  <button
-                    key={g}
-                    onClick={() => setGenre(g)}
-                    className={`genre-btn ${genre === g ? "active" : ""}`}
-                  >
-                    {g}
-                  </button>
-                ))}
+                <div className="genre-row">
+                  {topRowGenres.map((g) => (
+                    <button
+                      key={g}
+                      onClick={() => setGenre(g)}
+                      className={`genre-btn ${genre === g ? "active" : ""}`}
+                    >
+                      {g}
+                    </button>
+                  ))}
+                </div>
+                <div className="genre-row">
+                  {bottomRowGenres.map((g) => (
+                    <button
+                      key={g}
+                      onClick={() => setGenre(g)}
+                      className={`genre-btn ${genre === g ? "active" : ""}`}
+                    >
+                      {g}
+                    </button>
+                  ))}
+                </div>
               </div>
-              {canScroll && (
+              {canScroll.bottom && (
                 <button 
-                  className="scroll-btn scroll-right" 
-                  onClick={scrollRight}
-                  aria-label="Scroll right"
+                  className="scroll-btn scroll-down" 
+                  onClick={scrollDown}
+                  aria-label="Scroll down"
                 >
-                  ›
+                  ↓
                 </button>
               )}
             </div>

@@ -690,3 +690,109 @@ html {
     max-width: 1536px;
   }
 }
+/* Vertical Scroll Genres Filter */
+.genres-filter-wrapper-vertical {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 100%;
+  position: relative;
+}
+
+.genres-filter-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0.25rem 0.5rem;
+  scrollbar-width: thin;
+  scrollbar-color: #5c0202 #e8e0d8;
+  -webkit-overflow-scrolling: touch;
+  flex: 1;
+  max-height: 140px; /* Adjust based on your needs */
+  width: 100%;
+}
+
+.genre-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+  justify-content: center;
+}
+
+/* Custom scrollbar for Webkit browsers */
+.genres-filter-vertical::-webkit-scrollbar {
+  width: 6px;
+}
+
+.genres-filter-vertical::-webkit-scrollbar-track {
+  background: #e8e0d8;
+  border-radius: 10px;
+}
+
+.genres-filter-vertical::-webkit-scrollbar-thumb {
+  background: #5c0202;
+  border-radius: 10px;
+}
+
+.genres-filter-vertical::-webkit-scrollbar-thumb:hover {
+  background: #7a2e2a;
+}
+
+/* Gradient indicators for scrollability */
+.genres-filter-vertical.can-scroll {
+  mask-image: linear-gradient(to bottom, transparent, black 10px, black 90%, transparent);
+  -webkit-mask-image: linear-gradient(to bottom, transparent, black 10px, black 90%, transparent);
+}
+
+/* Scroll buttons for vertical */
+.scroll-up, .scroll-down {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: #5c0202;
+  color: white;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.2rem;
+  font-weight: bold;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(92, 2, 2, 0.3);
+  flex-shrink: 0;
+  z-index: 2;
+}
+
+.scroll-up:hover, .scroll-down:hover {
+  background-color: #7a2e2a;
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(92, 2, 2, 0.4);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .genres-filter-vertical {
+    max-height: 120px;
+  }
+  
+  .genre-row {
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .genres-filter-vertical {
+    max-height: 100px;
+  }
+  
+  .scroll-up, .scroll-down {
+    width: 30px;
+    height: 30px;
+    font-size: 1rem;
+  }
+}

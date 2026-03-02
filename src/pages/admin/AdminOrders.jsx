@@ -684,7 +684,7 @@ const OrderDetailsPage = ({ order, onBack }) => {
           <div className="webhook-status-banner">
             <Bell size={16} />
             <span>Mise à jour en temps réel activée</span>
-            <span className="live-bad">LIVE</span>
+            <span className="live-badge">LIVE</span>
           </div>
         )}
 
@@ -1157,17 +1157,15 @@ const OrderDetailsPage = ({ order, onBack }) => {
   );
 };
 
-// Add Order Page Component
+// Add Order Page Component - UPDATED with larger inputs, no scroll, manual price, always checked, phone validation
 const AddOrderPage = ({ onBack, onSubmit }) => {
   const dispatch = useDispatch();
   const [addLoading, setAddLoading] = useState(false);
   const [addError, setAddError] = useState(null);
+  const [phoneError, setPhoneError] = useState("");
   
   // Track if total was manually edited
   const [totalManuallyEdited, setTotalManuallyEdited] = useState(false);
-  
-  // Track if price was manually edited for Welivexpress
-  const [priceManuallyEdited, setPriceManuallyEdited] = useState(false);
   
   // Form state for new order
   const [newOrderData, setNewOrderData] = useState({
@@ -1177,13 +1175,13 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
     parcel_prd_qty: 0,
     parcel_city: "",
     parcel_address: "",
-    parcel_price: null,
+    parcel_price: null, // Empty for manual entry
     frais_livraison: 35,
-    frais_packaging: null,
+    frais_packaging: 0,
     total: null,
     profit: null,
     parcel_note: "",
-    parcel_open: 0,
+    parcel_open: 1, // Always checked by default
     livres: [],
     statut: "NEW_PARCEL",
     date: new Date().toISOString().split('T')[0]
@@ -1192,10 +1190,20 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
   // Reset manual edit flags when books change
   useEffect(() => {
     setTotalManuallyEdited(false);
-    setPriceManuallyEdited(false);
   }, [newOrderData.livres]);
 
-  // Calculate books subtotal, total, and parcel_price with RETURNED status logic
+  // Validate phone number
+  const validatePhone = (phone) => {
+    const phoneRegex = /^[0-9]{10}$/;
+    if (phone && !phoneRegex.test(phone)) {
+      setPhoneError("Le numéro de téléphone doit contenir exactement 10 chiffres");
+      return false;
+    }
+    setPhoneError("");
+    return true;
+  };
+
+  // Calculate books subtotal, total, and profit
   useEffect(() => {
     const booksSubtotal = (newOrderData.livres || []).reduce(
       (sum, book) => sum + (book.prix_achat * book.quantity), 0
@@ -1211,21 +1219,20 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
       total = parseFloat(newOrderData.total) || 0;
     }
     
-    // Calculate parcel price - if manually edited, use that value, otherwise calculate
-    let parcelPrice;
-    if (priceManuallyEdited) {
-      parcelPrice = parseFloat(newOrderData.parcel_price) || 0;
-    } else {
-      parcelPrice = total + delivery + packaging;
-    }
+    // Use manually entered parcel price or calculate if empty
+    const parcelPrice = newOrderData.parcel_price !== null && newOrderData.parcel_price !== '' 
+      ? parseFloat(newOrderData.parcel_price) 
+      : null;
     
-    // Calculate profit based on parcel_price - (total + delivery + packaging)
-    let profit = parcelPrice - (total + delivery + packaging);
+    // Calculate profit if we have parcel price
+    let profit = null;
+    if (parcelPrice !== null) {
+      profit = parcelPrice - (total + delivery + packaging);
+    }
     
     setNewOrderData(prev => {
       const updates = {};
       if (prev.total !== total) updates.total = total;
-      if (prev.parcel_price !== parcelPrice) updates.parcel_price = parcelPrice;
       if (prev.profit !== profit) updates.profit = profit;
       
       if (Object.keys(updates).length === 0) {
@@ -1243,19 +1250,19 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
     newOrderData.frais_packaging,
     newOrderData.total,
     newOrderData.parcel_price,
-    totalManuallyEdited,
-    priceManuallyEdited
+    totalManuallyEdited
   ]);
 
   const handleNewOrderChange = (e) => {
     const { name, value, type, checked } = e.target;
     
+    if (name === 'parcel_phone') {
+      validatePhone(value);
+    }
+    
     // Track manual edits
     if (name === 'total') {
       setTotalManuallyEdited(true);
-    }
-    if (name === 'parcel_price') {
-      setPriceManuallyEdited(true);
     }
     
     setNewOrderData(prev => ({
@@ -1300,16 +1307,26 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
         return;
     }
 
+    // Validate phone if provided
+    if (newOrderData.parcel_phone && !validatePhone(newOrderData.parcel_phone)) {
+        setAddError(phoneError);
+        return;
+    }
+
+    // Validate that parcel price is entered
+    if (newOrderData.parcel_price === null || newOrderData.parcel_price === '') {
+        setAddError("Veuillez entrer le prix du colis");
+        return;
+    }
+
     const delivery = parseFloat(newOrderData.frais_livraison) || 35;
     const packaging = parseFloat(newOrderData.frais_packaging) || 0;
     const total = parseFloat(newOrderData.total) || 0;
     
-    // Use manually edited price if set, otherwise calculate
-    const parcelPrice = priceManuallyEdited ? 
-      (parseFloat(newOrderData.parcel_price) || total + delivery + packaging) : 
-      (total + delivery + packaging);
+    // Use manually entered price
+    const parcelPrice = parseFloat(newOrderData.parcel_price);
     
-    // Calculate profit based on parcel_price - (total + delivery + packaging)
+    // Calculate profit
     let profit = parcelPrice - (total + delivery + packaging);
 
     const formattedLivres = newOrderData.livres.map(book => ({
@@ -1385,7 +1402,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
         <h2>Nouvelle commande</h2>
       </div>
 
-      <div className="page-content">
+      <div className="page-content no-scroll">
         {addError && (
           <div className="form-error">
             <span className="error-icon">⚠️</span>
@@ -1444,8 +1461,13 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
                   name="parcel_phone"
                   value={newOrderData.parcel_phone}
                   onChange={handleNewOrderChange}
-                  placeholder="Numéro de téléphone"
+                  placeholder="10 chiffres exactement"
+                  maxLength="10"
+                  pattern="[0-9]{10}"
+                  className={phoneError ? "input-error" : ""}
                 />
+                {phoneError && <small className="error-hint">{phoneError}</small>}
+                <small className="field-hint">10 chiffres, sans espaces ni tirets</small>
               </div>
             </div>
           </div>
@@ -1466,12 +1488,12 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
             <div className="form-row">
               <div className="form-group full-width">
                 <label>Adresse</label>
-                <input
-                  type="text"
+                <textarea
                   name="parcel_address"
                   value={newOrderData.parcel_address}
                   onChange={handleNewOrderChange}
                   placeholder="Adresse complète"
+                  rows="3"
                 />
               </div>
             </div>
@@ -1494,7 +1516,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
               <div className="form-group">
                 <label>Quantité totale</label>
                 <div className="input-with-icon">
-                  <Layers size={16} className="input-icon" />
+                  <Layers size={20} className="input-icon" />
                   <input
                     type="number"
                     name="parcel_prd_qty"
@@ -1519,43 +1541,52 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
             <div className="form-row">
               <div className="form-group">
                 <label>Frais livraison (MAD)</label>
-                <input
-                  type="number"
-                  name="frais_livraison"
-                  value={newOrderData.frais_livraison === null ? '' : newOrderData.frais_livraison}
-                  onChange={handleNewOrderChange}
-                  placeholder="35"
-                  min="0"
-                  step="0.01"
-                />
+                <div className="input-with-icon">
+                  <Truck size={20} className="input-icon" />
+                  <input
+                    type="number"
+                    name="frais_livraison"
+                    value={newOrderData.frais_livraison === null ? '' : newOrderData.frais_livraison}
+                    onChange={handleNewOrderChange}
+                    placeholder="35"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
                 <small className="field-hint">Valeur par défaut: 35 MAD</small>
               </div>
 
               <div className="form-group">
                 <label>Frais packaging (MAD)</label>
-                <input
-                  type="number"
-                  name="frais_packaging"
-                  value={newOrderData.frais_packaging === null ? '' : newOrderData.frais_packaging}
-                  onChange={handleNewOrderChange}
-                  placeholder="0"
-                  min="0"
-                  step="0.01"
-                />
+                <div className="input-with-icon">
+                  <Box size={20} className="input-icon" />
+                  <input
+                    type="number"
+                    name="frais_packaging"
+                    value={newOrderData.frais_packaging === null ? '' : newOrderData.frais_packaging}
+                    onChange={handleNewOrderChange}
+                    placeholder="0"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
               </div>
             </div>
 
             <div className="form-row">
               <div className="form-group">
                 <label>Total livres (MAD)</label>
-                <input
-                  type="number"
-                  name="total"
-                  value={newOrderData.total === null ? '' : newOrderData.total}
-                  readOnly
-                  className="readonly-input"
-                  placeholder="Calculé automatiquement"
-                />
+                <div className="input-with-icon">
+                  <BookOpen size={20} className="input-icon" />
+                  <input
+                    type="number"
+                    name="total"
+                    value={newOrderData.total === null ? '' : newOrderData.total}
+                    readOnly
+                    className="readonly-input"
+                    placeholder="Calculé automatiquement"
+                  />
+                </div>
                 <small className="field-hint">
                   Calculé automatiquement à partir des livres sélectionnés
                 </small>
@@ -1564,38 +1595,37 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
               <div className="form-group">
                 <label>Prix colis (MAD) <span className="required">*</span></label>
                 <div className="input-with-icon price-input">
-                  <DollarSign size={16} className="input-icon" />
+                  <DollarSign size={20} className="input-icon" />
                   <input
                     type="number"
                     name="parcel_price"
                     value={newOrderData.parcel_price === null ? '' : newOrderData.parcel_price}
                     onChange={handleNewOrderChange}
-                    placeholder="Calculé automatiquement"
+                    placeholder="Entrez le prix"
                     min="0"
                     step="0.01"
-                    className={priceManuallyEdited ? "manual-edit-input" : ""}
+                    required
+                    className="large-input"
                   />
-                  {priceManuallyEdited && (
-                    <span className="manual-edit-badge">Édité</span>
-                  )}
                 </div>
                 <small className="field-hint">
-                  {priceManuallyEdited 
-                    ? "Prix modifié manuellement (envoyé à Welivexpress)" 
-                    : "Prix calculé automatiquement (total + frais)"}
+                  Entrez manuellement le prix à collecter par Welivexpress
                 </small>
               </div>
 
               <div className="form-group">
                 <label>Profit (MAD)</label>
-                <input
-                  type="number"
-                  name="profit"
-                  value={newOrderData.profit === null ? '' : newOrderData.profit}
-                  readOnly
-                  className={`readonly-input ${newOrderData.profit < 0 ? 'negative' : ''}`}
-                  placeholder="Calculé automatiquement"
-                />
+                <div className="input-with-icon">
+                  <DollarSign size={20} className="input-icon" />
+                  <input
+                    type="number"
+                    name="profit"
+                    value={newOrderData.profit === null ? '' : newOrderData.profit}
+                    readOnly
+                    className={`readonly-input ${newOrderData.profit < 0 ? 'negative' : ''}`}
+                    placeholder="Calculé automatiquement"
+                  />
+                </div>
                 <small className="field-hint">
                   Profit = Prix colis - (Total livres + Frais)
                 </small>
@@ -1612,7 +1642,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
                 value={newOrderData.parcel_note}
                 onChange={handleNewOrderChange}
                 placeholder="Instructions spéciales pour la livraison (sera envoyée à Welivexpress)"
-                rows="3"
+                rows="4"
               />
               <small className="field-hint">
                 Cette note sera envoyée à Welivexpress sans les détails des livres
@@ -1633,10 +1663,10 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
 
           {/* Display price info for Welivexpress */}
           <div className="price-info-warning">
-            <Info size={16} />
+            <Info size={20} />
             <span>
-              <strong>Important:</strong> Le prix colis de <strong>{newOrderData.parcel_price || 'calculé automatiquement'} MAD</strong> sera envoyé à Welivexpress comme montant à collecter.
-              {priceManuallyEdited ? " (Prix modifié manuellement)" : " (Prix calculé automatiquement)"}
+              <strong>Important:</strong> Le prix colis de <strong>{newOrderData.parcel_price || '---'} MAD</strong> sera envoyé à Welivexpress comme montant à collecter.
+              {newOrderData.parcel_price === null && " Veuillez entrer un prix."}
             </span>
           </div>
 
@@ -1661,7 +1691,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
                 </>
               ) : (
                 <>
-                  <Save size={16} />
+                  <Save size={20} />
                   Créer la commande
                 </>
               )}
@@ -1673,11 +1703,11 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
   );
 };
 
-// Update Order Page Component
-// Update Order Page Component
+// Update Order Page Component - UPDATED with larger inputs, no scroll, manual price, always checked, phone validation
 const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
   const [updateLoading, setUpdateLoading] = useState(false);
   const [updateError, setUpdateError] = useState(null);
+  const [phoneError, setPhoneError] = useState("");
   
   // Form state for update
   const [formData, setFormData] = useState({
@@ -1688,9 +1718,9 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
     parcel_address: "",
     parcel_price: "",
     parcel_note: "",
-    parcel_open: 0,
+    parcel_open: 1, // Always checked by default
     statut: "",
-    statut_second: "" // ADD THIS - include secondary status
+    statut_second: ""
   });
 
   useEffect(() => {
@@ -1703,18 +1733,34 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
         parcel_address: order.parcel_address || "",
         parcel_price: order.parcel_price || "",
         parcel_note: order.parcel_note || "",
-        parcel_open: order.parcel_open || 0,
+        parcel_open: 1, // Force to checked
         statut: order.statut || "",
-        statut_second: order.statut_second || "" // ADD THIS
+        statut_second: order.statut_second || ""
       });
     }
   }, [order]);
 
+  // Validate phone number
+  const validatePhone = (phone) => {
+    const phoneRegex = /^[0-9]{10}$/;
+    if (phone && !phoneRegex.test(phone)) {
+      setPhoneError("Le numéro de téléphone doit contenir exactement 10 chiffres");
+      return false;
+    }
+    setPhoneError("");
+    return true;
+  };
+
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
+    
+    if (name === 'parcel_phone') {
+      validatePhone(value);
+    }
+    
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? (checked ? 1 : 0) : value
+      [name]: type === 'checkbox' ? 1 : value
     }));
   };
 
@@ -1728,6 +1774,12 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!order) return;
+
+    // Validate phone if provided
+    if (formData.parcel_phone && !validatePhone(formData.parcel_phone)) {
+        setUpdateError(phoneError);
+        return;
+    }
 
     setUpdateLoading(true);
     setUpdateError(null);
@@ -1809,7 +1861,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
         <h2>Modifier la commande #{order.parcel_code}</h2>
       </div>
 
-      <div className="page-content">
+      <div className="page-content no-scroll">
         {updateError && (
           <div className="form-error">
             <span className="error-icon">⚠️</span>
@@ -1839,8 +1891,13 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
                   name="parcel_phone"
                   value={formData.parcel_phone}
                   onChange={handleInputChange}
-                  placeholder="Numéro de téléphone"
+                  placeholder="10 chiffres exactement"
+                  maxLength="10"
+                  pattern="[0-9]{10}"
+                  className={phoneError ? "input-error" : ""}
                 />
+                {phoneError && <small className="error-hint">{phoneError}</small>}
+                <small className="field-hint">10 chiffres, sans espaces ni tirets</small>
               </div>
             </div>
 
@@ -1894,7 +1951,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
               <div className="form-group">
                 <label>Quantité totale</label>
                 <div className="input-with-icon">
-                  <Layers size={16} className="input-icon" />
+                  <Layers size={20} className="input-icon" />
                   <input
                     type="number"
                     name="parcel_prd_qty"
@@ -1924,12 +1981,12 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
             <div className="form-row">
               <div className="form-group full-width">
                 <label>Adresse</label>
-                <input
-                  type="text"
+                <textarea
                   name="parcel_address"
                   value={formData.parcel_address}
                   onChange={handleInputChange}
                   placeholder="Adresse"
+                  rows="3"
                 />
               </div>
             </div>
@@ -1941,7 +1998,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
               <div className="form-group">
                 <label>Prix colis (MAD)</label>
                 <div className="input-with-icon price-input">
-                  <DollarSign size={16} className="input-icon" />
+                  <DollarSign size={20} className="input-icon" />
                   <input
                     type="number"
                     name="parcel_price"
@@ -1965,7 +2022,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
                 value={formData.parcel_note}
                 onChange={handleInputChange}
                 placeholder="Notes ou instructions spéciales"
-                rows="3"
+                rows="4"
               />
             </div>
 
@@ -1983,9 +2040,9 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
 
           {/* Display price info for Welivexpress */}
           <div className="price-info-warning">
-            <Info size={16} />
+            <Info size={20} />
             <span>
-              <strong>Important:</strong> Le prix colis de <strong>{formData.parcel_price} MAD</strong> sera envoyé à Welivexpress lors des mises à jour.
+              <strong>Important:</strong> Le prix colis de <strong>{formData.parcel_price || '---'} MAD</strong> sera envoyé à Welivexpress lors des mises à jour.
             </span>
           </div>
 
@@ -2010,7 +2067,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
                 </>
               ) : (
                 <>
-                  <Save size={16} />
+                  <Save size={20} />
                   Enregistrer
                 </>
               )}

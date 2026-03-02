@@ -945,7 +945,7 @@
 
 .form-group label {
   font-family: 'Lato', sans-serif;
-  font-size: 1.6rem !important; /* Larger label size */
+  font-size: 1rem !important; /* Larger label size */
   font-weight: 700 !important; /* Bolder */
   color: #5c0202;
   letter-spacing: 0.02em;
@@ -3120,4 +3120,122 @@ textarea:focus-visible {
   .webhook-actions > * {
     margin: 0.5rem;
   }
+}
+/* Add to AdminOrders.css */
+
+/* No scroll on form pages */
+.page-content.no-scroll {
+  max-height: none;
+  overflow: visible;
+}
+
+/* Larger inputs */
+.form-group input,
+.form-group textarea,
+.form-group select,
+.city-input,
+.book-search-input {
+  font-size: 1.1rem !important;
+  padding: 1rem 1.25rem !important;
+}
+
+.form-group textarea {
+  min-height: 100px;
+}
+
+/* Larger input icons */
+.input-with-icon .input-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.input-with-icon input {
+  padding-left: 3.5rem !important;
+}
+
+/* Larger labels */
+.form-group label {
+  font-size: 1.1rem !important;
+  margin-bottom: 0.75rem;
+}
+
+.form-section h3 {
+  font-size: 1.4rem;
+  margin-bottom: 2rem;
+}
+
+/* Larger buttons */
+.btn-primary, 
+.btn-secondary,
+.btn-delete,
+.btn-back,
+.btn-add-order {
+  padding: 1rem 2rem !important;
+  font-size: 1rem !important;
+}
+
+.btn-primary svg,
+.btn-secondary svg,
+.btn-delete svg,
+.btn-back svg,
+.btn-add-order svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Input error state */
+.input-error {
+  border-color: #ef4444 !important;
+  background-color: #fff5f5 !important;
+}
+
+.error-hint {
+  color: #ef4444;
+  font-size: 0.9rem;
+  margin-top: 0.25rem;
+  display: block;
+}
+
+/* Large input specific */
+.large-input {
+  font-size: 1.2rem !important;
+  font-weight: 600;
+}
+
+/* Price info warning larger */
+.price-info-warning {
+  padding: 1.5rem;
+  font-size: 1rem;
+}
+
+.price-info-warning svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* Form actions spacing */
+.form-actions {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  gap: 1.5rem;
+}
+
+/* Adjust grid for larger inputs */
+.form-row {
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+/* Ensure form sections have proper spacing */
+.form-section {
+  margin-bottom: 2rem;
+}
+
+/* Make sure all content fits without scroll */
+.admin-orders,
+.add-order-page,
+.update-order-page,
+.order-details-page {
+  min-height: auto;
+  overflow: visible;
 }

@@ -114,16 +114,16 @@
 
 .genres-filter {
   display: flex;
-  flex-wrap: wrap; /* Changed to wrap for 2 lines */
+  flex-wrap: nowrap;
   gap: 0.625rem;
-  overflow-x: auto; /* Keep horizontal scroll */
+  overflow-x: auto;
   overflow-y: hidden;
-  padding: 0.5rem 0.5rem;
+  padding: 0.25rem 0.5rem;
   scrollbar-width: thin; /* For Firefox */
   scrollbar-color: #5c0202 #e8e0d8; /* For Firefox */
   -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
   flex: 1;
-  max-height: 120px; /* Limit height to show 2 lines */
+  white-space: nowrap;
 }
 
 /* Custom scrollbar for Webkit browsers (Chrome, Safari, Edge) */
@@ -522,10 +522,6 @@
     height: 30px;
     font-size: 1.2rem;
   }
-  
-  .genres-filter {
-    max-height: 100px;
-  }
 }
 
 @media (max-width: 480px) {
@@ -583,7 +579,6 @@
   
   .genres-filter {
     padding: 0.25rem 1rem;
-    max-height: 90px;
   }
 }
 

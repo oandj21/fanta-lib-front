@@ -20,9 +20,9 @@ import {
 
 import "../css/PublicTrackOrder.css";
 
-// French translations for statuses (same as admin)
+// French translations for statuses (only specified ones)
 const statusTranslations = {
-  // Primary delivery statuses
+  // Primary delivery statuses (only these 9)
   'NEW_PARCEL': 'Nouveau colis',
   'PARCEL_CONFIRMED': 'Colis confirmé',
   'PICKED_UP': 'Ramassé',
@@ -31,47 +31,17 @@ const statusTranslations = {
   'SENT': 'Expédié',
   'DELIVERED': 'Livré',
   'RETURNED': 'Retourné',
-  'CANCELLED': 'Annulé',
   'WAITING_PICKUP': 'En attente de ramassage',
   'RECEIVED': 'Reçu',
-  
-  // Secondary statuses
-  'REFUSE': 'Refusé',
-  'NOANSWER': 'Pas de réponse',
-  'UNREACHABLE': 'Injoignable',
-  'HORS_ZONE': 'Hors zone',
-  'POSTPONED': 'Reporté',
-  'PROGRAMMER': 'Programmé',
-  'DEUX': '2ème tentative',
-  'TROIS': '3ème tentative',
-  'ENVG': 'En voyage',
-  'RETURN_BY_AMANA': 'Retour par Amana',
-  'SENT_BY_AMANA': 'Envoyé par Amana',
   
   // Payment statuses
   'PAID': 'Payé',
   'NOT_PAID': 'Non payé',
   'INVOICED': 'Facturé',
-  'PENDING': 'En attente',
-  
-  // Generic fallbacks
-  'nouveau': 'Nouveau',
-  'confirmé': 'Confirmé',
-  'ramassé': 'Ramassé',
-  'distribution': 'En distribution',
-  'en cours': 'En cours',
-  'expédié': 'Expédié',
-  'livré': 'Livré',
-  'retourné': 'Retourné',
-  'annulé': 'Annulé',
-  'attente': 'En attente',
-  'reçu': 'Reçu',
-  'payé': 'Payé',
-  'non payé': 'Non payé',
-  'facturé': 'Facturé'
+  'PENDING': 'En attente'
 };
 
-// Helper to translate status to French (same as admin)
+// Helper to translate status to French
 const translateStatus = (status) => {
   if (!status) return '';
   
@@ -97,26 +67,21 @@ const getStatusColor = (status) => {
   const s = status.toLowerCase();
 
   if (s.includes("livré") || s.includes("delivered")) return "#22c55e";
-  if (s.includes("transit") || s.includes("en cours") || s.includes("distribution")) return "#f59e0b";
+  if (s.includes("distribution")) return "#f59e0b";
   if (s.includes("ramassé") || s.includes("ramass") || s.includes("picked")) return "#8b5cf6";
-  if (s.includes("attente") || s.includes("pending") || s.includes("waiting")) return "#6b7280";
+  if (s.includes("attente") || s.includes("waiting")) return "#6b7280";
   if (s.includes("retour") || s.includes("return")) return "#ef4444";
-  if (s.includes("préparé") || s.includes("preparation") || s.includes("confirmé")) return "#007bff";
+  if (s.includes("en cours") || s.includes("in_progress")) return "#007bff";
   if (s.includes("expédié") || s.includes("sent")) return "#0891b2";
-  if (s.includes("refusé") || s.includes("refuse")) return "#dc2626";
-  if (s.includes("pas de réponse") || s.includes("noanswer")) return "#f59e0b";
-  if (s.includes("injoignable") || s.includes("unreachable")) return "#d97706";
-  if (s.includes("hors zone") || s.includes("hors_zone")) return "#7c3aed";
-  if (s.includes("reporté") || s.includes("postponed")) return "#8b5cf6";
-  if (s.includes("programmé") || s.includes("programmer")) return "#2563eb";
-  if (s.includes("2ème") || s.includes("deux")) return "#f97316";
-  if (s.includes("3ème") || s.includes("trois")) return "#ea580c";
-  if (s.includes("en voyage") || s.includes("envg")) return "#0891b2";
-  if (s.includes("retour amana") || s.includes("return_by_amana")) return "#b91c1c";
-  if (s.includes("envoyé amana") || s.includes("sent_by_amana")) return "#1e40af";
+  if (s.includes("nouveau") || s.includes("new_parcel")) return "#3b82f6";
+  if (s.includes("reçu") || s.includes("received")) return "#10b981";
+  if (s.includes("confirmé") || s.includes("parcel_confirmed")) return "#8b5cf6";
+  
+  // Payment statuses
   if (s.includes("payé") || s.includes("paid")) return "#10b981";
   if (s.includes("non payé") || s.includes("not_paid")) return "#ef4444";
   if (s.includes("facturé") || s.includes("invoiced")) return "#8b5cf6";
+  if (s.includes("en attente") || s.includes("pending")) return "#6b7280";
 
   return "#3b82f6";
 };
@@ -146,30 +111,18 @@ const formatDate = (dateString) => {
   }
 };
 
-// Define the complete order of statuses for timeline
+// Define the complete order of statuses for timeline (only specified ones)
 const statusOrder = [
   'NEW_PARCEL',
   'PARCEL_CONFIRMED',
   'PICKED_UP',
   'WAITING_PICKUP',
   'RECEIVED',
-  'IN_PROGRESS',
   'SENT',
+  'IN_PROGRESS',
   'DISTRIBUTION',
   'DELIVERED',
-  'RETURNED',
-  'CANCELLED',
-  'REFUSE',
-  'NOANSWER',
-  'UNREACHABLE',
-  'HORS_ZONE',
-  'POSTPONED',
-  'PROGRAMMER',
-  'DEUX',
-  'TROIS',
-  'ENVG',
-  'RETURN_BY_AMANA',
-  'SENT_BY_AMANA'
+  'RETURNED'
 ];
 
 export default function PublicTrackOrder() {
@@ -196,7 +149,7 @@ export default function PublicTrackOrder() {
   const generateAllStatuses = (currentDeliveryStatus, secondaryStatus, history = []) => {
     const statuses = [];
     
-    // Add all statuses from statusOrder that are in history or are current
+    // Add all statuses from statusOrder
     statusOrder.forEach(statusKey => {
       const translatedStatus = translateStatus(statusKey);
       if (!translatedStatus) return;
@@ -484,11 +437,11 @@ export default function PublicTrackOrder() {
 
         </div>
 
-        {/* HISTORIQUE COMPLET DU COLIS - All statuses */}
+        {/* HISTORIQUE COMPLET DU COLIS - Only specified statuses */}
         {allStatuses.length > 0 && (
           <div className="timeline">
             <h3 style={{ marginBottom: 15 }}>
-              Historique complet du colis
+              Historique du colis
             </h3>
 
             {allStatuses.map((status, index) => (
@@ -530,7 +483,7 @@ export default function PublicTrackOrder() {
           </div>
         )}
 
-        {/* Original history from API (if different from our generated list) */}
+        {/* Original history from API (if available) */}
         {trackingInfo?.tracking?.history?.length > 0 && (
           <div className="timeline original-history">
             <h3 style={{ marginBottom: 15, marginTop: 30 }}>

@@ -21,36 +21,20 @@ export default function Livres() {
   const [genre, setGenre] = useState("الكل");
   const [canScroll, setCanScroll] = useState({ left: false, right: false });
   const containerRef = useRef(null);
-  
-  // Track if component is mounted
-  const isMounted = useRef(true);
 
   useEffect(() => {
-    isMounted.current = true;
-    
-    // Scroll to top when component mounts
     window.scrollTo({
       top: 0,
       behavior: 'smooth'
     });
-
-    // Cleanup function
-    return () => {
-      isMounted.current = false;
-    };
   }, []);
 
   useEffect(() => {
-    // Only fetch if component is mounted
-    if (isMounted.current) {
-      dispatch(fetchLivres());
-    }
+    dispatch(fetchLivres());
   }, [dispatch]);
 
   // Handle URL parameters
   useEffect(() => {
-    if (!isMounted.current) return;
-    
     const params = new URLSearchParams(location.search);
     const searchParam = params.get("search");
     const bookId = params.get("book");
@@ -61,7 +45,7 @@ export default function Livres() {
 
     if (bookId && books.length > 0) {
       const book = books.find(b => b.id === parseInt(bookId));
-      if (book && isMounted.current) {
+      if (book) {
         setSelectedBook(book);
       }
     }

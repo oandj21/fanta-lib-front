@@ -1674,36 +1674,25 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
 };
 
 // Update Order Page Component - UPDATED with larger inputs, no scroll, manual price, always checked, phone validation
-// Update Order Page Component - COMPLETE with all fields from add form
 const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
   const [updateLoading, setUpdateLoading] = useState(false);
   const [updateError, setUpdateError] = useState(null);
   const [phoneError, setPhoneError] = useState("");
   
-  // Track if total was manually edited
-  const [totalManuallyEdited, setTotalManuallyEdited] = useState(false);
-  
-  // Form state for update - includes ALL fields from add form
+  // Form state for update
   const [formData, setFormData] = useState({
     parcel_receiver: "",
     parcel_phone: "",
-    parcel_prd_qty: 0,
+    parcel_prd_qty: "",
     parcel_city: "",
     parcel_address: "",
-    parcel_price: null,
-    frais_livraison: 35,
-    frais_packaging: 0,
-    total: null,
-    profit: null,
+    parcel_price: "",
     parcel_note: "",
     parcel_open: 1, // Always checked by default
     statut: "",
-    statut_second: "",
-    livres: [],
-    date: ""
+    statut_second: ""
   });
 
-  // Load order data when component mounts or order changes
   useEffect(() => {
     if (order) {
       setFormData({
@@ -1712,25 +1701,14 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
         parcel_prd_qty: order.parcel_prd_qty || 0,
         parcel_city: order.parcel_city || "",
         parcel_address: order.parcel_address || "",
-        parcel_price: order.parcel_price || null,
-        frais_livraison: order.frais_livraison || 35,
-        frais_packaging: order.frais_packaging || 0,
-        total: order.total || null,
-        profit: order.profit || null,
+        parcel_price: order.parcel_price || "",
         parcel_note: order.parcel_note || "",
         parcel_open: 1, // Force to checked
         statut: order.statut || "",
-        statut_second: order.statut_second || "",
-        livres: order.livres || [],
-        date: order.date || new Date().toISOString().split('T')[0]
+        statut_second: order.statut_second || ""
       });
     }
   }, [order]);
-
-  // Reset manual edit flag when livres change
-  useEffect(() => {
-    setTotalManuallyEdited(false);
-  }, [formData.livres]);
 
   // Validate phone number
   const validatePhone = (phone) => {
@@ -1743,57 +1721,6 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
     return true;
   };
 
-  // Calculate books subtotal, total, and profit
-  useEffect(() => {
-    const booksSubtotal = (formData.livres || []).reduce(
-      (sum, book) => sum + ((book.prix_achat || book.price || 0) * (book.quantity || 1)), 0
-    );
-    
-    const delivery = parseFloat(formData.frais_livraison) || 35;
-    const packaging = parseFloat(formData.frais_packaging) || 0;
-    
-    let total;
-    if (!totalManuallyEdited || formData.livres.length === 0) {
-      total = booksSubtotal;
-    } else {
-      total = parseFloat(formData.total) || 0;
-    }
-    
-    // Use parcel price from form or order
-    const parcelPrice = formData.parcel_price !== null && formData.parcel_price !== '' 
-      ? parseFloat(formData.parcel_price) 
-      : (order?.parcel_price || null);
-    
-    // Calculate profit if we have parcel price
-    let profit = null;
-    if (parcelPrice !== null) {
-      profit = parcelPrice - (total + delivery + packaging);
-    }
-    
-    setFormData(prev => {
-      const updates = {};
-      if (prev.total !== total) updates.total = total;
-      if (prev.profit !== profit) updates.profit = profit;
-      
-      if (Object.keys(updates).length === 0) {
-        return prev;
-      }
-      
-      return {
-        ...prev,
-        ...updates
-      };
-    });
-  }, [
-    formData.livres, 
-    formData.frais_livraison, 
-    formData.frais_packaging,
-    formData.total,
-    formData.parcel_price,
-    totalManuallyEdited,
-    order
-  ]);
-
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     
@@ -1801,30 +1728,9 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
       validatePhone(value);
     }
     
-    // Track manual edits for total
-    if (name === 'total') {
-      setTotalManuallyEdited(true);
-    }
-    
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? (checked ? 1 : 0) : 
-               (name === 'parcel_price' || name === 'total' || name === 'frais_livraison' || name === 'frais_packaging') ? 
-               (value === '' ? null : parseFloat(value)) : value
-    }));
-  };
-
-  const handleBooksChange = (books) => {
-    setFormData(prev => ({
-      ...prev,
-      livres: books
-    }));
-  };
-
-  const handleTotalQuantityChange = (qty) => {
-    setFormData(prev => ({
-      ...prev,
-      parcel_prd_qty: qty
+      [name]: type === 'checkbox' ? 1 : value
     }));
   };
 
@@ -1853,9 +1759,6 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
       
       // Check all fields for changes
       Object.keys(formData).forEach(key => {
-        // Skip livres for comparison if needed
-        if (key === 'livres') return;
-        
         // Convert to string for comparison to handle numbers vs strings
         const formValue = formData[key] === null || formData[key] === undefined ? '' : String(formData[key]);
         const orderValue = order[key] === null || order[key] === undefined ? '' : String(order[key]);
@@ -1875,9 +1778,13 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
         updateData.statut_second = formData.statut_second;
       }
 
-      // Handle livres if changed (optional - you might want to implement comparison logic)
-      // For now, we'll only include livres if they're specifically being updated
-      // You can add comparison logic here if needed
+      // Recalculate profit based on updated data
+      const total = order.total || 0;
+      const delivery = parseFloat(updateData.frais_livraison !== undefined ? updateData.frais_livraison : order.frais_livraison) || 0;
+      const packaging = parseFloat(updateData.frais_packaging !== undefined ? updateData.frais_packaging : order.frais_packaging) || 0;
+      const parcelPrice = parseFloat(updateData.parcel_price !== undefined ? updateData.parcel_price : order.parcel_price) || 0;
+      
+      updateData.profit = parcelPrice - (total + delivery + packaging);
 
       // Log what we're sending for debugging
       console.log("📤 Sending update data:", updateData);
@@ -1924,7 +1831,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
         <h2>Modifier la commande #{order.parcel_code}</h2>
       </div>
 
-      <div className="page-content no-scroll compact-form">
+      <div className="page-content no-scroll">
         {updateError && (
           <div className="form-error">
             <span className="error-icon">⚠️</span>
@@ -1932,280 +1839,183 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="order-form compact">
-          {/* Row 1: Date and Code (read-only) */}
-          <div className="form-row">
-            <div className="form-group">
-              <label>Code colis</label>
-              <input
-                type="text"
-                value={order.parcel_code || ""}
-                readOnly
-                className="readonly-input"
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Date</label>
-              <input
-                type="date"
-                name="date"
-                value={formData.date}
-                onChange={handleInputChange}
-              />
-            </div>
-          </div>
-
-          {/* Row 2: Client and Phone */}
-          <div className="form-row">
-            <div className="form-group">
-              <label>Client <span className="required">*</span></label>
-              <input
-                type="text"
-                name="parcel_receiver"
-                value={formData.parcel_receiver}
-                onChange={handleInputChange}
-                placeholder="Nom du client"
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Téléphone</label>
-              <input
-                type="text"
-                name="parcel_phone"
-                value={formData.parcel_phone}
-                onChange={handleInputChange}
-                placeholder="10 chiffres"
-                maxLength="10"
-                pattern="[0-9]{10}"
-                className={phoneError ? "input-error" : ""}
-              />
-              {phoneError && <small className="error-hint">{phoneError}</small>}
-            </div>
-          </div>
-
-          {/* Row 3: City and Address */}
-          <div className="form-row">
-            <div className="form-group">
-              <label>Ville <span className="required">*</span></label>
-              <CityAutocomplete
-                value={formData.parcel_city}
-                onChange={(value) => setFormData(prev => ({ ...prev, parcel_city: value }))}
-                onSelect={handleCitySelect}
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Adresse</label>
-              <input
-                type="text"
-                name="parcel_address"
-                value={formData.parcel_address}
-                onChange={handleInputChange}
-                placeholder="Adresse"
-              />
-            </div>
-          </div>
-
-          {/* Row 4: Statuses */}
-          <div className="form-row">
-            <div className="form-group">
-              <label>Statut principal</label>
-              <select
-                name="statut"
-                value={formData.statut}
-                onChange={handleInputChange}
-                className="statut-select"
-              >
-                <option value="NEW_PARCEL">Nouveau colis</option>
-                <option value="PARCEL_CONFIRMED">Colis confirmé</option>
-                <option value="PICKED_UP">Ramassé</option>
-                <option value="DISTRIBUTION">En distribution</option>
-                <option value="IN_PROGRESS">En cours</option>
-                <option value="SENT">Expédié</option>
-                <option value="DELIVERED">Livré</option>
-                <option value="RETURNED">Retourné</option>
-                <option value="CANCELLED">Annulé</option>
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label>Statut secondaire</label>
-              <select
-                name="statut_second"
-                value={formData.statut_second}
-                onChange={handleInputChange}
-                className="statut-select"
-              >
-                <option value="">Aucun</option>
-                <option value="REFUSE">Refusé</option>
-                <option value="NOANSWER">Pas de réponse</option>
-                <option value="UNREACHABLE">Injoignable</option>
-                <option value="HORS_ZONE">Hors zone</option>
-                <option value="POSTPONED">Reporté</option>
-                <option value="PROGRAMMER">Programmé</option>
-                <option value="DEUX">2ème tentative</option>
-                <option value="TROIS">3ème tentative</option>
-                <option value="ENVG">En voyage</option>
-                <option value="RETURN_BY_AMANA">Retour par Amana</option>
-                <option value="SENT_BY_AMANA">Envoyé par Amana</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Row 5: Book Selector - takes full width */}
-          <div className="form-group full-width">
-            <label>Livres <span className="required">*</span></label>
-            <BookSelector 
-              selectedBooks={formData.livres}
-              onBooksChange={handleBooksChange}
-              onTotalQuantityChange={handleTotalQuantityChange}
-            />
-          </div>
-
-          {/* Row 6: Quantity and Parcel Price */}
-          <div className="form-row">
-            <div className="form-group">
-              <label>Quantité totale</label>
-              <div className="input-with-icon">
-                <Layers size={20} className="input-icon" />
+        <form onSubmit={handleSubmit} className="order-form">
+          <div className="form-section">
+            <h3>Informations générales</h3>
+            <div className="form-row">
+              <div className="form-group">
+                <label>Client</label>
                 <input
-                  type="number"
-                  name="parcel_prd_qty"
-                  value={formData.parcel_prd_qty}
+                  type="text"
+                  name="parcel_receiver"
+                  value={formData.parcel_receiver}
                   onChange={handleInputChange}
-                  placeholder="Qté"
-                  min="1"
-                  required
+                  placeholder="Nom du client"
                 />
               </div>
-            </div>
 
-            <div className="form-group">
-              <label>Prix colis (MAD) <span className="required">*</span></label>
-              <div className="input-with-icon price-input">
-                <DollarSign size={20} className="input-icon" />
+              <div className="form-group">
+                <label>Téléphone</label>
                 <input
-                  type="number"
-                  name="parcel_price"
-                  value={formData.parcel_price === null ? '' : formData.parcel_price}
+                  type="text"
+                  name="parcel_phone"
+                  value={formData.parcel_phone}
                   onChange={handleInputChange}
-                  placeholder="Prix"
-                  min="0"
-                  step="0.01"
-                  required
+                  placeholder="10 chiffres exactement"
+                  maxLength="10"
+                  pattern="[0-9]{10}"
+                  className={phoneError ? "input-error" : ""}
                 />
+                {phoneError && <small className="error-hint">{phoneError}</small>}
+                <small className="field-hint">10 chiffres, sans espaces ni tirets</small>
               </div>
             </div>
-          </div>
 
-          {/* Row 7: Delivery Fee and Packaging Fee */}
-          <div className="form-row">
-            <div className="form-group">
-              <label>Frais livraison</label>
-              <div className="input-with-icon">
-                <Truck size={20} className="input-icon" />
-                <input
-                  type="number"
-                  name="frais_livraison"
-                  value={formData.frais_livraison === null ? '' : formData.frais_livraison}
+            <div className="form-row">
+              <div className="form-group">
+                <label>Statut principal</label>
+                <select
+                  name="statut"
+                  value={formData.statut}
                   onChange={handleInputChange}
-                  placeholder="35"
-                  min="0"
-                  step="0.01"
-                />
+                  className="statut-select"
+                >
+                  <option value="NEW_PARCEL">Nouveau colis</option>
+                  <option value="PARCEL_CONFIRMED">Colis confirmé</option>
+                  <option value="PICKED_UP">Ramassé</option>
+                  <option value="DISTRIBUTION">En distribution</option>
+                  <option value="IN_PROGRESS">En cours</option>
+                  <option value="SENT">Expédié</option>
+                  <option value="DELIVERED">Livré</option>
+                  <option value="RETURNED">Retourné</option>
+                  <option value="CANCELLED">Annulé</option>
+                </select>
               </div>
-            </div>
 
-            <div className="form-group">
-              <label>Frais packaging</label>
-              <div className="input-with-icon">
-                <Box size={20} className="input-icon" />
-                <input
-                  type="number"
-                  name="frais_packaging"
-                  value={formData.frais_packaging === null ? '' : formData.frais_packaging}
+              <div className="form-group">
+                <label>Statut secondaire</label>
+                <select
+                  name="statut_second"
+                  value={formData.statut_second}
                   onChange={handleInputChange}
-                  placeholder="0"
-                  min="0"
-                  step="0.01"
-                />
+                  className="statut-select"
+                >
+                  <option value="">Aucun</option>
+                  <option value="REFUSE">Refusé</option>
+                  <option value="NOANSWER">Pas de réponse</option>
+                  <option value="UNREACHABLE">Injoignable</option>
+                  <option value="HORS_ZONE">Hors zone</option>
+                  <option value="POSTPONED">Reporté</option>
+                  <option value="PROGRAMMER">Programmé</option>
+                  <option value="DEUX">2ème tentative</option>
+                  <option value="TROIS">3ème tentative</option>
+                  <option value="ENVG">En voyage</option>
+                  <option value="RETURN_BY_AMANA">Retour par Amana</option>
+                  <option value="SENT_BY_AMANA">Envoyé par Amana</option>
+                </select>
+                <small className="field-hint">Statut secondaire détaillé (optionnel)</small>
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label>Quantité totale</label>
+                <div className="input-with-icon">
+                  <Layers size={20} className="input-icon" />
+                  <input
+                    type="number"
+                    name="parcel_prd_qty"
+                    value={formData.parcel_prd_qty}
+                    onChange={handleInputChange}
+                    placeholder="Quantité"
+                    min="0"
+                  />
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Row 8: Total and Profit */}
-          <div className="form-row">
-            <div className="form-group">
-              <label>Total livres</label>
-              <div className="input-with-icon">
-                <BookOpen size={20} className="input-icon" />
-                <input
-                  type="number"
-                  name="total"
-                  value={formData.total === null ? '' : formData.total}
+          <div className="form-section">
+            <h3>Adresse de livraison</h3>
+            <div className="form-row">
+              <div className="form-group full-width">
+                <label>Ville</label>
+                <CityAutocomplete
+                  value={formData.parcel_city}
+                  onChange={(value) => setFormData(prev => ({ ...prev, parcel_city: value }))}
+                  onSelect={handleCitySelect}
+                />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group full-width">
+                <label>Adresse</label>
+                <textarea
+                  name="parcel_address"
+                  value={formData.parcel_address}
                   onChange={handleInputChange}
-                  className={totalManuallyEdited ? "manual-edit-input" : ""}
-                  placeholder="Auto"
-                  step="0.01"
-                />
-                {totalManuallyEdited && (
-                  <span className="manual-edit-badge">Manuel</span>
-                )}
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label>Profit</label>
-              <div className="input-with-icon">
-                <DollarSign size={20} className="input-icon" />
-                <input
-                  type="number"
-                  name="profit"
-                  value={formData.profit === null ? '' : formData.profit}
-                  readOnly
-                  className={`readonly-input ${formData.profit < 0 ? 'negative' : ''}`}
-                  placeholder="Auto"
+                  placeholder="Adresse"
+                  rows="3"
                 />
               </div>
             </div>
           </div>
 
-          {/* Row 9: Note */}
-          <div className="form-group full-width">
-            <label>Note</label>
-            <textarea
-              name="parcel_note"
-              value={formData.parcel_note}
-              onChange={handleInputChange}
-              placeholder="Instructions spéciales"
-              rows="3"
-            />
+          <div className="form-section">
+            <h3>Prix et note</h3>
+            <div className="form-row">
+              <div className="form-group">
+                <label>Prix colis (MAD)</label>
+                <div className="input-with-icon price-input">
+                  <DollarSign size={20} className="input-icon" />
+                  <input
+                    type="number"
+                    name="parcel_price"
+                    value={formData.parcel_price || ''}
+                    onChange={handleInputChange}
+                    placeholder="0.00"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+                <small className="field-hint">
+                  Ce prix sera envoyé à Welivexpress comme montant à collecter
+                </small>
+              </div>
+            </div>
+
+            <div className="form-group full-width">
+              <label>Note</label>
+              <textarea
+                name="parcel_note"
+                value={formData.parcel_note}
+                onChange={handleInputChange}
+                placeholder="Notes ou instructions spéciales"
+                rows="4"
+              />
+            </div>
+
+            <div className="form-checkbox">
+              <input
+                type="checkbox"
+                id="parcel_open"
+                name="parcel_open"
+                checked={formData.parcel_open === 1}
+                onChange={handleInputChange}
+              />
+              <label htmlFor="parcel_open">Colis ouvert / vérifié</label>
+            </div>
           </div>
 
-          {/* Row 10: Checkbox */}
-          <div className="form-checkbox">
-            <input
-              type="checkbox"
-              id="parcel_open"
-              name="parcel_open"
-              checked={formData.parcel_open === 1}
-              onChange={handleInputChange}
-            />
-            <label htmlFor="parcel_open">Colis ouvert / vérifié</label>
-          </div>
-
-          {/* Price Info Warning */}
-          <div className="price-info-warning compact">
-            <Info size={16} />
+          {/* Display price info for Welivexpress */}
+          <div className="price-info-warning">
+            <Info size={20} />
             <span>
-              <strong>Important:</strong> Prix colis: <strong>{formData.parcel_price || '---'} MAD</strong>
+              <strong>Important:</strong> Le prix colis de <strong>{formData.parcel_price || '---'} MAD</strong> sera envoyé à Welivexpress lors des mises à jour.
             </span>
           </div>
 
-          {/* Form Actions */}
           <div className="form-actions">
             <button 
               type="button" 

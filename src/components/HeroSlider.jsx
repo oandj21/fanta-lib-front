@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import "../css/HeroSlider.css";
 
 // Import all hero images using the exact filenames
@@ -105,17 +104,10 @@ const slides = [
 
 export default function HeroSlider() {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const sliderInterval = useRef(null);
 
   const goToSlide = (index) => {
     setCurrentIndex(index);
-  };
-
-  const goToPrevSlide = () => {
-    setCurrentIndex((prevIndex) => 
-      prevIndex === 0 ? slides.length - 1 : prevIndex - 1
-    );
   };
 
   const goToNextSlide = () => {
@@ -125,33 +117,19 @@ export default function HeroSlider() {
   };
 
   useEffect(() => {
-    if (isAutoPlaying) {
-      sliderInterval.current = setInterval(() => {
-        goToNextSlide();
-      }, 5000);
-    }
+    sliderInterval.current = setInterval(() => {
+      goToNextSlide();
+    }, 2000); // Changed to 2 seconds
 
     return () => {
       if (sliderInterval.current) {
         clearInterval(sliderInterval.current);
       }
     };
-  }, [isAutoPlaying]);
-
-  const handleMouseEnter = () => {
-    setIsAutoPlaying(false);
-  };
-
-  const handleMouseLeave = () => {
-    setIsAutoPlaying(true);
-  };
+  }, []);
 
   return (
-    <section 
-      className="hero-slider"
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
+    <section className="hero-slider">
       <div className="slider-container">
         <div 
           className="slider-track"
@@ -171,14 +149,6 @@ export default function HeroSlider() {
             عرض كل الكتب ←
           </a>
         </div>
-
-        {/* Navigation Buttons */}
-        <button className="slider-nav prev" onClick={goToPrevSlide} aria-label="Previous slide">
-          <ChevronRight size={24} />
-        </button>
-        <button className="slider-nav next" onClick={goToNextSlide} aria-label="Next slide">
-          <ChevronLeft size={24} />
-        </button>
 
         {/* Dots Indicator */}
         <div className="slider-dots">

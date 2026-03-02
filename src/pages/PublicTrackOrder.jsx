@@ -14,7 +14,8 @@ import {
   RefreshCw,
   Home,
   Info,
-  AlertCircle
+  AlertCircle,
+  CheckCircle
 } from "lucide-react";
 
 import "../css/PublicTrackOrder.css";
@@ -120,24 +121,63 @@ const getStatusColor = (status) => {
   return "#3b82f6";
 };
 
-/* FORMAT DATE */
+/* FORMAT DATE - Fixed to properly display dates */
 const formatDate = (dateString) => {
   if (!dateString) return "-";
 
-  return new Date(dateString).toLocaleString("fr-FR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit"
-  });
+  try {
+    const date = new Date(dateString);
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return "-";
+    }
+    
+    return date.toLocaleString("fr-FR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  } catch (error) {
+    console.error("Error formatting date:", error);
+    return "-";
+  }
 };
+
+// Define the complete order of statuses for timeline
+const statusOrder = [
+  'NEW_PARCEL',
+  'PARCEL_CONFIRMED',
+  'PICKED_UP',
+  'WAITING_PICKUP',
+  'RECEIVED',
+  'IN_PROGRESS',
+  'SENT',
+  'DISTRIBUTION',
+  'DELIVERED',
+  'RETURNED',
+  'CANCELLED',
+  'REFUSE',
+  'NOANSWER',
+  'UNREACHABLE',
+  'HORS_ZONE',
+  'POSTPONED',
+  'PROGRAMMER',
+  'DEUX',
+  'TROIS',
+  'ENVG',
+  'RETURN_BY_AMANA',
+  'SENT_BY_AMANA'
+];
 
 export default function PublicTrackOrder() {
   const { parcelCode } = useParams();
 
   const [trackingInfo, setTrackingInfo] = useState(null);
   const [order, setOrder] = useState(null);
+  const [allStatuses, setAllStatuses] = useState([]);
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -151,6 +191,56 @@ export default function PublicTrackOrder() {
       fetchTracking();
     }
   }, [parcelCode]);
+
+  /* Generate all possible statuses for the timeline */
+  const generateAllStatuses = (currentDeliveryStatus, secondaryStatus, history = []) => {
+    const statuses = [];
+    
+    // Add all statuses from statusOrder that are in history or are current
+    statusOrder.forEach(statusKey => {
+      const translatedStatus = translateStatus(statusKey);
+      if (!translatedStatus) return;
+      
+      // Check if this status exists in history
+      const historyItem = history.find(item => 
+        item.status?.toUpperCase() === statusKey || 
+        translateStatus(item.status) === translatedStatus
+      );
+      
+      // Check if this is the current delivery status
+      const isCurrentDeliveryStatus = 
+        currentDeliveryStatus?.toUpperCase() === statusKey || 
+        translateStatus(currentDeliveryStatus) === translatedStatus;
+      
+      // Check if this is the current secondary status
+      const isCurrentSecondaryStatus = 
+        secondaryStatus?.toUpperCase() === statusKey || 
+        translateStatus(secondaryStatus) === translatedStatus;
+      
+      // Determine if this status is completed (has a date)
+      let isCompleted = false;
+      let statusDate = null;
+      
+      if (historyItem) {
+        isCompleted = true;
+        statusDate = historyItem.date;
+      } else if (isCurrentDeliveryStatus || isCurrentSecondaryStatus) {
+        // Current status is considered in progress
+        isCompleted = false;
+      }
+      
+      statuses.push({
+        key: statusKey,
+        label: translatedStatus,
+        isCompleted,
+        isCurrent: isCurrentDeliveryStatus || isCurrentSecondaryStatus,
+        date: statusDate,
+        color: getStatusColor(statusKey)
+      });
+    });
+    
+    return statuses;
+  };
 
   /* RECHERCHER SUIVI */
   const fetchTracking = async (isRefresh = false) => {
@@ -171,7 +261,7 @@ export default function PublicTrackOrder() {
 
         /* Construire l'objet commande à partir de l'API */
         if (data.parcel) {
-          setOrder({
+          const orderData = {
             parcel_code: data.parcel.code,
             parcel_receiver: data.parcel.receiver,
             parcel_phone: data.parcel.phone,
@@ -184,7 +274,16 @@ export default function PublicTrackOrder() {
             statut_second: data.parcel.status_second,
             payment_status: data.parcel.payment_status,
             date: data.parcel.created_date
-          });
+          };
+          setOrder(orderData);
+          
+          // Generate all statuses for timeline
+          const statuses = generateAllStatuses(
+            data.parcel.delivery_status,
+            data.parcel.status_second,
+            data.tracking?.history || []
+          );
+          setAllStatuses(statuses);
         }
       } else {
         setError("Commande introuvable");
@@ -385,26 +484,71 @@ export default function PublicTrackOrder() {
 
         </div>
 
-        {/* HISTORIQUE CHRONOLOGIQUE */}
-        {trackingInfo?.tracking?.history?.length > 0 && (
+        {/* HISTORIQUE COMPLET DU COLIS - All statuses */}
+        {allStatuses.length > 0 && (
           <div className="timeline">
             <h3 style={{ marginBottom: 15 }}>
-              Historique du colis
+              Historique complet du colis
+            </h3>
+
+            {allStatuses.map((status, index) => (
+              <div key={index} className="timeline-item">
+                <div 
+                  className={`timeline-dot ${status.isCompleted ? 'completed' : ''} ${status.isCurrent ? 'current' : ''}`}
+                  style={{
+                    background: status.isCompleted ? status.color : 
+                               status.isCurrent ? status.color : '#e0e0e0',
+                    border: status.isCompleted ? `4px solid ${status.color}30` : 
+                           status.isCurrent ? `4px solid ${status.color}30` : '4px solid #f0f0f0'
+                  }}
+                >
+                  {status.isCompleted && <CheckCircle size={12} color="white" />}
+                </div>
+
+                <div 
+                  className={`timeline-content ${status.isCompleted ? 'completed' : ''} ${status.isCurrent ? 'current' : ''}`}
+                  style={{
+                    borderLeft: status.isCompleted ? `3px solid ${status.color}` : 
+                               status.isCurrent ? `3px solid ${status.color}` : '3px solid #e0e0e0'
+                  }}
+                >
+                  <span className="timeline-time">
+                    {status.date ? formatDate(status.date) : 
+                     status.isCurrent ? 'En cours' : 'À venir'}
+                  </span>
+                  <span style={{ 
+                    fontWeight: status.isCurrent ? 'bold' : 'normal',
+                    color: status.isCompleted ? status.color : 
+                          status.isCurrent ? status.color : '#666'
+                  }}>
+                    {status.label}
+                    {status.isCurrent && ' (Actuel)'}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Original history from API (if different from our generated list) */}
+        {trackingInfo?.tracking?.history?.length > 0 && (
+          <div className="timeline original-history">
+            <h3 style={{ marginBottom: 15, marginTop: 30 }}>
+              Historique détaillé
             </h3>
 
             {trackingInfo.tracking.history.map((item, index) => (
               <div key={index} className="timeline-item">
+                <div className="timeline-dot completed" style={{ background: getStatusColor(item.status) }}>
+                  <CheckCircle size={12} color="white" />
+                </div>
 
-                <div className="timeline-dot"></div>
-
-                <div className="timeline-content">
+                <div className="timeline-content completed">
                   <span className="timeline-time">
                     {formatDate(item.date)}
                   </span>
-
                   <span>{translateStatus(item.status)}</span>
                 </div>
-
               </div>
             ))}
           </div>

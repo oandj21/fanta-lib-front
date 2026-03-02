@@ -58,12 +58,12 @@ export default function Livres() {
       .filter(cat => cat && cat.trim() !== "")
   ))];
 
-  // Check if genres filter can scroll
+  // Check if genres filter can scroll horizontally
   useEffect(() => {
     const checkScroll = () => {
       if (genresFilterRef.current) {
-        const { scrollHeight, clientHeight } = genresFilterRef.current;
-        setCanScroll(scrollHeight > clientHeight);
+        const { scrollWidth, clientWidth } = genresFilterRef.current;
+        setCanScroll(scrollWidth > clientWidth);
       }
     };
     
@@ -98,6 +98,18 @@ export default function Livres() {
     window.history.replaceState({}, "", url);
   };
 
+  const scrollLeft = () => {
+    if (genresFilterRef.current) {
+      genresFilterRef.current.scrollBy({ left: -200, behavior: 'smooth' });
+    }
+  };
+
+  const scrollRight = () => {
+    if (genresFilterRef.current) {
+      genresFilterRef.current.scrollBy({ left: 200, behavior: 'smooth' });
+    }
+  };
+
   return (
     <div className="livres-page">
       <Header />
@@ -112,19 +124,39 @@ export default function Livres() {
       <section className="books-section">
         <section className="filters-sectio">
           <div className="filters-container">
-            <div 
-              className={`genres-filter ${canScroll ? 'can-scroll' : ''}`}
-              ref={genresFilterRef}
-            >
-              {genres.map((g) => (
-                <button
-                  key={g}
-                  onClick={() => setGenre(g)}
-                  className={`genre-btn ${genre === g ? "active" : ""}`}
+            <div className="genres-filter-wrapper">
+              {canScroll && (
+                <button 
+                  className="scroll-btn scroll-left" 
+                  onClick={scrollLeft}
+                  aria-label="Scroll left"
                 >
-                  {g}
+                  ‹
                 </button>
-              ))}
+              )}
+              <div 
+                className={`genres-filter ${canScroll ? 'can-scroll' : ''}`}
+                ref={genresFilterRef}
+              >
+                {genres.map((g) => (
+                  <button
+                    key={g}
+                    onClick={() => setGenre(g)}
+                    className={`genre-btn ${genre === g ? "active" : ""}`}
+                  >
+                    {g}
+                  </button>
+                ))}
+              </div>
+              {canScroll && (
+                <button 
+                  className="scroll-btn scroll-right" 
+                  onClick={scrollRight}
+                  aria-label="Scroll right"
+                >
+                  ›
+                </button>
+              )}
             </div>
           </div>
         </section>

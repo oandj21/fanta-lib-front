@@ -19,6 +19,76 @@ import {
 
 import "../css/PublicTrackOrder.css";
 
+// French translations for statuses (same as admin)
+const statusTranslations = {
+  // Primary delivery statuses
+  'NEW_PARCEL': 'Nouveau colis',
+  'PARCEL_CONFIRMED': 'Colis confirmé',
+  'PICKED_UP': 'Ramassé',
+  'DISTRIBUTION': 'En distribution',
+  'IN_PROGRESS': 'En cours',
+  'SENT': 'Expédié',
+  'DELIVERED': 'Livré',
+  'RETURNED': 'Retourné',
+  'CANCELLED': 'Annulé',
+  'WAITING_PICKUP': 'En attente de ramassage',
+  'RECEIVED': 'Reçu',
+  
+  // Secondary statuses
+  'REFUSE': 'Refusé',
+  'NOANSWER': 'Pas de réponse',
+  'UNREACHABLE': 'Injoignable',
+  'HORS_ZONE': 'Hors zone',
+  'POSTPONED': 'Reporté',
+  'PROGRAMMER': 'Programmé',
+  'DEUX': '2ème tentative',
+  'TROIS': '3ème tentative',
+  'ENVG': 'En voyage',
+  'RETURN_BY_AMANA': 'Retour par Amana',
+  'SENT_BY_AMANA': 'Envoyé par Amana',
+  
+  // Payment statuses
+  'PAID': 'Payé',
+  'NOT_PAID': 'Non payé',
+  'INVOICED': 'Facturé',
+  'PENDING': 'En attente',
+  
+  // Generic fallbacks
+  'nouveau': 'Nouveau',
+  'confirmé': 'Confirmé',
+  'ramassé': 'Ramassé',
+  'distribution': 'En distribution',
+  'en cours': 'En cours',
+  'expédié': 'Expédié',
+  'livré': 'Livré',
+  'retourné': 'Retourné',
+  'annulé': 'Annulé',
+  'attente': 'En attente',
+  'reçu': 'Reçu',
+  'payé': 'Payé',
+  'non payé': 'Non payé',
+  'facturé': 'Facturé'
+};
+
+// Helper to translate status to French (same as admin)
+const translateStatus = (status) => {
+  if (!status) return '';
+  
+  // Check exact match
+  if (statusTranslations[status]) {
+    return statusTranslations[status];
+  }
+  
+  // Check case-insensitive match
+  const statusUpper = status.toUpperCase();
+  if (statusTranslations[statusUpper]) {
+    return statusTranslations[statusUpper];
+  }
+  
+  // Return original if no translation found
+  return status;
+};
+
 /* COULEUR DU STATUT */
 const getStatusColor = (status) => {
   if (!status) return "#6b7280";
@@ -26,41 +96,28 @@ const getStatusColor = (status) => {
   const s = status.toLowerCase();
 
   if (s.includes("livré") || s.includes("delivered")) return "#22c55e";
-  if (s.includes("transit") || s.includes("en cours")) return "#f59e0b";
-  if (s.includes("ramassé") || s.includes("ramass")) return "#3b82f6";
-  if (s.includes("attente") || s.includes("en attente")) return "#6b7280";
-  if (s.includes("retour") || s.includes("retourné")) return "#ef4444";
-  if (s.includes("préparé") || s.includes("preparation")) return "#8b5cf6";
-  if (s.includes("expédié") || s.includes("expedie")) return "#3b82f6";
-  if (s.includes("livraison") || s.includes("en livraison")) return "#f59e0b";
+  if (s.includes("transit") || s.includes("en cours") || s.includes("distribution")) return "#f59e0b";
+  if (s.includes("ramassé") || s.includes("ramass") || s.includes("picked")) return "#8b5cf6";
+  if (s.includes("attente") || s.includes("pending") || s.includes("waiting")) return "#6b7280";
+  if (s.includes("retour") || s.includes("return")) return "#ef4444";
+  if (s.includes("préparé") || s.includes("preparation") || s.includes("confirmé")) return "#007bff";
+  if (s.includes("expédié") || s.includes("sent")) return "#0891b2";
+  if (s.includes("refusé") || s.includes("refuse")) return "#dc2626";
+  if (s.includes("pas de réponse") || s.includes("noanswer")) return "#f59e0b";
+  if (s.includes("injoignable") || s.includes("unreachable")) return "#d97706";
+  if (s.includes("hors zone") || s.includes("hors_zone")) return "#7c3aed";
+  if (s.includes("reporté") || s.includes("postponed")) return "#8b5cf6";
+  if (s.includes("programmé") || s.includes("programmer")) return "#2563eb";
+  if (s.includes("2ème") || s.includes("deux")) return "#f97316";
+  if (s.includes("3ème") || s.includes("trois")) return "#ea580c";
+  if (s.includes("en voyage") || s.includes("envg")) return "#0891b2";
+  if (s.includes("retour amana") || s.includes("return_by_amana")) return "#b91c1c";
+  if (s.includes("envoyé amana") || s.includes("sent_by_amana")) return "#1e40af";
+  if (s.includes("payé") || s.includes("paid")) return "#10b981";
+  if (s.includes("non payé") || s.includes("not_paid")) return "#ef4444";
+  if (s.includes("facturé") || s.includes("invoiced")) return "#8b5cf6";
 
   return "#3b82f6";
-};
-
-/* TRADUCTION DU STATUT */
-const translateStatus = (status) => {
-  if (!status) return "Non disponible";
-  
-  const statusLower = status.toLowerCase();
-  
-  // Statuts de livraison
-  if (statusLower.includes("pending") || statusLower.includes("en attente")) return "En attente";
-  if (statusLower.includes("preparation") || statusLower.includes("préparé")) return "Préparé";
-  if (statusLower.includes("picked up") || statusLower.includes("ramassé")) return "Ramassé";
-  if (statusLower.includes("in transit") || statusLower.includes("en transit")) return "En transit";
-  if (statusLower.includes("out for delivery") || statusLower.includes("en livraison")) return "En livraison";
-  if (statusLower.includes("delivered") || statusLower.includes("livré")) return "Livré";
-  if (statusLower.includes("returned") || statusLower.includes("retourné")) return "Retourné";
-  if (statusLower.includes("cancelled") || statusLower.includes("annulé")) return "Annulé";
-  
-  // Statuts de paiement
-  if (statusLower.includes("paid") || statusLower.includes("payé")) return "Payé";
-  if (statusLower.includes("unpaid") || statusLower.includes("non payé")) return "Non payé";
-  if (statusLower.includes("partial") || statusLower.includes("partiel")) return "Paiement partiel";
-  if (statusLower.includes("cash on delivery") || statusLower.includes("contre remboursement")) return "Contre remboursement";
-  
-  // Si aucun match, retourner le statut original
-  return status;
 };
 
 /* FORMAT DATE */
@@ -124,6 +181,7 @@ export default function PublicTrackOrder() {
             parcel_price: data.parcel.price,
             parcel_prd_qty: data.parcel.product?.quantity || 1,
             statut: data.parcel.delivery_status,
+            statut_second: data.parcel.status_second,
             payment_status: data.parcel.payment_status,
             date: data.parcel.created_date
           });
@@ -164,10 +222,12 @@ export default function PublicTrackOrder() {
   }
 
   const deliveryStatus = order.statut;
+  const secondaryStatus = order.statut_second;
   const paymentStatus = order.payment_status;
   
   // Traduire les statuts
   const translatedDeliveryStatus = translateStatus(deliveryStatus);
+  const translatedSecondaryStatus = secondaryStatus ? translateStatus(secondaryStatus) : null;
   const translatedPaymentStatus = translateStatus(paymentStatus);
 
   return (
@@ -208,14 +268,31 @@ export default function PublicTrackOrder() {
               <h3>Statut livraison</h3>
             </div>
 
-            <div
-              className="status-badge large"
-              style={{
-                background: `${getStatusColor(deliveryStatus)}20`,
-                color: getStatusColor(deliveryStatus)
-              }}
-            >
-              {translatedDeliveryStatus}
+            <div className="status-badge-container">
+              <div
+                className="status-badge large"
+                style={{
+                  background: `${getStatusColor(deliveryStatus)}20`,
+                  color: getStatusColor(deliveryStatus),
+                  border: `1px solid ${getStatusColor(deliveryStatus)}30`
+                }}
+              >
+                {translatedDeliveryStatus || "En attente"}
+              </div>
+              
+              {secondaryStatus && secondaryStatus !== '' && (
+                <div
+                  className="status-badge large secondary"
+                  style={{
+                    background: `${getStatusColor(secondaryStatus)}20`,
+                    color: getStatusColor(secondaryStatus),
+                    border: `1px solid ${getStatusColor(secondaryStatus)}30`,
+                    marginLeft: '8px'
+                  }}
+                >
+                  {translatedSecondaryStatus}
+                </div>
+              )}
             </div>
           </div>
 
@@ -229,11 +306,13 @@ export default function PublicTrackOrder() {
             <div
               className="status-badge"
               style={{
-                background: translatedPaymentStatus === "Payé" ? "#22c55e20" : "#eef2ff",
-                color: translatedPaymentStatus === "Payé" ? "#22c55e" : "#1e63d5"
+                background: translatedPaymentStatus === "Payé" ? "#22c55e20" : 
+                            translatedPaymentStatus === "Non payé" ? "#ef444420" : "#eef2ff",
+                color: translatedPaymentStatus === "Payé" ? "#22c55e" : 
+                       translatedPaymentStatus === "Non payé" ? "#ef4444" : "#1e63d5"
               }}
             >
-              {translatedPaymentStatus}
+              {translatedPaymentStatus || "Non disponible"}
             </div>
           </div>
         </div>

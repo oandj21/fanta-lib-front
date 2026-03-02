@@ -19,7 +19,7 @@ import {
 
 import "../css/PublicTrackOrder.css";
 
-/* STATUS COLOR */
+/* COULEUR DU STATUT */
 const getStatusColor = (status) => {
   if (!status) return "#6b7280";
 
@@ -66,7 +66,7 @@ export default function PublicTrackOrder() {
     }
   }, [parcelCode]);
 
-  /* FETCH TRACKING */
+  /* RECHERCHER SUIVI */
   const fetchTracking = async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
@@ -83,7 +83,7 @@ export default function PublicTrackOrder() {
 
         setTrackingInfo(data);
 
-        /* Build order object from API */
+        /* Construire l'objet commande à partir de l'API */
         if (data.parcel) {
           setOrder({
             parcel_code: data.parcel.code,
@@ -128,7 +128,7 @@ export default function PublicTrackOrder() {
 
         <Link to="/" className="btn-home">
           <Home size={16} />
-          Retour accueil
+          Retour à l'accueil
         </Link>
       </div>
     );
@@ -140,12 +140,21 @@ export default function PublicTrackOrder() {
   return (
     <div className="public-track-container">
 
-      {/* HEADER */}
+      {/* EN-TÊTE */}
       <div className="track-header">
         <Link to="/" className="back-link">
           <ArrowLeft size={16} />
           Retour
         </Link>
+
+        <button 
+          className="btn-refresh" 
+          onClick={() => fetchTracking(true)}
+          disabled={refreshing}
+        >
+          <RefreshCw size={16} className={refreshing ? "spin" : ""} />
+          {refreshing ? "Actualisation..." : "Actualiser"}
+        </button>
 
         <h1>Suivi des colis</h1>
         <p className="parcel-code-display">
@@ -153,13 +162,13 @@ export default function PublicTrackOrder() {
         </p>
       </div>
 
-      {/* CONTENT */}
+      {/* CONTENU */}
       <div className="track-content">
 
-        {/* STATUS */}
+        {/* STATUTS */}
         <div className="status-cards">
 
-          {/* DELIVERY */}
+          {/* LIVRAISON */}
           <div className="status-card">
             <div className="status-card-header">
               <Truck size={18} />
@@ -177,7 +186,7 @@ export default function PublicTrackOrder() {
             </div>
           </div>
 
-          {/* PAYMENT */}
+          {/* PAIEMENT */}
           <div className="status-card">
             <div className="status-card-header">
               <CreditCard size={18} />
@@ -196,16 +205,7 @@ export default function PublicTrackOrder() {
           </div>
         </div>
 
-        {/* REFRESH */}
-        <button
-          className="btn-refresh"
-          onClick={() => fetchTracking(true)}
-        >
-          <RefreshCw size={16} />
-          {refreshing ? "Mise à jour..." : "Actualiser"}
-        </button>
-
-        {/* DETAILS */}
+        {/* DÉTAILS */}
         <div className="details-grid">
 
           <div className="detail-card">
@@ -273,7 +273,7 @@ export default function PublicTrackOrder() {
 
         </div>
 
-        {/* TIMELINE HISTORY */}
+        {/* HISTORIQUE CHRONOLOGIQUE */}
         {trackingInfo?.tracking?.history?.length > 0 && (
           <div className="timeline">
             <h3 style={{ marginBottom: 15 }}>
@@ -300,11 +300,11 @@ export default function PublicTrackOrder() {
 
       </div>
 
-      {/* FOOTER */}
+      {/* PIED DE PAGE */}
       <div className="track-footer">
         <p>
           <Info size={14} />
-          Pour toute information contactez le support.
+          Pour toute information, contactez le support.
         </p>
       </div>
 

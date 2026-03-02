@@ -1,168 +1,138 @@
-/* Global container */
+/* Container */
 .public-track-container {
-  font-family: Arial, Helvetica, sans-serif;
-  background: #f4f6f9;
-  min-height: 100vh;
+  max-width: 900px;
+  margin: auto;
+  padding: 20px;
 }
 
 /* HEADER */
 .track-header {
-  background: #1e63d5;
+  background: var(--primary);
   color: white;
-  padding: 25px 20px 35px;
+  border-radius: 16px;
+  padding: 30px 20px;
   text-align: center;
   position: relative;
+  box-shadow: var(--shadow-md);
 }
 
-.track-header h1 {
-  margin-top: 10px;
-  font-size: 26px;
-  font-weight: 600;
-}
-
-.parcel-code-display {
-  margin-top: 10px;
-  font-size: 16px;
-}
-
+/* Top buttons (two sides) */
 .back-link {
   position: absolute;
   left: 15px;
   top: 15px;
   color: white;
   text-decoration: none;
-  display: flex;
-  gap: 6px;
-  align-items: center;
   font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.logo-container {
-  margin-bottom: 10px;
+.btn-refresh {
+  position: absolute;
+  right: 15px;
+  top: 15px;
+  background: white;
+  color: var(--primary);
+  border: none;
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: var(--transition);
 }
 
-.header-logo {
-  height: 55px;
+.btn-refresh:hover {
+  background: var(--secondary);
 }
 
-/* MAIN CONTENT */
+/* Parcel code */
+.parcel-code-display {
+  margin-top: 10px;
+  font-size: 18px;
+}
+
+/* CONTENT */
 .track-content {
-  max-width: 850px;
-  margin: -25px auto 30px;
-  padding: 0 15px;
+  background: white;
+  margin-top: -20px;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: var(--shadow-md);
 }
 
-/* STATUS CARD */
+/* STATUS CARDS */
 .status-cards {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(2, 1fr);
   gap: 15px;
+  margin-bottom: 20px;
 }
 
 .status-card {
-  background: white;
+  background: var(--background);
   border-radius: 14px;
-  padding: 18px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.06);
+  padding: 16px;
+  border: 1px solid var(--border);
 }
 
 .status-card-header {
   display: flex;
-  gap: 10px;
   align-items: center;
-  margin-bottom: 12px;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-weight: 600;
 }
 
+/* STATUS BADGE */
 .status-badge {
-  padding: 8px 14px;
-  border-radius: 20px;
+  padding: 8px 12px;
+  border-radius: 999px;
   font-weight: 600;
+  font-size: 14px;
   display: inline-block;
 }
 
 .status-badge.large {
-  font-size: 18px;
+  font-size: 16px;
   padding: 10px 18px;
-}
-
-/* REFRESH BUTTON */
-.btn-refresh {
-  width: 100%;
-  margin: 15px 0;
-  padding: 12px;
-  border: none;
-  border-radius: 10px;
-  background: #1e63d5;
-  color: white;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.btn-refresh:hover {
-  background: #174fb0;
 }
 
 /* DETAILS GRID */
 .details-grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(2, 1fr);
   gap: 15px;
+  margin-top: 25px;
 }
 
 .detail-card {
-  background: white;
+  background: var(--background);
   border-radius: 14px;
-  padding: 18px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+  padding: 15px;
+  border: 1px solid var(--border);
 }
 
 .detail-card-header {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  margin-bottom: 10px;
   font-weight: 600;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .detail-row {
   display: flex;
   justify-content: space-between;
-  margin: 8px 0;
   font-size: 14px;
+  margin-bottom: 6px;
 }
 
-.detail-label {
-  color: #6b7280;
-}
-
-.detail-value {
-  font-weight: 600;
-}
-
-.detail-value.price {
-  color: #1e63d5;
-}
-
-/* NOTE */
-.note-section {
-  margin-top: 20px;
-  background: white;
-  border-radius: 12px;
-  padding: 18px;
-}
-
-.note-header {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-/* TIMELINE (Sendit style) */
+/* TIMELINE */
 .timeline {
+  margin-top: 35px;
   position: relative;
-  padding-left: 30px;
-  margin-top: 20px;
 }
 
 .timeline::before {
@@ -170,88 +140,73 @@
   position: absolute;
   left: 12px;
   top: 0;
-  width: 4px;
-  height: 100%;
-  background: #f3b000;
-  border-radius: 10px;
+  bottom: 0;
+  width: 3px;
+  background: var(--secondary);
 }
 
 .timeline-item {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 20px;
   position: relative;
-  margin-bottom: 25px;
 }
 
 .timeline-dot {
-  position: absolute;
-  left: -2px;
-  top: 4px;
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  background: #f3b000;
-  border: 4px solid white;
-  box-shadow: 0 0 0 2px #f3b000;
+  background: var(--primary);
+  border: 4px solid var(--secondary);
+  position: relative;
+  z-index: 2;
 }
 
 .timeline-content {
   background: white;
-  border-radius: 30px;
-  padding: 8px 14px;
-  display: inline-flex;
-  gap: 10px;
-  align-items: center;
-  border: 2px solid #1e63d5;
-  font-size: 14px;
-  font-weight: 600;
+  padding: 10px 14px;
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+  min-width: 200px;
 }
 
 .timeline-time {
-  background: #1e63d5;
-  color: white;
-  padding: 5px 10px;
-  border-radius: 20px;
+  display: block;
+  font-size: 12px;
+  color: var(--muted-foreground);
+  margin-bottom: 4px;
 }
 
 /* FOOTER */
 .track-footer {
+  margin-top: 20px;
   text-align: center;
-  padding: 20px;
-  color: #6b7280;
+  color: var(--muted-foreground);
   font-size: 13px;
 }
 
 /* LOADING */
 .public-track-loading {
-  display: flex;
-  height: 100vh;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
+  text-align: center;
+  padding: 80px 20px;
 }
 
-.loading-spinner {
-  width: 45px;
-  height: 45px;
-  border: 4px solid #e5e7eb;
-  border-top: 4px solid #1e63d5;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 10px;
+/* ERROR */
+.public-track-error {
+  text-align: center;
+  padding: 80px 20px;
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* MOBILE spacing like screenshot */
-@media (min-width: 768px) {
-  .details-grid {
-    grid-template-columns: 1fr 1fr;
-  }
+/* MOBILE */
+@media (max-width: 768px) {
 
   .status-cards {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
   }
+
+  .details-grid {
+    grid-template-columns: 1fr;
+  }
+
 }

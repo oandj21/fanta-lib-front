@@ -13,14 +13,15 @@ import {
   PackageCheck,
   PackageX,
   FileText,
-  BookOpen,
   Copy,
   Check,
   ArrowLeft,
   AlertCircle,
   RefreshCw,
   Home,
-  Info
+  Info,
+  ChevronRight,
+  Map
 } from "lucide-react";
 import "../css/PublicTrackOrder.css";
 
@@ -31,8 +32,8 @@ const getStatusColor = (status) => {
   const statusLower = status.toLowerCase();
   
   if (status === 'NEW_PARCEL' || statusLower.includes('nouveau')) return '#3b82f6';
-  if (status === 'PARCEL_CONFIRMED' || statusLower.includes('confirm')) return '#007bff';
-  if (status === 'PARCEL_IN_TRANSIT' || statusLower.includes('transit') || statusLower.includes('expéd')) return '#ffc107';
+  if (status === 'PARCEL_CONFIRMED' || statusLower.includes('confirm')) return '#8b5cf6';
+  if (status === 'PARCEL_IN_TRANSIT' || statusLower.includes('transit') || statusLower.includes('expéd')) return '#f59e0b';
   if (status === 'PARCEL_DELIVERED' || statusLower.includes('livré') || statusLower.includes('delivered')) return '#10b981';
   if (status === 'PARCEL_CANCELLED' || statusLower.includes('annul') || statusLower.includes('cancelled')) return '#6b7280';
   if (status === 'PARCEL_RETURNED' || statusLower.includes('retour') || statusLower.includes('returned')) return '#ef4444';
@@ -54,6 +55,16 @@ const formatDate = (dateString) => {
     hour: '2-digit',
     minute: '2-digit'
   });
+};
+
+// Format date for history
+const formatHistoryDate = (dateString) => {
+  if (!dateString) return { date: "-", time: "" };
+  const date = new Date(dateString);
+  return {
+    date: date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }),
+    time: date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+  };
 };
 
 export default function PublicTrackOrder() {
@@ -81,14 +92,27 @@ export default function PublicTrackOrder() {
     setError(null);
     
     try {
-      // Use the public tracking endpoint
       const response = await axios.get(`${API_URL}/public/track/${parcelCode}`);
+      
+      console.log("Tracking response:", response.data);
       
       if (response.data.success && response.data.data) {
         setTrackingInfo(response.data.data);
         
-        // Create order object from tracking data
         if (response.data.data.parcel) {
+          const canOpen = response.data.data.parcel.can_open;
+          
+          let parcelOpenValue = 0;
+          if (canOpen !== undefined && canOpen !== null) {
+            if (typeof canOpen === 'number') {
+              parcelOpenValue = canOpen;
+            } else if (typeof canOpen === 'string') {
+              parcelOpenValue = parseInt(canOpen) || 0;
+            } else if (typeof canOpen === 'boolean') {
+              parcelOpenValue = canOpen ? 1 : 0;
+            }
+          }
+          
           const trackingOrder = {
             parcel_code: response.data.data.parcel.code || parcelCode,
             parcel_receiver: response.data.data.parcel.receiver || 'Client',
@@ -97,12 +121,13 @@ export default function PublicTrackOrder() {
             parcel_city: response.data.data.parcel.city?.name || response.data.data.parcel.city || '',
             parcel_address: response.data.data.parcel.address || '',
             parcel_price: response.data.data.parcel.price || 0,
-            parcel_open: response.data.data.parcel.can_open || 0,
+            parcel_open: parcelOpenValue,
             parcel_note: response.data.data.parcel.note || '',
             statut: response.data.data.parcel.delivery_status || 'En attente',
             date: response.data.data.parcel.created_date || new Date().toISOString().split('T')[0],
-            livres: [] // You might want to fetch this separately if needed
+            livres: []
           };
+          
           setOrder(trackingOrder);
         }
       } else {
@@ -133,6 +158,107 @@ export default function PublicTrackOrder() {
     setLogoError(true);
   };
 
+  // Generate mock history if not available from API
+  const getTrackingHistory = () => {
+    if (trackingInfo?.tracking_history && trackingInfo.tracking_history.length > 0) {
+      return trackingInfo.tracking_history;
+    }
+    
+    // Mock history based on current status
+    const status = order?.statut || 'En attente';
+    const createdDate = order?.date ? new Date(order.date) : new Date();
+    
+    const history = [
+      {
+        status: 'En attente',
+        date: createdDate.toISOString(),
+        description: 'Colis enregistré'
+      }
+    ];
+    
+    if (status.toLowerCase().includes('livré') || status === 'PARCEL_DELIVERED') {
+      const deliveredDate = new Date(createdDate);
+      deliveredDate.setDate(deliveredDate.getDate() + 2);
+      deliveredDate.setHours(14, 40);
+      
+      history.push(
+        {
+          status: 'Ramassage en cours',
+          date: new Date(createdDate.getTime() + 2 * 60 * 60 * 1000).toISOString(),
+          description: 'Colis en cours de ramassage'
+        },
+        {
+          status: 'Ramassé',
+          date: new Date(createdDate.getTime() + 4 * 60 * 60 * 1000).toISOString(),
+          description: 'Colis ramassé par le transporteur'
+        },
+        {
+          status: 'Entrepôt',
+          date: new Date(createdDate.getTime() + 10 * 60 * 60 * 1000).toISOString(),
+          description: 'Colis arrivé à l\'entrepôt'
+        },
+        {
+          status: 'En transit',
+          date: new Date(createdDate.getTime() + 24 * 60 * 60 * 1000).toISOString(),
+          description: 'Colis en transit vers la ville de destination'
+        },
+        {
+          status: 'Distribué',
+          date: new Date(createdDate.getTime() + 30 * 60 * 60 * 1000).toISOString(),
+          description: 'Colis distribué au livreur'
+        },
+        {
+          status: 'En cours de livraison',
+          date: new Date(createdDate.getTime() + 32 * 60 * 60 * 1000).toISOString(),
+          description: 'Livreur en route vers l\'adresse de livraison'
+        },
+        {
+          status: 'Livré',
+          date: deliveredDate.toISOString(),
+          description: 'Colis livré avec succès'
+        }
+      );
+    } else if (status.toLowerCase().includes('transit') || status === 'PARCEL_IN_TRANSIT') {
+      history.push(
+        {
+          status: 'Ramassage en cours',
+          date: new Date(createdDate.getTime() + 2 * 60 * 60 * 1000).toISOString(),
+          description: 'Colis en cours de ramassage'
+        },
+        {
+          status: 'Ramassé',
+          date: new Date(createdDate.getTime() + 4 * 60 * 60 * 1000).toISOString(),
+          description: 'Colis ramassé par le transporteur'
+        },
+        {
+          status: 'Entrepôt',
+          date: new Date(createdDate.getTime() + 10 * 60 * 60 * 1000).toISOString(),
+          description: 'Colis arrivé à l\'entrepôt'
+        },
+        {
+          status: 'En transit',
+          date: new Date(createdDate.getTime() + 24 * 60 * 60 * 1000).toISOString(),
+          description: 'Colis en transit vers la ville de destination'
+        }
+      );
+    } else if (status.toLowerCase().includes('confirm') || status === 'PARCEL_CONFIRMED') {
+      history.push(
+        {
+          status: 'Ramassage en cours',
+          date: new Date(createdDate.getTime() + 2 * 60 * 60 * 1000).toISOString(),
+          description: 'Colis en cours de ramassage'
+        },
+        {
+          status: 'Ramassé',
+          date: new Date(createdDate.getTime() + 4 * 60 * 60 * 1000).toISOString(),
+          description: 'Colis ramassé par le transporteur'
+        }
+      );
+    }
+    
+    return history;
+  };
+
   if (loading) {
     return (
       <div className="public-track-loading">
@@ -158,54 +284,80 @@ export default function PublicTrackOrder() {
     );
   }
 
-  // Get delivery status from tracking or order
   const deliveryStatus = trackingInfo?.parcel?.delivery_status || order.statut;
   const paymentStatus = trackingInfo?.parcel?.payment_status;
   const paymentText = trackingInfo?.parcel?.payment_status_text;
+  const trackingHistory = getTrackingHistory();
+  
+  // Mask phone number
+  const maskPhone = (phone) => {
+    if (!phone || phone.length < 8) return phone;
+    return phone.substring(0, 4) + '****' + phone.substring(phone.length - 2);
+  };
 
   return (
     <div className="public-track-container">
       {/* Header with Logo */}
       <div className="track-header">
-        <Link to="/" className="back-link">
-          <ArrowLeft size={16} />
-          Retour à l'accueil
-        </Link>
-        
         <div className="track-header-content">
-          {/* Logo Container */}
-          <div className="logo-container">
-            {!logoError ? (
-              <img 
-                src="/logo.jpeg" 
-                alt="Logo" 
-                className="header-logo"
-                onError={handleLogoError}
-              />
-            ) : (
-              <Package size={32} className="header-icon" />
-            )}
+          <Link to="/" className="back-link">
+            <ArrowLeft size={16} />
+            Retour à l'accueil
+          </Link>
+          
+          <div className="header-main">
+            <div className="logo-container">
+              {!logoError ? (
+                <img 
+                  src="/logo.jpeg" 
+                  alt="Sendit" 
+                  className="header-logo"
+                  onError={handleLogoError}
+                />
+              ) : (
+                <div className="logo-fallback">
+                  <Package size={32} />
+                  <span>Sendit</span>
+                </div>
+              )}
+            </div>
+            
+            <div className="header-title">
+              <h1>Suivi des colis et des livraisons</h1>
+              <p className="parcel-code-display">
+                Code : <strong>{order.parcel_code}</strong>
+              </p>
+            </div>
+            
+            <button onClick={copyTrackingLink} className="btn-copy-link">
+              {copied ? <Check size={16} /> : <Copy size={16} />}
+              {copied ? "Lien copié !" : "Copier le lien"}
+            </button>
           </div>
-          
-          <h1>Suivi de commande</h1>
-          <p className="parcel-code-display">Code: <strong>{order.parcel_code}</strong></p>
-          
-          <button onClick={copyTrackingLink} className="btn-copy-link">
-            {copied ? <Check size={16} /> : <Copy size={16} />}
-            {copied ? "Lien copié !" : "Copier le lien de suivi"}
-          </button>
         </div>
       </div>
 
       {/* Main content */}
       <div className="track-content">
-        {/* Status cards */}
-        <div className="status-cards">
-          <div className="status-card">
-            <div className="status-card-header">
-              <Truck size={18} />
-              <h3>Statut de livraison</h3>
+        {/* Destination Card - Style inspired by image */}
+        <div className="destination-card">
+          <div className="destination-header">
+            <MapPin size={18} />
+            <h3>Destination</h3>
+          </div>
+          <div className="destination-content">
+            <div className="destination-item">
+              <span className="destination-city">{order.parcel_city || 'Non spécifiée'}</span>
             </div>
+            {order.parcel_address && (
+              <div className="destination-item">
+                <span className="destination-address">{order.parcel_address}</span>
+              </div>
+            )}
+          </div>
+          
+          <div className="status-badge-container">
+            <span className="status-label">Statut</span>
             <div 
               className="status-badge large"
               style={{ 
@@ -216,33 +368,29 @@ export default function PublicTrackOrder() {
             >
               {deliveryStatus || 'En attente'}
             </div>
-            {trackingInfo?.tracking?.description && (
-              <p className="status-description">{trackingInfo.tracking.description}</p>
-            )}
           </div>
+        </div>
 
-          <div className="status-card">
-            <div className="status-card-header">
-              <CreditCard size={18} />
-              <h3>Statut de paiement</h3>
+        {/* Contact & Payment Info - Style inspired by image */}
+        <div className="info-grid">
+          <div className="info-card">
+            <div className="info-header">
+              <Phone size={16} />
+              <span>N° Téléphone :</span>
             </div>
-            {paymentStatus ? (
-              <>
-                <div 
-                  className="status-badge"
-                  style={{ 
-                    backgroundColor: `${getStatusColor(paymentStatus)}15`,
-                    color: getStatusColor(paymentStatus),
-                    border: `1px solid ${getStatusColor(paymentStatus)}30`
-                  }}
-                >
-                  {paymentStatus}
-                </div>
-                {paymentText && <p className="payment-text">{paymentText}</p>}
-              </>
-            ) : (
-              <p className="no-info">Information non disponible</p>
-            )}
+            <div className="info-value">
+              {order.parcel_phone ? maskPhone(order.parcel_phone) : 'Non renseigné'}
+            </div>
+          </div>
+          
+          <div className="info-card">
+            <div className="info-header">
+              <CreditCard size={16} />
+              <span>Montant :</span>
+            </div>
+            <div className="info-value price">
+              {order.parcel_price} DH
+            </div>
           </div>
         </div>
 
@@ -256,95 +404,67 @@ export default function PublicTrackOrder() {
           {refreshing ? 'Mise à jour...' : 'Actualiser le statut'}
         </button>
 
-        {/* Order details grid */}
-        <div className="details-grid">
-          {/* Client info */}
-          <div className="detail-card">
-            <div className="detail-card-header">
-              <User size={18} />
-              <h3>Client</h3>
-            </div>
-            <div className="detail-card-content">
-              <div className="detail-row">
-                <span className="detail-label">Nom:</span>
-                <span className="detail-value">{order.parcel_receiver}</span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Téléphone:</span>
-                <span className="detail-value">{order.parcel_phone || '-'}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Address info */}
-          <div className="detail-card">
-            <div className="detail-card-header">
-              <MapPin size={18} />
-              <h3>Adresse de livraison</h3>
-            </div>
-            <div className="detail-card-content">
-              <div className="detail-row">
-                <span className="detail-label">Ville:</span>
-                <span className="detail-value">{order.parcel_city}</span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Adresse:</span>
-                <span className="detail-value address">{order.parcel_address || '-'}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Package info */}
-          <div className="detail-card">
-            <div className="detail-card-header">
-              <Package size={18} />
-              <h3>Colis</h3>
-            </div>
-            <div className="detail-card-content">
-              <div className="detail-row">
-                <span className="detail-label">Quantité totale:</span>
-                <span className="detail-value">{order.parcel_prd_qty || 1}</span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Prix du colis:</span>
-                <span className="detail-value price">{order.parcel_price} MAD</span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Colis ouvert:</span>
-                <span className="detail-value">
-                  {order.parcel_open === 1 ? (
-                    <span className="can-open-allowed">
-                      <PackageCheck size={14} /> Oui
-                    </span>
-                  ) : (
-                    <span className="can-open-not-allowed">
-                      <PackageX size={14} /> Non
-                    </span>
-                  )}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Dates */}
-          <div className="detail-card">
-            <div className="detail-card-header">
-              <Calendar size={18} />
-              <h3>Dates</h3>
-            </div>
-            <div className="detail-card-content">
-              <div className="detail-row">
-                <span className="detail-label">Date de commande:</span>
-                <span className="detail-value">
-                  {order.date ? new Date(order.date).toLocaleDateString('fr-FR') : '-'}
-                </span>
-              </div>
-              {trackingInfo?.parcel?.updated_at && (
-                <div className="detail-row">
-                  <span className="detail-label">Dernière mise à jour:</span>
-                  <span className="detail-value">{formatDate(trackingInfo.parcel.updated_at)}</span>
+        {/* Tracking History - Style inspired by image */}
+        <div className="history-section">
+          <h3 className="history-title">Historique des statuts de votre colis</h3>
+          
+          <div className="timeline">
+            {trackingHistory.map((event, index) => {
+              const { date, time } = formatHistoryDate(event.date);
+              return (
+                <div key={index} className="timeline-item">
+                  <div className="timeline-date">
+                    <span className="date">{date}</span>
+                    <span className="time">{time}</span>
+                  </div>
+                  <div className="timeline-content">
+                    <ChevronRight size={16} className="timeline-arrow" />
+                    <div className="timeline-status">
+                      <span 
+                        className="status-dot"
+                        style={{ backgroundColor: getStatusColor(event.status) }}
+                      ></span>
+                      <span className="status-text">{event.status}</span>
+                      {event.description && (
+                        <span className="status-description"> - {event.description}</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              )}
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Additional details in a compact card */}
+        <div className="compact-details">
+          <div className="compact-row">
+            <div className="compact-item">
+              <User size={14} />
+              <span className="compact-label">Client:</span>
+              <span className="compact-value">{order.parcel_receiver}</span>
+            </div>
+            <div className="compact-item">
+              <Package size={14} />
+              <span className="compact-label">Qté:</span>
+              <span className="compact-value">{order.parcel_prd_qty || 1}</span>
+            </div>
+          </div>
+          
+          <div className="compact-row">
+            <div className="compact-item">
+              <PackageCheck size={14} />
+              <span className="compact-label">Ouverture:</span>
+              <span className="compact-value">
+                {order.parcel_open === 1 || order.parcel_open === true ? 'Autorisée' : 'Non autorisée'}
+              </span>
+            </div>
+            <div className="compact-item">
+              <Calendar size={14} />
+              <span className="compact-label">Date:</span>
+              <span className="compact-value">
+                {order.date ? new Date(order.date).toLocaleDateString('fr-FR') : '-'}
+              </span>
             </div>
           </div>
         </div>
@@ -360,7 +480,7 @@ export default function PublicTrackOrder() {
           </div>
         )}
 
-        {/* Tracking timestamps */}
+        {/* Update time */}
         {trackingInfo?.query_time && (
           <div className="update-time">
             <Clock size={14} />

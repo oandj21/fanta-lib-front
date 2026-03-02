@@ -1901,77 +1901,89 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!order) return;
+  e.preventDefault();
+  if (!order) return;
 
-    // Validate phone if provided
-    if (formData.parcel_phone && !validatePhone(formData.parcel_phone)) {
-        setUpdateError(phoneError);
-        return;
-    }
+  // Validate phone if provided
+  if (formData.parcel_phone && !validatePhone(formData.parcel_phone)) {
+      setUpdateError(phoneError);
+      return;
+  }
 
-    setUpdateLoading(true);
-    setUpdateError(null);
+  setUpdateLoading(true);
+  setUpdateError(null);
 
-    try {
-      const updateData = {};
-      
-      // Check all fields for changes
-      Object.keys(formData).forEach(key => {
-        // Skip livres for comparison if needed
-        if (key === 'livres') return;
+  try {
+    const updateData = {};
+    
+    // Check all fields for changes
+    Object.keys(formData).forEach(key => {
+      // Special handling for livres - always include if they exist and are different
+      if (key === 'livres') {
+        // Compare livres arrays
+        const currentLivres = JSON.stringify(formData.livres);
+        const originalLivres = JSON.stringify(order.livres || []);
         
-        // Convert to string for comparison to handle numbers vs strings
-        const formValue = formData[key] === null || formData[key] === undefined ? '' : String(formData[key]);
-        const orderValue = order[key] === null || order[key] === undefined ? '' : String(order[key]);
-        
-        if (formValue !== orderValue) {
-          // For statut_second, if it's empty string, send as null to backend
-          if (key === 'statut_second' && formData[key] === '') {
-            updateData[key] = null;
-          } else {
-            updateData[key] = formData[key];
-          }
+        if (currentLivres !== originalLivres) {
+          updateData.livres = formData.livres;
         }
-      });
-
-      // Special handling for statut_second if it wasn't in original order
-      if (order.statut_second === null && formData.statut_second !== '') {
-        updateData.statut_second = formData.statut_second;
-      }
-
-      // Log what we're sending for debugging
-      console.log("📤 Sending update data:", updateData);
-
-      if (Object.keys(updateData).length === 0) {
-        onBack();
         return;
       }
-
-      await onSubmit(order.id, updateData);
-      onBack();
       
-    } catch (error) {
-      console.error("Update failed:", error);
+      // Convert to string for comparison to handle numbers vs strings
+      const formValue = formData[key] === null || formData[key] === undefined ? '' : String(formData[key]);
+      const orderValue = order[key] === null || order[key] === undefined ? '' : String(order[key]);
       
-      // Log the actual error response from server
-      if (error.response) {
-        console.error("Server error response:", error.response.data);
-        setUpdateError(
-          error.response.data?.message || 
-          error.response.data?.error ||
-          `Erreur ${error.response.status}: ${JSON.stringify(error.response.data)}`
-        );
-      } else {
-        setUpdateError(
-          error?.message || 
-          "Erreur lors de la mise à jour. Veuillez réessayer."
-        );
+      if (formValue !== orderValue) {
+        // For statut_second, if it's empty string, send as null to backend
+        if (key === 'statut_second' && formData[key] === '') {
+          updateData[key] = null;
+        } else {
+          updateData[key] = formData[key];
+        }
       }
-    } finally {
-      setUpdateLoading(false);
+    });
+
+    // Also update quantity based on livres total
+    if (formData.livres && formData.livres.length > 0) {
+      const totalQty = formData.livres.reduce((sum, book) => sum + (book.quantity || 1), 0);
+      if (totalQty !== order.parcel_prd_qty) {
+        updateData.parcel_prd_qty = totalQty;
+      }
     }
-  };
+
+    // Log what we're sending for debugging
+    console.log("📤 Sending update data:", updateData);
+
+    if (Object.keys(updateData).length === 0) {
+      onBack();
+      return;
+    }
+
+    await onSubmit(order.id, updateData);
+    onBack();
+    
+  } catch (error) {
+    console.error("Update failed:", error);
+    
+    // Log the actual error response from server
+    if (error.response) {
+      console.error("Server error response:", error.response.data);
+      setUpdateError(
+        error.response.data?.message || 
+        error.response.data?.error ||
+        `Erreur ${error.response.status}: ${JSON.stringify(error.response.data)}`
+      );
+    } else {
+      setUpdateError(
+        error?.message || 
+        "Erreur lors de la mise à jour. Veuillez réessayer."
+      );
+    }
+  } finally {
+    setUpdateLoading(false);
+  }
+};
 
   if (!order) return null;
 

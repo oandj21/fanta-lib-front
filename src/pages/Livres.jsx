@@ -19,10 +19,8 @@ export default function Livres() {
   
   const [search, setSearch] = useState("");
   const [genre, setGenre] = useState("الكل");
-  const [canScroll, setCanScroll] = useState({ left: false, right: false });
-  const topRowRef = useRef(null);
-  const bottomRowRef = useRef(null);
-  const isScrollingRef = useRef(false); // Prevent infinite scroll loop
+  const [canScroll, setCanScroll] = useState(false);
+  const genresFilterRef = useRef(null);
 
   useEffect(() => {
     window.scrollTo({
@@ -53,40 +51,6 @@ export default function Livres() {
     }
   }, [location.search, books]);
 
-  // Sync scroll positions between rows
-  useEffect(() => {
-    const topRow = topRowRef.current;
-    const bottomRow = bottomRowRef.current;
-    
-    if (!topRow || !bottomRow) return;
-    
-    const handleTopScroll = () => {
-      if (isScrollingRef.current) return;
-      isScrollingRef.current = true;
-      bottomRow.scrollTo({ left: topRow.scrollLeft, behavior: 'auto' });
-      setTimeout(() => {
-        isScrollingRef.current = false;
-      }, 50);
-    };
-    
-    const handleBottomScroll = () => {
-      if (isScrollingRef.current) return;
-      isScrollingRef.current = true;
-      topRow.scrollTo({ left: bottomRow.scrollLeft, behavior: 'auto' });
-      setTimeout(() => {
-        isScrollingRef.current = false;
-      }, 50);
-    };
-    
-    topRow.addEventListener('scroll', handleTopScroll);
-    bottomRow.addEventListener('scroll', handleBottomScroll);
-    
-    return () => {
-      topRow.removeEventListener('scroll', handleTopScroll);
-      bottomRow.removeEventListener('scroll', handleBottomScroll);
-    };
-  }, []);
-
   // Get unique genres from books, filtering out empty/null values
   const genres = ["الكل", ...Array.from(new Set(
     books
@@ -94,34 +58,12 @@ export default function Livres() {
       .filter(cat => cat && cat.trim() !== "")
   ))];
 
-  // Split genres into two rows (alternating)
-  const topRowGenres = [];
-  const bottomRowGenres = [];
-  
-  genres.forEach((genre, index) => {
-    if (index % 2 === 0) {
-      topRowGenres.push(genre);
-    } else {
-      bottomRowGenres.push(genre);
-    }
-  });
-
-  // Check if rows can scroll horizontally
+  // Check if genres filter can scroll horizontally
   useEffect(() => {
     const checkScroll = () => {
-      if (topRowRef.current && bottomRowRef.current) {
-        const topScrollWidth = topRowRef.current.scrollWidth;
-        const topClientWidth = topRowRef.current.clientWidth;
-        const bottomScrollWidth = bottomRowRef.current.scrollWidth;
-        const bottomClientWidth = bottomRowRef.current.clientWidth;
-        
-        // Check if either row can scroll
-        const canScrollAny = topScrollWidth > topClientWidth || bottomScrollWidth > bottomClientWidth;
-        
-        setCanScroll({
-          left: canScrollAny,
-          right: canScrollAny
-        });
+      if (genresFilterRef.current) {
+        const { scrollWidth, clientWidth } = genresFilterRef.current;
+        setCanScroll(scrollWidth > clientWidth);
       }
     };
     
@@ -157,19 +99,14 @@ export default function Livres() {
   };
 
   const scrollLeft = () => {
-    if (topRowRef.current && bottomRowRef.current) {
-      const newScrollLeft = Math.max(0, topRowRef.current.scrollLeft - 200);
-      topRowRef.current.scrollTo({ left: newScrollLeft, behavior: 'smooth' });
-      bottomRowRef.current.scrollTo({ left: newScrollLeft, behavior: 'smooth' });
+    if (genresFilterRef.current) {
+      genresFilterRef.current.scrollBy({ left: -200, behavior: 'smooth' });
     }
   };
 
   const scrollRight = () => {
-    if (topRowRef.current && bottomRowRef.current) {
-      const maxScrollLeft = topRowRef.current.scrollWidth - topRowRef.current.clientWidth;
-      const newScrollLeft = Math.min(maxScrollLeft, topRowRef.current.scrollLeft + 200);
-      topRowRef.current.scrollTo({ left: newScrollLeft, behavior: 'smooth' });
-      bottomRowRef.current.scrollTo({ left: newScrollLeft, behavior: 'smooth' });
+    if (genresFilterRef.current) {
+      genresFilterRef.current.scrollBy({ left: 200, behavior: 'smooth' });
     }
   };
 
@@ -187,8 +124,8 @@ export default function Livres() {
       <section className="books-section">
         <section className="filters-sectio">
           <div className="filters-container">
-            <div className="genres-filter-wrapper-horizontal">
-              {canScroll.left && (
+            <div className="genres-filter-wrapper">
+              {canScroll && (
                 <button 
                   className="scroll-btn scroll-left" 
                   onClick={scrollLeft}
@@ -197,37 +134,21 @@ export default function Livres() {
                   ‹
                 </button>
               )}
-              <div className="genres-rows-container">
-                <div 
-                  className="genre-row-horizontal"
-                  ref={topRowRef}
-                >
-                  {topRowGenres.map((g) => (
-                    <button
-                      key={g}
-                      onClick={() => setGenre(g)}
-                      className={`genre-btn ${genre === g ? "active" : ""}`}
-                    >
-                      {g}
-                    </button>
-                  ))}
-                </div>
-                <div 
-                  className="genre-row-horizontal"
-                  ref={bottomRowRef}
-                >
-                  {bottomRowGenres.map((g) => (
-                    <button
-                      key={g}
-                      onClick={() => setGenre(g)}
-                      className={`genre-btn ${genre === g ? "active" : ""}`}
-                    >
-                      {g}
-                    </button>
-                  ))}
-                </div>
+              <div 
+                className={`genres-filter ${canScroll ? 'can-scroll' : ''}`}
+                ref={genresFilterRef}
+              >
+                {genres.map((g) => (
+                  <button
+                    key={g}
+                    onClick={() => setGenre(g)}
+                    className={`genre-btn ${genre === g ? "active" : ""}`}
+                  >
+                    {g}
+                  </button>
+                ))}
               </div>
-              {canScroll.right && (
+              {canScroll && (
                 <button 
                   className="scroll-btn scroll-right" 
                   onClick={scrollRight}

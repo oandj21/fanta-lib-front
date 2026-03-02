@@ -19,22 +19,35 @@ export default function Livres() {
   
   const [search, setSearch] = useState("");
   const [genre, setGenre] = useState("الكل");
-  const [canScroll, setCanScroll] = useState(false);
-  const genresFilterRef = useRef(null);
+  const [canScroll, setCanScroll] = useState({ left: false, right: false });
+  const containerRef = useRef(null);
+  
+  // Track if component is mounted
+  const isMounted = useRef(true);
 
   useEffect(() => {
+    isMounted.current = true;
+    
     window.scrollTo({
       top: 0,
       behavior: 'smooth'
     });
+
+    return () => {
+      isMounted.current = false;
+    };
   }, []);
 
   useEffect(() => {
-    dispatch(fetchLivres());
+    if (isMounted.current) {
+      dispatch(fetchLivres());
+    }
   }, [dispatch]);
 
   // Handle URL parameters
   useEffect(() => {
+    if (!isMounted.current) return;
+    
     const params = new URLSearchParams(location.search);
     const searchParam = params.get("search");
     const bookId = params.get("book");
@@ -45,25 +58,42 @@ export default function Livres() {
 
     if (bookId && books.length > 0) {
       const book = books.find(b => b.id === parseInt(bookId));
-      if (book) {
+      if (book && isMounted.current) {
         setSelectedBook(book);
       }
     }
   }, [location.search, books]);
 
-  // Get unique genres from books, filtering out empty/null values
+  // Get unique genres from books
   const genres = ["الكل", ...Array.from(new Set(
     books
       .map((b) => b.categorie)
       .filter(cat => cat && cat.trim() !== "")
   ))];
 
-  // Check if genres filter can scroll horizontally
+  // Split genres into two rows
+  const topRowGenres = [];
+  const bottomRowGenres = [];
+  
+  genres.forEach((genre, index) => {
+    if (index % 2 === 0) {
+      topRowGenres.push(genre);
+    } else {
+      bottomRowGenres.push(genre);
+    }
+  });
+
+  // Check if container can scroll
   useEffect(() => {
     const checkScroll = () => {
-      if (genresFilterRef.current) {
-        const { scrollWidth, clientWidth } = genresFilterRef.current;
-        setCanScroll(scrollWidth > clientWidth);
+      if (containerRef.current) {
+        const scrollWidth = containerRef.current.scrollWidth;
+        const clientWidth = containerRef.current.clientWidth;
+        
+        setCanScroll({
+          left: scrollWidth > clientWidth,
+          right: scrollWidth > clientWidth
+        });
       }
     };
     
@@ -92,21 +122,20 @@ export default function Livres() {
 
   const handleCloseDetails = () => {
     setSelectedBook(null);
-    // Remove book param from URL
     const url = new URL(window.location);
     url.searchParams.delete("book");
     window.history.replaceState({}, "", url);
   };
 
   const scrollLeft = () => {
-    if (genresFilterRef.current) {
-      genresFilterRef.current.scrollBy({ left: -200, behavior: 'smooth' });
+    if (containerRef.current) {
+      containerRef.current.scrollBy({ left: -200, behavior: 'smooth' });
     }
   };
 
   const scrollRight = () => {
-    if (genresFilterRef.current) {
-      genresFilterRef.current.scrollBy({ left: 200, behavior: 'smooth' });
+    if (containerRef.current) {
+      containerRef.current.scrollBy({ left: 200, behavior: 'smooth' });
     }
   };
 
@@ -124,8 +153,8 @@ export default function Livres() {
       <section className="books-section">
         <section className="filters-sectio">
           <div className="filters-container">
-            <div className="genres-filter-wrapper">
-              {canScroll && (
+            <div className="genres-filter-wrapper-horizontal">
+              {canScroll.left && (
                 <button 
                   className="scroll-btn scroll-left" 
                   onClick={scrollLeft}
@@ -134,21 +163,37 @@ export default function Livres() {
                   ‹
                 </button>
               )}
+              
+              {/* Single container that scrolls both rows TOGETHER */}
               <div 
-                className={`genres-filter ${canScroll ? 'can-scroll' : ''}`}
-                ref={genresFilterRef}
+                className="genres-rows-container-scrollable"
+                ref={containerRef}
               >
-                {genres.map((g) => (
-                  <button
-                    key={g}
-                    onClick={() => setGenre(g)}
-                    className={`genre-btn ${genre === g ? "active" : ""}`}
-                  >
-                    {g}
-                  </button>
-                ))}
+                <div className="genre-row-horizontal">
+                  {topRowGenres.map((g) => (
+                    <button
+                      key={g}
+                      onClick={() => setGenre(g)}
+                      className={`genre-btn ${genre === g ? "active" : ""}`}
+                    >
+                      {g}
+                    </button>
+                  ))}
+                </div>
+                <div className="genre-row-horizontal">
+                  {bottomRowGenres.map((g) => (
+                    <button
+                      key={g}
+                      onClick={() => setGenre(g)}
+                      className={`genre-btn ${genre === g ? "active" : ""}`}
+                    >
+                      {g}
+                    </button>
+                  ))}
+                </div>
               </div>
-              {canScroll && (
+              
+              {canScroll.right && (
                 <button 
                   className="scroll-btn scroll-right" 
                   onClick={scrollRight}
@@ -191,7 +236,6 @@ export default function Livres() {
 
       <WhatsAppFloat />
       
-      {/* Modal rendered at root level */}
       {selectedBook && (
         <BookDetailModal book={selectedBook} onClose={handleCloseDetails} />
       )}

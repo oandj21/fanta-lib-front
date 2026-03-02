@@ -80,6 +80,7 @@
   background-color: #ffffff;
   border-bottom: 1px solid #e8e0d8;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  border-radius: 20px;
   top: 0;
   z-index: 90;
 }
@@ -688,5 +689,70 @@ html {
 @media (min-width: 1536px) {
   .container {
     max-width: 1536px;
+  }
+}
+/* Add these styles to your existing Livres.css */
+
+/* Two-Row Horizontal Scroll Container */
+.genres-filter-wrapper-horizontal {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 100%;
+  position: relative;
+}
+
+/* Scrollable container that holds both rows */
+.genres-rows-container-scrollable {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: #5c0202 #e8e0d8;
+  -webkit-overflow-scrolling: touch;
+  padding: 0.25rem 0;
+}
+
+/* Custom scrollbar */
+.genres-rows-container-scrollable::-webkit-scrollbar {
+  height: 6px;
+}
+
+.genres-rows-container-scrollable::-webkit-scrollbar-track {
+  background: #e8e0d8;
+  border-radius: 10px;
+}
+
+.genres-rows-container-scrollable::-webkit-scrollbar-thumb {
+  background: #5c0202;
+  border-radius: 10px;
+}
+
+.genres-rows-container-scrollable::-webkit-scrollbar-thumb:hover {
+  background: #7a2e2a;
+}
+
+/* Individual rows - no scrolling */
+.genre-row-horizontal {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.625rem;
+  padding: 0.25rem 0.5rem;
+  white-space: nowrap;
+  overflow-x: visible;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .genres-rows-container-scrollable {
+    padding: 0.25rem 0;
+  }
+  
+  .genre-row-horizontal {
+    padding: 0.25rem 1rem;
   }
 }

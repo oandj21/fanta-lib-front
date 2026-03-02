@@ -1674,6 +1674,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
 };
 
 // Update Order Page Component
+// Update Order Page Component
 const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
   const [updateLoading, setUpdateLoading] = useState(false);
   const [updateError, setUpdateError] = useState(null);
@@ -1688,7 +1689,8 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
     parcel_price: "",
     parcel_note: "",
     parcel_open: 0,
-    statut: ""
+    statut: "",
+    statut_second: "" // ADD THIS - include secondary status
   });
 
   useEffect(() => {
@@ -1702,7 +1704,8 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
         parcel_price: order.parcel_price || "",
         parcel_note: order.parcel_note || "",
         parcel_open: order.parcel_open || 0,
-        statut: order.statut || ""
+        statut: order.statut || "",
+        statut_second: order.statut_second || "" // ADD THIS
       });
     }
   }, [order]);
@@ -1731,14 +1734,26 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
 
     try {
       const updateData = {};
+      
+      // Check all fields for changes
       Object.keys(formData).forEach(key => {
-        if (formData[key] !== order[key] && formData[key] !== "") {
-          updateData[key] = formData[key];
+        // Convert to string for comparison to handle numbers vs strings
+        const formValue = formData[key] === null || formData[key] === undefined ? '' : String(formData[key]);
+        const orderValue = order[key] === null || order[key] === undefined ? '' : String(order[key]);
+        
+        if (formValue !== orderValue) {
+          // For statut_second, if it's empty string, send as null to backend
+          if (key === 'statut_second' && formData[key] === '') {
+            updateData[key] = null;
+          } else {
+            updateData[key] = formData[key];
+          }
         }
       });
 
-      if (formData.statut !== order.statut) {
-        updateData.statut = formData.statut;
+      // Special handling for statut_second if it wasn't in original order
+      if (order.statut_second === null && formData.statut_second !== '') {
+        updateData.statut_second = formData.statut_second;
       }
 
       // Recalculate profit based on updated data
@@ -1748,6 +1763,9 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
       const parcelPrice = parseFloat(updateData.parcel_price !== undefined ? updateData.parcel_price : order.parcel_price) || 0;
       
       updateData.profit = parcelPrice - (total + delivery + packaging);
+
+      // Log what we're sending for debugging
+      console.log("📤 Sending update data:", updateData);
 
       if (Object.keys(updateData).length === 0) {
         onBack();
@@ -1759,10 +1777,21 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
       
     } catch (error) {
       console.error("Update failed:", error);
-      setUpdateError(
-        error?.message || 
-        "Erreur lors de la mise à jour. Veuillez réessayer."
-      );
+      
+      // Log the actual error response from server
+      if (error.response) {
+        console.error("Server error response:", error.response.data);
+        setUpdateError(
+          error.response.data?.message || 
+          error.response.data?.error ||
+          `Erreur ${error.response.status}: ${JSON.stringify(error.response.data)}`
+        );
+      } else {
+        setUpdateError(
+          error?.message || 
+          "Erreur lors de la mise à jour. Veuillez réessayer."
+        );
+      }
     } finally {
       setUpdateLoading(false);
     }
@@ -1817,7 +1846,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
 
             <div className="form-row">
               <div className="form-group">
-                <label>Statut</label>
+                <label>Statut principal</label>
                 <select
                   name="statut"
                   value={formData.statut}
@@ -1836,6 +1865,32 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
                 </select>
               </div>
 
+              <div className="form-group">
+                <label>Statut secondaire</label>
+                <select
+                  name="statut_second"
+                  value={formData.statut_second}
+                  onChange={handleInputChange}
+                  className="statut-select"
+                >
+                  <option value="">Aucun</option>
+                  <option value="REFUSE">Refusé</option>
+                  <option value="NOANSWER">Pas de réponse</option>
+                  <option value="UNREACHABLE">Injoignable</option>
+                  <option value="HORS_ZONE">Hors zone</option>
+                  <option value="POSTPONED">Reporté</option>
+                  <option value="PROGRAMMER">Programmé</option>
+                  <option value="DEUX">2ème tentative</option>
+                  <option value="TROIS">3ème tentative</option>
+                  <option value="ENVG">En voyage</option>
+                  <option value="RETURN_BY_AMANA">Retour par Amana</option>
+                  <option value="SENT_BY_AMANA">Envoyé par Amana</option>
+                </select>
+                <small className="field-hint">Statut secondaire détaillé (optionnel)</small>
+              </div>
+            </div>
+
+            <div className="form-row">
               <div className="form-group">
                 <label>Quantité totale</label>
                 <div className="input-with-icon">

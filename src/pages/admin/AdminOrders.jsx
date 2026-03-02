@@ -1675,7 +1675,9 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
 
 // Update Order Page Component - UPDATED with larger inputs, no scroll, manual price, always checked, phone validation
 // Update Order Page Component - COMPLETE with all fields from add form
+// Update Order Page Component - COMPLETE with proper data mapping from DB
 const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
+  const dispatch = useDispatch();
   const [updateLoading, setUpdateLoading] = useState(false);
   const [updateError, setUpdateError] = useState(null);
   const [phoneError, setPhoneError] = useState("");
@@ -1683,7 +1685,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
   // Track if total was manually edited
   const [totalManuallyEdited, setTotalManuallyEdited] = useState(false);
   
-  // Form state for update - includes ALL fields from add form
+  // Form state for update
   const [formData, setFormData] = useState({
     parcel_receiver: "",
     parcel_phone: "",
@@ -1696,7 +1698,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
     total: null,
     profit: null,
     parcel_note: "",
-    parcel_open: 1, // Always checked by default
+    parcel_open: 1,
     statut: "",
     statut_second: "",
     livres: [],
@@ -1706,23 +1708,83 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
   // Load order data when component mounts or order changes
   useEffect(() => {
     if (order) {
+      console.log("📦 Order data from DB:", order);
+      
+      // Format date properly if it exists
+      let formattedDate = "";
+      if (order.date) {
+        try {
+          // Handle different date formats
+          const dateObj = new Date(order.date);
+          if (!isNaN(dateObj.getTime())) {
+            formattedDate = dateObj.toISOString().split('T')[0];
+          }
+        } catch (e) {
+          console.error("Error formatting date:", e);
+        }
+      }
+
+      // Process livres data - handle different possible structures
+      let processedLivres = [];
+      if (order.livres && Array.isArray(order.livres)) {
+        processedLivres = order.livres.map(book => ({
+          id: book.id || book.livre_id || book.book_id,
+          titre: book.titre || book.title || book.nom || "Livre",
+          auteur: book.auteur || book.author || "Auteur inconnu",
+          prix_achat: parseFloat(book.prix_achat || book.price || book.prix || 0),
+          quantity: parseInt(book.quantity || book.quantite || book.qty || 1),
+          total: parseFloat(book.prix_achat || book.price || 0) * parseInt(book.quantity || 1)
+        }));
+      }
+
+      // Calculate total from livres if not provided
+      let calculatedTotal = order.total;
+      if (processedLivres.length > 0 && (!calculatedTotal || calculatedTotal === 0)) {
+        calculatedTotal = processedLivres.reduce((sum, book) => sum + (book.prix_achat * book.quantity), 0);
+      }
+
+      // Calculate quantity from livres if not provided
+      let calculatedQty = order.parcel_prd_qty;
+      if (processedLivres.length > 0 && (!calculatedQty || calculatedQty === 0)) {
+        calculatedQty = processedLivres.reduce((sum, book) => sum + book.quantity, 0);
+      }
+
       setFormData({
-        parcel_receiver: order.parcel_receiver || "",
-        parcel_phone: order.parcel_phone || "",
-        parcel_prd_qty: order.parcel_prd_qty || 0,
-        parcel_city: order.parcel_city || "",
-        parcel_address: order.parcel_address || "",
-        parcel_price: order.parcel_price || null,
-        frais_livraison: order.frais_livraison || 35,
-        frais_packaging: order.frais_packaging || 0,
-        total: order.total || null,
-        profit: order.profit || null,
-        parcel_note: order.parcel_note || "",
+        parcel_receiver: order.parcel_receiver || order.receiver || order.client_nom || "",
+        parcel_phone: order.parcel_phone || order.phone || order.client_telephone || "",
+        parcel_prd_qty: calculatedQty || 0,
+        parcel_city: order.parcel_city || order.city || order.ville || "",
+        parcel_address: order.parcel_address || order.address || order.adresse || "",
+        parcel_price: order.parcel_price !== undefined && order.parcel_price !== null 
+          ? parseFloat(order.parcel_price) 
+          : (order.price ? parseFloat(order.price) : null),
+        frais_livraison: order.frais_livraison !== undefined && order.frais_livraison !== null
+          ? parseFloat(order.frais_livraison)
+          : (order.delivery_fee ? parseFloat(order.delivery_fee) : 35),
+        frais_packaging: order.frais_packaging !== undefined && order.frais_packaging !== null
+          ? parseFloat(order.frais_packaging)
+          : (order.packaging_fee ? parseFloat(order.packaging_fee) : 0),
+        total: calculatedTotal !== undefined && calculatedTotal !== null
+          ? parseFloat(calculatedTotal)
+          : (order.total ? parseFloat(order.total) : null),
+        profit: order.profit !== undefined && order.profit !== null
+          ? parseFloat(order.profit)
+          : null,
+        parcel_note: order.parcel_note || order.note || order.notes || "",
         parcel_open: 1, // Force to checked
-        statut: order.statut || "",
-        statut_second: order.statut_second || "",
-        livres: order.livres || [],
-        date: order.date || new Date().toISOString().split('T')[0]
+        statut: order.statut || order.status || order.delivery_status || "NEW_PARCEL",
+        statut_second: order.statut_second || order.secondary_status || "",
+        livres: processedLivres,
+        date: formattedDate || new Date().toISOString().split('T')[0]
+      });
+
+      // Log what we've mapped for debugging
+      console.log("📋 Mapped form data:", {
+        receiver: order.parcel_receiver || order.receiver,
+        city: order.parcel_city || order.city,
+        qty: calculatedQty,
+        livres: processedLivres.length,
+        date: formattedDate
       });
     }
   }, [order]);
@@ -1746,7 +1808,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
   // Calculate books subtotal, total, and profit
   useEffect(() => {
     const booksSubtotal = (formData.livres || []).reduce(
-      (sum, book) => sum + ((book.prix_achat || book.price || 0) * (book.quantity || 1)), 0
+      (sum, book) => sum + ((book.prix_achat || 0) * (book.quantity || 1)), 0
     );
     
     const delivery = parseFloat(formData.frais_livraison) || 35;
@@ -1759,10 +1821,13 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
       total = parseFloat(formData.total) || 0;
     }
     
-    // Use parcel price from form or order
+    // Update quantity based on livres
+    const totalQty = (formData.livres || []).reduce((sum, book) => sum + (book.quantity || 1), 0);
+    
+    // Use parcel price from form
     const parcelPrice = formData.parcel_price !== null && formData.parcel_price !== '' 
       ? parseFloat(formData.parcel_price) 
-      : (order?.parcel_price || null);
+      : null;
     
     // Calculate profit if we have parcel price
     let profit = null;
@@ -1774,6 +1839,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
       const updates = {};
       if (prev.total !== total) updates.total = total;
       if (prev.profit !== profit) updates.profit = profit;
+      if (prev.parcel_prd_qty !== totalQty) updates.parcel_prd_qty = totalQty;
       
       if (Object.keys(updates).length === 0) {
         return prev;
@@ -1790,8 +1856,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
     formData.frais_packaging,
     formData.total,
     formData.parcel_price,
-    totalManuallyEdited,
-    order
+    totalManuallyEdited
   ]);
 
   const handleInputChange = (e) => {
@@ -1875,10 +1940,6 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
         updateData.statut_second = formData.statut_second;
       }
 
-      // Handle livres if changed (optional - you might want to implement comparison logic)
-      // For now, we'll only include livres if they're specifically being updated
-      // You can add comparison logic here if needed
-
       // Log what we're sending for debugging
       console.log("📤 Sending update data:", updateData);
 
@@ -1933,13 +1994,13 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
         )}
 
         <form onSubmit={handleSubmit} className="order-form compact">
-          {/* Row 1: Date and Code (read-only) */}
+          {/* Row 1: Code (read-only) and Date */}
           <div className="form-row">
             <div className="form-group">
               <label>Code colis</label>
               <input
                 type="text"
-                value={order.parcel_code || ""}
+                value={order.parcel_code || order.code || ""}
                 readOnly
                 className="readonly-input"
               />
@@ -2079,8 +2140,11 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
                   placeholder="Qté"
                   min="1"
                   required
+                  readOnly
+                  className="readonly-input"
                 />
               </div>
+              <small className="field-hint">Calculé automatiquement à partir des livres</small>
             </div>
 
             <div className="form-group">

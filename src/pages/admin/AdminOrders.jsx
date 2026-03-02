@@ -21,7 +21,7 @@ import {
 import "../../css/AdminOrders.css";
 
 // 🔔 WEBHOOK AUTO-SYNC: Webhook secret from your .env
-const WEBHOOK_SECRET = 'UQgtnYMZ/rjBsUcmJ7fm93L+ITsrvALqETNALBTQJ7E=';
+const WEBHOOK_SECRET = 'mJHbyDfVB4F90aa+MpNU6LDsrqQx4NlaSMy5lR4TfpU=';
 
 // 🔔 WEBHOOK AUTO-SYNC: Helper function to send webhook-style updates
 const sendWebhookUpdate = async (payload) => {

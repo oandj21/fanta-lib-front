@@ -1,5 +1,5 @@
 // Livres.jsx
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
 import { fetchLivres, selectLivres, selectLivresLoading } from "../store/store";
@@ -19,35 +19,20 @@ export default function Livres() {
   
   const [search, setSearch] = useState("");
   const [genre, setGenre] = useState("الكل");
-  const [canScroll, setCanScroll] = useState({ left: false, right: false });
-  const containerRef = useRef(null);
-  
-  // Track if component is mounted
-  const isMounted = useRef(true);
 
   useEffect(() => {
-    isMounted.current = true;
-    
     window.scrollTo({
       top: 0,
       behavior: 'smooth'
     });
-
-    return () => {
-      isMounted.current = false;
-    };
   }, []);
 
   useEffect(() => {
-    if (isMounted.current) {
-      dispatch(fetchLivres());
-    }
+    dispatch(fetchLivres());
   }, [dispatch]);
 
   // Handle URL parameters
   useEffect(() => {
-    if (!isMounted.current) return;
-    
     const params = new URLSearchParams(location.search);
     const searchParam = params.get("search");
     const bookId = params.get("book");
@@ -58,7 +43,7 @@ export default function Livres() {
 
     if (bookId && books.length > 0) {
       const book = books.find(b => b.id === parseInt(bookId));
-      if (book && isMounted.current) {
+      if (book) {
         setSelectedBook(book);
       }
     }
@@ -70,38 +55,6 @@ export default function Livres() {
       .map((b) => b.categorie)
       .filter(cat => cat && cat.trim() !== "")
   ))];
-
-  // Split genres into two rows
-  const topRowGenres = [];
-  const bottomRowGenres = [];
-  
-  genres.forEach((genre, index) => {
-    if (index % 2 === 0) {
-      topRowGenres.push(genre);
-    } else {
-      bottomRowGenres.push(genre);
-    }
-  });
-
-  // Check if container can scroll
-  useEffect(() => {
-    const checkScroll = () => {
-      if (containerRef.current) {
-        const scrollWidth = containerRef.current.scrollWidth;
-        const clientWidth = containerRef.current.clientWidth;
-        
-        setCanScroll({
-          left: scrollWidth > clientWidth,
-          right: scrollWidth > clientWidth
-        });
-      }
-    };
-    
-    checkScroll();
-    window.addEventListener('resize', checkScroll);
-    
-    return () => window.removeEventListener('resize', checkScroll);
-  }, [genres]);
 
   const filtered = books.filter((b) => {
     const title = b.titre || "";
@@ -127,18 +80,6 @@ export default function Livres() {
     window.history.replaceState({}, "", url);
   };
 
-  const scrollLeft = () => {
-    if (containerRef.current) {
-      containerRef.current.scrollBy({ left: -200, behavior: 'smooth' });
-    }
-  };
-
-  const scrollRight = () => {
-    if (containerRef.current) {
-      containerRef.current.scrollBy({ left: 200, behavior: 'smooth' });
-    }
-  };
-
   return (
     <div className="livres-page">
       <Header />
@@ -153,55 +94,17 @@ export default function Livres() {
       <section className="books-section">
         <section className="filters-sectio">
           <div className="filters-container">
-            <div className="genres-filter-wrapper-horizontal">
-              {canScroll.left && (
-                <button 
-                  className="scroll-btn scroll-left" 
-                  onClick={scrollLeft}
-                  aria-label="Scroll left"
+            {/* Two-row grid layout - NO SCROLLING! */}
+            <div className="genres-grid-two-rows">
+              {genres.map((g) => (
+                <button
+                  key={g}
+                  onClick={() => setGenre(g)}
+                  className={`genre-btn ${genre === g ? "active" : ""}`}
                 >
-                  ‹
+                  {g}
                 </button>
-              )}
-              
-              {/* Single container that scrolls both rows TOGETHER */}
-              <div 
-                className="genres-rows-container-scrollable"
-                ref={containerRef}
-              >
-                <div className="genre-row-horizontal">
-                  {topRowGenres.map((g) => (
-                    <button
-                      key={g}
-                      onClick={() => setGenre(g)}
-                      className={`genre-btn ${genre === g ? "active" : ""}`}
-                    >
-                      {g}
-                    </button>
-                  ))}
-                </div>
-                <div className="genre-row-horizontal">
-                  {bottomRowGenres.map((g) => (
-                    <button
-                      key={g}
-                      onClick={() => setGenre(g)}
-                      className={`genre-btn ${genre === g ? "active" : ""}`}
-                    >
-                      {g}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              
-              {canScroll.right && (
-                <button 
-                  className="scroll-btn scroll-right" 
-                  onClick={scrollRight}
-                  aria-label="Scroll right"
-                >
-                  ›
-                </button>
-              )}
+              ))}
             </div>
           </div>
         </section>

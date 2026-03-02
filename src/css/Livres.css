@@ -80,7 +80,6 @@
   background-color: #ffffff;
   border-bottom: 1px solid #e8e0d8;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-  border-radius: 20px;
   top: 0;
   z-index: 90;
 }
@@ -93,6 +92,7 @@
   gap: 1.25rem;
   align-items: center;
   justify-content: center;
+  width: 100%;
 }
 
 @media (min-width: 640px) {
@@ -103,103 +103,18 @@
   }
 }
 
-/* Horizontal Scroll Genres Filter */
-.genres-filter-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+/* Two-row grid layout - NO SCROLLING */
+.genres-grid-two-rows {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, auto));
+  gap: 0.625rem;
+  padding: 0.5rem;
   width: 100%;
   max-width: 100%;
-  position: relative;
-}
-
-.genres-filter {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 0.625rem;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding: 0.25rem 0.5rem;
-  scrollbar-width: thin; /* For Firefox */
-  scrollbar-color: #5c0202 #e8e0d8; /* For Firefox */
-  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
-  flex: 1;
-  white-space: nowrap;
-}
-
-/* Custom scrollbar for Webkit browsers (Chrome, Safari, Edge) */
-.genres-filter::-webkit-scrollbar {
-  height: 6px;
-}
-
-.genres-filter::-webkit-scrollbar-track {
-  background: #e8e0d8;
-  border-radius: 10px;
-}
-
-.genres-filter::-webkit-scrollbar-thumb {
-  background: #5c0202;
-  border-radius: 10px;
-}
-
-.genres-filter::-webkit-scrollbar-thumb:hover {
-  background: #7a2e2a;
-}
-
-/* Gradient indicators for scrollability */
-.genres-filter.can-scroll {
-  mask-image: linear-gradient(to right, transparent, black 10px, black 90%, transparent);
-  -webkit-mask-image: linear-gradient(to right, transparent, black 10px, black 90%, transparent);
-}
-
-/* Scroll buttons */
-.scroll-btn {
-  background-color: #5c0202;
-  color: white;
-  border: none;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
   justify-content: center;
-  cursor: pointer;
-  font-size: 1.5rem;
-  font-weight: bold;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(92, 2, 2, 0.3);
-  flex-shrink: 0;
-  z-index: 2;
 }
 
-.scroll-btn:hover {
-  background-color: #7a2e2a;
-  transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(92, 2, 2, 0.4);
-}
-
-.scroll-btn:active {
-  transform: scale(0.95);
-}
-
-.scroll-left {
-  margin-left: 0.25rem;
-}
-
-.scroll-right {
-  margin-right: 0.25rem;
-}
-
-/* RTL support for scroll buttons */
-[dir="rtl"] .scroll-left {
-  transform: rotate(180deg);
-}
-
-[dir="rtl"] .scroll-right {
-  transform: rotate(180deg);
-}
-
-/* Ensure buttons maintain consistent size */
+/* Genre button styles */
 .genre-btn {
   padding: 0.625rem 1.25rem;
   border-radius: 50px;
@@ -212,8 +127,9 @@
   cursor: pointer;
   transition: all 0.2s ease;
   letter-spacing: 0.3px;
-  flex-shrink: 0; /* Prevent buttons from shrinking */
-  white-space: nowrap; /* Keep button text on one line */
+  white-space: nowrap;
+  width: 100%;
+  min-width: fit-content;
 }
 
 .genre-btn:hover {
@@ -518,10 +434,14 @@
 
 /* Responsive adjustments for smaller screens */
 @media (max-width: 768px) {
-  .scroll-btn {
-    width: 30px;
-    height: 30px;
-    font-size: 1.2rem;
+  .genres-grid-two-rows {
+    grid-template-columns: repeat(auto-fill, minmax(100px, auto));
+    gap: 0.5rem;
+  }
+  
+  .genre-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
   }
 }
 
@@ -546,9 +466,16 @@
     padding: 2rem 1rem;
   }
   
+  .genres-grid-two-rows {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
   .genre-btn {
-    padding: 0.5rem 1rem;
-    font-size: 0.85rem;
+    width: 100%;
+    white-space: normal;
+    word-break: break-word;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
   }
   
   .empty-state {
@@ -571,15 +498,6 @@
   
   .book-card:hover {
     transform: translateY(-3px);
-  }
-
-  /* Hide scroll buttons on very small screens, rely on touch scrolling */
-  .scroll-btn {
-    display: none;
-  }
-  
-  .genres-filter {
-    padding: 0.25rem 1rem;
   }
 }
 
@@ -621,23 +539,8 @@
   flex-direction: row;
 }
 
-[dir="rtl"] .genres-filter::-webkit-scrollbar {
-  height: 6px;
-}
-
-@media (max-width: 639px) {
-  [dir="rtl"] .filters-container {
-    flex-direction: column;
-  }
-}
-
 /* Focus styles for accessibility */
 .genre-btn:focus-visible {
-  outline: 2px solid #5c0202;
-  outline-offset: 2px;
-}
-
-.scroll-btn:focus-visible {
   outline: 2px solid #5c0202;
   outline-offset: 2px;
 }
@@ -691,68 +594,14 @@ html {
     max-width: 1536px;
   }
 }
-/* Add these styles to your existing Livres.css */
 
-/* Two-Row Horizontal Scroll Container */
-.genres-filter-wrapper-horizontal {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  width: 100%;
-  max-width: 100%;
-  position: relative;
-}
-
-/* Scrollable container that holds both rows */
-.genres-rows-container-scrollable {
-  display: flex;
-  flex-direction: column;
-  gap: 0.625rem;
-  flex: 1;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: thin;
-  scrollbar-color: #5c0202 #e8e0d8;
-  -webkit-overflow-scrolling: touch;
-  padding: 0.25rem 0;
-}
-
-/* Custom scrollbar */
-.genres-rows-container-scrollable::-webkit-scrollbar {
-  height: 6px;
-}
-
-.genres-rows-container-scrollable::-webkit-scrollbar-track {
-  background: #e8e0d8;
-  border-radius: 10px;
-}
-
-.genres-rows-container-scrollable::-webkit-scrollbar-thumb {
-  background: #5c0202;
-  border-radius: 10px;
-}
-
-.genres-rows-container-scrollable::-webkit-scrollbar-thumb:hover {
-  background: #7a2e2a;
-}
-
-/* Individual rows - no scrolling */
-.genre-row-horizontal {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 0.625rem;
-  padding: 0.25rem 0.5rem;
-  white-space: nowrap;
-  overflow-x: visible;
-}
-
-/* Responsive */
-@media (max-width: 480px) {
-  .genres-rows-container-scrollable {
-    padding: 0.25rem 0;
-  }
-  
-  .genre-row-horizontal {
-    padding: 0.25rem 1rem;
-  }
+/* Hide all scroll-related styles */
+.genres-filter-wrapper,
+.genres-filter,
+.genres-filter-wrapper-horizontal,
+.genres-rows-container,
+.genres-rows-container-scrollable,
+.genre-row-horizontal,
+.scroll-btn {
+  display: none;
 }

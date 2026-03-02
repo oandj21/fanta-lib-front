@@ -22,6 +22,7 @@ export default function Livres() {
   const [canScroll, setCanScroll] = useState({ left: false, right: false });
   const topRowRef = useRef(null);
   const bottomRowRef = useRef(null);
+  const isScrollingRef = useRef(false); // Prevent infinite scroll loop
 
   useEffect(() => {
     window.scrollTo({
@@ -52,6 +53,40 @@ export default function Livres() {
     }
   }, [location.search, books]);
 
+  // Sync scroll positions between rows
+  useEffect(() => {
+    const topRow = topRowRef.current;
+    const bottomRow = bottomRowRef.current;
+    
+    if (!topRow || !bottomRow) return;
+    
+    const handleTopScroll = () => {
+      if (isScrollingRef.current) return;
+      isScrollingRef.current = true;
+      bottomRow.scrollTo({ left: topRow.scrollLeft, behavior: 'auto' });
+      setTimeout(() => {
+        isScrollingRef.current = false;
+      }, 50);
+    };
+    
+    const handleBottomScroll = () => {
+      if (isScrollingRef.current) return;
+      isScrollingRef.current = true;
+      topRow.scrollTo({ left: bottomRow.scrollLeft, behavior: 'auto' });
+      setTimeout(() => {
+        isScrollingRef.current = false;
+      }, 50);
+    };
+    
+    topRow.addEventListener('scroll', handleTopScroll);
+    bottomRow.addEventListener('scroll', handleBottomScroll);
+    
+    return () => {
+      topRow.removeEventListener('scroll', handleTopScroll);
+      bottomRow.removeEventListener('scroll', handleBottomScroll);
+    };
+  }, []);
+
   // Get unique genres from books, filtering out empty/null values
   const genres = ["الكل", ...Array.from(new Set(
     books
@@ -80,9 +115,12 @@ export default function Livres() {
         const bottomScrollWidth = bottomRowRef.current.scrollWidth;
         const bottomClientWidth = bottomRowRef.current.clientWidth;
         
+        // Check if either row can scroll
+        const canScrollAny = topScrollWidth > topClientWidth || bottomScrollWidth > bottomClientWidth;
+        
         setCanScroll({
-          left: topScrollWidth > topClientWidth || bottomScrollWidth > bottomClientWidth,
-          right: topScrollWidth > topClientWidth || bottomScrollWidth > bottomClientWidth
+          left: canScrollAny,
+          right: canScrollAny
         });
       }
     };
@@ -120,15 +158,18 @@ export default function Livres() {
 
   const scrollLeft = () => {
     if (topRowRef.current && bottomRowRef.current) {
-      topRowRef.current.scrollBy({ left: -200, behavior: 'smooth' });
-      bottomRowRef.current.scrollBy({ left: -200, behavior: 'smooth' });
+      const newScrollLeft = Math.max(0, topRowRef.current.scrollLeft - 200);
+      topRowRef.current.scrollTo({ left: newScrollLeft, behavior: 'smooth' });
+      bottomRowRef.current.scrollTo({ left: newScrollLeft, behavior: 'smooth' });
     }
   };
 
   const scrollRight = () => {
     if (topRowRef.current && bottomRowRef.current) {
-      topRowRef.current.scrollBy({ left: 200, behavior: 'smooth' });
-      bottomRowRef.current.scrollBy({ left: 200, behavior: 'smooth' });
+      const maxScrollLeft = topRowRef.current.scrollWidth - topRowRef.current.clientWidth;
+      const newScrollLeft = Math.min(maxScrollLeft, topRowRef.current.scrollLeft + 200);
+      topRowRef.current.scrollTo({ left: newScrollLeft, behavior: 'smooth' });
+      bottomRowRef.current.scrollTo({ left: newScrollLeft, behavior: 'smooth' });
     }
   };
 

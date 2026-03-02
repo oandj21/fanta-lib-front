@@ -3276,7 +3276,7 @@ textarea:focus-visible {
 .order-form.compact .form-group .city-input,
 .order-form.compact .book-search-input {
   padding: 0.6rem 1rem !important;
-  font-size: 0.9rem !important;
+  font-size: 1.1rem !important;
 }
 
 .order-form.compact .input-with-icon input {

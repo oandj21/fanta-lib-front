@@ -20,7 +20,8 @@ export default function Livres() {
   const [search, setSearch] = useState("");
   const [genre, setGenre] = useState("الكل");
   const [canScroll, setCanScroll] = useState({ left: false, right: false });
-  const containerRef = useRef(null);
+  const topRowRef = useRef(null);
+  const bottomRowRef = useRef(null);
 
   useEffect(() => {
     window.scrollTo({
@@ -70,16 +71,18 @@ export default function Livres() {
     }
   });
 
-  // Check if container can scroll horizontally
+  // Check if rows can scroll horizontally
   useEffect(() => {
     const checkScroll = () => {
-      if (containerRef.current) {
-        const scrollWidth = containerRef.current.scrollWidth;
-        const clientWidth = containerRef.current.clientWidth;
+      if (topRowRef.current && bottomRowRef.current) {
+        const topScrollWidth = topRowRef.current.scrollWidth;
+        const topClientWidth = topRowRef.current.clientWidth;
+        const bottomScrollWidth = bottomRowRef.current.scrollWidth;
+        const bottomClientWidth = bottomRowRef.current.clientWidth;
         
         setCanScroll({
-          left: scrollWidth > clientWidth,
-          right: scrollWidth > clientWidth
+          left: topScrollWidth > topClientWidth || bottomScrollWidth > bottomClientWidth,
+          right: topScrollWidth > topClientWidth || bottomScrollWidth > bottomClientWidth
         });
       }
     };
@@ -116,14 +119,16 @@ export default function Livres() {
   };
 
   const scrollLeft = () => {
-    if (containerRef.current) {
-      containerRef.current.scrollBy({ left: -200, behavior: 'smooth' });
+    if (topRowRef.current && bottomRowRef.current) {
+      topRowRef.current.scrollBy({ left: -200, behavior: 'smooth' });
+      bottomRowRef.current.scrollBy({ left: -200, behavior: 'smooth' });
     }
   };
 
   const scrollRight = () => {
-    if (containerRef.current) {
-      containerRef.current.scrollBy({ left: 200, behavior: 'smooth' });
+    if (topRowRef.current && bottomRowRef.current) {
+      topRowRef.current.scrollBy({ left: 200, behavior: 'smooth' });
+      bottomRowRef.current.scrollBy({ left: 200, behavior: 'smooth' });
     }
   };
 
@@ -151,13 +156,11 @@ export default function Livres() {
                   ‹
                 </button>
               )}
-              
-              {/* Single container that scrolls both rows */}
-              <div 
-                className="genres-rows-container-scrollable"
-                ref={containerRef}
-              >
-                <div className="genre-row-horizontal">
+              <div className="genres-rows-container">
+                <div 
+                  className="genre-row-horizontal"
+                  ref={topRowRef}
+                >
                   {topRowGenres.map((g) => (
                     <button
                       key={g}
@@ -168,7 +171,10 @@ export default function Livres() {
                     </button>
                   ))}
                 </div>
-                <div className="genre-row-horizontal">
+                <div 
+                  className="genre-row-horizontal"
+                  ref={bottomRowRef}
+                >
                   {bottomRowGenres.map((g) => (
                     <button
                       key={g}
@@ -180,7 +186,6 @@ export default function Livres() {
                   ))}
                 </div>
               </div>
-              
               {canScroll.right && (
                 <button 
                   className="scroll-btn scroll-right" 

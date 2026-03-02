@@ -102,8 +102,8 @@
   }
 }
 
-/* Two-Row Horizontal Scroll Genres Filter */
-.genres-filter-wrapper-horizontal {
+/* Horizontal Scroll Genres Filter */
+.genres-filter-wrapper {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -112,56 +112,43 @@
   position: relative;
 }
 
-/* New scrollable container that holds both rows */
-.genres-rows-container-scrollable {
+.genres-filter {
   display: flex;
-  flex-direction: column;
+  flex-wrap: nowrap;
   gap: 0.625rem;
-  flex: 1;
   overflow-x: auto;
   overflow-y: hidden;
-  scrollbar-width: thin;
-  scrollbar-color: #5c0202 #e8e0d8;
-  -webkit-overflow-scrolling: touch;
-  padding: 0.25rem 0;
+  padding: 0.25rem 0.5rem;
+  scrollbar-width: thin; /* For Firefox */
+  scrollbar-color: #5c0202 #e8e0d8; /* For Firefox */
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  flex: 1;
+  white-space: nowrap;
 }
 
-/* Custom scrollbar for Webkit browsers */
-.genres-rows-container-scrollable::-webkit-scrollbar {
+/* Custom scrollbar for Webkit browsers (Chrome, Safari, Edge) */
+.genres-filter::-webkit-scrollbar {
   height: 6px;
 }
 
-.genres-rows-container-scrollable::-webkit-scrollbar-track {
+.genres-filter::-webkit-scrollbar-track {
   background: #e8e0d8;
   border-radius: 10px;
 }
 
-.genres-rows-container-scrollable::-webkit-scrollbar-thumb {
+.genres-filter::-webkit-scrollbar-thumb {
   background: #5c0202;
   border-radius: 10px;
 }
 
-.genres-rows-container-scrollable::-webkit-scrollbar-thumb:hover {
+.genres-filter::-webkit-scrollbar-thumb:hover {
   background: #7a2e2a;
 }
 
-/* Individual row styles - no longer scrollable */
-.genre-row-horizontal {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 0.625rem;
-  padding: 0.25rem 0.5rem;
-  white-space: nowrap;
-  overflow-x: visible;
-}
-
-/* Keep old container style for backwards compatibility */
-.genres-rows-container {
-  display: flex;
-  flex-direction: column;
-  gap: 0.625rem;
-  flex: 1;
-  overflow: hidden;
+/* Gradient indicators for scrollability */
+.genres-filter.can-scroll {
+  mask-image: linear-gradient(to right, transparent, black 10px, black 90%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 10px, black 90%, transparent);
 }
 
 /* Scroll buttons */
@@ -211,7 +198,7 @@
   transform: rotate(180deg);
 }
 
-/* Genre button styles */
+/* Ensure buttons maintain consistent size */
 .genre-btn {
   padding: 0.625rem 1.25rem;
   border-radius: 50px;
@@ -224,8 +211,8 @@
   cursor: pointer;
   transition: all 0.2s ease;
   letter-spacing: 0.3px;
-  flex-shrink: 0;
-  white-space: nowrap;
+  flex-shrink: 0; /* Prevent buttons from shrinking */
+  white-space: nowrap; /* Keep button text on one line */
 }
 
 .genre-btn:hover {
@@ -535,10 +522,6 @@
     height: 30px;
     font-size: 1.2rem;
   }
-  
-  .genres-rows-container-scrollable {
-    padding: 0.15rem 0;
-  }
 }
 
 @media (max-width: 480px) {
@@ -594,11 +577,7 @@
     display: none;
   }
   
-  .genres-rows-container-scrollable {
-    padding: 0.25rem 0;
-  }
-  
-  .genre-row-horizontal {
+  .genres-filter {
     padding: 0.25rem 1rem;
   }
 }
@@ -639,6 +618,16 @@
 
 [dir="rtl"] .filters-container {
   flex-direction: row;
+}
+
+[dir="rtl"] .genres-filter::-webkit-scrollbar {
+  height: 6px;
+}
+
+@media (max-width: 639px) {
+  [dir="rtl"] .filters-container {
+    flex-direction: column;
+  }
 }
 
 /* Focus styles for accessibility */

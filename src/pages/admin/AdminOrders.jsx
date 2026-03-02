@@ -268,7 +268,9 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [cities, setCities] = useState([]);
   const [error, setError] = useState(null);
-
+useEffect(() => {
+    setQuery(value || "");
+  }, [value]);
   // Fetch cities from Welivexpress API
   const fetchCities = useCallback(async () => {
     try {

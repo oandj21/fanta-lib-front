@@ -65,7 +65,7 @@ const App = () => (
         <BrowserRouter>
           <TitleUpdater />
           <Routes>
-            {/* Public routes */}
+            {/* Public routes - these should come FIRST */}
             <Route path="/" element={<Index />} />
             <Route path="/livres" element={<Livres />} />
             <Route path="/contact" element={<Contact />} />
@@ -75,97 +75,97 @@ const App = () => (
             {/* Login route */}
             <Route path="/login" element={<AdminLogin />} />
             
-            {/* Admin routes */}
-            <Route
-              path="/dashboard"
+            {/* Admin routes - use individual routes */}
+            <Route 
+              path="/dashboard" 
               element={
                 <ProtectedRoute>
                   <AdminLayout />
                 </ProtectedRoute>
-              }
+              } 
             >
               <Route index element={<AdminDashboard />} />
             </Route>
             
-            <Route
-              path="/books"
+            <Route 
+              path="/books" 
               element={
                 <ProtectedRoute>
                   <AdminLayout />
                 </ProtectedRoute>
-              }
+              } 
             >
               <Route index element={<AdminBooks />} />
             </Route>
             
-            <Route
-              path="/orders"
+            <Route 
+              path="/orders" 
               element={
                 <ProtectedRoute>
                   <AdminLayout />
                 </ProtectedRoute>
-              }
+              } 
             >
               <Route index element={<AdminOrders />} />
             </Route>
             
-            <Route
-              path="/expenses"
+            <Route 
+              path="/expenses" 
               element={
                 <ProtectedRoute>
                   <AdminLayout />
                 </ProtectedRoute>
-              }
+              } 
             >
               <Route index element={<AdminExpenses />} />
             </Route>
             
-            <Route
-              path="/finance"
+            <Route 
+              path="/finance" 
               element={
                 <ProtectedRoute>
                   <AdminLayout />
                 </ProtectedRoute>
-              }
+              } 
             >
               <Route index element={<AdminFinance />} />
             </Route>
             
-            <Route
-              path="/users"
+            <Route 
+              path="/users" 
               element={
                 <ProtectedRoute>
                   <AdminLayout />
                 </ProtectedRoute>
-              }
+              } 
             >
               <Route index element={<AdminUsers />} />
             </Route>
             
-            <Route
-              path="/messages"
+            <Route 
+              path="/messages" 
               element={
                 <ProtectedRoute>
                   <AdminLayout />
                 </ProtectedRoute>
-              }
+              } 
             >
               <Route index element={<AdminMessages />} />
             </Route>
             
-            <Route
-              path="/profile"
+            <Route 
+              path="/profile" 
               element={
                 <ProtectedRoute>
                   <AdminLayout />
                 </ProtectedRoute>
-              }
+              } 
             >
               <Route index element={<AdminProfile />} />
             </Route>
             
             {/* Redirect old /admin routes */}
-            <Route path="/admin/*" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/admin" element={<Navigate to="/dashboard" replace />} />
             <Route path="/admin/login" element={<Navigate to="/login" replace />} />
             <Route path="/admin/dashboard" element={<Navigate to="/dashboard" replace />} />
             <Route path="/admin/books" element={<Navigate to="/books" replace />} />
@@ -175,7 +175,7 @@ const App = () => (
             <Route path="/admin/users" element={<Navigate to="/users" replace />} />
             <Route path="/admin/profile" element={<Navigate to="/profile" replace />} />
             
-            {/* 404 route */}
+            {/* 404 route - always LAST */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

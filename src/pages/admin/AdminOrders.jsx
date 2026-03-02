@@ -1158,6 +1158,7 @@ const OrderDetailsPage = ({ order, onBack }) => {
 };
 
 // Add Order Page Component - UPDATED with larger inputs, no scroll, manual price, always checked, phone validation
+// Add Order Page Component - COMPACT VERSION (no scroll)
 const AddOrderPage = ({ onBack, onSubmit }) => {
   const dispatch = useDispatch();
   const [addLoading, setAddLoading] = useState(false);
@@ -1175,13 +1176,13 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
     parcel_prd_qty: 0,
     parcel_city: "",
     parcel_address: "",
-    parcel_price: null, // Empty for manual entry
+    parcel_price: null,
     frais_livraison: 35,
     frais_packaging: 0,
     total: null,
     profit: null,
     parcel_note: "",
-    parcel_open: 1, // Always checked by default
+    parcel_open: 1,
     livres: [],
     statut: "NEW_PARCEL",
     date: new Date().toISOString().split('T')[0]
@@ -1402,7 +1403,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
         <h2>Nouvelle commande</h2>
       </div>
 
-      <div className="page-content no-scroll">
+      <div className="page-content no-scroll compact-form">
         {addError && (
           <div className="form-error">
             <span className="error-icon">⚠️</span>
@@ -1410,266 +1411,235 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="order-form">
-          <div className="form-section">
-            <h3>Informations générales</h3>
-            <div className="form-row">
-              <div className="form-group">
-                <label>Code colis</label>
+        <form onSubmit={handleSubmit} className="order-form compact">
+          {/* Row 1: Code and Date */}
+          <div className="form-row">
+            <div className="form-group">
+              <label>Code colis</label>
+              <input
+                type="text"
+                name="parcel_code"
+                value={newOrderData.parcel_code}
+                onChange={handleNewOrderChange}
+                readOnly
+                className="readonly-input"
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Date</label>
+              <input
+                type="date"
+                name="date"
+                value={newOrderData.date}
+                onChange={handleNewOrderChange}
+                required
+              />
+            </div>
+          </div>
+
+          {/* Row 2: Client and Phone */}
+          <div className="form-row">
+            <div className="form-group">
+              <label>Client <span className="required">*</span></label>
+              <input
+                type="text"
+                name="parcel_receiver"
+                value={newOrderData.parcel_receiver}
+                onChange={handleNewOrderChange}
+                placeholder="Nom du client"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Téléphone</label>
+              <input
+                type="text"
+                name="parcel_phone"
+                value={newOrderData.parcel_phone}
+                onChange={handleNewOrderChange}
+                placeholder="10 chiffres"
+                maxLength="10"
+                pattern="[0-9]{10}"
+                className={phoneError ? "input-error" : ""}
+              />
+              {phoneError && <small className="error-hint">{phoneError}</small>}
+            </div>
+          </div>
+
+          {/* Row 3: City and Address */}
+          <div className="form-row">
+            <div className="form-group">
+              <label>Ville <span className="required">*</span></label>
+              <CityAutocomplete
+                value={newOrderData.parcel_city}
+                onChange={(value) => setNewOrderData(prev => ({ ...prev, parcel_city: value }))}
+                onSelect={handleNewCitySelect}
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Adresse</label>
+              <input
+                type="text"
+                name="parcel_address"
+                value={newOrderData.parcel_address}
+                onChange={handleNewOrderChange}
+                placeholder="Adresse"
+              />
+            </div>
+          </div>
+
+          {/* Row 4: Book Selector - takes full width */}
+          <div className="form-group full-width">
+            <label>Livres <span className="required">*</span></label>
+            <BookSelector 
+              selectedBooks={newOrderData.livres}
+              onBooksChange={handleBooksChange}
+              onTotalQuantityChange={handleTotalQuantityChange}
+            />
+          </div>
+
+          {/* Row 5: Quantity and Parcel Price */}
+          <div className="form-row">
+            <div className="form-group">
+              <label>Quantité totale</label>
+              <div className="input-with-icon">
+                <Layers size={20} className="input-icon" />
                 <input
-                  type="text"
-                  name="parcel_code"
-                  value={newOrderData.parcel_code}
+                  type="number"
+                  name="parcel_prd_qty"
+                  value={newOrderData.parcel_prd_qty}
                   onChange={handleNewOrderChange}
+                  placeholder="Qté"
+                  min="1"
+                  required
                   readOnly
                   className="readonly-input"
                 />
               </div>
+            </div>
 
-              <div className="form-group">
-                <label>Date</label>
+            <div className="form-group">
+              <label>Prix colis (MAD) <span className="required">*</span></label>
+              <div className="input-with-icon price-input">
+                <DollarSign size={20} className="input-icon" />
                 <input
-                  type="date"
-                  name="date"
-                  value={newOrderData.date}
+                  type="number"
+                  name="parcel_price"
+                  value={newOrderData.parcel_price === null ? '' : newOrderData.parcel_price}
                   onChange={handleNewOrderChange}
+                  placeholder="Prix"
+                  min="0"
+                  step="0.01"
                   required
                 />
               </div>
             </div>
           </div>
 
-          <div className="form-section">
-            <h3>Client</h3>
-            <div className="form-row">
-              <div className="form-group">
-                <label>Client <span className="required">*</span></label>
+          {/* Row 6: Delivery Fee and Packaging Fee */}
+          <div className="form-row">
+            <div className="form-group">
+              <label>Frais livraison</label>
+              <div className="input-with-icon">
+                <Truck size={20} className="input-icon" />
                 <input
-                  type="text"
-                  name="parcel_receiver"
-                  value={newOrderData.parcel_receiver}
+                  type="number"
+                  name="frais_livraison"
+                  value={newOrderData.frais_livraison === null ? '' : newOrderData.frais_livraison}
                   onChange={handleNewOrderChange}
-                  placeholder="Nom du client"
-                  required
+                  placeholder="35"
+                  min="0"
+                  step="0.01"
                 />
               </div>
+            </div>
 
-              <div className="form-group">
-                <label>Téléphone</label>
+            <div className="form-group">
+              <label>Frais packaging</label>
+              <div className="input-with-icon">
+                <Box size={20} className="input-icon" />
                 <input
-                  type="text"
-                  name="parcel_phone"
-                  value={newOrderData.parcel_phone}
+                  type="number"
+                  name="frais_packaging"
+                  value={newOrderData.frais_packaging === null ? '' : newOrderData.frais_packaging}
                   onChange={handleNewOrderChange}
-                  placeholder="10 chiffres exactement"
-                  maxLength="10"
-                  pattern="[0-9]{10}"
-                  className={phoneError ? "input-error" : ""}
-                />
-                {phoneError && <small className="error-hint">{phoneError}</small>}
-                <small className="field-hint">10 chiffres, sans espaces ni tirets</small>
-              </div>
-            </div>
-          </div>
-
-          <div className="form-section">
-            <h3>Adresse de livraison</h3>
-            <div className="form-row">
-              <div className="form-group full-width">
-                <label>Ville <span className="required">*</span></label>
-                <CityAutocomplete
-                  value={newOrderData.parcel_city}
-                  onChange={(value) => setNewOrderData(prev => ({ ...prev, parcel_city: value }))}
-                  onSelect={handleNewCitySelect}
-                />
-              </div>
-            </div>
-
-            <div className="form-row">
-              <div className="form-group full-width">
-                <label>Adresse</label>
-                <textarea
-                  name="parcel_address"
-                  value={newOrderData.parcel_address}
-                  onChange={handleNewOrderChange}
-                  placeholder="Adresse complète"
-                  rows="3"
+                  placeholder="0"
+                  min="0"
+                  step="0.01"
                 />
               </div>
             </div>
           </div>
 
-          <div className="form-section">
-            <h3>Livres commandés</h3>
-            <div className="form-group full-width">
-              <BookSelector 
-                selectedBooks={newOrderData.livres}
-                onBooksChange={handleBooksChange}
-                onTotalQuantityChange={handleTotalQuantityChange}
-              />
-              <small className="field-hint">
-                La sélection des livres mettra automatiquement à jour la quantité totale
-              </small>
+          {/* Row 7: Total and Profit */}
+          <div className="form-row">
+            <div className="form-group">
+              <label>Total livres</label>
+              <div className="input-with-icon">
+                <BookOpen size={20} className="input-icon" />
+                <input
+                  type="number"
+                  name="total"
+                  value={newOrderData.total === null ? '' : newOrderData.total}
+                  readOnly
+                  className="readonly-input"
+                  placeholder="Auto"
+                />
+              </div>
             </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label>Quantité totale</label>
-                <div className="input-with-icon">
-                  <Layers size={20} className="input-icon" />
-                  <input
-                    type="number"
-                    name="parcel_prd_qty"
-                    value={newOrderData.parcel_prd_qty}
-                    onChange={handleNewOrderChange}
-                    placeholder="Quantité totale"
-                    min="1"
-                    required
-                    readOnly
-                    className="readonly-input"
-                  />
-                </div>
-                <small className="field-hint">
-                  Calculée automatiquement à partir des livres sélectionnés
-                </small>
+            <div className="form-group">
+              <label>Profit</label>
+              <div className="input-with-icon">
+                <DollarSign size={20} className="input-icon" />
+                <input
+                  type="number"
+                  name="profit"
+                  value={newOrderData.profit === null ? '' : newOrderData.profit}
+                  readOnly
+                  className={`readonly-input ${newOrderData.profit < 0 ? 'negative' : ''}`}
+                  placeholder="Auto"
+                />
               </div>
             </div>
           </div>
 
-          <div className="form-section">
-            <h3>Frais et prix</h3>
-            <div className="form-row">
-              <div className="form-group">
-                <label>Frais livraison (MAD)</label>
-                <div className="input-with-icon">
-                  <Truck size={20} className="input-icon" />
-                  <input
-                    type="number"
-                    name="frais_livraison"
-                    value={newOrderData.frais_livraison === null ? '' : newOrderData.frais_livraison}
-                    onChange={handleNewOrderChange}
-                    placeholder="35"
-                    min="0"
-                    step="0.01"
-                  />
-                </div>
-                <small className="field-hint">Valeur par défaut: 35 MAD</small>
-              </div>
-
-              <div className="form-group">
-                <label>Frais packaging (MAD)</label>
-                <div className="input-with-icon">
-                  <Box size={20} className="input-icon" />
-                  <input
-                    type="number"
-                    name="frais_packaging"
-                    value={newOrderData.frais_packaging === null ? '' : newOrderData.frais_packaging}
-                    onChange={handleNewOrderChange}
-                    placeholder="0"
-                    min="0"
-                    step="0.01"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label>Total livres (MAD)</label>
-                <div className="input-with-icon">
-                  <BookOpen size={20} className="input-icon" />
-                  <input
-                    type="number"
-                    name="total"
-                    value={newOrderData.total === null ? '' : newOrderData.total}
-                    readOnly
-                    className="readonly-input"
-                    placeholder="Calculé automatiquement"
-                  />
-                </div>
-                <small className="field-hint">
-                  Calculé automatiquement à partir des livres sélectionnés
-                </small>
-              </div>
-
-              <div className="form-group">
-                <label>Prix colis (MAD) <span className="required">*</span></label>
-                <div className="input-with-icon price-input">
-                  <DollarSign size={20} className="input-icon" />
-                  <input
-                    type="number"
-                    name="parcel_price"
-                    value={newOrderData.parcel_price === null ? '' : newOrderData.parcel_price}
-                    onChange={handleNewOrderChange}
-                    placeholder="Entrez le prix"
-                    min="0"
-                    step="0.01"
-                    required
-                    className="large-input"
-                  />
-                </div>
-                <small className="field-hint">
-                  Entrez manuellement le prix à collecter par Welivexpress
-                </small>
-              </div>
-
-              <div className="form-group">
-                <label>Profit (MAD)</label>
-                <div className="input-with-icon">
-                  <DollarSign size={20} className="input-icon" />
-                  <input
-                    type="number"
-                    name="profit"
-                    value={newOrderData.profit === null ? '' : newOrderData.profit}
-                    readOnly
-                    className={`readonly-input ${newOrderData.profit < 0 ? 'negative' : ''}`}
-                    placeholder="Calculé automatiquement"
-                  />
-                </div>
-                <small className="field-hint">
-                  Profit = Prix colis - (Total livres + Frais)
-                </small>
-              </div>
-            </div>
+          {/* Row 8: Note */}
+          <div className="form-group full-width">
+            <label>Note</label>
+            <input
+              type="text"
+              name="parcel_note"
+              value={newOrderData.parcel_note}
+              onChange={handleNewOrderChange}
+              placeholder="Instructions spéciales"
+            />
           </div>
 
-          <div className="form-section">
-            <h3>Informations supplémentaires</h3>
-            <div className="form-group full-width">
-              <label>Note supplémentaire</label>
-              <textarea
-                name="parcel_note"
-                value={newOrderData.parcel_note}
-                onChange={handleNewOrderChange}
-                placeholder="Instructions spéciales pour la livraison (sera envoyée à Welivexpress)"
-                rows="4"
-              />
-              <small className="field-hint">
-                Cette note sera envoyée à Welivexpress sans les détails des livres
-              </small>
-            </div>
-
-            <div className="form-checkbox">
-              <input
-                type="checkbox"
-                id="parcel_open"
-                name="parcel_open"
-                checked={newOrderData.parcel_open === 1}
-                onChange={handleNewOrderChange}
-              />
-              <label htmlFor="parcel_open">Colis ouvert / vérifié</label>
-            </div>
+          {/* Row 9: Checkbox */}
+          <div className="form-checkbox">
+            <input
+              type="checkbox"
+              id="parcel_open"
+              name="parcel_open"
+              checked={newOrderData.parcel_open === 1}
+              onChange={handleNewOrderChange}
+            />
+            <label htmlFor="parcel_open">Colis ouvert / vérifié</label>
           </div>
 
-          {/* Display price info for Welivexpress */}
-          <div className="price-info-warning">
-            <Info size={20} />
+          {/* Price Info - Compact */}
+          <div className="price-info-warning compact">
+            <Info size={16} />
             <span>
-              <strong>Important:</strong> Le prix colis de <strong>{newOrderData.parcel_price || '---'} MAD</strong> sera envoyé à Welivexpress comme montant à collecter.
-              {newOrderData.parcel_price === null && " Veuillez entrer un prix."}
+              <strong>Important:</strong> Prix colis: <strong>{newOrderData.parcel_price || '---'} MAD</strong>
             </span>
           </div>
 
+          {/* Form Actions */}
           <div className="form-actions">
             <button 
               type="button" 
@@ -1692,7 +1662,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
               ) : (
                 <>
                   <Save size={20} />
-                  Créer la commande
+                  Créer
                 </>
               )}
             </button>

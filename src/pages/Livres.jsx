@@ -19,8 +19,8 @@ export default function Livres() {
   
   const [search, setSearch] = useState("");
   const [genre, setGenre] = useState("الكل");
-  const [canScroll, setCanScroll] = useState(false);
-  const genresFilterRef = useRef(null);
+  const [canScroll, setCanScroll] = useState({ left: false, right: false });
+  const containerRef = useRef(null);
 
   useEffect(() => {
     window.scrollTo({
@@ -58,12 +58,29 @@ export default function Livres() {
       .filter(cat => cat && cat.trim() !== "")
   ))];
 
-  // Check if genres filter can scroll horizontally
+  // Split genres into two rows (alternating)
+  const topRowGenres = [];
+  const bottomRowGenres = [];
+  
+  genres.forEach((genre, index) => {
+    if (index % 2 === 0) {
+      topRowGenres.push(genre);
+    } else {
+      bottomRowGenres.push(genre);
+    }
+  });
+
+  // Check if container can scroll horizontally
   useEffect(() => {
     const checkScroll = () => {
-      if (genresFilterRef.current) {
-        const { scrollWidth, clientWidth } = genresFilterRef.current;
-        setCanScroll(scrollWidth > clientWidth);
+      if (containerRef.current) {
+        const scrollWidth = containerRef.current.scrollWidth;
+        const clientWidth = containerRef.current.clientWidth;
+        
+        setCanScroll({
+          left: scrollWidth > clientWidth,
+          right: scrollWidth > clientWidth
+        });
       }
     };
     
@@ -99,14 +116,14 @@ export default function Livres() {
   };
 
   const scrollLeft = () => {
-    if (genresFilterRef.current) {
-      genresFilterRef.current.scrollBy({ left: -200, behavior: 'smooth' });
+    if (containerRef.current) {
+      containerRef.current.scrollBy({ left: -200, behavior: 'smooth' });
     }
   };
 
   const scrollRight = () => {
-    if (genresFilterRef.current) {
-      genresFilterRef.current.scrollBy({ left: 200, behavior: 'smooth' });
+    if (containerRef.current) {
+      containerRef.current.scrollBy({ left: 200, behavior: 'smooth' });
     }
   };
 
@@ -124,8 +141,8 @@ export default function Livres() {
       <section className="books-section">
         <section className="filters-sectio">
           <div className="filters-container">
-            <div className="genres-filter-wrapper">
-              {canScroll && (
+            <div className="genres-filter-wrapper-horizontal">
+              {canScroll.left && (
                 <button 
                   className="scroll-btn scroll-left" 
                   onClick={scrollLeft}
@@ -134,21 +151,37 @@ export default function Livres() {
                   ‹
                 </button>
               )}
+              
+              {/* Single container that scrolls both rows */}
               <div 
-                className={`genres-filter ${canScroll ? 'can-scroll' : ''}`}
-                ref={genresFilterRef}
+                className="genres-rows-container-scrollable"
+                ref={containerRef}
               >
-                {genres.map((g) => (
-                  <button
-                    key={g}
-                    onClick={() => setGenre(g)}
-                    className={`genre-btn ${genre === g ? "active" : ""}`}
-                  >
-                    {g}
-                  </button>
-                ))}
+                <div className="genre-row-horizontal">
+                  {topRowGenres.map((g) => (
+                    <button
+                      key={g}
+                      onClick={() => setGenre(g)}
+                      className={`genre-btn ${genre === g ? "active" : ""}`}
+                    >
+                      {g}
+                    </button>
+                  ))}
+                </div>
+                <div className="genre-row-horizontal">
+                  {bottomRowGenres.map((g) => (
+                    <button
+                      key={g}
+                      onClick={() => setGenre(g)}
+                      className={`genre-btn ${genre === g ? "active" : ""}`}
+                    >
+                      {g}
+                    </button>
+                  ))}
+                </div>
               </div>
-              {canScroll && (
+              
+              {canScroll.right && (
                 <button 
                   className="scroll-btn scroll-right" 
                   onClick={scrollRight}

@@ -1,24 +1,17 @@
-// components/BookCard.jsx
 import { useState } from "react";
 import BookDetailModal from "./BookDetailModal";
-import { Eye, ShoppingCart, Check, BookOpen } from "lucide-react";
+import { Eye, ShoppingCart, Check } from "lucide-react";
 import useLanguageDirection from "../utils/useLanguageDirection";
 import "../css/BookCard.css";
 
 export default function BookCard({ book }) {
   const [showDetail, setShowDetail] = useState(false);
   const [added, setAdded] = useState(false);
-  const [imageError, setImageError] = useState(false);
   const { getTextDirection, getClassName } = useLanguageDirection();
-
-  // Local SVG placeholder (no external dependency)
-  const getPlaceholderSVG = () => {
-    return 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'300\' height=\'400\' viewBox=\'0 0 300 400\'%3E%3Crect width=\'300\' height=\'400\' fill=\'%23f0e8e0\'/%3E%3Ctext x=\'50%25\' y=\'45%25\' dominant-baseline=\'middle\' text-anchor=\'middle\' font-family=\'Inter, sans-serif\' font-size=\'20\' fill=\'%235c0202\'%3E📚%3C/text%3E%3Ctext x=\'50%25\' y=\'55%25\' dominant-baseline=\'middle\' text-anchor=\'middle\' font-family=\'Inter, sans-serif\' font-size=\'16\' fill=\'%235c0202\'%3ENo Cover%3C/text%3E%3C/svg%3E';
-  };
 
   // Helper function to get image URL
   const getImageUrl = (images) => {
-    if (!images || imageError) return getPlaceholderSVG();
+    if (!images) return 'https://via.placeholder.com/300x400?text=No+Cover';
     
     if (typeof images === 'string') {
       try {
@@ -28,7 +21,6 @@ export default function BookCard({ book }) {
         }
       } catch (e) {
         console.error('خطأ في تحليل الصور:', e);
-        return getPlaceholderSVG();
       }
     }
     
@@ -36,11 +28,7 @@ export default function BookCard({ book }) {
       return `https://fanta-lib-back-production-76f4.up.railway.app/storage/${images[0]}`;
     }
     
-    return getPlaceholderSVG();
-  };
-
-  const handleImageError = () => {
-    setImageError(true);
+    return 'https://via.placeholder.com/300x400?text=No+Cover';
   };
 
   const handleAdd = (e) => {
@@ -81,7 +69,10 @@ export default function BookCard({ book }) {
           <img 
             src={getImageUrl(book.images)} 
             alt={book.titre || "غلاف الكتاب"} 
-            onError={handleImageError}
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = 'https://via.placeholder.com/300x400?text=Image+Error';
+            }}
           />
           {/* Status Badge */}
           {book.status && (

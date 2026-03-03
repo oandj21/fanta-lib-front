@@ -268,11 +268,9 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [cities, setCities] = useState([]);
   const [error, setError] = useState(null);
-
-  useEffect(() => {
+useEffect(() => {
     setQuery(value || "");
   }, [value]);
-
   // Fetch cities from Welivexpress API
   const fetchCities = useCallback(async () => {
     try {
@@ -1161,11 +1159,13 @@ const OrderDetailsPage = ({ order, onBack }) => {
   );
 };
 
-// Add Order Page Component - COMPACT VERSION with phone validation removed
+// Add Order Page Component - UPDATED with larger inputs, no scroll, manual price, always checked, phone validation
+// Add Order Page Component - COMPACT VERSION (no scroll)
 const AddOrderPage = ({ onBack, onSubmit }) => {
   const dispatch = useDispatch();
   const [addLoading, setAddLoading] = useState(false);
   const [addError, setAddError] = useState(null);
+  const [phoneError, setPhoneError] = useState("");
   
   // Track if total was manually edited
   const [totalManuallyEdited, setTotalManuallyEdited] = useState(false);
@@ -1194,6 +1194,17 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
   useEffect(() => {
     setTotalManuallyEdited(false);
   }, [newOrderData.livres]);
+
+  // Validate phone number
+  const validatePhone = (phone) => {
+    const phoneRegex = /^[0-9]{10}$/;
+    if (phone && !phoneRegex.test(phone)) {
+      setPhoneError("Le numéro de téléphone doit contenir exactement 10 chiffres");
+      return false;
+    }
+    setPhoneError("");
+    return true;
+  };
 
   // Calculate books subtotal, total, and profit
   useEffect(() => {
@@ -1248,6 +1259,10 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
   const handleNewOrderChange = (e) => {
     const { name, value, type, checked } = e.target;
     
+    if (name === 'parcel_phone') {
+      validatePhone(value);
+    }
+    
     // Track manual edits
     if (name === 'total') {
       setTotalManuallyEdited(true);
@@ -1292,6 +1307,12 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
 
     if (newOrderData.livres.length === 0) {
         setAddError("Veuillez sélectionner au moins un livre");
+        return;
+    }
+
+    // Validate phone if provided
+    if (newOrderData.parcel_phone && !validatePhone(newOrderData.parcel_phone)) {
+        setAddError(phoneError);
         return;
     }
 
@@ -1419,7 +1440,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
             </div>
           </div>
 
-          {/* Row 2: Client and Phone - Phone validation removed */}
+          {/* Row 2: Client and Phone */}
           <div className="form-row">
             <div className="form-group">
               <label>Client <span className="required">*</span></label>
@@ -1440,9 +1461,12 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
                 name="parcel_phone"
                 value={newOrderData.parcel_phone}
                 onChange={handleNewOrderChange}
-                placeholder="Téléphone du client"
-                // No validation attributes
+                placeholder="10 chiffres"
+                maxLength="10"
+                pattern="[0-9]{10}"
+                className={phoneError ? "input-error" : ""}
               />
+              {phoneError && <small className="error-hint">{phoneError}</small>}
             </div>
           </div>
 
@@ -1651,11 +1675,14 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
   );
 };
 
-// Update Order Page Component - COMPLETE with phone validation removed
+// Update Order Page Component - UPDATED with larger inputs, no scroll, manual price, always checked, phone validation
+// Update Order Page Component - COMPLETE with all fields from add form
+// Update Order Page Component - COMPLETE with proper data mapping from DB
 const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
   const dispatch = useDispatch();
   const [updateLoading, setUpdateLoading] = useState(false);
   const [updateError, setUpdateError] = useState(null);
+  const [phoneError, setPhoneError] = useState("");
   
   // Track if total was manually edited
   const [totalManuallyEdited, setTotalManuallyEdited] = useState(false);
@@ -1769,6 +1796,17 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
     setTotalManuallyEdited(false);
   }, [formData.livres]);
 
+  // Validate phone number
+  const validatePhone = (phone) => {
+    const phoneRegex = /^[0-9]{10}$/;
+    if (phone && !phoneRegex.test(phone)) {
+      setPhoneError("Le numéro de téléphone doit contenir exactement 10 chiffres");
+      return false;
+    }
+    setPhoneError("");
+    return true;
+  };
+
   // Calculate books subtotal, total, and profit
   useEffect(() => {
     const booksSubtotal = (formData.livres || []).reduce(
@@ -1826,6 +1864,10 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     
+    if (name === 'parcel_phone') {
+      validatePhone(value);
+    }
+    
     // Track manual edits for total
     if (name === 'total') {
       setTotalManuallyEdited(true);
@@ -1863,6 +1905,12 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
   const handleSubmit = async (e) => {
   e.preventDefault();
   if (!order) return;
+
+  // Validate phone if provided
+  if (formData.parcel_phone && !validatePhone(formData.parcel_phone)) {
+      setUpdateError(phoneError);
+      return;
+  }
 
   setUpdateLoading(true);
   setUpdateError(null);
@@ -1983,7 +2031,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
             </div>
           </div>
 
-          {/* Row 2: Client and Phone - Phone validation removed */}
+          {/* Row 2: Client and Phone */}
           <div className="form-row">
             <div className="form-group">
               <label>Client <span className="required">*</span></label>
@@ -2004,9 +2052,12 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
                 name="parcel_phone"
                 value={formData.parcel_phone}
                 onChange={handleInputChange}
-                placeholder="Téléphone du client"
-                // No validation attributes
+                placeholder="10 chiffres"
+                maxLength="10"
+                pattern="[0-9]{10}"
+                className={phoneError ? "input-error" : ""}
               />
+              {phoneError && <small className="error-hint">{phoneError}</small>}
             </div>
           </div>
 

@@ -322,20 +322,20 @@ useEffect(() => {
   const getFallbackCities = () => {
     return [
       { id: "15769", name: "Casablanca" },
-      { id: "15770", name: "Rabat" },
-      { id: "15771", name: "Fès" },
-      { id: "15772", name: "Marrakech" },
-      { id: "15773", name: "Agadir" },
-      { id: "15774", name: "Tanger" },
-      { id: "15775", name: "Meknès" },
-      { id: "15776", name: "Oujda" },
-      { id: "15777", name: "Kénitra" },
-      { id: "15778", name: "Tétouan" },
-      { id: "15779", name: "Safi" },
-      { id: "15780", name: "Mohammédia" },
-      { id: "15781", name: "El Jadida" },
-      { id: "15782", name: "Béni Mellal" },
-      { id: "15783", name: "Nador" }
+      { id: "15907", name: "Rabat" },
+      { id: "16621", name: "Fès" },
+      { id: "16057", name: "Marrakech" },
+      { id: "15349", name: "Agadir" },
+      { id: "15535", name: "Tanger" },
+      { id: "16783", name: "Meknès" },
+      { id: "17065", name: "Oujda" },
+      { id: "15997", name: "Kénitra" },
+      { id: "15541", name: "Tétouan" },
+      { id: "15841", name: "Safi" },
+      { id: "15823", name: "Mohammédia" },
+      { id: "15793", name: "El Jadida" },
+      { id: "16267", name: "Béni Mellal" },
+      { id: "16885", name: "Nador" }
     ];
   };
 

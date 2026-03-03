@@ -260,19 +260,39 @@ const CopyNotification = ({ message, isVisible, onClose }) => {
   );
 };
 
-// City Autocomplete Component
-// City Autocomplete Component
+// ==============================================
+// CITY AUTOCOMPLETE COMPONENT - MODIFIED TO RETURN ID
+// ==============================================
 const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
-  const [query, setQuery] = useState(value || "");
+  const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [cities, setCities] = useState([]);
   const [error, setError] = useState(null);
+  const [selectedCityId, setSelectedCityId] = useState(null);
 
+  // Initialize query from value prop
   useEffect(() => {
-    setQuery(value || "");
-  }, [value]);
+    if (value && typeof value === 'number') {
+      // If value is a number (ID), we need to find the city name
+      const city = cities.find(c => {
+        const cityId = typeof c === 'object' ? c.id : null;
+        return cityId === value;
+      });
+      if (city) {
+        const cityName = typeof city === 'string' ? city : city.name || city.city || city.label || '';
+        setQuery(cityName);
+        setSelectedCityId(value);
+      }
+    } else if (value && typeof value === 'string') {
+      setQuery(value);
+      setSelectedCityId(null);
+    } else {
+      setQuery("");
+      setSelectedCityId(null);
+    }
+  }, [value, cities]);
 
   // Fetch cities from Welivexpress API
   const fetchCities = useCallback(async () => {
@@ -311,7 +331,7 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
     } catch (err) {
       console.error("Error fetching cities:", err);
       setError("Impossible de charger les villes");
-      setCities([]); // Set empty array on error instead of fallback
+      setCities([]);
     } finally {
       setLoading(false);
     }
@@ -340,16 +360,22 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
   const handleInputChange = (e) => {
     const newValue = e.target.value;
     setQuery(newValue);
+    // When user types, we clear the selected ID
+    setSelectedCityId(null);
+    // Pass the string value to parent (for display purposes)
     onChange(newValue);
   };
 
   const handleSelectCity = (city) => {
     const cityName = typeof city === 'string' ? city : city.name || city.city || city.label || city;
-    const cityId = typeof city === 'object' && city.id ? city.id : cityName;
+    const cityId = typeof city === 'object' && city.id ? parseInt(city.id, 10) : null;
     
     setQuery(cityName);
-    onChange(cityName);
-    if (onSelect) onSelect(cityName, cityId);
+    setSelectedCityId(cityId);
+    
+    // IMPORTANT: Pass the ID as a number to the parent
+    if (onSelect) onSelect(cityId, cityName);
+    
     setShowSuggestions(false);
   };
 
@@ -376,7 +402,7 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
         <ul className="suggestions-list">
           {suggestions.map((city, index) => {
             const cityName = typeof city === 'string' ? city : city.name || city.city || city.label || city;
-            const cityId = typeof city === 'object' && city.id ? city.id : '';
+            const cityId = typeof city === 'object' && city.id ? parseInt(city.id, 10) : null;
             return (
               <li
                 key={index}
@@ -393,9 +419,6 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
       )}
       
       {error && <div className="city-error">{error}</div>}
-      {!loading && cities.length === 0 && !error && (
-        <div className="city-error">Aucune ville disponible</div>
-      )}
     </div>
   );
 };
@@ -956,10 +979,10 @@ const OrderDetailsPage = ({ order, onBack }) => {
                 <div className="order-info-card">
                   <div className="order-info-label">
                     <MapPin size={14} />
-                    Ville
+                    Ville (ID)
                   </div>
                   <div className="order-info-value">
-                    {order.parcel_city || "-"}
+                    {typeof order.parcel_city === 'number' ? order.parcel_city : (order.parcel_city || "-")}
                   </div>
                 </div>
 
@@ -1137,8 +1160,9 @@ const OrderDetailsPage = ({ order, onBack }) => {
   );
 };
 
-// Add Order Page Component - UPDATED with larger inputs, no scroll, manual price, always checked, phone validation
-// Add Order Page Component - COMPACT VERSION (no scroll)
+// ==============================================
+// ADD ORDER PAGE - MODIFIED TO SEND CITY ID
+// ==============================================
 const AddOrderPage = ({ onBack, onSubmit }) => {
   const dispatch = useDispatch();
   const [addLoading, setAddLoading] = useState(false);
@@ -1154,7 +1178,8 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
     parcel_receiver: "",
     parcel_phone: "",
     parcel_prd_qty: 0,
-    parcel_city: "",
+    parcel_city_id: null, // MODIFIED: Store city ID
+    parcel_city_name: "", // MODIFIED: Store city name for display
     parcel_address: "",
     parcel_price: null,
     frais_livraison: 35,
@@ -1268,18 +1293,35 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
     }));
   };
 
-  const handleNewCitySelect = (city, cityId) => {
+  // MODIFIED: Handle city selection - store ID and name
+  const handleNewCitySelect = (cityId, cityName) => {
     setNewOrderData(prev => ({
       ...prev,
-      parcel_city: city
+      parcel_city_id: cityId, // Store the ID
+      parcel_city_name: cityName // Store the name for display
+    }));
+  };
+
+  // MODIFIED: Handle city input change (for typing)
+  const handleCityInputChange = (value) => {
+    setNewOrderData(prev => ({
+      ...prev,
+      parcel_city_name: value,
+      parcel_city_id: null // Clear ID when user types
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!newOrderData.parcel_receiver || !newOrderData.parcel_city) {
-        setAddError("Veuillez remplir tous les champs obligatoires (client, ville)");
+    if (!newOrderData.parcel_receiver) {
+        setAddError("Veuillez remplir le nom du client");
+        return;
+    }
+
+    // MODIFIED: Check for city ID instead of name
+    if (!newOrderData.parcel_city_id) {
+        setAddError("Veuillez sélectionner une ville dans la liste (l'ID est requis)");
         return;
     }
 
@@ -1319,12 +1361,13 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
         total: parseFloat(book.prix_achat) * parseInt(book.quantity)
     }));
 
+    // MODIFIED: Send city ID as parcel_city (as integer)
     const orderToCreate = {
         parcel_code: newOrderData.parcel_code,
         parcel_receiver: newOrderData.parcel_receiver,
         parcel_phone: newOrderData.parcel_phone || "",
         parcel_prd_qty: newOrderData.parcel_prd_qty,
-        parcel_city: newOrderData.parcel_city,
+        parcel_city: parseInt(newOrderData.parcel_city_id, 10), // Send ID as integer
         parcel_address: newOrderData.parcel_address || "",
         parcel_price: parseFloat(parcelPrice.toFixed(2)),
         frais_livraison: parseFloat(delivery.toFixed(2)),
@@ -1338,7 +1381,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
         statut: newOrderData.statut || "NEW_PARCEL"
     };
 
-    console.log("📦 Order to create:", orderToCreate);
+    console.log("📦 Order to create (with city ID):", orderToCreate);
 
     setAddLoading(true);
     setAddError(null);
@@ -1353,7 +1396,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
             code: orderToCreate.parcel_code,
             price: orderToCreate.parcel_price,
             receiver: orderToCreate.parcel_receiver,
-            city: orderToCreate.parcel_city,
+            city_id: orderToCreate.parcel_city, // Send ID in webhook
             address: orderToCreate.parcel_address,
             total_books: orderToCreate.parcel_prd_qty,
             status: orderToCreate.statut
@@ -1452,11 +1495,18 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
           <div className="form-row">
             <div className="form-group">
               <label>Ville <span className="required">*</span></label>
+              {/* MODIFIED: CityAutocomplete with ID handling */}
               <CityAutocomplete
-                value={newOrderData.parcel_city}
-                onChange={(value) => setNewOrderData(prev => ({ ...prev, parcel_city: value }))}
+                value={newOrderData.parcel_city_id || newOrderData.parcel_city_name}
+                onChange={handleCityInputChange}
                 onSelect={handleNewCitySelect}
               />
+              {/* Display selected ID for debugging */}
+              {newOrderData.parcel_city_id && (
+                <small className="city-id-hint">
+                  ID sélectionné: <strong>{newOrderData.parcel_city_id}</strong>
+                </small>
+              )}
             </div>
 
             <div className="form-group">
@@ -1616,6 +1666,9 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
             <Info size={16} />
             <span>
               <strong>Important:</strong> Prix colis: <strong>{newOrderData.parcel_price || '---'} MAD</strong>
+              {newOrderData.parcel_city_id && (
+                <> | Ville ID: <strong>{newOrderData.parcel_city_id}</strong></>
+              )}
             </span>
           </div>
 
@@ -1653,9 +1706,9 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
   );
 };
 
-// Update Order Page Component - UPDATED with larger inputs, no scroll, manual price, always checked, phone validation
-// Update Order Page Component - COMPLETE with all fields from add form
-// Update Order Page Component - COMPLETE with proper data mapping from DB
+// ==============================================
+// UPDATE ORDER PAGE - MODIFIED TO SEND CITY ID
+// ==============================================
 const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
   const dispatch = useDispatch();
   const [updateLoading, setUpdateLoading] = useState(false);
@@ -1670,7 +1723,8 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
     parcel_receiver: "",
     parcel_phone: "",
     parcel_prd_qty: 0,
-    parcel_city: "",
+    parcel_city_id: null, // MODIFIED: Store city ID
+    parcel_city_name: "", // MODIFIED: Store city name for display
     parcel_address: "",
     parcel_price: null,
     frais_livraison: 35,
@@ -1694,7 +1748,6 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
       let formattedDate = "";
       if (order.date) {
         try {
-          // Handle different date formats
           const dateObj = new Date(order.date);
           if (!isNaN(dateObj.getTime())) {
             formattedDate = dateObj.toISOString().split('T')[0];
@@ -1704,7 +1757,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
         }
       }
 
-      // Process livres data - handle different possible structures
+      // Process livres data
       let processedLivres = [];
       if (order.livres && Array.isArray(order.livres)) {
         processedLivres = order.livres.map(book => ({
@@ -1729,11 +1782,27 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
         calculatedQty = processedLivres.reduce((sum, book) => sum + book.quantity, 0);
       }
 
+      // MODIFIED: Determine if parcel_city is ID or name
+      let cityId = null;
+      let cityName = "";
+      
+      if (order.parcel_city) {
+        // Check if it's a number (ID) or string (name)
+        if (typeof order.parcel_city === 'number' || !isNaN(parseInt(order.parcel_city, 10))) {
+          cityId = parseInt(order.parcel_city, 10);
+          cityName = ""; // We'll need to fetch the name or let user select
+        } else {
+          cityId = null;
+          cityName = order.parcel_city;
+        }
+      }
+
       setFormData({
         parcel_receiver: order.parcel_receiver || order.receiver || order.client_nom || "",
         parcel_phone: order.parcel_phone || order.phone || order.client_telephone || "",
         parcel_prd_qty: calculatedQty || 0,
-        parcel_city: order.parcel_city || order.city || order.ville || "",
+        parcel_city_id: cityId,
+        parcel_city_name: cityName,
         parcel_address: order.parcel_address || order.address || order.adresse || "",
         parcel_price: order.parcel_price !== undefined && order.parcel_price !== null 
           ? parseFloat(order.parcel_price) 
@@ -1751,20 +1820,11 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
           ? parseFloat(order.profit)
           : null,
         parcel_note: order.parcel_note || order.note || order.notes || "",
-        parcel_open: 1, // Force to checked
+        parcel_open: 1,
         statut: order.statut || order.status || order.delivery_status || "NEW_PARCEL",
         statut_second: order.statut_second || order.secondary_status || "",
         livres: processedLivres,
         date: formattedDate || new Date().toISOString().split('T')[0]
-      });
-
-      // Log what we've mapped for debugging
-      console.log("📋 Mapped form data:", {
-        receiver: order.parcel_receiver || order.receiver,
-        city: order.parcel_city || order.city,
-        qty: calculatedQty,
-        livres: processedLivres.length,
-        date: formattedDate
       });
     }
   }, [order]);
@@ -1873,97 +1933,125 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
     }));
   };
 
-  const handleCitySelect = (city, cityId) => {
+  // MODIFIED: Handle city selection - store ID and name
+  const handleCitySelect = (cityId, cityName) => {
     setFormData(prev => ({
       ...prev,
-      parcel_city: city
+      parcel_city_id: cityId, // Store the ID
+      parcel_city_name: cityName // Store the name for display
+    }));
+  };
+
+  // MODIFIED: Handle city input change (for typing)
+  const handleCityInputChange = (value) => {
+    setFormData(prev => ({
+      ...prev,
+      parcel_city_name: value,
+      parcel_city_id: null // Clear ID when user types
     }));
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  if (!order) return;
+    e.preventDefault();
+    if (!order) return;
 
-  // Validate phone if provided
-  if (formData.parcel_phone && !validatePhone(formData.parcel_phone)) {
-      setUpdateError(phoneError);
-      return;
-  }
+    // MODIFIED: Check for city ID instead of name
+    if (!formData.parcel_city_id) {
+        setUpdateError("Veuillez sélectionner une ville dans la liste (l'ID est requis)");
+        return;
+    }
 
-  setUpdateLoading(true);
-  setUpdateError(null);
+    // Validate phone if provided
+    if (formData.parcel_phone && !validatePhone(formData.parcel_phone)) {
+        setUpdateError(phoneError);
+        return;
+    }
 
-  try {
-    const updateData = {};
-    
-    // Check all fields for changes
-    Object.keys(formData).forEach(key => {
-      // Special handling for livres - always include if they exist and are different
-      if (key === 'livres') {
-        // Compare livres arrays
-        const currentLivres = JSON.stringify(formData.livres);
-        const originalLivres = JSON.stringify(order.livres || []);
+    setUpdateLoading(true);
+    setUpdateError(null);
+
+    try {
+      const updateData = {};
+      
+      // Check all fields for changes
+      Object.keys(formData).forEach(key => {
+        // Skip internal fields
+        if (key === 'parcel_city_name') return;
         
-        if (currentLivres !== originalLivres) {
-          updateData.livres = formData.livres;
+        // Special handling for livres
+        if (key === 'livres') {
+          const currentLivres = JSON.stringify(formData.livres);
+          const originalLivres = JSON.stringify(order.livres || []);
+          
+          if (currentLivres !== originalLivres) {
+            updateData.livres = formData.livres;
+          }
+          return;
         }
+        
+        // MODIFIED: Handle parcel_city specially - send as ID
+        if (key === 'parcel_city_id') {
+          const newValue = formData.parcel_city_id;
+          const oldValue = order.parcel_city;
+          
+          // Compare as numbers
+          if (parseInt(newValue, 10) !== parseInt(oldValue, 10)) {
+            updateData.parcel_city = parseInt(newValue, 10); // Send as parcel_city
+          }
+          return;
+        }
+        
+        // For other fields
+        const formValue = formData[key] === null || formData[key] === undefined ? '' : String(formData[key]);
+        const orderValue = order[key] === null || order[key] === undefined ? '' : String(order[key]);
+        
+        if (formValue !== orderValue) {
+          if (key === 'statut_second' && formData[key] === '') {
+            updateData[key] = null;
+          } else {
+            updateData[key] = formData[key];
+          }
+        }
+      });
+
+      // Also update quantity based on livres total
+      if (formData.livres && formData.livres.length > 0) {
+        const totalQty = formData.livres.reduce((sum, book) => sum + (book.quantity || 1), 0);
+        if (totalQty !== order.parcel_prd_qty) {
+          updateData.parcel_prd_qty = totalQty;
+        }
+      }
+
+      console.log("📤 Sending update data (with city ID):", updateData);
+
+      if (Object.keys(updateData).length === 0) {
+        onBack();
         return;
       }
-      
-      // Convert to string for comparison to handle numbers vs strings
-      const formValue = formData[key] === null || formData[key] === undefined ? '' : String(formData[key]);
-      const orderValue = order[key] === null || order[key] === undefined ? '' : String(order[key]);
-      
-      if (formValue !== orderValue) {
-        // For statut_second, if it's empty string, send as null to backend
-        if (key === 'statut_second' && formData[key] === '') {
-          updateData[key] = null;
-        } else {
-          updateData[key] = formData[key];
-        }
-      }
-    });
 
-    // Also update quantity based on livres total
-    if (formData.livres && formData.livres.length > 0) {
-      const totalQty = formData.livres.reduce((sum, book) => sum + (book.quantity || 1), 0);
-      if (totalQty !== order.parcel_prd_qty) {
-        updateData.parcel_prd_qty = totalQty;
-      }
-    }
-
-    // Log what we're sending for debugging
-    console.log("📤 Sending update data:", updateData);
-
-    if (Object.keys(updateData).length === 0) {
+      await onSubmit(order.id, updateData);
       onBack();
-      return;
+      
+    } catch (error) {
+      console.error("Update failed:", error);
+      
+      if (error.response) {
+        console.error("Server error response:", error.response.data);
+        setUpdateError(
+          error.response.data?.message || 
+          error.response.data?.error ||
+          `Erreur ${error.response.status}: ${JSON.stringify(error.response.data)}`
+        );
+      } else {
+        setUpdateError(
+          error?.message || 
+          "Erreur lors de la mise à jour. Veuillez réessayer."
+        );
+      }
+    } finally {
+      setUpdateLoading(false);
     }
-
-    await onSubmit(order.id, updateData);
-    onBack();
-    
-  } catch (error) {
-    console.error("Update failed:", error);
-    
-    // Log the actual error response from server
-    if (error.response) {
-      console.error("Server error response:", error.response.data);
-      setUpdateError(
-        error.response.data?.message || 
-        error.response.data?.error ||
-        `Erreur ${error.response.status}: ${JSON.stringify(error.response.data)}`
-      );
-    } else {
-      setUpdateError(
-        error?.message || 
-        "Erreur lors de la mise à jour. Veuillez réessayer."
-      );
-    }
-  } finally {
-    setUpdateLoading(false);
-  }
-};
+  };
 
   if (!order) return null;
 
@@ -2043,11 +2131,18 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
           <div className="form-row">
             <div className="form-group">
               <label>Ville <span className="required">*</span></label>
+              {/* MODIFIED: CityAutocomplete with ID handling */}
               <CityAutocomplete
-                value={formData.parcel_city}
-                onChange={(value) => setFormData(prev => ({ ...prev, parcel_city: value }))}
+                value={formData.parcel_city_id || formData.parcel_city_name}
+                onChange={handleCityInputChange}
                 onSelect={handleCitySelect}
               />
+              {/* Display selected ID for debugging */}
+              {formData.parcel_city_id && (
+                <small className="city-id-hint">
+                  ID sélectionné: <strong>{formData.parcel_city_id}</strong>
+                </small>
+              )}
             </div>
 
             <div className="form-group">
@@ -2258,6 +2353,9 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
             <Info size={16} />
             <span>
               <strong>Important:</strong> Prix colis: <strong>{formData.parcel_price || '---'} MAD</strong>
+              {formData.parcel_city_id && (
+                <> | Ville ID: <strong>{formData.parcel_city_id}</strong></>
+              )}
             </span>
           </div>
 
@@ -2681,7 +2779,7 @@ export default function AdminOrders() {
       const matchesSearch = searchTerm === "" || 
         order.parcel_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.parcel_receiver?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.parcel_city?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (typeof order.parcel_city === 'string' && order.parcel_city?.toLowerCase().includes(searchTerm.toLowerCase())) ||
         order.parcel_phone?.toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesStatus = statusFilter === "all" || 
@@ -3093,7 +3191,11 @@ export default function AdminOrders() {
                       <td className="order-client">{order.parcel_receiver || "-"}</td>
                       <td>{order.parcel_phone || "-"}</td>
                       <td className="order-qty">{order.parcel_prd_qty || 0}</td>
-                      <td>{order.parcel_city || "-"}</td>
+                      <td>
+                        {typeof order.parcel_city === 'number' 
+                          ? `ID: ${order.parcel_city}` 
+                          : (order.parcel_city || "-")}
+                      </td>
                       <td>
                         {loadingTracking ? (
                           <RefreshCw size={14} className="spinning" />

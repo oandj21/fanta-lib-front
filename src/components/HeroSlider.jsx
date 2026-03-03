@@ -144,7 +144,7 @@ export default function HeroSlider() {
         </div>
 
         {/* Single centered button */}
-        <div className="hero-content" style={{ textAlign: 'center' }}>
+        <div className="hero-conten" style={{ textAlign: 'center' }}>
           <a href="/livres" className="btn-secondar">
             عرض كل الكتب ←
           </a>

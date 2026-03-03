@@ -42,7 +42,7 @@
 }
 
 /* Hero Content */
-.hero-content {
+.hero-conten {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
@@ -59,7 +59,7 @@
 
 /* Desktop: top 75% */
 @media (min-width: 768px) {
-  .hero-content {
+  .hero-conten {
     top: 82%;
   }
 }

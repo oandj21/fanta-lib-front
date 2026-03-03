@@ -211,7 +211,7 @@ const getStatusDescription = (status) => {
 // PROMPT COMPONENTS
 // ==============================================
 
-// Delete Confirmation Modal
+// Delete Confirmation Modal (only modal left as it's a confirmation)
 const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm, orderCode }) => {
   if (!isOpen) return null;
 
@@ -260,9 +260,8 @@ const CopyNotification = ({ message, isVisible, onClose }) => {
   );
 };
 
-// ==============================================
-// CITY AUTOCOMPLETE COMPONENT - RETURNS CITY NAME
-// ==============================================
+// City Autocomplete Component
+// City Autocomplete Component
 const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
   const [query, setQuery] = useState(value || "");
   const [suggestions, setSuggestions] = useState([]);
@@ -271,7 +270,6 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
   const [cities, setCities] = useState([]);
   const [error, setError] = useState(null);
 
-  // Update query when value prop changes
   useEffect(() => {
     setQuery(value || "");
   }, [value]);
@@ -313,7 +311,7 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
     } catch (err) {
       console.error("Error fetching cities:", err);
       setError("Impossible de charger les villes");
-      setCities([]);
+      setCities([]); // Set empty array on error instead of fallback
     } finally {
       setLoading(false);
     }
@@ -323,7 +321,6 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
     fetchCities();
   }, [fetchCities]);
 
-  // Filter cities based on query
   useEffect(() => {
     if (query.length >= 1) {
       const filtered = cities
@@ -343,18 +340,16 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
   const handleInputChange = (e) => {
     const newValue = e.target.value;
     setQuery(newValue);
-    // Pass the raw input value to parent
     onChange(newValue);
   };
 
   const handleSelectCity = (city) => {
-    // Extract the city name (as string) from the city object
     const cityName = typeof city === 'string' ? city : city.name || city.city || city.label || city;
+    const cityId = typeof city === 'object' && city.id ? city.id : cityName;
     
     setQuery(cityName);
-    // Pass ONLY the city name to the parent
     onChange(cityName);
-    if (onSelect) onSelect(cityName);
+    if (onSelect) onSelect(cityName, cityId);
     setShowSuggestions(false);
   };
 
@@ -381,6 +376,7 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
         <ul className="suggestions-list">
           {suggestions.map((city, index) => {
             const cityName = typeof city === 'string' ? city : city.name || city.city || city.label || city;
+            const cityId = typeof city === 'object' && city.id ? city.id : '';
             return (
               <li
                 key={index}
@@ -389,6 +385,7 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
               >
                 <MapPin size={14} />
                 <span className="city-name">{cityName}</span>
+                {cityId && <span className="city-id">(ID: {cityId})</span>}
               </li>
             );
           })}
@@ -789,6 +786,12 @@ const OrderDetailsPage = ({ order, onBack }) => {
                     </div>
                     <div className="tracking-detail-content">
                       <div className="tracking-detail-row">
+                        <span className="detail-label">Ville ID:</span>
+                        <span className="detail-value">
+                          {trackingInfo.parcel.city?.id || trackingInfo.parcel.city_id || '-'}
+                        </span>
+                      </div>
+                      <div className="tracking-detail-row">
                         <span className="detail-label">Ville:</span>
                         <span className="detail-value">
                           {trackingInfo.parcel.city?.name || trackingInfo.parcel.city || '-'}
@@ -851,9 +854,21 @@ const OrderDetailsPage = ({ order, onBack }) => {
                         </span>
                       </div>
                       <div className="tracking-detail-row">
+                        <span className="detail-label">Créé le:</span>
+                        <span className="detail-value">
+                          {trackingInfo.parcel.created_date || '-'}
+                        </span>
+                      </div>
+                      <div className="tracking-detail-row">
                         <span className="detail-label">Mise à jour:</span>
                         <span className="detail-value">
                           {formatDate(trackingInfo.parcel.updated_at)}
+                        </span>
+                      </div>
+                      <div className="tracking-detail-row">
+                        <span className="detail-label">Mis à jour le:</span>
+                        <span className="detail-value">
+                          {trackingInfo.parcel.updated_date || '-'}
                         </span>
                       </div>
                     </div>
@@ -885,6 +900,14 @@ const OrderDetailsPage = ({ order, onBack }) => {
                     </div>
                   )}
                 </div>
+
+                {/* Query Time */}
+                {trackingInfo.query_time && (
+                  <div className="tracking-query-time">
+                    <Clock size={14} />
+                    <span>Dernière mise à jour: {formatDate(trackingInfo.query_time)}</span>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -1114,9 +1137,8 @@ const OrderDetailsPage = ({ order, onBack }) => {
   );
 };
 
-// ==============================================
-// ADD ORDER PAGE - SENDS CITY NAME
-// ==============================================
+// Add Order Page Component - UPDATED with larger inputs, no scroll, manual price, always checked, phone validation
+// Add Order Page Component - COMPACT VERSION (no scroll)
 const AddOrderPage = ({ onBack, onSubmit }) => {
   const dispatch = useDispatch();
   const [addLoading, setAddLoading] = useState(false);
@@ -1126,13 +1148,13 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
   // Track if total was manually edited
   const [totalManuallyEdited, setTotalManuallyEdited] = useState(false);
   
-  // Form state for new order - using parcel_city for city name
+  // Form state for new order
   const [newOrderData, setNewOrderData] = useState({
     parcel_code: `CMD-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
     parcel_receiver: "",
     parcel_phone: "",
     parcel_prd_qty: 0,
-    parcel_city: "", // Will store the city name as string
+    parcel_city: "",
     parcel_address: "",
     parcel_price: null,
     frais_livraison: 35,
@@ -1246,25 +1268,18 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
     }));
   };
 
-  // Handle city selection - receives only the city name
-  const handleCitySelect = (cityName) => {
+  const handleNewCitySelect = (city, cityId) => {
     setNewOrderData(prev => ({
       ...prev,
-      parcel_city: cityName
+      parcel_city: city
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Validation
-    if (!newOrderData.parcel_receiver) {
-        setAddError("Veuillez remplir le nom du client");
-        return;
-    }
-
-    if (!newOrderData.parcel_city) {
-        setAddError("Veuillez entrer une ville");
+    if (!newOrderData.parcel_receiver || !newOrderData.parcel_city) {
+        setAddError("Veuillez remplir tous les champs obligatoires (client, ville)");
         return;
     }
 
@@ -1304,13 +1319,12 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
         total: parseFloat(book.prix_achat) * parseInt(book.quantity)
     }));
 
-    // Create order object - sending city name as string
     const orderToCreate = {
         parcel_code: newOrderData.parcel_code,
         parcel_receiver: newOrderData.parcel_receiver,
         parcel_phone: newOrderData.parcel_phone || "",
         parcel_prd_qty: newOrderData.parcel_prd_qty,
-        parcel_city: newOrderData.parcel_city, // Send city name as string
+        parcel_city: newOrderData.parcel_city,
         parcel_address: newOrderData.parcel_address || "",
         parcel_price: parseFloat(parcelPrice.toFixed(2)),
         frais_livraison: parseFloat(delivery.toFixed(2)),
@@ -1324,7 +1338,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
         statut: newOrderData.statut || "NEW_PARCEL"
     };
 
-    console.log("📦 Order to create (with city name):", orderToCreate);
+    console.log("📦 Order to create:", orderToCreate);
 
     setAddLoading(true);
     setAddError(null);
@@ -1441,7 +1455,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
               <CityAutocomplete
                 value={newOrderData.parcel_city}
                 onChange={(value) => setNewOrderData(prev => ({ ...prev, parcel_city: value }))}
-                onSelect={handleCitySelect}
+                onSelect={handleNewCitySelect}
               />
             </div>
 
@@ -1639,9 +1653,9 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
   );
 };
 
-// ==============================================
-// UPDATE ORDER PAGE - SENDS CITY NAME
-// ==============================================
+// Update Order Page Component - UPDATED with larger inputs, no scroll, manual price, always checked, phone validation
+// Update Order Page Component - COMPLETE with all fields from add form
+// Update Order Page Component - COMPLETE with proper data mapping from DB
 const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
   const dispatch = useDispatch();
   const [updateLoading, setUpdateLoading] = useState(false);
@@ -1680,6 +1694,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
       let formattedDate = "";
       if (order.date) {
         try {
+          // Handle different date formats
           const dateObj = new Date(order.date);
           if (!isNaN(dateObj.getTime())) {
             formattedDate = dateObj.toISOString().split('T')[0];
@@ -1689,7 +1704,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
         }
       }
 
-      // Process livres data
+      // Process livres data - handle different possible structures
       let processedLivres = [];
       if (order.livres && Array.isArray(order.livres)) {
         processedLivres = order.livres.map(book => ({
@@ -1736,11 +1751,20 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
           ? parseFloat(order.profit)
           : null,
         parcel_note: order.parcel_note || order.note || order.notes || "",
-        parcel_open: 1,
+        parcel_open: 1, // Force to checked
         statut: order.statut || order.status || order.delivery_status || "NEW_PARCEL",
         statut_second: order.statut_second || order.secondary_status || "",
         livres: processedLivres,
         date: formattedDate || new Date().toISOString().split('T')[0]
+      });
+
+      // Log what we've mapped for debugging
+      console.log("📋 Mapped form data:", {
+        receiver: order.parcel_receiver || order.receiver,
+        city: order.parcel_city || order.city,
+        qty: calculatedQty,
+        livres: processedLivres.length,
+        date: formattedDate
       });
     }
   }, [order]);
@@ -1849,94 +1873,97 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
     }));
   };
 
-  // Handle city selection - receives only the city name
-  const handleCitySelect = (cityName) => {
+  const handleCitySelect = (city, cityId) => {
     setFormData(prev => ({
       ...prev,
-      parcel_city: cityName
+      parcel_city: city
     }));
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!order) return;
+  e.preventDefault();
+  if (!order) return;
 
-    // Validate phone if provided
-    if (formData.parcel_phone && !validatePhone(formData.parcel_phone)) {
-        setUpdateError(phoneError);
+  // Validate phone if provided
+  if (formData.parcel_phone && !validatePhone(formData.parcel_phone)) {
+      setUpdateError(phoneError);
+      return;
+  }
+
+  setUpdateLoading(true);
+  setUpdateError(null);
+
+  try {
+    const updateData = {};
+    
+    // Check all fields for changes
+    Object.keys(formData).forEach(key => {
+      // Special handling for livres - always include if they exist and are different
+      if (key === 'livres') {
+        // Compare livres arrays
+        const currentLivres = JSON.stringify(formData.livres);
+        const originalLivres = JSON.stringify(order.livres || []);
+        
+        if (currentLivres !== originalLivres) {
+          updateData.livres = formData.livres;
+        }
         return;
+      }
+      
+      // Convert to string for comparison to handle numbers vs strings
+      const formValue = formData[key] === null || formData[key] === undefined ? '' : String(formData[key]);
+      const orderValue = order[key] === null || order[key] === undefined ? '' : String(order[key]);
+      
+      if (formValue !== orderValue) {
+        // For statut_second, if it's empty string, send as null to backend
+        if (key === 'statut_second' && formData[key] === '') {
+          updateData[key] = null;
+        } else {
+          updateData[key] = formData[key];
+        }
+      }
+    });
+
+    // Also update quantity based on livres total
+    if (formData.livres && formData.livres.length > 0) {
+      const totalQty = formData.livres.reduce((sum, book) => sum + (book.quantity || 1), 0);
+      if (totalQty !== order.parcel_prd_qty) {
+        updateData.parcel_prd_qty = totalQty;
+      }
     }
 
-    setUpdateLoading(true);
-    setUpdateError(null);
+    // Log what we're sending for debugging
+    console.log("📤 Sending update data:", updateData);
 
-    try {
-      const updateData = {};
-      
-      // Check all fields for changes
-      Object.keys(formData).forEach(key => {
-        // Special handling for livres
-        if (key === 'livres') {
-          const currentLivres = JSON.stringify(formData.livres);
-          const originalLivres = JSON.stringify(order.livres || []);
-          
-          if (currentLivres !== originalLivres) {
-            updateData.livres = formData.livres;
-          }
-          return;
-        }
-        
-        // For other fields
-        const formValue = formData[key] === null || formData[key] === undefined ? '' : String(formData[key]);
-        const orderValue = order[key] === null || order[key] === undefined ? '' : String(order[key]);
-        
-        if (formValue !== orderValue) {
-          if (key === 'statut_second' && formData[key] === '') {
-            updateData[key] = null;
-          } else {
-            updateData[key] = formData[key];
-          }
-        }
-      });
-
-      // Also update quantity based on livres total
-      if (formData.livres && formData.livres.length > 0) {
-        const totalQty = formData.livres.reduce((sum, book) => sum + (book.quantity || 1), 0);
-        if (totalQty !== order.parcel_prd_qty) {
-          updateData.parcel_prd_qty = totalQty;
-        }
-      }
-
-      console.log("📤 Sending update data (with city name):", updateData);
-
-      if (Object.keys(updateData).length === 0) {
-        onBack();
-        return;
-      }
-
-      await onSubmit(order.id, updateData);
+    if (Object.keys(updateData).length === 0) {
       onBack();
-      
-    } catch (error) {
-      console.error("Update failed:", error);
-      
-      if (error.response) {
-        console.error("Server error response:", error.response.data);
-        setUpdateError(
-          error.response.data?.message || 
-          error.response.data?.error ||
-          `Erreur ${error.response.status}: ${JSON.stringify(error.response.data)}`
-        );
-      } else {
-        setUpdateError(
-          error?.message || 
-          "Erreur lors de la mise à jour. Veuillez réessayer."
-        );
-      }
-    } finally {
-      setUpdateLoading(false);
+      return;
     }
-  };
+
+    await onSubmit(order.id, updateData);
+    onBack();
+    
+  } catch (error) {
+    console.error("Update failed:", error);
+    
+    // Log the actual error response from server
+    if (error.response) {
+      console.error("Server error response:", error.response.data);
+      setUpdateError(
+        error.response.data?.message || 
+        error.response.data?.error ||
+        `Erreur ${error.response.status}: ${JSON.stringify(error.response.data)}`
+      );
+    } else {
+      setUpdateError(
+        error?.message || 
+        "Erreur lors de la mise à jour. Veuillez réessayer."
+      );
+    }
+  } finally {
+    setUpdateLoading(false);
+  }
+};
 
   if (!order) return null;
 
@@ -2457,6 +2484,7 @@ export default function AdminOrders() {
   // OPTIMIZED: Fetch all tracking info in a single batch when orders are loaded
   useEffect(() => {
     const fetchAllTrackingInfo = async () => {
+      // Don't fetch if already done or no orders or fetch in progress
       if (initialFetchDone.current || orderList.length === 0 || fetchInProgress.current) {
         return;
       }
@@ -2469,6 +2497,7 @@ export default function AdminOrders() {
         const trackingPromises = [];
         const validOrders = [];
         
+        // Collect all valid parcel codes
         for (const order of orderList) {
           if (order.parcel_code) {
             trackingPromises.push(
@@ -2497,17 +2526,20 @@ export default function AdminOrders() {
           return;
         }
 
+        // Execute all promises in parallel
         const results = await Promise.all(trackingPromises);
         
         const newTrackingMap = {};
         const updatesToDispatch = [];
 
+        // Process results
         results.forEach((response, index) => {
           const order = validOrders[index];
           if (response && response.data && response.data.success && response.data.data) {
             const trackingData = response.data.data;
             newTrackingMap[order.parcel_code] = trackingData;
             
+            // Check for status changes
             if (trackingData.parcel?.delivery_status) {
               const deliveryStatus = trackingData.parcel.delivery_status;
               const secondaryStatus = trackingData.parcel.status_second;
@@ -2517,6 +2549,7 @@ export default function AdminOrders() {
                 ? `${deliveryStatus} - ${secondaryStatus}`
                 : deliveryStatus;
               
+              // If status changed, prepare update
               if (order.statut !== deliveryStatus || 
                   order.statut_second !== secondaryStatus || 
                   order.payment_status !== paymentStatus) {
@@ -2534,8 +2567,10 @@ export default function AdminOrders() {
                   }
                 });
                 
+                // Calculate profit based on parcel_price - total formula
                 let profit = (order.parcel_price || 0) - ((order.total || 0) + (order.frais_livraison || 0) + (order.frais_packaging || 0));
                 
+                // Send webhook update
                 const payload = {
                   parcel: {
                     code: order.parcel_code,
@@ -2548,6 +2583,7 @@ export default function AdminOrders() {
                 
                 sendWebhookUpdate(payload);
                 
+                // Prepare Redux update with profit recalculation
                 updatesToDispatch.push(
                   dispatch(updateCommande({ 
                     id: order.id, 
@@ -2564,8 +2600,10 @@ export default function AdminOrders() {
           }
         });
 
+        // Update tracking map
         setTrackingInfoMap(newTrackingMap);
         
+        // Execute all Redux updates in parallel
         if (updatesToDispatch.length > 0) {
           await Promise.all(updatesToDispatch);
         }
@@ -2643,7 +2681,7 @@ export default function AdminOrders() {
       const matchesSearch = searchTerm === "" || 
         order.parcel_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.parcel_receiver?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (order.parcel_city && order.parcel_city.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        order.parcel_city?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.parcel_phone?.toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesStatus = statusFilter === "all" || 

@@ -1916,48 +1916,72 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
   setUpdateError(null);
 
   try {
+    // Create update object with ONLY fields that exist in the database
+    // and match the controller's validation rules
     const updateData = {};
     
-    // Check all fields for changes
-    Object.keys(formData).forEach(key => {
-      // Special handling for livres - always include if they exist and are different
-      if (key === 'livres') {
-        // Compare livres arrays
-        const currentLivres = JSON.stringify(formData.livres);
-        const originalLivres = JSON.stringify(order.livres || []);
-        
-        if (currentLivres !== originalLivres) {
-          updateData.livres = formData.livres;
+    // Define which fields from the database can be updated
+    // Based on your CommandeController@update validation rules
+    const updatableFields = [
+      'parcel_receiver',
+      'parcel_phone', 
+      'parcel_prd_qty',
+      'parcel_city',
+      'parcel_address',
+      'parcel_price',
+      'frais_livraison',
+      'frais_packaging',
+      'total',
+      'profit',
+      'parcel_note',
+      'parcel_open',
+      'statut',
+      'statut_second',
+      'payment_status',
+      'payment_status_text',
+      'date'
+    ];
+    
+    // Check each field for changes
+    updatableFields.forEach(field => {
+      // Get current form value and original order value
+      const formValue = formData[field];
+      const orderValue = order[field];
+      
+      // Handle null/undefined/empty string cases
+      const normalizedFormValue = formValue === null || formValue === undefined ? '' : formValue;
+      const normalizedOrderValue = orderValue === null || orderValue === undefined ? '' : orderValue;
+      
+      // If values are different, include in update
+      if (JSON.stringify(normalizedFormValue) !== JSON.stringify(normalizedOrderValue)) {
+        // Special handling for statut_second - send null instead of empty string
+        if (field === 'statut_second' && formValue === '') {
+          updateData[field] = null;
+        } 
+        // For parcel_open, ensure it's sent as integer 0 or 1
+        else if (field === 'parcel_open') {
+          updateData[field] = formValue ? 1 : 0;
         }
-        return;
-      }
-      
-      // Convert to string for comparison to handle numbers vs strings
-      const formValue = formData[key] === null || formData[key] === undefined ? '' : String(formData[key]);
-      const orderValue = order[key] === null || order[key] === undefined ? '' : String(order[key]);
-      
-      if (formValue !== orderValue) {
-        // For statut_second, if it's empty string, send as null to backend
-        if (key === 'statut_second' && formData[key] === '') {
-          updateData[key] = null;
-        } else {
-          updateData[key] = formData[key];
+        // For numeric fields, ensure they're sent as numbers
+        else if (['parcel_prd_qty', 'parcel_price', 'frais_livraison', 'frais_packaging', 'total', 'profit'].includes(field)) {
+          updateData[field] = formValue === '' ? null : Number(formValue);
+        }
+        else {
+          updateData[field] = formValue;
         }
       }
     });
 
-    // Also update quantity based on livres total
-    if (formData.livres && formData.livres.length > 0) {
-      const totalQty = formData.livres.reduce((sum, book) => sum + (book.quantity || 1), 0);
-      if (totalQty !== order.parcel_prd_qty) {
-        updateData.parcel_prd_qty = totalQty;
-      }
-    }
+    // IMPORTANT: DO NOT send these fields that cause validation errors:
+    // - parcel_code (read-only, not in validation)
+    // - livres (not in update validation)
+    // - statut_display (calculated field)
 
     // Log what we're sending for debugging
-    console.log("📤 Sending update data:", updateData);
+    console.log("📤 Sending update data to controller:", updateData);
 
     if (Object.keys(updateData).length === 0) {
+      console.log("No changes detected");
       onBack();
       return;
     }
@@ -1971,11 +1995,19 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
     // Log the actual error response from server
     if (error.response) {
       console.error("Server error response:", error.response.data);
-      setUpdateError(
-        error.response.data?.message || 
-        error.response.data?.error ||
-        `Erreur ${error.response.status}: ${JSON.stringify(error.response.data)}`
-      );
+      
+      // Show validation errors if present
+      if (error.response.data.errors) {
+        const validationErrors = Object.entries(error.response.data.errors)
+          .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
+          .join('\n');
+        setUpdateError(`Erreurs de validation:\n${validationErrors}`);
+      } else {
+        setUpdateError(
+          error.response.data?.message || 
+          `Erreur ${error.response.status}: ${JSON.stringify(error.response.data)}`
+        );
+      }
     } else {
       setUpdateError(
         error?.message || 

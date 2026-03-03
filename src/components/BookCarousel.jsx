@@ -21,19 +21,18 @@ const BookCarousel = forwardRef(({ onShowDetails }, ref) => {
 
   const loopedBooks = [...books, ...books, ...books];
 
-  // Expose methods to parent component
   useImperativeHandle(ref, () => ({
     onModalOpen: () => {
       modalOpenRef.current = true;
       isHoveringRef.current = false;
       isDraggingRef.current = false;
-      autoScrollEnabledRef.current = true;
+      autoScrollEnabledRef.current = false; // Stop auto-scroll when modal opens
     },
     onModalClose: () => {
       modalOpenRef.current = false;
       isHoveringRef.current = false;
       isDraggingRef.current = false;
-      autoScrollEnabledRef.current = true;
+      autoScrollEnabledRef.current = true; // Resume auto-scroll when modal closes
       
       setTimeout(() => {
         isHoveringRef.current = false;
@@ -49,12 +48,14 @@ const BookCarousel = forwardRef(({ onShowDetails }, ref) => {
     const SPEED = 0.8;
 
     const animate = () => {
-      if (autoScrollEnabledRef.current && !isHoveringRef.current && !isDraggingRef.current) {
+      // Only animate if auto-scroll is enabled AND not hovering AND not dragging AND modal is closed
+      if (autoScrollEnabledRef.current && !isHoveringRef.current && !isDraggingRef.current && !modalOpenRef.current) {
         posRef.current += SPEED;
         const cardWidth = track.children[0]?.offsetWidth || 220;
         const gap = 20;
         const itemWidth = cardWidth + gap;
         
+        // Smooth infinite loop
         if (posRef.current >= itemWidth * books.length) {
           posRef.current = 0;
         }
@@ -74,111 +75,167 @@ const BookCarousel = forwardRef(({ onShowDetails }, ref) => {
   }, [books.length]);
 
   // Mouse/Touch drag handlers
-  const handleMouseDown = (e) => {
+  const handleDragStart = (clientX) => {
     if (modalOpenRef.current) return;
     
-    e.preventDefault();
+    // Prevent default to avoid text selection
+    if (clientX instanceof MouseEvent) {
+      clientX.preventDefault();
+    }
+    
     isDraggingRef.current = true;
-    autoScrollEnabledRef.current = false;
-    startXRef.current = e.pageX - (containerRef.current?.offsetLeft || 0);
+    autoScrollEnabledRef.current = false; // Immediately stop auto-scroll
+    
+    // Get the starting position
+    const containerRect = containerRef.current?.getBoundingClientRect();
+    const containerLeft = containerRect?.left || 0;
+    
+    startXRef.current = clientX - containerLeft;
     scrollLeftRef.current = posRef.current;
     dragStartTimeRef.current = Date.now();
     clickProcessedRef.current = false;
   };
 
-  const handleMouseMove = (e) => {
+  const handleDragMove = (clientX) => {
     if (!isDraggingRef.current || modalOpenRef.current) return;
-    e.preventDefault();
     
-    const x = e.pageX - (containerRef.current?.offsetLeft || 0);
-    const walk = (x - startXRef.current) * 1.5;
-    const newPos = Math.max(0, scrollLeftRef.current - walk);
-    
-    posRef.current = newPos;
-    if (trackRef.current) {
-      trackRef.current.style.transform = `translateX(-${newPos}px)`;
+    // Prevent default to avoid text selection
+    if (clientX instanceof MouseEvent) {
+      clientX.preventDefault();
     }
+    
+    const containerRect = containerRef.current?.getBoundingClientRect();
+    const containerLeft = containerRect?.left || 0;
+    
+    const x = clientX - containerLeft;
+    const walk = (x - startXRef.current) * 1.5;
+    let newPos = scrollLeftRef.current - walk;
+    
+    // Clamp position to prevent going out of bounds
+    const track = trackRef.current;
+    if (track) {
+      const cardWidth = track.children[0]?.offsetWidth || 220;
+      const gap = 20;
+      const itemWidth = cardWidth + gap;
+      const maxPos = itemWidth * books.length;
+      
+      // Allow some resistance at edges but still allow movement
+      if (newPos < -50) {
+        newPos = -50;
+      } else if (newPos > maxPos + 50) {
+        newPos = maxPos + 50;
+      }
+    }
+    
+    posRef.current = Math.max(0, newPos);
+    trackRef.current.style.transform = `translateX(-${posRef.current}px)`;
   };
 
-  const handleMouseUp = (e) => {
-    if (isDraggingRef.current && !modalOpenRef.current) {
+  const handleDragEnd = () => {
+    if (isDraggingRef.current) {
       const dragDuration = Date.now() - dragStartTimeRef.current;
       
-      if (dragDuration < 200) {
-        isDraggingRef.current = false;
-        autoScrollEnabledRef.current = true;
-        return;
+      // Reset position if dragged out of bounds
+      const track = trackRef.current;
+      if (track) {
+        const cardWidth = track.children[0]?.offsetWidth || 220;
+        const gap = 20;
+        const itemWidth = cardWidth + gap;
+        const maxPos = itemWidth * books.length;
+        
+        // Smoothly return to valid position if out of bounds
+        if (posRef.current < 0) {
+          posRef.current = 0;
+          track.style.transform = `translateX(0px)`;
+        } else if (posRef.current > maxPos) {
+          posRef.current = maxPos;
+          track.style.transform = `translateX(-${maxPos}px)`;
+        }
       }
       
-      e.preventDefault();
+      // If it was a quick tap (< 150ms), it's probably a click
+      if (dragDuration < 150) {
+        // Don't reset anything, just end dragging
+      }
     }
+    
     isDraggingRef.current = false;
-    autoScrollEnabledRef.current = true;
-  };
-
-  const handleMouseLeave = () => {
-    if (!modalOpenRef.current) {
-      isHoveringRef.current = false;
-      isDraggingRef.current = false;
+    // Only resume auto-scroll if not hovering and modal is closed
+    if (!isHoveringRef.current && !modalOpenRef.current) {
       autoScrollEnabledRef.current = true;
     }
   };
 
-  // Touch events for mobile
-  const handleTouchStart = (e) => {
-    if (modalOpenRef.current) return;
-    
+  // Mouse events
+  const handleMouseDown = (e) => {
     e.preventDefault();
-    isDraggingRef.current = true;
-    autoScrollEnabledRef.current = false;
-    startXRef.current = e.touches[0].pageX - (containerRef.current?.offsetLeft || 0);
-    scrollLeftRef.current = posRef.current;
-    dragStartTimeRef.current = Date.now();
-    clickProcessedRef.current = false;
+    e.stopPropagation();
+    handleDragStart(e.pageX);
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDraggingRef.current) return;
+    e.preventDefault();
+    e.stopPropagation();
+    handleDragMove(e.pageX);
+  };
+
+  const handleMouseUp = (e) => {
+    if (isDraggingRef.current) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    handleDragEnd();
+  };
+
+  const handleMouseLeave = () => {
+    if (isDraggingRef.current) {
+      handleDragEnd();
+    }
+    
+    isHoveringRef.current = false;
+    // Only resume auto-scroll if not dragging and modal is closed
+    if (!isDraggingRef.current && !modalOpenRef.current) {
+      autoScrollEnabledRef.current = true;
+    }
+  };
+
+  // Touch events
+  const handleTouchStart = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    handleDragStart(e.touches[0].pageX);
   };
 
   const handleTouchMove = (e) => {
-    if (!isDraggingRef.current || modalOpenRef.current) return;
+    if (!isDraggingRef.current) return;
     e.preventDefault();
-    
-    const x = e.touches[0].pageX - (containerRef.current?.offsetLeft || 0);
-    const walk = (x - startXRef.current) * 1.5;
-    const newPos = Math.max(0, scrollLeftRef.current - walk);
-    
-    posRef.current = newPos;
-    if (trackRef.current) {
-      trackRef.current.style.transform = `translateX(-${newPos}px)`;
-    }
+    e.stopPropagation();
+    handleDragMove(e.touches[0].pageX);
   };
 
   const handleTouchEnd = (e) => {
-    if (isDraggingRef.current && !modalOpenRef.current) {
-      const dragDuration = Date.now() - dragStartTimeRef.current;
-      
-      if (dragDuration < 200) {
-        isDraggingRef.current = false;
-        autoScrollEnabledRef.current = true;
-        return;
-      }
-      
-      e.preventDefault();
-    }
-    isDraggingRef.current = false;
-    autoScrollEnabledRef.current = true;
+    e.preventDefault();
+    e.stopPropagation();
+    handleDragEnd();
   };
 
   const handleTouchCancel = (e) => {
-    isDraggingRef.current = false;
-    autoScrollEnabledRef.current = true;
+    e.preventDefault();
+    e.stopPropagation();
+    handleDragEnd();
   };
 
-  // Handle card click to open modal
+  // Handle card click
   const handleCardClick = (book, e) => {
     e.stopPropagation();
     
     if (clickProcessedRef.current) return;
     
-    if (!isDraggingRef.current && !modalOpenRef.current) {
+    const dragDuration = Date.now() - dragStartTimeRef.current;
+    
+    // Only open modal if it wasn't a drag (short duration and no significant movement)
+    if (!isDraggingRef.current && dragDuration < 200 && !modalOpenRef.current) {
       clickProcessedRef.current = true;
       onShowDetails(book);
       
@@ -203,7 +260,7 @@ const BookCarousel = forwardRef(({ onShowDetails }, ref) => {
         onMouseEnter={() => { 
           if (!modalOpenRef.current) {
             isHoveringRef.current = true; 
-            autoScrollEnabledRef.current = false;
+            autoScrollEnabledRef.current = false; // Stop auto-scroll on hover
           }
         }}
         onMouseLeave={handleMouseLeave}
@@ -221,8 +278,9 @@ const BookCarousel = forwardRef(({ onShowDetails }, ref) => {
               key={`${book.id}-${index}`} 
               className="carousel-item carousel-book-card"
               onClick={(e) => handleCardClick(book, e)}
+              onMouseDown={(e) => e.stopPropagation()} // Prevent card from interfering with drag
             >
-              <BookCard book={book} />
+              <BookCard book={book} onShowDetails={onShowDetails} />
             </div>
           ))}
         </div>

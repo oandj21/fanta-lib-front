@@ -3,6 +3,7 @@ import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { Search, X } from "lucide-react";
 import { selectLivres } from "../store/store";
+import useLanguageDirection from "../utils/useLanguageDirection";
 import "../css/SearchDropdown.css";
 
 export default function SearchDropdown({ isMobile = false }) {
@@ -12,6 +13,7 @@ export default function SearchDropdown({ isMobile = false }) {
   const navigate = useNavigate();
   const searchRef = useRef(null);
   const inputRef = useRef(null);
+  const { getTextDirection, getTextStyle } = useLanguageDirection();
 
   // Filter books based on search term
   const filteredBooks = books.filter((book) => {
@@ -74,16 +76,16 @@ export default function SearchDropdown({ isMobile = false }) {
       try {
         const parsed = JSON.parse(images);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return `fanta-lib-back-production-76f4.up.railway.app/storage/${parsed[0]}`;
+          return `https://fanta-lib-back-production-76f4.up.railway.app/storage/${parsed[0]}`;
         }
       } catch (e) {
         // If parsing fails, treat as direct filename
-        return `fanta-lib-back-production-76f4.up.railway.app/storage/${images}`;
+        return `https://fanta-lib-back-production-76f4.up.railway.app/storage/${images}`;
       }
     }
     
     if (Array.isArray(images) && images.length > 0) {
-      return `fanta-lib-back-production-76f4.up.railway.app/storage/${images[0]}`;
+      return `https://fanta-lib-back-production-76f4.up.railway.app/storage/${images[0]}`;
     }
     
     return 'https://via.placeholder.com/40x60?text=No+Cover';
@@ -100,6 +102,8 @@ export default function SearchDropdown({ isMobile = false }) {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="search-input"
+          dir={getTextDirection(searchTerm)}
+          style={{ textAlign: getTextDirection(searchTerm) === 'rtl' ? 'right' : 'left' }}
         />
         {searchTerm && (
           <button
@@ -133,12 +137,29 @@ export default function SearchDropdown({ isMobile = false }) {
                     />
                   </div>
                   <div className="result-info">
-                    <h4 className="result-title">{book.titre || "عنوان غير معروف"}</h4>
-                    <p className="result-author">{book.auteur || "مؤلف غير معروف"}</p>
+                    <h4 
+                      className="result-title"
+                      dir={getTextDirection(book.titre)}
+                      style={{ textAlign: getTextDirection(book.titre) === 'rtl' ? 'right' : 'left' }}
+                    >
+                      {book.titre || "عنوان غير معروف"}
+                    </h4>
+                    <p 
+                      className="result-author"
+                      dir={getTextDirection(book.auteur)}
+                      style={{ textAlign: getTextDirection(book.auteur) === 'rtl' ? 'right' : 'left' }}
+                    >
+                      {book.auteur || "مؤلف غير معروف"}
+                    </p>
                   </div>
                 </div>
               ))}
-              <div className="search-footer" onClick={handleSearchSubmit}>
+              <div 
+                className="search-footer" 
+                onClick={handleSearchSubmit}
+                dir={getTextDirection(searchTerm)}
+                style={{ textAlign: getTextDirection(searchTerm) === 'rtl' ? 'right' : 'left' }}
+              >
                 <Search size={14} />
                 <span>عرض جميع النتائج لـ "{searchTerm}"</span>
               </div>

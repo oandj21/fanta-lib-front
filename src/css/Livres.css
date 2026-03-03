@@ -119,6 +119,8 @@
   grid-auto-flow: column;
   gap: 0.625rem;
   overflow-x: auto;
+  direction: rtl;          /* 👈 IMPORTANT */
+  scroll-behavior: smooth; /* smoother scroll */
 }
 
 

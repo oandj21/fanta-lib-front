@@ -145,22 +145,12 @@ export default function HeroSlider() {
 
         {/* Single centered button */}
         <div className="hero-content" style={{ textAlign: 'center' }}>
-          <a href="/livres" className="btn-secondary">
+          <a href="/livres" className="btn-secondar">
             عرض كل الكتب ←
           </a>
         </div>
 
-        {/* Dots Indicator */}
-        <div className="slider-dots">
-          {slides.map((_, index) => (
-            <button
-              key={index}
-              className={`slider-dot ${index === currentIndex ? 'active' : ''}`}
-              onClick={() => goToSlide(index)}
-              aria-label={`Go to slide ${index + 1}`}
-            />
-          ))}
-        </div>
+        {/* Dots Indicator - REMOVED */}
       </div>
     </section>
   );

@@ -3,6 +3,7 @@ import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { Search, X } from "lucide-react";
 import { selectLivres } from "../store/store";
+import useLanguageDirection from "../utils/useLanguageDirection";
 import "../css/SearchDropdown.css";
 
 export default function SearchDropdown({ isMobile = false }) {
@@ -12,6 +13,7 @@ export default function SearchDropdown({ isMobile = false }) {
   const navigate = useNavigate();
   const searchRef = useRef(null);
   const inputRef = useRef(null);
+  const { getTextDirection, getTextStyle } = useLanguageDirection();
 
   // Filter books based on search term
   const filteredBooks = books.filter((book) => {
@@ -100,6 +102,8 @@ export default function SearchDropdown({ isMobile = false }) {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="search-input"
+          dir={getTextDirection(searchTerm)}
+          style={{ textAlign: getTextDirection(searchTerm) === 'rtl' ? 'right' : 'left' }}
         />
         {searchTerm && (
           <button
@@ -133,12 +137,29 @@ export default function SearchDropdown({ isMobile = false }) {
                     />
                   </div>
                   <div className="result-info">
-                    <h4 className="result-title">{book.titre || "عنوان غير معروف"}</h4>
-                    <p className="result-author">{book.auteur || "مؤلف غير معروف"}</p>
+                    <h4 
+                      className="result-title"
+                      dir={getTextDirection(book.titre)}
+                      style={{ textAlign: getTextDirection(book.titre) === 'rtl' ? 'right' : 'left' }}
+                    >
+                      {book.titre || "عنوان غير معروف"}
+                    </h4>
+                    <p 
+                      className="result-author"
+                      dir={getTextDirection(book.auteur)}
+                      style={{ textAlign: getTextDirection(book.auteur) === 'rtl' ? 'right' : 'left' }}
+                    >
+                      {book.auteur || "مؤلف غير معروف"}
+                    </p>
                   </div>
                 </div>
               ))}
-              <div className="search-footer" onClick={handleSearchSubmit}>
+              <div 
+                className="search-footer" 
+                onClick={handleSearchSubmit}
+                dir={getTextDirection(searchTerm)}
+                style={{ textAlign: getTextDirection(searchTerm) === 'rtl' ? 'right' : 'left' }}
+              >
                 <Search size={14} />
                 <span>عرض جميع النتائج لـ "{searchTerm}"</span>
               </div>

@@ -19,6 +19,7 @@
   right: 12px;
   color: #5c0202;
   opacity: 0.6;
+  z-index: 1;
 }
 
 [dir="rtl"] .search-icon {
@@ -28,17 +29,13 @@
 
 .search-input {
   width: 100%;
-  padding: 10px 40px 10px 35px;
+  padding: 10px 40px 10px 40px;
   border: 2px solid #e0d6cc;
   border-radius: 50px;
   background-color: white;
   color: #5c0202;
   font-size: 14px;
   transition: all 0.3s ease;
-}
-
-[dir="rtl"] .search-input {
-  padding: 10px 40px 10px 35px;
 }
 
 .search-input:focus {
@@ -52,9 +49,18 @@
   font-weight: 300;
 }
 
+/* RTL placeholder support */
+.search-input[dir="rtl"]::placeholder {
+  text-align: right;
+}
+
+.search-input[dir="ltr"]::placeholder {
+  text-align: left;
+}
+
 .clear-sear {
   position: absolute;
-  left: 250px;
+  left: 12px;
   background: none;
   border: none;
   color: #5c0202;
@@ -65,13 +71,14 @@
   padding: 4px;
   border-radius: 50%;
   transition: all 0.2s ease;
+  z-index: 1;
 }
 
-[dir="rtl"] .clear-sear {
+[dir="rtl"] .clear-sear,
+.search-input[dir="rtl"] + .clear-sear {
   left: auto;
-  right: 200px;
+  right: 12px;
 }
-
 
 .search-results {
   position: absolute;
@@ -183,13 +190,12 @@
   font-size: 14px;
 }
 
-/* RTL Support */
-[dir="rtl"] .search-results {
-  left: 0;
-  right: 0;
+/* RTL Support for search results */
+[dir="rtl"] .search-result-item {
+  flex-direction: row;
 }
 
-[dir="rtl"] .search-result-item {
+[dir="rtl"] .search-footer {
   flex-direction: row;
 }
 

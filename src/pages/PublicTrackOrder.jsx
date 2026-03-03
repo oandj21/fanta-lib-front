@@ -303,7 +303,10 @@ export default function PublicTrackOrder() {
           {refreshing ? "Actualisation..." : "Actualiser"}
         </button>
 
-        <h1>Suivi des colis</h1>
+        <div className="header-title-container">
+          <img src="/logo.jpeg" alt="Logo" className="header-logo" />
+          <h1>Suivi des colis</h1>
+        </div>
         <p className="parcel-code-display">
           Code : <strong>{order.parcel_code}</strong>
         </p>

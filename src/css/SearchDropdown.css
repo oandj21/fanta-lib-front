@@ -45,6 +45,8 @@
 }
 
 .search-input::placeholder {
+  text-align: right;
+  direction: rtl;
   color: #b8a9a0;
   font-weight: 300;
 }

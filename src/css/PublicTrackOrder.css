@@ -496,3 +496,36 @@
     transform: translateY(0);
   }
 }
+/* Header title with logo */
+.header-title-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 5px;
+}
+
+.header-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Adjust for mobile */
+@media (max-width: 480px) {
+  .header-title-container {
+    gap: 8px;
+  }
+  
+  .header-logo {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .header-title-container h1 {
+    font-size: 20px;
+  }
+}

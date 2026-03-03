@@ -96,15 +96,17 @@ export default function SearchDropdown({ isMobile = false }) {
       <form onSubmit={handleSearchSubmit} className="search-form">
         <Search size={18} className="search-icon" />
         <input
-          ref={inputRef}
-          type="text"
-          placeholder="ابحث عن كتاب أو مؤلف..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="search-input"
-          dir={getTextDirection(searchTerm)}
-          style={{ textAlign: getTextDirection(searchTerm) === 'rtl' ? 'right' : 'left' }}
-        />
+  ref={inputRef}
+  type="text"
+  placeholder="ابحث عن كتاب أو مؤلف..."
+  value={searchTerm}
+  onChange={(e) => setSearchTerm(e.target.value)}
+  className="search-input"
+  dir={getTextDirection(searchTerm) || 'rtl'} // Default to rtl for Arabic placeholder
+  style={{ 
+    textAlign: (getTextDirection(searchTerm) || 'rtl') === 'rtl' ? 'right' : 'left' 
+  }}
+/>
         {searchTerm && (
           <button
             type="button"

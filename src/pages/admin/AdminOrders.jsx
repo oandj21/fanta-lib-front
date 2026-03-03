@@ -261,6 +261,7 @@ const CopyNotification = ({ message, isVisible, onClose }) => {
 };
 
 // City Autocomplete Component
+// City Autocomplete Component
 const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
   const [query, setQuery] = useState(value || "");
   const [suggestions, setSuggestions] = useState([]);
@@ -268,9 +269,11 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [cities, setCities] = useState([]);
   const [error, setError] = useState(null);
-useEffect(() => {
+
+  useEffect(() => {
     setQuery(value || "");
   }, [value]);
+
   // Fetch cities from Welivexpress API
   const fetchCities = useCallback(async () => {
     try {
@@ -304,40 +307,15 @@ useEffect(() => {
         }
       }
       
-      if (citiesData.length === 0) {
-        citiesData = getFallbackCities();
-      }
-      
       setCities(citiesData);
     } catch (err) {
       console.error("Error fetching cities:", err);
       setError("Impossible de charger les villes");
-      setCities(getFallbackCities());
+      setCities([]); // Set empty array on error instead of fallback
     } finally {
       setLoading(false);
     }
   }, []);
-
-  // Fallback cities with IDs
-  const getFallbackCities = () => {
-    return [
-      { id: "15769", name: "Casablanca" },
-      { id: "15907", name: "Rabat" },
-      { id: "16621", name: "Fès" },
-      { id: "16057", name: "Marrakech" },
-      { id: "15349", name: "Agadir" },
-      { id: "15535", name: "Tanger" },
-      { id: "16783", name: "Meknès" },
-      { id: "17065", name: "Oujda" },
-      { id: "15997", name: "Kénitra" },
-      { id: "15541", name: "Tétouan" },
-      { id: "15841", name: "Safi" },
-      { id: "15823", name: "Mohammédia" },
-      { id: "15793", name: "El Jadida" },
-      { id: "16267", name: "Béni Mellal" },
-      { id: "16885", name: "Nador" }
-    ];
-  };
 
   useEffect(() => {
     fetchCities();

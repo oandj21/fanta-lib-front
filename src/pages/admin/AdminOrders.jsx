@@ -262,6 +262,7 @@ const CopyNotification = ({ message, isVisible, onClose }) => {
 
 // City Autocomplete Component
 // City Autocomplete Component
+// City Autocomplete Component - MODIFIÉ pour capturer et retourner l'ID
 const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
   const [query, setQuery] = useState(value || "");
   const [suggestions, setSuggestions] = useState([]);
@@ -269,6 +270,7 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [cities, setCities] = useState([]);
   const [error, setError] = useState(null);
+  const [selectedCityId, setSelectedCityId] = useState(null);
 
   useEffect(() => {
     setQuery(value || "");
@@ -311,7 +313,7 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
     } catch (err) {
       console.error("Error fetching cities:", err);
       setError("Impossible de charger les villes");
-      setCities([]); // Set empty array on error instead of fallback
+      setCities([]);
     } finally {
       setLoading(false);
     }
@@ -341,13 +343,15 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
     const newValue = e.target.value;
     setQuery(newValue);
     onChange(newValue);
+    setSelectedCityId(null); // Reset selected ID when user types
   };
 
   const handleSelectCity = (city) => {
     const cityName = typeof city === 'string' ? city : city.name || city.city || city.label || city;
-    const cityId = typeof city === 'object' && city.id ? city.id : cityName;
+    const cityId = typeof city === 'object' && city.id ? city.id : null;
     
     setQuery(cityName);
+    setSelectedCityId(cityId);
     onChange(cityName);
     if (onSelect) onSelect(cityName, cityId);
     setShowSuggestions(false);
@@ -396,10 +400,12 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
       {!loading && cities.length === 0 && !error && (
         <div className="city-error">Aucune ville disponible</div>
       )}
+      {selectedCityId && (
+        <div className="city-selected-id">ID ville sélectionné: {selectedCityId}</div>
+      )}
     </div>
   );
 };
-
 // Book Selection Component
 const BookSelector = ({ selectedBooks, onBooksChange, onTotalQuantityChange }) => {
   const dispatch = useDispatch();

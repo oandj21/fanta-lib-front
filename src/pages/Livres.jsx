@@ -15,23 +15,20 @@ export default function Livres() {
   const location = useLocation();
   const books = useSelector(selectLivres);
   const loading = useSelector(selectLivresLoading);
-
   const [selectedBook, setSelectedBook] = useState(null);
+  
   const [search, setSearch] = useState("");
   const [genre, setGenre] = useState("الكل");
   const [canScroll, setCanScroll] = useState(false);
-
   const genresFilterRef = useRef(null);
 
-  // Scroll to top on mount
   useEffect(() => {
     window.scrollTo({
       top: 0,
-      behavior: "smooth",
+      behavior: 'smooth'
     });
   }, []);
 
-  // Fetch books
   useEffect(() => {
     dispatch(fetchLivres());
   }, [dispatch]);
@@ -47,45 +44,35 @@ export default function Livres() {
     }
 
     if (bookId && books.length > 0) {
-      const book = books.find((b) => b.id === parseInt(bookId));
+      const book = books.find(b => b.id === parseInt(bookId));
       if (book) {
         setSelectedBook(book);
       }
     }
   }, [location.search, books]);
 
-  // Extract unique genres
-  const genres = [
-    "الكل",
-    ...Array.from(
-      new Set(
-        books
-          .map((b) => b.categorie)
-          .filter((cat) => cat && cat.trim() !== "")
-      )
-    ),
-  ];
+  // Get unique genres from books, filtering out empty/null values
+  const genres = ["الكل", ...Array.from(new Set(
+    books
+      .map((b) => b.categorie)
+      .filter(cat => cat && cat.trim() !== "")
+  ))];
 
-  // Check if scroll is needed
+  // Check if genres filter can scroll horizontally
   useEffect(() => {
     const checkScroll = () => {
       if (genresFilterRef.current) {
         const { scrollWidth, clientWidth } = genresFilterRef.current;
         setCanScroll(scrollWidth > clientWidth);
-
-        // 👇 Start from right side for RTL
-        genresFilterRef.current.scrollLeft =
-          genresFilterRef.current.scrollWidth;
       }
     };
-
+    
     checkScroll();
-    window.addEventListener("resize", checkScroll);
-
-    return () => window.removeEventListener("resize", checkScroll);
+    window.addEventListener('resize', checkScroll);
+    
+    return () => window.removeEventListener('resize', checkScroll);
   }, [genres]);
 
-  // Filter books
   const filtered = books.filter((b) => {
     const title = b.titre || "";
     const author = b.auteur || "";
@@ -96,7 +83,6 @@ export default function Livres() {
       author.toLowerCase().includes(search.toLowerCase());
 
     const matchGenre = genre === "الكل" || category === genre;
-
     return matchSearch && matchGenre;
   });
 
@@ -106,33 +92,26 @@ export default function Livres() {
 
   const handleCloseDetails = () => {
     setSelectedBook(null);
-
+    // Remove book param from URL
     const url = new URL(window.location);
     url.searchParams.delete("book");
     window.history.replaceState({}, "", url);
   };
 
-  // 🔥 RTL Scroll Fix
   const scrollLeft = () => {
     if (genresFilterRef.current) {
-      genresFilterRef.current.scrollBy({
-        left: 200,
-        behavior: "smooth",
-      });
+      genresFilterRef.current.scrollBy({ left: -200, behavior: 'smooth' });
     }
   };
 
   const scrollRight = () => {
     if (genresFilterRef.current) {
-      genresFilterRef.current.scrollBy({
-        left: -200,
-        behavior: "smooth",
-      });
+      genresFilterRef.current.scrollBy({ left: 200, behavior: 'smooth' });
     }
   };
 
   return (
-    <div className="livres-page" dir="rtl">
+    <div className="livres-page">
       <Header />
 
       <section className="page-her">
@@ -147,17 +126,16 @@ export default function Livres() {
           <div className="filters-container">
             <div className="genres-filter-wrapper">
               {canScroll && (
-                <button
-                  className="scroll-btn scroll-left"
+                <button 
+                  className="scroll-btn scroll-left" 
                   onClick={scrollLeft}
                   aria-label="Scroll left"
                 >
                   ‹
                 </button>
               )}
-
-              <div
-                className={`genres-filter ${canScroll ? "can-scroll" : ""}`}
+              <div 
+                className={`genres-filter ${canScroll ? 'can-scroll' : ''}`}
                 ref={genresFilterRef}
               >
                 {genres.map((g) => (
@@ -170,10 +148,9 @@ export default function Livres() {
                   </button>
                 ))}
               </div>
-
               {canScroll && (
-                <button
-                  className="scroll-btn scroll-right"
+                <button 
+                  className="scroll-btn scroll-right" 
                   onClick={scrollRight}
                   aria-label="Scroll right"
                 >
@@ -183,7 +160,7 @@ export default function Livres() {
             </div>
           </div>
         </section>
-
+        
         {loading ? (
           <div className="loading-container">
             <div className="loading-spinner"></div>
@@ -192,10 +169,8 @@ export default function Livres() {
         ) : (
           <>
             <p className="results-count">
-              {filtered.length} كتاب تم العثور{" "}
-              {filtered.length > 1 ? "عليهم" : "عليه"}
+              {filtered.length} كتاب تم العثور {filtered.length > 1 ? "عليهم" : "عليه"}
             </p>
-
             {filtered.length === 0 ? (
               <div className="empty-state">
                 <BookOpen />
@@ -204,15 +179,8 @@ export default function Livres() {
             ) : (
               <div className="books-grid">
                 {filtered.map((book, i) => (
-                  <div
-                    key={book.id}
-                    style={{ animationDelay: `${i * 60}ms` }}
-                    className="animate-fade-up"
-                  >
-                    <BookCard
-                      book={book}
-                      onShowDetails={handleShowDetails}
-                    />
+                  <div key={book.id} style={{ animationDelay: `${i * 60}ms` }} className="animate-fade-up">
+                    <BookCard book={book} onShowDetails={handleShowDetails} />
                   </div>
                 ))}
               </div>
@@ -222,12 +190,10 @@ export default function Livres() {
       </section>
 
       <WhatsAppFloat />
-
+      
+      {/* Modal rendered at root level */}
       {selectedBook && (
-        <BookDetailModal
-          book={selectedBook}
-          onClose={handleCloseDetails}
-        />
+        <BookDetailModal book={selectedBook} onClose={handleCloseDetails} />
       )}
     </div>
   );

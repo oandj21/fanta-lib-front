@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { 
@@ -261,7 +260,8 @@ const CopyNotification = ({ message, isVisible, onClose }) => {
   );
 };
 
-// City Autocomplete Component - FIXED VERSION with city ID support
+// City Autocomplete Component
+// City Autocomplete Component
 const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
   const [query, setQuery] = useState(value || "");
   const [suggestions, setSuggestions] = useState([]);
@@ -269,7 +269,6 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [cities, setCities] = useState([]);
   const [error, setError] = useState(null);
-  const [selectedCityId, setSelectedCityId] = useState(null);
 
   useEffect(() => {
     setQuery(value || "");
@@ -308,24 +307,11 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
         }
       }
       
-      // Make sure each city has an id and name
-      citiesData = citiesData.map(city => {
-        if (typeof city === 'string') {
-          return { id: city, name: city };
-        } else if (city && typeof city === 'object') {
-          return {
-            id: city.id || city.city_id || city.code || city.name || city,
-            name: city.name || city.city || city.label || city
-          };
-        }
-        return city;
-      }).filter(city => city && city.name); // Filter out invalid entries
-      
       setCities(citiesData);
     } catch (err) {
       console.error("Error fetching cities:", err);
       setError("Impossible de charger les villes");
-      setCities([]);
+      setCities([]); // Set empty array on error instead of fallback
     } finally {
       setLoading(false);
     }
@@ -338,9 +324,10 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
   useEffect(() => {
     if (query.length >= 1) {
       const filtered = cities
-        .filter(city => 
-          city.name && city.name.toLowerCase().includes(query.toLowerCase())
-        )
+        .filter(city => {
+          const cityName = typeof city === 'string' ? city : city.name || city.city || city.label || '';
+          return cityName.toLowerCase().includes(query.toLowerCase());
+        })
         .slice(0, 10);
       setSuggestions(filtered);
       setShowSuggestions(true);
@@ -354,14 +341,15 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
     const newValue = e.target.value;
     setQuery(newValue);
     onChange(newValue);
-    setSelectedCityId(null);
   };
 
   const handleSelectCity = (city) => {
-    setQuery(city.name);
-    setSelectedCityId(city.id);
-    // Pass both city name and city ID to parent
-    if (onSelect) onSelect(city.name, city.id);
+    const cityName = typeof city === 'string' ? city : city.name || city.city || city.label || city;
+    const cityId = typeof city === 'object' && city.id ? city.id : cityName;
+    
+    setQuery(cityName);
+    onChange(cityName);
+    if (onSelect) onSelect(cityName, cityId);
     setShowSuggestions(false);
   };
 
@@ -386,24 +374,22 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
       
       {showSuggestions && suggestions.length > 0 && (
         <ul className="suggestions-list">
-          {suggestions.map((city, index) => (
-            <li
-              key={index}
-              onMouseDown={() => handleSelectCity(city)}
-              className="suggestion-item"
-            >
-              <MapPin size={14} />
-              <span className="city-name">{city.name}</span>
-              {city.id && <span className="city-id">(ID: {city.id})</span>}
-            </li>
-          ))}
+          {suggestions.map((city, index) => {
+            const cityName = typeof city === 'string' ? city : city.name || city.city || city.label || city;
+            const cityId = typeof city === 'object' && city.id ? city.id : '';
+            return (
+              <li
+                key={index}
+                onMouseDown={() => handleSelectCity(city)}
+                className="suggestion-item"
+              >
+                <MapPin size={14} />
+                <span className="city-name">{cityName}</span>
+                {cityId && <span className="city-id">(ID: {cityId})</span>}
+              </li>
+            );
+          })}
         </ul>
-      )}
-      
-      {selectedCityId && (
-        <div className="city-selected-id">
-          <small>Ville sélectionnée: {query} (ID: {selectedCityId})</small>
-        </div>
       )}
       
       {error && <div className="city-error">{error}</div>}
@@ -1151,7 +1137,8 @@ const OrderDetailsPage = ({ order, onBack }) => {
   );
 };
 
-// Add Order Page Component - FIXED with city ID support
+// Add Order Page Component - UPDATED with larger inputs, no scroll, manual price, always checked, phone validation
+// Add Order Page Component - COMPACT VERSION (no scroll)
 const AddOrderPage = ({ onBack, onSubmit }) => {
   const dispatch = useDispatch();
   const [addLoading, setAddLoading] = useState(false);
@@ -1161,14 +1148,13 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
   // Track if total was manually edited
   const [totalManuallyEdited, setTotalManuallyEdited] = useState(false);
   
-  // Form state for new order - ADDED parcel_city_id
+  // Form state for new order
   const [newOrderData, setNewOrderData] = useState({
     parcel_code: `CMD-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
     parcel_receiver: "",
     parcel_phone: "",
     parcel_prd_qty: 0,
     parcel_city: "",
-    parcel_city_id: null, // ADDED: city ID field
     parcel_address: "",
     parcel_price: null,
     frais_livraison: 35,
@@ -1282,12 +1268,10 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
     }));
   };
 
-  // UPDATED: Store both city name and city ID
   const handleNewCitySelect = (city, cityId) => {
     setNewOrderData(prev => ({
       ...prev,
-      parcel_city: city,
-      parcel_city_id: cityId  // Store the city ID
+      parcel_city: city
     }));
   };
 
@@ -1335,14 +1319,12 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
         total: parseFloat(book.prix_achat) * parseInt(book.quantity)
     }));
 
-    // INCLUDE city_id in the order data
     const orderToCreate = {
         parcel_code: newOrderData.parcel_code,
         parcel_receiver: newOrderData.parcel_receiver,
         parcel_phone: newOrderData.parcel_phone || "",
         parcel_prd_qty: newOrderData.parcel_prd_qty,
         parcel_city: newOrderData.parcel_city,
-        parcel_city_id: newOrderData.parcel_city_id, // ADDED: city ID
         parcel_address: newOrderData.parcel_address || "",
         parcel_price: parseFloat(parcelPrice.toFixed(2)),
         frais_livraison: parseFloat(delivery.toFixed(2)),
@@ -1357,7 +1339,6 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
     };
 
     console.log("📦 Order to create:", orderToCreate);
-    console.log("📍 City ID being sent:", newOrderData.parcel_city_id);
 
     setAddLoading(true);
     setAddError(null);
@@ -1373,7 +1354,6 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
             price: orderToCreate.parcel_price,
             receiver: orderToCreate.parcel_receiver,
             city: orderToCreate.parcel_city,
-            city_id: orderToCreate.parcel_city_id, // Include city ID in webhook
             address: orderToCreate.parcel_address,
             total_books: orderToCreate.parcel_prd_qty,
             status: orderToCreate.statut
@@ -1468,7 +1448,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
             </div>
           </div>
 
-          {/* Row 3: City and Address - UPDATED with CityAutocomplete */}
+          {/* Row 3: City and Address */}
           <div className="form-row">
             <div className="form-group">
               <label>Ville <span className="required">*</span></label>
@@ -1477,10 +1457,6 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
                 onChange={(value) => setNewOrderData(prev => ({ ...prev, parcel_city: value }))}
                 onSelect={handleNewCitySelect}
               />
-              {/* Display selected city ID for debugging */}
-              {newOrderData.parcel_city_id && (
-                <small className="city-id-hint">ID Ville: {newOrderData.parcel_city_id}</small>
-              )}
             </div>
 
             <div className="form-group">
@@ -1677,7 +1653,9 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
   );
 };
 
-// Update Order Page Component - FIXED with city ID support
+// Update Order Page Component - UPDATED with larger inputs, no scroll, manual price, always checked, phone validation
+// Update Order Page Component - COMPLETE with all fields from add form
+// Update Order Page Component - COMPLETE with proper data mapping from DB
 const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
   const dispatch = useDispatch();
   const [updateLoading, setUpdateLoading] = useState(false);
@@ -1687,13 +1665,12 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
   // Track if total was manually edited
   const [totalManuallyEdited, setTotalManuallyEdited] = useState(false);
   
-  // Form state for update - ADDED parcel_city_id
+  // Form state for update
   const [formData, setFormData] = useState({
     parcel_receiver: "",
     parcel_phone: "",
     parcel_prd_qty: 0,
     parcel_city: "",
-    parcel_city_id: null, // ADDED: city ID field
     parcel_address: "",
     parcel_price: null,
     frais_livraison: 35,
@@ -1757,7 +1734,6 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
         parcel_phone: order.parcel_phone || order.phone || order.client_telephone || "",
         parcel_prd_qty: calculatedQty || 0,
         parcel_city: order.parcel_city || order.city || order.ville || "",
-        parcel_city_id: order.parcel_city_id || order.city_id || null, // ADDED: load city ID if exists
         parcel_address: order.parcel_address || order.address || order.adresse || "",
         parcel_price: order.parcel_price !== undefined && order.parcel_price !== null 
           ? parseFloat(order.parcel_price) 
@@ -1786,7 +1762,6 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
       console.log("📋 Mapped form data:", {
         receiver: order.parcel_receiver || order.receiver,
         city: order.parcel_city || order.city,
-        city_id: order.parcel_city_id || order.city_id,
         qty: calculatedQty,
         livres: processedLivres.length,
         date: formattedDate
@@ -1898,100 +1873,97 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
     }));
   };
 
-  // UPDATED: Store both city name and city ID
   const handleCitySelect = (city, cityId) => {
     setFormData(prev => ({
       ...prev,
-      parcel_city: city,
-      parcel_city_id: cityId  // Store the city ID
+      parcel_city: city
     }));
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!order) return;
+  e.preventDefault();
+  if (!order) return;
 
-    // Validate phone if provided
-    if (formData.parcel_phone && !validatePhone(formData.parcel_phone)) {
-        setUpdateError(phoneError);
+  // Validate phone if provided
+  if (formData.parcel_phone && !validatePhone(formData.parcel_phone)) {
+      setUpdateError(phoneError);
+      return;
+  }
+
+  setUpdateLoading(true);
+  setUpdateError(null);
+
+  try {
+    const updateData = {};
+    
+    // Check all fields for changes
+    Object.keys(formData).forEach(key => {
+      // Special handling for livres - always include if they exist and are different
+      if (key === 'livres') {
+        // Compare livres arrays
+        const currentLivres = JSON.stringify(formData.livres);
+        const originalLivres = JSON.stringify(order.livres || []);
+        
+        if (currentLivres !== originalLivres) {
+          updateData.livres = formData.livres;
+        }
         return;
+      }
+      
+      // Convert to string for comparison to handle numbers vs strings
+      const formValue = formData[key] === null || formData[key] === undefined ? '' : String(formData[key]);
+      const orderValue = order[key] === null || order[key] === undefined ? '' : String(order[key]);
+      
+      if (formValue !== orderValue) {
+        // For statut_second, if it's empty string, send as null to backend
+        if (key === 'statut_second' && formData[key] === '') {
+          updateData[key] = null;
+        } else {
+          updateData[key] = formData[key];
+        }
+      }
+    });
+
+    // Also update quantity based on livres total
+    if (formData.livres && formData.livres.length > 0) {
+      const totalQty = formData.livres.reduce((sum, book) => sum + (book.quantity || 1), 0);
+      if (totalQty !== order.parcel_prd_qty) {
+        updateData.parcel_prd_qty = totalQty;
+      }
     }
 
-    setUpdateLoading(true);
-    setUpdateError(null);
+    // Log what we're sending for debugging
+    console.log("📤 Sending update data:", updateData);
 
-    try {
-      const updateData = {};
-      
-      // Check all fields for changes
-      Object.keys(formData).forEach(key => {
-        // Special handling for livres - always include if they exist and are different
-        if (key === 'livres') {
-          // Compare livres arrays
-          const currentLivres = JSON.stringify(formData.livres);
-          const originalLivres = JSON.stringify(order.livres || []);
-          
-          if (currentLivres !== originalLivres) {
-            updateData.livres = formData.livres;
-          }
-          return;
-        }
-        
-        // Convert to string for comparison to handle numbers vs strings
-        const formValue = formData[key] === null || formData[key] === undefined ? '' : String(formData[key]);
-        const orderValue = order[key] === null || order[key] === undefined ? '' : String(order[key]);
-        
-        if (formValue !== orderValue) {
-          // For statut_second, if it's empty string, send as null to backend
-          if (key === 'statut_second' && formData[key] === '') {
-            updateData[key] = null;
-          } else {
-            updateData[key] = formData[key];
-          }
-        }
-      });
-
-      // Also update quantity based on livres total
-      if (formData.livres && formData.livres.length > 0) {
-        const totalQty = formData.livres.reduce((sum, book) => sum + (book.quantity || 1), 0);
-        if (totalQty !== order.parcel_prd_qty) {
-          updateData.parcel_prd_qty = totalQty;
-        }
-      }
-
-      // Log what we're sending for debugging
-      console.log("📤 Sending update data:", updateData);
-      console.log("📍 City ID in update:", formData.parcel_city_id);
-
-      if (Object.keys(updateData).length === 0) {
-        onBack();
-        return;
-      }
-
-      await onSubmit(order.id, updateData);
+    if (Object.keys(updateData).length === 0) {
       onBack();
-      
-    } catch (error) {
-      console.error("Update failed:", error);
-      
-      // Log the actual error response from server
-      if (error.response) {
-        console.error("Server error response:", error.response.data);
-        setUpdateError(
-          error.response.data?.message || 
-          error.response.data?.error ||
-          `Erreur ${error.response.status}: ${JSON.stringify(error.response.data)}`
-        );
-      } else {
-        setUpdateError(
-          error?.message || 
-          "Erreur lors de la mise à jour. Veuillez réessayer."
-        );
-      }
-    } finally {
-      setUpdateLoading(false);
+      return;
     }
-  };
+
+    await onSubmit(order.id, updateData);
+    onBack();
+    
+  } catch (error) {
+    console.error("Update failed:", error);
+    
+    // Log the actual error response from server
+    if (error.response) {
+      console.error("Server error response:", error.response.data);
+      setUpdateError(
+        error.response.data?.message || 
+        error.response.data?.error ||
+        `Erreur ${error.response.status}: ${JSON.stringify(error.response.data)}`
+      );
+    } else {
+      setUpdateError(
+        error?.message || 
+        "Erreur lors de la mise à jour. Veuillez réessayer."
+      );
+    }
+  } finally {
+    setUpdateLoading(false);
+  }
+};
 
   if (!order) return null;
 
@@ -2067,7 +2039,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
             </div>
           </div>
 
-          {/* Row 3: City and Address - UPDATED with CityAutocomplete */}
+          {/* Row 3: City and Address */}
           <div className="form-row">
             <div className="form-group">
               <label>Ville <span className="required">*</span></label>
@@ -2076,10 +2048,6 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
                 onChange={(value) => setFormData(prev => ({ ...prev, parcel_city: value }))}
                 onSelect={handleCitySelect}
               />
-              {/* Display selected city ID for debugging */}
-              {formData.parcel_city_id && (
-                <small className="city-id-hint">ID Ville: {formData.parcel_city_id}</small>
-              )}
             </div>
 
             <div className="form-group">

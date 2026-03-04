@@ -168,9 +168,7 @@ export default function Livres() {
           </div>
         ) : (
           <>
-            <p className="results-count">
-              {filtered.length} كتاب تم العثور {filtered.length > 1 ? "عليهم" : "عليه"}
-            </p>
+            
             {filtered.length === 0 ? (
               <div className="empty-state">
                 <BookOpen />

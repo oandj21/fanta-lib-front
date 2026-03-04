@@ -1433,7 +1433,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
             </div>
 
             <div className="form-group">
-              <label>Téléphone</label>
+              <label>Téléphone <span className="required">*</span></label>
               <input
                 type="text"
                 name="parcel_phone"
@@ -1443,6 +1443,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
                 maxLength="10"
                 pattern="[0-9]{10}"
                 className={phoneError ? "input-error" : ""}
+                required
               />
               {phoneError && <small className="error-hint">{phoneError}</small>}
             </div>
@@ -1460,13 +1461,14 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
             </div>
 
             <div className="form-group">
-              <label>Adresse</label>
+              <label>Adresse <span className="required">*</span></label>
               <input
                 type="text"
                 name="parcel_address"
                 value={newOrderData.parcel_address}
                 onChange={handleNewOrderChange}
                 placeholder="Adresse"
+                required
               />
             </div>
           </div>
@@ -2024,7 +2026,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
             </div>
 
             <div className="form-group">
-              <label>Téléphone</label>
+              <label>Téléphone <span className="required">*</span></label>
               <input
                 type="text"
                 name="parcel_phone"
@@ -2034,6 +2036,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
                 maxLength="10"
                 pattern="[0-9]{10}"
                 className={phoneError ? "input-error" : ""}
+                required
               />
               {phoneError && <small className="error-hint">{phoneError}</small>}
             </div>
@@ -2051,13 +2054,14 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
             </div>
 
             <div className="form-group">
-              <label>Adresse</label>
+              <label>Adresse <span className="required">*</span></label>
               <input
                 type="text"
                 name="parcel_address"
                 value={formData.parcel_address}
                 onChange={handleInputChange}
                 placeholder="Adresse"
+                required
               />
             </div>
           </div>

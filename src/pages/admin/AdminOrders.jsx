@@ -69,7 +69,6 @@ const sendWebhookUpdate = async (payload) => {
 };
 
 // French translations for statuses
-// French translations for statuses
 const statusTranslations = {
   // Primary delivery statuses
   'NEW_PARCEL': 'Nouveau colis',
@@ -97,7 +96,7 @@ const statusTranslations = {
   'RETURN_BY_AMANA': 'Retour par Amana',
   'SENT_BY_AMANA': 'Envoyé par Amana',
   
-  // Payment statuses - ADD THESE
+  // Payment statuses
   'PAID': 'Payé',
   'NOT_PAID': 'Non payé',
   'INVOICED': 'Facturé',
@@ -140,7 +139,6 @@ const translateStatus = (status) => {
 };
 
 // Helper to get status color based on status text
-// Helper to get status color based on status text
 const getStatusColor = (status) => {
   if (!status) return '#6b7280';
   
@@ -172,16 +170,14 @@ const getStatusColor = (status) => {
   if (status === 'RETURN_BY_AMANA' || statusLower.includes('retour amana')) return '#b91c1c';
   if (status === 'SENT_BY_AMANA' || statusLower.includes('envoyé amana')) return '#1e40af';
   
-  // Payment statuses - UPDATE THESE
-  if (status === 'PAID' || statusLower.includes('payé')) return '#10b981';
-  if (status === 'NOT_PAID' || statusLower.includes('non payé')) return '#ef4444';
-  if (status === 'PENDING' || statusLower.includes('en attente')) return '#f59e0b';
-  if (status === 'INVOICED' || statusLower.includes('facturé')) return '#8b5cf6';
+  // Payment statuses
+  if (statusLower.includes('payé') || statusLower.includes('paid')) return '#10b981';
+  if (statusLower.includes('non payé') || statusLower.includes('not_paid')) return '#ef4444';
+  if (statusLower.includes('facturé') || statusLower.includes('invoiced')) return '#8b5cf6';
   
   return '#6b7280';
 };
 
-// Get status description in French
 // Get status description in French
 const getStatusDescription = (status) => {
   const descriptions = {
@@ -205,13 +201,7 @@ const getStatusDescription = (status) => {
     'TROIS': 'Troisième tentative de livraison',
     'ENVG': 'Colis en voyage',
     'RETURN_BY_AMANA': 'Retour par Amana',
-    'SENT_BY_AMANA': 'Envoyé par Amana',
-    
-    // Payment status descriptions - ADD THESE
-    'PAID': 'Paiement effectué',
-    'NOT_PAID': 'Paiement en attente',
-    'PENDING': 'Paiement en attente de confirmation',
-    'INVOICED': 'Facture générée'
+    'SENT_BY_AMANA': 'Envoyé par Amana'
   };
   
   return descriptions[status] || status;
@@ -270,6 +260,7 @@ const CopyNotification = ({ message, isVisible, onClose }) => {
   );
 };
 
+// City Autocomplete Component
 // City Autocomplete Component
 const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
   const [query, setQuery] = useState(value || "");
@@ -1146,58 +1137,20 @@ const OrderDetailsPage = ({ order, onBack }) => {
   );
 };
 
-// Add Order Page Component - UPDATED with city-based parcel code generator
+// Add Order Page Component - UPDATED with larger inputs, no scroll, manual price, always checked, phone validation
+// Add Order Page Component - COMPACT VERSION (no scroll)
 const AddOrderPage = ({ onBack, onSubmit }) => {
   const dispatch = useDispatch();
   const [addLoading, setAddLoading] = useState(false);
   const [addError, setAddError] = useState(null);
   const [phoneError, setPhoneError] = useState("");
   
-  // Month selection for code generation
-  const [selectedMonth, setSelectedMonth] = useState('03'); // Default to March
-  
   // Track if total was manually edited
   const [totalManuallyEdited, setTotalManuallyEdited] = useState(false);
   
-  // Helper function to generate random uppercase letters
-  const generateRandomLetters = (count) => {
-    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    let result = '';
-    for (let i = 0; i < count; i++) {
-      result += letters.charAt(Math.floor(Math.random() * letters.length));
-    }
-    return result;
-  };
-
-  // Generate parcel code based on city, month, year, random numbers and letters
-  const generateParcelCode = (city, month = '03') => {
-    if (!city || city.trim() === '') {
-      // Default temporary code if no city
-      return `TMP${Date.now().toString().slice(-8)}`;
-    }
-    
-    // Get first 3 letters of city (lowercase)
-    const cityPrefix = city.substring(0, 3).toLowerCase();
-    
-    // Month code: '03' (March) or '04' (April)
-    const monthCode = month;
-    
-    // Year code: '26'
-    const yearCode = '26';
-    
-    // Generate 4 random digits (1000-9999)
-    const randomNumbers = Math.floor(Math.random() * 9000 + 1000);
-    
-    // Generate 2 random uppercase letters
-    const randomLetters = generateRandomLetters(2);
-    
-    // Combine all parts: cityPrefix + monthCode + yearCode + randomNumbers + randomLetters
-    return `${cityPrefix}${monthCode}${yearCode}${randomNumbers}${randomLetters}`;
-  };
-  
   // Form state for new order
   const [newOrderData, setNewOrderData] = useState({
-    parcel_code: "", // Will be generated when city is selected
+    parcel_code: `CMD-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
     parcel_receiver: "",
     parcel_phone: "",
     parcel_prd_qty: 0,
@@ -1293,20 +1246,12 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
       setTotalManuallyEdited(true);
     }
     
-    setNewOrderData(prev => {
-      const updates = {
-        [name]: type === 'checkbox' ? (checked ? 1 : 0) : 
-                 (name === 'parcel_price' || name === 'total' || name === 'frais_livraison' || name === 'frais_packaging') ? 
-                 (value === '' ? null : parseFloat(value)) : value
-      };
-      
-      // If city is being updated and has at least 3 characters, generate code
-      if (name === 'parcel_city' && value.length >= 3) {
-        updates.parcel_code = generateParcelCode(value, selectedMonth);
-      }
-      
-      return { ...prev, ...updates };
-    });
+    setNewOrderData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? (checked ? 1 : 0) : 
+               (name === 'parcel_price' || name === 'total' || name === 'frais_livraison' || name === 'frais_packaging') ? 
+               (value === '' ? null : parseFloat(value)) : value
+    }));
   };
 
   const handleBooksChange = (books) => {
@@ -1326,9 +1271,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
   const handleNewCitySelect = (city, cityId) => {
     setNewOrderData(prev => ({
       ...prev,
-      parcel_city: city,
-      // Generate parcel code based on selected city and current month
-      parcel_code: generateParcelCode(city, selectedMonth)
+      parcel_city: city
     }));
   };
 
@@ -1449,7 +1392,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
         )}
 
         <form onSubmit={handleSubmit} className="order-form compact">
-          {/* Row 1: Code (generated) and Date */}
+          {/* Row 1: Code and Date */}
           <div className="form-row">
             <div className="form-group">
               <label>Code colis</label>
@@ -1457,11 +1400,10 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
                 type="text"
                 name="parcel_code"
                 value={newOrderData.parcel_code}
+                onChange={handleNewOrderChange}
                 readOnly
-                className="readonly-input generated-code"
-                placeholder="Sélectionnez une ville"
+                className="readonly-input"
               />
-              <small className="field-hint">Généré automatiquement</small>
             </div>
 
             <div className="form-group">
@@ -1507,30 +1449,8 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
             </div>
           </div>
 
-          {/* Row 3: Month Selection and City */}
+          {/* Row 3: City and Address */}
           <div className="form-row">
-            <div className="form-group">
-              <label>Code Mois</label>
-              <select 
-                value={selectedMonth}
-                onChange={(e) => {
-                  const newMonth = e.target.value;
-                  setSelectedMonth(newMonth);
-                  // Regenerate code with new month if city exists
-                  if (newOrderData.parcel_city) {
-                    setNewOrderData(prev => ({
-                      ...prev,
-                      parcel_code: generateParcelCode(prev.parcel_city, newMonth)
-                    }));
-                  }
-                }}
-                className="month-select"
-              >
-                <option value="03">Mars (03)</option>
-                <option value="04">Avril (04)</option>
-              </select>
-            </div>
-
             <div className="form-group">
               <label>Ville <span className="required">*</span></label>
               <CityAutocomplete
@@ -1539,24 +1459,21 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
                 onSelect={handleNewCitySelect}
               />
             </div>
-          </div>
 
-          {/* Row 4: Address */}
-          <div className="form-row">
-            <div className="form-group full-width">
+            <div className="form-group">
               <label>Adresse <span className="required">*</span></label>
               <input
                 type="text"
                 name="parcel_address"
                 value={newOrderData.parcel_address}
                 onChange={handleNewOrderChange}
-                placeholder="Adresse complète"
+                placeholder="Adresse"
                 required
               />
             </div>
           </div>
 
-          {/* Row 5: Book Selector - takes full width */}
+          {/* Row 4: Book Selector - takes full width */}
           <div className="form-group full-width">
             <label>Livres <span className="required">*</span></label>
             <BookSelector 
@@ -1566,7 +1483,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
             />
           </div>
 
-          {/* Row 6: Quantity and Parcel Price */}
+          {/* Row 5: Quantity and Parcel Price */}
           <div className="form-row">
             <div className="form-group">
               <label>Quantité totale</label>
@@ -1604,7 +1521,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
             </div>
           </div>
 
-          {/* Row 7: Delivery Fee and Packaging Fee */}
+          {/* Row 6: Delivery Fee and Packaging Fee */}
           <div className="form-row">
             <div className="form-group">
               <label>Frais livraison</label>
@@ -1639,7 +1556,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
             </div>
           </div>
 
-          {/* Row 8: Total and Profit */}
+          {/* Row 7: Total and Profit */}
           <div className="form-row">
             <div className="form-group">
               <label>Total livres</label>
@@ -1672,7 +1589,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
             </div>
           </div>
 
-          {/* Row 9: Note */}
+          {/* Row 8: Note */}
           <div className="form-group full-width">
             <label>Note</label>
             <input
@@ -1684,7 +1601,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
             />
           </div>
 
-          {/* Row 10: Checkbox */}
+          {/* Row 9: Checkbox */}
           <div className="form-checkbox">
             <input
               type="checkbox"
@@ -1696,11 +1613,11 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
             <label htmlFor="parcel_open">Colis ouvert / vérifié</label>
           </div>
 
-          {/* Code Preview */}
-          <div className="code-preview">
+          {/* Price Info - Compact */}
+          <div className="price-info-warning compact">
             <Info size={16} />
             <span>
-              <strong>Code généré:</strong> {newOrderData.parcel_code || "En attente de sélection de ville"}
+              <strong>Important:</strong> Prix colis: <strong>{newOrderData.parcel_price || '---'} MAD</strong>
             </span>
           </div>
 
@@ -1738,6 +1655,8 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
   );
 };
 
+// Update Order Page Component - UPDATED with larger inputs, no scroll, manual price, always checked, phone validation
+// Update Order Page Component - COMPLETE with all fields from add form
 // Update Order Page Component - COMPLETE with proper data mapping from DB
 const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
   const dispatch = useDispatch();
@@ -1745,49 +1664,11 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
   const [updateError, setUpdateError] = useState(null);
   const [phoneError, setPhoneError] = useState("");
   
-  // Month selection for code regeneration
-  const [selectedMonth, setSelectedMonth] = useState('03');
-  
   // Track if total was manually edited
   const [totalManuallyEdited, setTotalManuallyEdited] = useState(false);
   
-  // Helper function to generate random uppercase letters
-  const generateRandomLetters = (count) => {
-    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    let result = '';
-    for (let i = 0; i < count; i++) {
-      result += letters.charAt(Math.floor(Math.random() * letters.length));
-    }
-    return result;
-  };
-
-  // Generate parcel code based on city, month, year, random numbers and letters
-  const generateParcelCode = (city, month = '03') => {
-    if (!city || city.trim() === '') {
-      return `TMP${Date.now().toString().slice(-8)}`;
-    }
-    
-    // Get first 3 letters of city (lowercase)
-    const cityPrefix = city.substring(0, 3).toLowerCase();
-    
-    // Month code
-    const monthCode = month;
-    
-    // Year code
-    const yearCode = '26';
-    
-    // Generate 4 random digits
-    const randomNumbers = Math.floor(Math.random() * 9000 + 1000);
-    
-    // Generate 2 random uppercase letters
-    const randomLetters = generateRandomLetters(2);
-    
-    return `${cityPrefix}${monthCode}${yearCode}${randomNumbers}${randomLetters}`;
-  };
-  
   // Form state for update
   const [formData, setFormData] = useState({
-    parcel_code: "",
     parcel_receiver: "",
     parcel_phone: "",
     parcel_prd_qty: 0,
@@ -1815,6 +1696,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
       let formattedDate = "";
       if (order.date) {
         try {
+          // Handle different date formats
           const dateObj = new Date(order.date);
           if (!isNaN(dateObj.getTime())) {
             formattedDate = dateObj.toISOString().split('T')[0];
@@ -1824,7 +1706,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
         }
       }
 
-      // Process livres data
+      // Process livres data - handle different possible structures
       let processedLivres = [];
       if (order.livres && Array.isArray(order.livres)) {
         processedLivres = order.livres.map(book => ({
@@ -1850,7 +1732,6 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
       }
 
       setFormData({
-        parcel_code: order.parcel_code || order.code || "",
         parcel_receiver: order.parcel_receiver || order.receiver || order.client_nom || "",
         parcel_phone: order.parcel_phone || order.phone || order.client_telephone || "",
         parcel_prd_qty: calculatedQty || 0,
@@ -1872,20 +1753,21 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
           ? parseFloat(order.profit)
           : null,
         parcel_note: order.parcel_note || order.note || order.notes || "",
-        parcel_open: 1,
+        parcel_open: 1, // Force to checked
         statut: order.statut || order.status || order.delivery_status || "NEW_PARCEL",
         statut_second: order.statut_second || order.secondary_status || "",
         livres: processedLivres,
         date: formattedDate || new Date().toISOString().split('T')[0]
       });
 
-      // Extract month from existing parcel code if possible
-      if (order.parcel_code && order.parcel_code.length >= 8) {
-        const possibleMonth = order.parcel_code.substring(3, 5);
-        if (possibleMonth === '03' || possibleMonth === '04') {
-          setSelectedMonth(possibleMonth);
-        }
-      }
+      // Log what we've mapped for debugging
+      console.log("📋 Mapped form data:", {
+        receiver: order.parcel_receiver || order.receiver,
+        city: order.parcel_city || order.city,
+        qty: calculatedQty,
+        livres: processedLivres.length,
+        date: formattedDate
+      });
     }
   }, [order]);
 
@@ -2000,96 +1882,90 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
     }));
   };
 
-  const handleRegenerateCode = () => {
-    if (formData.parcel_city) {
-      const newCode = generateParcelCode(formData.parcel_city, selectedMonth);
-      setFormData(prev => ({
-        ...prev,
-        parcel_code: newCode
-      }));
-    }
-  };
-
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!order) return;
+  e.preventDefault();
+  if (!order) return;
 
-    // Validate phone if provided
-    if (formData.parcel_phone && !validatePhone(formData.parcel_phone)) {
-        setUpdateError(phoneError);
+  // Validate phone if provided
+  if (formData.parcel_phone && !validatePhone(formData.parcel_phone)) {
+      setUpdateError(phoneError);
+      return;
+  }
+
+  setUpdateLoading(true);
+  setUpdateError(null);
+
+  try {
+    const updateData = {};
+    
+    // Check all fields for changes
+    Object.keys(formData).forEach(key => {
+      // Special handling for livres - always include if they exist and are different
+      if (key === 'livres') {
+        // Compare livres arrays
+        const currentLivres = JSON.stringify(formData.livres);
+        const originalLivres = JSON.stringify(order.livres || []);
+        
+        if (currentLivres !== originalLivres) {
+          updateData.livres = formData.livres;
+        }
         return;
+      }
+      
+      // Convert to string for comparison to handle numbers vs strings
+      const formValue = formData[key] === null || formData[key] === undefined ? '' : String(formData[key]);
+      const orderValue = order[key] === null || order[key] === undefined ? '' : String(order[key]);
+      
+      if (formValue !== orderValue) {
+        // For statut_second, if it's empty string, send as null to backend
+        if (key === 'statut_second' && formData[key] === '') {
+          updateData[key] = null;
+        } else {
+          updateData[key] = formData[key];
+        }
+      }
+    });
+
+    // Also update quantity based on livres total
+    if (formData.livres && formData.livres.length > 0) {
+      const totalQty = formData.livres.reduce((sum, book) => sum + (book.quantity || 1), 0);
+      if (totalQty !== order.parcel_prd_qty) {
+        updateData.parcel_prd_qty = totalQty;
+      }
     }
 
-    setUpdateLoading(true);
-    setUpdateError(null);
+    // Log what we're sending for debugging
+    console.log("📤 Sending update data:", updateData);
 
-    try {
-      const updateData = {};
-      
-      // Check all fields for changes
-      Object.keys(formData).forEach(key => {
-        // Special handling for livres
-        if (key === 'livres') {
-          const currentLivres = JSON.stringify(formData.livres);
-          const originalLivres = JSON.stringify(order.livres || []);
-          
-          if (currentLivres !== originalLivres) {
-            updateData.livres = formData.livres;
-          }
-          return;
-        }
-        
-        // Convert to string for comparison
-        const formValue = formData[key] === null || formData[key] === undefined ? '' : String(formData[key]);
-        const orderValue = order[key] === null || order[key] === undefined ? '' : String(order[key]);
-        
-        if (formValue !== orderValue) {
-          if (key === 'statut_second' && formData[key] === '') {
-            updateData[key] = null;
-          } else {
-            updateData[key] = formData[key];
-          }
-        }
-      });
-
-      // Update quantity based on livres total
-      if (formData.livres && formData.livres.length > 0) {
-        const totalQty = formData.livres.reduce((sum, book) => sum + (book.quantity || 1), 0);
-        if (totalQty !== order.parcel_prd_qty) {
-          updateData.parcel_prd_qty = totalQty;
-        }
-      }
-
-      console.log("📤 Sending update data:", updateData);
-
-      if (Object.keys(updateData).length === 0) {
-        onBack();
-        return;
-      }
-
-      await onSubmit(order.id, updateData);
+    if (Object.keys(updateData).length === 0) {
       onBack();
-      
-    } catch (error) {
-      console.error("Update failed:", error);
-      
-      if (error.response) {
-        console.error("Server error response:", error.response.data);
-        setUpdateError(
-          error.response.data?.message || 
-          error.response.data?.error ||
-          `Erreur ${error.response.status}: ${JSON.stringify(error.response.data)}`
-        );
-      } else {
-        setUpdateError(
-          error?.message || 
-          "Erreur lors de la mise à jour. Veuillez réessayer."
-        );
-      }
-    } finally {
-      setUpdateLoading(false);
+      return;
     }
-  };
+
+    await onSubmit(order.id, updateData);
+    onBack();
+    
+  } catch (error) {
+    console.error("Update failed:", error);
+    
+    // Log the actual error response from server
+    if (error.response) {
+      console.error("Server error response:", error.response.data);
+      setUpdateError(
+        error.response.data?.message || 
+        error.response.data?.error ||
+        `Erreur ${error.response.status}: ${JSON.stringify(error.response.data)}`
+      );
+    } else {
+      setUpdateError(
+        error?.message || 
+        "Erreur lors de la mise à jour. Veuillez réessayer."
+      );
+    }
+  } finally {
+    setUpdateLoading(false);
+  }
+};
 
   if (!order) return null;
 
@@ -2112,30 +1988,16 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
         )}
 
         <form onSubmit={handleSubmit} className="order-form compact">
-          {/* Row 1: Code and Date */}
+          {/* Row 1: Code (read-only) and Date */}
           <div className="form-row">
             <div className="form-group">
               <label>Code colis</label>
-              <div className="code-input-group">
-                <input
-                  type="text"
-                  name="parcel_code"
-                  value={formData.parcel_code}
-                  onChange={handleInputChange}
-                  className="code-input"
-                  placeholder="Code colis"
-                />
-                <button 
-                  type="button" 
-                  onClick={handleRegenerateCode}
-                  className="btn-regenerate"
-                  title="Régénérer le code"
-                  disabled={!formData.parcel_city}
-                >
-                  <RefreshCw size={16} />
-                </button>
-              </div>
-              <small className="field-hint">Cliquez sur 🔄 pour régénérer</small>
+              <input
+                type="text"
+                value={order.parcel_code || order.code || ""}
+                readOnly
+                className="readonly-input"
+              />
             </div>
 
             <div className="form-group">
@@ -2180,20 +2042,8 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
             </div>
           </div>
 
-          {/* Row 3: Month and City */}
+          {/* Row 3: City and Address */}
           <div className="form-row">
-            <div className="form-group">
-              <label>Code Mois</label>
-              <select 
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-                className="month-select"
-              >
-                <option value="03">Mars (03)</option>
-                <option value="04">Avril (04)</option>
-              </select>
-            </div>
-
             <div className="form-group">
               <label>Ville <span className="required">*</span></label>
               <CityAutocomplete
@@ -2202,11 +2052,8 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
                 onSelect={handleCitySelect}
               />
             </div>
-          </div>
 
-          {/* Row 4: Address */}
-          <div className="form-row">
-            <div className="form-group full-width">
+            <div className="form-group">
               <label>Adresse <span className="required">*</span></label>
               <input
                 type="text"
@@ -2219,7 +2066,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
             </div>
           </div>
 
-          {/* Row 5: Statuses */}
+          {/* Row 4: Statuses */}
           <div className="form-row">
             <div className="form-group">
               <label>Statut principal</label>
@@ -2265,7 +2112,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
             </div>
           </div>
 
-          {/* Row 6: Book Selector */}
+          {/* Row 5: Book Selector - takes full width */}
           <div className="form-group full-width">
             <label>Livres <span className="required">*</span></label>
             <BookSelector 
@@ -2275,7 +2122,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
             />
           </div>
 
-          {/* Row 7: Quantity and Parcel Price */}
+          {/* Row 6: Quantity and Parcel Price */}
           <div className="form-row">
             <div className="form-group">
               <label>Quantité totale</label>
@@ -2293,7 +2140,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
                   className="readonly-input"
                 />
               </div>
-              <small className="field-hint">Calculé automatiquement</small>
+              <small className="field-hint">Calculé automatiquement à partir des livres</small>
             </div>
 
             <div className="form-group">
@@ -2314,7 +2161,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
             </div>
           </div>
 
-          {/* Row 8: Delivery Fee and Packaging Fee */}
+          {/* Row 7: Delivery Fee and Packaging Fee */}
           <div className="form-row">
             <div className="form-group">
               <label>Frais livraison</label>
@@ -2349,7 +2196,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
             </div>
           </div>
 
-          {/* Row 9: Total and Profit */}
+          {/* Row 8: Total and Profit */}
           <div className="form-row">
             <div className="form-group">
               <label>Total livres</label>
@@ -2386,7 +2233,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
             </div>
           </div>
 
-          {/* Row 10: Note */}
+          {/* Row 9: Note */}
           <div className="form-group full-width">
             <label>Note</label>
             <textarea
@@ -2398,7 +2245,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
             />
           </div>
 
-          {/* Row 11: Checkbox */}
+          {/* Row 10: Checkbox */}
           <div className="form-checkbox">
             <input
               type="checkbox"
@@ -2408,6 +2255,14 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
               onChange={handleInputChange}
             />
             <label htmlFor="parcel_open">Colis ouvert / vérifié</label>
+          </div>
+
+          {/* Price Info Warning */}
+          <div className="price-info-warning compact">
+            <Info size={16} />
+            <span>
+              <strong>Important:</strong> Prix colis: <strong>{formData.parcel_price || '---'} MAD</strong>
+            </span>
           </div>
 
           {/* Form Actions */}

@@ -29,6 +29,7 @@ const sendWebhookUpdate = async (payload) => {
     const payloadString = JSON.stringify(payload);
     const encoder = new TextEncoder();
     
+    // Import the secret key
     const key = await crypto.subtle.importKey(
       'raw',
       encoder.encode(WEBHOOK_SECRET),
@@ -37,16 +38,19 @@ const sendWebhookUpdate = async (payload) => {
       ['sign']
     );
     
+    // Generate signature
     const signature = await crypto.subtle.sign(
       'HMAC',
       key,
       encoder.encode(payloadString)
     );
     
+    // Convert to hex
     const signatureHex = Array.from(new Uint8Array(signature))
       .map(b => b.toString(16).padStart(2, '0'))
       .join('');
     
+    // Send to your own webhook endpoint
     const response = await fetch('https://fanta-lib-back-production-76f4.up.railway.app/api/welivexpress/webhook', {
       method: 'POST',
       headers: {
@@ -79,7 +83,7 @@ const statusTranslations = {
   'WAITING_PICKUP': 'En attente de ramassage',
   'RECEIVED': 'Reçu',
   
-  // Secondary statuses (from webhook event)
+  // Secondary statuses
   'REFUSE': 'Refusé',
   'NOANSWER': 'Pas de réponse',
   'UNREACHABLE': 'Injoignable',
@@ -119,15 +123,18 @@ const statusTranslations = {
 const translateStatus = (status) => {
   if (!status) return '';
   
+  // Check exact match
   if (statusTranslations[status]) {
     return statusTranslations[status];
   }
   
+  // Check case-insensitive match
   const statusUpper = status.toUpperCase();
   if (statusTranslations[statusUpper]) {
     return statusTranslations[statusUpper];
   }
   
+  // Return original if no translation found
   return status;
 };
 
@@ -150,7 +157,7 @@ const getStatusColor = (status) => {
   if (status === 'WAITING_PICKUP' || statusLower.includes('attente')) return '#f59e0b';
   if (status === 'RECEIVED' || statusLower.includes('reçu')) return '#10b981';
   
-  // Secondary statuses
+  // Secondary statuses (specific)
   if (status === 'REFUSE' || statusLower.includes('refusé')) return '#dc2626';
   if (status === 'NOANSWER' || statusLower.includes('pas de réponse')) return '#f59e0b';
   if (status === 'UNREACHABLE' || statusLower.includes('injoignable')) return '#d97706';
@@ -164,10 +171,9 @@ const getStatusColor = (status) => {
   if (status === 'SENT_BY_AMANA' || statusLower.includes('envoyé amana')) return '#1e40af';
   
   // Payment statuses
-  if (status === 'PAID' || statusLower.includes('payé')) return '#10b981';
-  if (status === 'NOT_PAID' || statusLower.includes('non payé')) return '#ef4444';
-  if (status === 'PENDING' || statusLower.includes('en attente')) return '#f59e0b';
-  if (status === 'INVOICED' || statusLower.includes('facturé')) return '#8b5cf6';
+  if (statusLower.includes('payé') || statusLower.includes('paid')) return '#10b981';
+  if (statusLower.includes('non payé') || statusLower.includes('not_paid')) return '#ef4444';
+  if (statusLower.includes('facturé') || statusLower.includes('invoiced')) return '#8b5cf6';
   
   return '#6b7280';
 };
@@ -195,11 +201,7 @@ const getStatusDescription = (status) => {
     'TROIS': 'Troisième tentative de livraison',
     'ENVG': 'Colis en voyage',
     'RETURN_BY_AMANA': 'Retour par Amana',
-    'SENT_BY_AMANA': 'Envoyé par Amana',
-    'PAID': 'Paiement effectué',
-    'NOT_PAID': 'Paiement en attente',
-    'PENDING': 'Paiement en attente de confirmation',
-    'INVOICED': 'Facture générée'
+    'SENT_BY_AMANA': 'Envoyé par Amana'
   };
   
   return descriptions[status] || status;
@@ -209,7 +211,7 @@ const getStatusDescription = (status) => {
 // PROMPT COMPONENTS
 // ==============================================
 
-// Delete Confirmation Modal
+// Delete Confirmation Modal (only modal left as it's a confirmation)
 const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm, orderCode }) => {
   if (!isOpen) return null;
 
@@ -258,6 +260,7 @@ const CopyNotification = ({ message, isVisible, onClose }) => {
   );
 };
 
+// City Autocomplete Component
 // City Autocomplete Component
 const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
   const [query, setQuery] = useState(value || "");
@@ -308,7 +311,7 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
     } catch (err) {
       console.error("Error fetching cities:", err);
       setError("Impossible de charger les villes");
-      setCities([]);
+      setCities([]); // Set empty array on error instead of fallback
     } finally {
       setLoading(false);
     }
@@ -819,13 +822,13 @@ const OrderDetailsPage = ({ order, onBack }) => {
                       <div className="tracking-detail-row">
                         <span className="detail-label">Produit:</span>
                         <span className="detail-value">
-                          {trackingInfo.parcel.product?.name || trackingInfo.parcel.product_name || '-'}
+                          {trackingInfo.parcel.product?.name || '-'}
                         </span>
                       </div>
                       <div className="tracking-detail-row">
                         <span className="detail-label">Quantité:</span>
                         <span className="detail-value">
-                          {trackingInfo.parcel.product?.quantity || trackingInfo.parcel.product_qty || 1}
+                          {trackingInfo.parcel.product?.quantity || 1}
                         </span>
                       </div>
                       <div className="tracking-detail-row">
@@ -1134,63 +1137,20 @@ const OrderDetailsPage = ({ order, onBack }) => {
   );
 };
 
-// Add Order Page Component - WITH CITY-BASED PARCEL CODE GENERATOR
+// Add Order Page Component - UPDATED with larger inputs, no scroll, manual price, always checked, phone validation
+// Add Order Page Component - COMPACT VERSION (no scroll)
 const AddOrderPage = ({ onBack, onSubmit }) => {
   const dispatch = useDispatch();
   const [addLoading, setAddLoading] = useState(false);
   const [addError, setAddError] = useState(null);
   const [phoneError, setPhoneError] = useState("");
   
-  // Month selection for code generation
-  const [selectedMonth, setSelectedMonth] = useState('03'); // Default to March
-  
   // Track if total was manually edited
   const [totalManuallyEdited, setTotalManuallyEdited] = useState(false);
   
-  // Helper function to generate random uppercase letters
-  const generateRandomLetters = (count) => {
-    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    let result = '';
-    for (let i = 0; i < count; i++) {
-      result += letters.charAt(Math.floor(Math.random() * letters.length));
-    }
-    return result;
-  };
-
-  // Generate random numbers (1000-9999)
-  const generateRandomNumbers = () => {
-    return Math.floor(Math.random() * 9000 + 1000);
-  };
-
-  // Generate parcel code based on city, month, year, random numbers and letters
-  const generateParcelCode = (city, month = '03') => {
-    if (!city || city.trim() === '') {
-      return '';
-    }
-    
-    // Get first 3 letters of city (lowercase)
-    const cityPrefix = city.substring(0, 3).toLowerCase();
-    
-    // Month code: '03' (March) or '04' (April)
-    const monthCode = month;
-    
-    // Year code: '26' (2026)
-    const yearCode = '26';
-    
-    // Generate 4 random digits (1000-9999)
-    const randomNumbers = generateRandomNumbers();
-    
-    // Generate 2 random uppercase letters
-    const randomLetters = generateRandomLetters(2);
-    
-    // Combine all parts: cityPrefix + monthCode + yearCode + randomNumbers + randomLetters
-    // Example: aga03264752AB
-    return `${cityPrefix}${monthCode}${yearCode}${randomNumbers}${randomLetters}`;
-  };
-  
   // Form state for new order
   const [newOrderData, setNewOrderData] = useState({
-    parcel_code: "",
+    parcel_code: `CMD-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
     parcel_receiver: "",
     parcel_phone: "",
     parcel_prd_qty: 0,
@@ -1240,10 +1200,12 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
       total = parseFloat(newOrderData.total) || 0;
     }
     
+    // Use manually entered parcel price or calculate if empty
     const parcelPrice = newOrderData.parcel_price !== null && newOrderData.parcel_price !== '' 
       ? parseFloat(newOrderData.parcel_price) 
       : null;
     
+    // Calculate profit if we have parcel price
     let profit = null;
     if (parcelPrice !== null) {
       profit = parcelPrice - (total + delivery + packaging);
@@ -1279,19 +1241,17 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
       validatePhone(value);
     }
     
+    // Track manual edits
     if (name === 'total') {
       setTotalManuallyEdited(true);
     }
     
-    setNewOrderData(prev => {
-      const updates = {
-        [name]: type === 'checkbox' ? (checked ? 1 : 0) : 
-                 (name === 'parcel_price' || name === 'total' || name === 'frais_livraison' || name === 'frais_packaging') ? 
-                 (value === '' ? null : parseFloat(value)) : value
-      };
-      
-      return { ...prev, ...updates };
-    });
+    setNewOrderData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? (checked ? 1 : 0) : 
+               (name === 'parcel_price' || name === 'total' || name === 'frais_livraison' || name === 'frais_packaging') ? 
+               (value === '' ? null : parseFloat(value)) : value
+    }));
   };
 
   const handleBooksChange = (books) => {
@@ -1309,24 +1269,10 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
   };
 
   const handleNewCitySelect = (city, cityId) => {
-    // Generate parcel code when city is selected
-    const newCode = generateParcelCode(city, selectedMonth);
-    
     setNewOrderData(prev => ({
       ...prev,
-      parcel_city: city,
-      parcel_code: newCode
+      parcel_city: city
     }));
-  };
-
-  const handleRegenerateCode = () => {
-    if (newOrderData.parcel_city) {
-      const newCode = generateParcelCode(newOrderData.parcel_city, selectedMonth);
-      setNewOrderData(prev => ({
-        ...prev,
-        parcel_code: newCode
-      }));
-    }
   };
 
   const handleSubmit = async (e) => {
@@ -1342,11 +1288,13 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
         return;
     }
 
+    // Validate phone if provided
     if (newOrderData.parcel_phone && !validatePhone(newOrderData.parcel_phone)) {
         setAddError(phoneError);
         return;
     }
 
+    // Validate that parcel price is entered
     if (newOrderData.parcel_price === null || newOrderData.parcel_price === '') {
         setAddError("Veuillez entrer le prix du colis");
         return;
@@ -1355,7 +1303,11 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
     const delivery = parseFloat(newOrderData.frais_livraison) || 35;
     const packaging = parseFloat(newOrderData.frais_packaging) || 0;
     const total = parseFloat(newOrderData.total) || 0;
+    
+    // Use manually entered price
     const parcelPrice = parseFloat(newOrderData.parcel_price);
+    
+    // Calculate profit
     let profit = parcelPrice - (total + delivery + packaging);
 
     const formattedLivres = newOrderData.livres.map(book => ({
@@ -1394,6 +1346,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
     try {
         const result = await onSubmit(orderToCreate);
         
+        // Send webhook with the created order data
         const webhookPayload = {
           event: 'order_created',
           parcel: {
@@ -1439,34 +1392,18 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
         )}
 
         <form onSubmit={handleSubmit} className="order-form compact">
-          {/* Row 1: Code with regenerate button and Date */}
+          {/* Row 1: Code and Date */}
           <div className="form-row">
             <div className="form-group">
               <label>Code colis</label>
-              <div className="code-input-group">
-                <input
-                  type="text"
-                  name="parcel_code"
-                  value={newOrderData.parcel_code}
-                  readOnly
-                  className="readonly-input code-input"
-                  placeholder="Sélectionnez une ville"
-                />
-                <button 
-                  type="button" 
-                  onClick={handleRegenerateCode}
-                  className="btn-regenerate"
-                  title="Régénérer le code"
-                  disabled={!newOrderData.parcel_city}
-                >
-                  <RefreshCw size={16} />
-                </button>
-              </div>
-              <small className="field-hint">
-                {newOrderData.parcel_city 
-                  ? `Généré: ${newOrderData.parcel_city.substring(0,3).toLowerCase()} + mois + année + 4 chiffres + 2 lettres` 
-                  : "Sélectionnez une ville pour générer"}
-              </small>
+              <input
+                type="text"
+                name="parcel_code"
+                value={newOrderData.parcel_code}
+                onChange={handleNewOrderChange}
+                readOnly
+                className="readonly-input"
+              />
             </div>
 
             <div className="form-group">
@@ -1512,29 +1449,8 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
             </div>
           </div>
 
-          {/* Row 3: Month Selection and City */}
+          {/* Row 3: City and Address */}
           <div className="form-row">
-            <div className="form-group">
-              <label>Code Mois</label>
-              <select 
-                value={selectedMonth}
-                onChange={(e) => {
-                  const newMonth = e.target.value;
-                  setSelectedMonth(newMonth);
-                  if (newOrderData.parcel_city) {
-                    setNewOrderData(prev => ({
-                      ...prev,
-                      parcel_code: generateParcelCode(prev.parcel_city, newMonth)
-                    }));
-                  }
-                }}
-                className="month-select"
-              >
-                <option value="03">Mars (03)</option>
-                <option value="04">Avril (04)</option>
-              </select>
-            </div>
-
             <div className="form-group">
               <label>Ville <span className="required">*</span></label>
               <CityAutocomplete
@@ -1543,24 +1459,21 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
                 onSelect={handleNewCitySelect}
               />
             </div>
-          </div>
 
-          {/* Row 4: Address */}
-          <div className="form-row">
-            <div className="form-group full-width">
+            <div className="form-group">
               <label>Adresse <span className="required">*</span></label>
               <input
                 type="text"
                 name="parcel_address"
                 value={newOrderData.parcel_address}
                 onChange={handleNewOrderChange}
-                placeholder="Adresse complète"
+                placeholder="Adresse"
                 required
               />
             </div>
           </div>
 
-          {/* Row 5: Book Selector */}
+          {/* Row 4: Book Selector - takes full width */}
           <div className="form-group full-width">
             <label>Livres <span className="required">*</span></label>
             <BookSelector 
@@ -1570,7 +1483,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
             />
           </div>
 
-          {/* Row 6: Quantity and Parcel Price */}
+          {/* Row 5: Quantity and Parcel Price */}
           <div className="form-row">
             <div className="form-group">
               <label>Quantité totale</label>
@@ -1608,7 +1521,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
             </div>
           </div>
 
-          {/* Row 7: Delivery Fee and Packaging Fee */}
+          {/* Row 6: Delivery Fee and Packaging Fee */}
           <div className="form-row">
             <div className="form-group">
               <label>Frais livraison</label>
@@ -1643,7 +1556,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
             </div>
           </div>
 
-          {/* Row 8: Total and Profit */}
+          {/* Row 7: Total and Profit */}
           <div className="form-row">
             <div className="form-group">
               <label>Total livres</label>
@@ -1676,7 +1589,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
             </div>
           </div>
 
-          {/* Row 9: Note */}
+          {/* Row 8: Note */}
           <div className="form-group full-width">
             <label>Note</label>
             <input
@@ -1688,7 +1601,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
             />
           </div>
 
-          {/* Row 10: Checkbox */}
+          {/* Row 9: Checkbox */}
           <div className="form-checkbox">
             <input
               type="checkbox"
@@ -1700,14 +1613,11 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
             <label htmlFor="parcel_open">Colis ouvert / vérifié</label>
           </div>
 
-          {/* Code Preview */}
-          <div className="code-preview">
+          {/* Price Info - Compact */}
+          <div className="price-info-warning compact">
             <Info size={16} />
             <span>
-              <strong>Format du code:</strong> ville(3) + mois(03/04) + année(26) + 4 chiffres + 2 lettres
-              {newOrderData.parcel_code && (
-                <> → <strong>{newOrderData.parcel_code}</strong></>
-              )}
+              <strong>Important:</strong> Prix colis: <strong>{newOrderData.parcel_price || '---'} MAD</strong>
             </span>
           </div>
 
@@ -1745,51 +1655,20 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
   );
 };
 
-// Update Order Page Component
+// Update Order Page Component - UPDATED with larger inputs, no scroll, manual price, always checked, phone validation
+// Update Order Page Component - COMPLETE with all fields from add form
+// Update Order Page Component - COMPLETE with proper data mapping from DB
 const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
   const dispatch = useDispatch();
   const [updateLoading, setUpdateLoading] = useState(false);
   const [updateError, setUpdateError] = useState(null);
   const [phoneError, setPhoneError] = useState("");
   
-  // Month selection for code regeneration
-  const [selectedMonth, setSelectedMonth] = useState('03');
-  
   // Track if total was manually edited
   const [totalManuallyEdited, setTotalManuallyEdited] = useState(false);
   
-  // Helper function to generate random uppercase letters
-  const generateRandomLetters = (count) => {
-    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    let result = '';
-    for (let i = 0; i < count; i++) {
-      result += letters.charAt(Math.floor(Math.random() * letters.length));
-    }
-    return result;
-  };
-
-  const generateRandomNumbers = () => {
-    return Math.floor(Math.random() * 9000 + 1000);
-  };
-
-  // Generate parcel code based on city, month, year, random numbers and letters
-  const generateParcelCode = (city, month = '03') => {
-    if (!city || city.trim() === '') {
-      return order?.parcel_code || '';
-    }
-    
-    const cityPrefix = city.substring(0, 3).toLowerCase();
-    const monthCode = month;
-    const yearCode = '26';
-    const randomNumbers = generateRandomNumbers();
-    const randomLetters = generateRandomLetters(2);
-    
-    return `${cityPrefix}${monthCode}${yearCode}${randomNumbers}${randomLetters}`;
-  };
-  
   // Form state for update
   const [formData, setFormData] = useState({
-    parcel_code: "",
     parcel_receiver: "",
     parcel_phone: "",
     parcel_prd_qty: 0,
@@ -1808,14 +1687,16 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
     date: ""
   });
 
-  // Load order data when component mounts
+  // Load order data when component mounts or order changes
   useEffect(() => {
     if (order) {
       console.log("📦 Order data from DB:", order);
       
+      // Format date properly if it exists
       let formattedDate = "";
       if (order.date) {
         try {
+          // Handle different date formats
           const dateObj = new Date(order.date);
           if (!isNaN(dateObj.getTime())) {
             formattedDate = dateObj.toISOString().split('T')[0];
@@ -1825,6 +1706,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
         }
       }
 
+      // Process livres data - handle different possible structures
       let processedLivres = [];
       if (order.livres && Array.isArray(order.livres)) {
         processedLivres = order.livres.map(book => ({
@@ -1837,26 +1719,19 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
         }));
       }
 
+      // Calculate total from livres if not provided
       let calculatedTotal = order.total;
       if (processedLivres.length > 0 && (!calculatedTotal || calculatedTotal === 0)) {
         calculatedTotal = processedLivres.reduce((sum, book) => sum + (book.prix_achat * book.quantity), 0);
       }
 
+      // Calculate quantity from livres if not provided
       let calculatedQty = order.parcel_prd_qty;
       if (processedLivres.length > 0 && (!calculatedQty || calculatedQty === 0)) {
         calculatedQty = processedLivres.reduce((sum, book) => sum + book.quantity, 0);
       }
 
-      // Extract month from existing parcel code if possible
-      if (order.parcel_code && order.parcel_code.length >= 8) {
-        const possibleMonth = order.parcel_code.substring(3, 5);
-        if (possibleMonth === '03' || possibleMonth === '04') {
-          setSelectedMonth(possibleMonth);
-        }
-      }
-
       setFormData({
-        parcel_code: order.parcel_code || order.code || "",
         parcel_receiver: order.parcel_receiver || order.receiver || order.client_nom || "",
         parcel_phone: order.parcel_phone || order.phone || order.client_telephone || "",
         parcel_prd_qty: calculatedQty || 0,
@@ -1878,11 +1753,20 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
           ? parseFloat(order.profit)
           : null,
         parcel_note: order.parcel_note || order.note || order.notes || "",
-        parcel_open: order.parcel_open !== undefined ? order.parcel_open : 1,
+        parcel_open: 1, // Force to checked
         statut: order.statut || order.status || order.delivery_status || "NEW_PARCEL",
         statut_second: order.statut_second || order.secondary_status || "",
         livres: processedLivres,
         date: formattedDate || new Date().toISOString().split('T')[0]
+      });
+
+      // Log what we've mapped for debugging
+      console.log("📋 Mapped form data:", {
+        receiver: order.parcel_receiver || order.receiver,
+        city: order.parcel_city || order.city,
+        qty: calculatedQty,
+        livres: processedLivres.length,
+        date: formattedDate
       });
     }
   }, [order]);
@@ -1919,12 +1803,15 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
       total = parseFloat(formData.total) || 0;
     }
     
+    // Update quantity based on livres
     const totalQty = (formData.livres || []).reduce((sum, book) => sum + (book.quantity || 1), 0);
     
+    // Use parcel price from form
     const parcelPrice = formData.parcel_price !== null && formData.parcel_price !== '' 
       ? parseFloat(formData.parcel_price) 
       : null;
     
+    // Calculate profit if we have parcel price
     let profit = null;
     if (parcelPrice !== null) {
       profit = parcelPrice - (total + delivery + packaging);
@@ -1961,6 +1848,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
       validatePhone(value);
     }
     
+    // Track manual edits for total
     if (name === 'total') {
       setTotalManuallyEdited(true);
     }
@@ -1994,91 +1882,90 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
     }));
   };
 
-  const handleRegenerateCode = () => {
-    if (formData.parcel_city) {
-      const newCode = generateParcelCode(formData.parcel_city, selectedMonth);
-      setFormData(prev => ({
-        ...prev,
-        parcel_code: newCode
-      }));
-    }
-  };
-
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!order) return;
+  e.preventDefault();
+  if (!order) return;
 
-    if (formData.parcel_phone && !validatePhone(formData.parcel_phone)) {
-        setUpdateError(phoneError);
+  // Validate phone if provided
+  if (formData.parcel_phone && !validatePhone(formData.parcel_phone)) {
+      setUpdateError(phoneError);
+      return;
+  }
+
+  setUpdateLoading(true);
+  setUpdateError(null);
+
+  try {
+    const updateData = {};
+    
+    // Check all fields for changes
+    Object.keys(formData).forEach(key => {
+      // Special handling for livres - always include if they exist and are different
+      if (key === 'livres') {
+        // Compare livres arrays
+        const currentLivres = JSON.stringify(formData.livres);
+        const originalLivres = JSON.stringify(order.livres || []);
+        
+        if (currentLivres !== originalLivres) {
+          updateData.livres = formData.livres;
+        }
         return;
+      }
+      
+      // Convert to string for comparison to handle numbers vs strings
+      const formValue = formData[key] === null || formData[key] === undefined ? '' : String(formData[key]);
+      const orderValue = order[key] === null || order[key] === undefined ? '' : String(order[key]);
+      
+      if (formValue !== orderValue) {
+        // For statut_second, if it's empty string, send as null to backend
+        if (key === 'statut_second' && formData[key] === '') {
+          updateData[key] = null;
+        } else {
+          updateData[key] = formData[key];
+        }
+      }
+    });
+
+    // Also update quantity based on livres total
+    if (formData.livres && formData.livres.length > 0) {
+      const totalQty = formData.livres.reduce((sum, book) => sum + (book.quantity || 1), 0);
+      if (totalQty !== order.parcel_prd_qty) {
+        updateData.parcel_prd_qty = totalQty;
+      }
     }
 
-    setUpdateLoading(true);
-    setUpdateError(null);
+    // Log what we're sending for debugging
+    console.log("📤 Sending update data:", updateData);
 
-    try {
-      const updateData = {};
-      
-      Object.keys(formData).forEach(key => {
-        if (key === 'livres') {
-          const currentLivres = JSON.stringify(formData.livres);
-          const originalLivres = JSON.stringify(order.livres || []);
-          
-          if (currentLivres !== originalLivres) {
-            updateData.livres = formData.livres;
-          }
-          return;
-        }
-        
-        const formValue = formData[key] === null || formData[key] === undefined ? '' : String(formData[key]);
-        const orderValue = order[key] === null || order[key] === undefined ? '' : String(order[key]);
-        
-        if (formValue !== orderValue) {
-          if (key === 'statut_second' && formData[key] === '') {
-            updateData[key] = null;
-          } else {
-            updateData[key] = formData[key];
-          }
-        }
-      });
-
-      if (formData.livres && formData.livres.length > 0) {
-        const totalQty = formData.livres.reduce((sum, book) => sum + (book.quantity || 1), 0);
-        if (totalQty !== order.parcel_prd_qty) {
-          updateData.parcel_prd_qty = totalQty;
-        }
-      }
-
-      console.log("📤 Sending update data:", updateData);
-
-      if (Object.keys(updateData).length === 0) {
-        onBack();
-        return;
-      }
-
-      await onSubmit(order.id, updateData);
+    if (Object.keys(updateData).length === 0) {
       onBack();
-      
-    } catch (error) {
-      console.error("Update failed:", error);
-      
-      if (error.response) {
-        console.error("Server error response:", error.response.data);
-        setUpdateError(
-          error.response.data?.message || 
-          error.response.data?.error ||
-          `Erreur ${error.response.status}: ${JSON.stringify(error.response.data)}`
-        );
-      } else {
-        setUpdateError(
-          error?.message || 
-          "Erreur lors de la mise à jour. Veuillez réessayer."
-        );
-      }
-    } finally {
-      setUpdateLoading(false);
+      return;
     }
-  };
+
+    await onSubmit(order.id, updateData);
+    onBack();
+    
+  } catch (error) {
+    console.error("Update failed:", error);
+    
+    // Log the actual error response from server
+    if (error.response) {
+      console.error("Server error response:", error.response.data);
+      setUpdateError(
+        error.response.data?.message || 
+        error.response.data?.error ||
+        `Erreur ${error.response.status}: ${JSON.stringify(error.response.data)}`
+      );
+    } else {
+      setUpdateError(
+        error?.message || 
+        "Erreur lors de la mise à jour. Veuillez réessayer."
+      );
+    }
+  } finally {
+    setUpdateLoading(false);
+  }
+};
 
   if (!order) return null;
 
@@ -2101,30 +1988,16 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
         )}
 
         <form onSubmit={handleSubmit} className="order-form compact">
-          {/* Row 1: Code with regenerate button and Date */}
+          {/* Row 1: Code (read-only) and Date */}
           <div className="form-row">
             <div className="form-group">
               <label>Code colis</label>
-              <div className="code-input-group">
-                <input
-                  type="text"
-                  name="parcel_code"
-                  value={formData.parcel_code}
-                  onChange={handleInputChange}
-                  className="code-input"
-                  placeholder="Code colis"
-                />
-                <button 
-                  type="button" 
-                  onClick={handleRegenerateCode}
-                  className="btn-regenerate"
-                  title="Régénérer le code"
-                  disabled={!formData.parcel_city}
-                >
-                  <RefreshCw size={16} />
-                </button>
-              </div>
-              <small className="field-hint">Cliquez sur 🔄 pour régénérer</small>
+              <input
+                type="text"
+                value={order.parcel_code || order.code || ""}
+                readOnly
+                className="readonly-input"
+              />
             </div>
 
             <div className="form-group">
@@ -2169,20 +2042,8 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
             </div>
           </div>
 
-          {/* Row 3: Month and City */}
+          {/* Row 3: City and Address */}
           <div className="form-row">
-            <div className="form-group">
-              <label>Code Mois</label>
-              <select 
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-                className="month-select"
-              >
-                <option value="03">Mars (03)</option>
-                <option value="04">Avril (04)</option>
-              </select>
-            </div>
-
             <div className="form-group">
               <label>Ville <span className="required">*</span></label>
               <CityAutocomplete
@@ -2191,11 +2052,8 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
                 onSelect={handleCitySelect}
               />
             </div>
-          </div>
 
-          {/* Row 4: Address */}
-          <div className="form-row">
-            <div className="form-group full-width">
+            <div className="form-group">
               <label>Adresse <span className="required">*</span></label>
               <input
                 type="text"
@@ -2208,7 +2066,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
             </div>
           </div>
 
-          {/* Row 5: Statuses */}
+          {/* Row 4: Statuses */}
           <div className="form-row">
             <div className="form-group">
               <label>Statut principal</label>
@@ -2254,7 +2112,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
             </div>
           </div>
 
-          {/* Row 6: Book Selector */}
+          {/* Row 5: Book Selector - takes full width */}
           <div className="form-group full-width">
             <label>Livres <span className="required">*</span></label>
             <BookSelector 
@@ -2264,7 +2122,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
             />
           </div>
 
-          {/* Row 7: Quantity and Parcel Price */}
+          {/* Row 6: Quantity and Parcel Price */}
           <div className="form-row">
             <div className="form-group">
               <label>Quantité totale</label>
@@ -2282,7 +2140,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
                   className="readonly-input"
                 />
               </div>
-              <small className="field-hint">Calculé automatiquement</small>
+              <small className="field-hint">Calculé automatiquement à partir des livres</small>
             </div>
 
             <div className="form-group">
@@ -2303,7 +2161,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
             </div>
           </div>
 
-          {/* Row 8: Delivery Fee and Packaging Fee */}
+          {/* Row 7: Delivery Fee and Packaging Fee */}
           <div className="form-row">
             <div className="form-group">
               <label>Frais livraison</label>
@@ -2338,7 +2196,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
             </div>
           </div>
 
-          {/* Row 9: Total and Profit */}
+          {/* Row 8: Total and Profit */}
           <div className="form-row">
             <div className="form-group">
               <label>Total livres</label>
@@ -2375,7 +2233,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
             </div>
           </div>
 
-          {/* Row 10: Note */}
+          {/* Row 9: Note */}
           <div className="form-group full-width">
             <label>Note</label>
             <textarea
@@ -2387,7 +2245,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
             />
           </div>
 
-          {/* Row 11: Checkbox */}
+          {/* Row 10: Checkbox */}
           <div className="form-checkbox">
             <input
               type="checkbox"
@@ -2397,6 +2255,14 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
               onChange={handleInputChange}
             />
             <label htmlFor="parcel_open">Colis ouvert / vérifié</label>
+          </div>
+
+          {/* Price Info Warning */}
+          <div className="price-info-warning compact">
+            <Info size={16} />
+            <span>
+              <strong>Important:</strong> Prix colis: <strong>{formData.parcel_price || '---'} MAD</strong>
+            </span>
           </div>
 
           {/* Form Actions */}
@@ -2587,7 +2453,7 @@ export default function AdminOrders() {
   const { list: orderList = [], loading } = useSelector((state) => state.commandes);
   
   // Page view states
-  const [currentView, setCurrentView] = useState('list');
+  const [currentView, setCurrentView] = useState('list'); // 'list', 'add', 'edit', 'details'
   const [selectedOrder, setSelectedOrder] = useState(null);
   
   // Search and filter states
@@ -2610,6 +2476,7 @@ export default function AdminOrders() {
   const [trackingInfoMap, setTrackingInfoMap] = useState({});
   const [loadingTracking, setLoadingTracking] = useState(false);
   
+  // Use ref to track if initial fetch has been done
   const initialFetchDone = useRef(false);
   const fetchInProgress = useRef(false);
 
@@ -2618,9 +2485,10 @@ export default function AdminOrders() {
     dispatch(fetchCommandes());
   }, [dispatch]);
 
-  // Fetch tracking info
+  // OPTIMIZED: Fetch all tracking info in a single batch when orders are loaded
   useEffect(() => {
     const fetchAllTrackingInfo = async () => {
+      // Don't fetch if already done or no orders or fetch in progress
       if (initialFetchDone.current || orderList.length === 0 || fetchInProgress.current) {
         return;
       }
@@ -2633,6 +2501,7 @@ export default function AdminOrders() {
         const trackingPromises = [];
         const validOrders = [];
         
+        // Collect all valid parcel codes
         for (const order of orderList) {
           if (order.parcel_code) {
             trackingPromises.push(
@@ -2661,17 +2530,20 @@ export default function AdminOrders() {
           return;
         }
 
+        // Execute all promises in parallel
         const results = await Promise.all(trackingPromises);
         
         const newTrackingMap = {};
         const updatesToDispatch = [];
 
+        // Process results
         results.forEach((response, index) => {
           const order = validOrders[index];
           if (response && response.data && response.data.success && response.data.data) {
             const trackingData = response.data.data;
             newTrackingMap[order.parcel_code] = trackingData;
             
+            // Check for status changes
             if (trackingData.parcel?.delivery_status) {
               const deliveryStatus = trackingData.parcel.delivery_status;
               const secondaryStatus = trackingData.parcel.status_second;
@@ -2681,6 +2553,7 @@ export default function AdminOrders() {
                 ? `${deliveryStatus} - ${secondaryStatus}`
                 : deliveryStatus;
               
+              // If status changed, prepare update
               if (order.statut !== deliveryStatus || 
                   order.statut_second !== secondaryStatus || 
                   order.payment_status !== paymentStatus) {
@@ -2698,8 +2571,10 @@ export default function AdminOrders() {
                   }
                 });
                 
+                // Calculate profit based on parcel_price - total formula
                 let profit = (order.parcel_price || 0) - ((order.total || 0) + (order.frais_livraison || 0) + (order.frais_packaging || 0));
                 
+                // Send webhook update
                 const payload = {
                   parcel: {
                     code: order.parcel_code,
@@ -2712,6 +2587,7 @@ export default function AdminOrders() {
                 
                 sendWebhookUpdate(payload);
                 
+                // Prepare Redux update with profit recalculation
                 updatesToDispatch.push(
                   dispatch(updateCommande({ 
                     id: order.id, 
@@ -2728,8 +2604,10 @@ export default function AdminOrders() {
           }
         });
 
+        // Update tracking map
         setTrackingInfoMap(newTrackingMap);
         
+        // Execute all Redux updates in parallel
         if (updatesToDispatch.length > 0) {
           await Promise.all(updatesToDispatch);
         }
@@ -2828,6 +2706,7 @@ export default function AdminOrders() {
 
   const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
 
+  // Get unique statuses from orders for filter dropdown
   const uniqueStatuses = useMemo(() => {
     const statuses = new Set();
     orderList.forEach(order => {
@@ -2841,6 +2720,7 @@ export default function AdminOrders() {
     return Array.from(statuses).sort();
   }, [orderList]);
 
+  // Calculate stats dynamically from orderList
   const stats = useMemo(() => {
     const statsMap = {};
     orderList.forEach(order => {
@@ -2935,6 +2815,7 @@ export default function AdminOrders() {
     );
   };
 
+  // Helper to get tracking info for an order
   const getTrackingStatus = (parcelCode) => {
     if (!parcelCode) return null;
     const info = trackingInfoMap[parcelCode];
@@ -2954,6 +2835,7 @@ export default function AdminOrders() {
     return <div className="admin-loading">Chargement des commandes...</div>;
   }
 
+  // Render the appropriate view
   if (currentView === 'details' && selectedOrder) {
     return (
       <div className="admin-orders">
@@ -3030,8 +2912,10 @@ export default function AdminOrders() {
     );
   }
 
+  // Default: List view
   return (
     <div className="admin-orders">
+      {/* Delete Confirmation Modal */}
       <DeleteConfirmationModal 
         isOpen={showDeleteConfirm}
         onClose={() => {
@@ -3042,6 +2926,7 @@ export default function AdminOrders() {
         orderCode={orderToDelete?.parcel_code}
       />
 
+      {/* Copy Notification */}
       <CopyNotification 
         message={copyMessage}
         isVisible={showCopyNotification}
@@ -3075,6 +2960,7 @@ export default function AdminOrders() {
         </div>
       </div>
 
+      {/* Webhook Panel Modal */}
       {showWebhookPanel && (
         <div className="modal-overlay" onClick={() => setShowWebhookPanel(false)}>
           <div className="webhook-modal" onClick={e => e.stopPropagation()}>
@@ -3083,6 +2969,7 @@ export default function AdminOrders() {
         </div>
       )}
 
+      {/* Stats Cards */}
       <div className="orders-stats-grid">
         <div className="order-stat-card total">
           <div className="order-stat-content">
@@ -3105,6 +2992,7 @@ export default function AdminOrders() {
         ))}
       </div>
 
+      {/* Search and Filters */}
       <div className="filters-section">
         <div className="search-bar">
           <Search size={18} className="search-icon" />
@@ -3131,6 +3019,7 @@ export default function AdminOrders() {
         </button>
       </div>
 
+      {/* Filter Panel */}
       {showFilters && (
         <div className="filter-panel">
           <div className="filter-row">
@@ -3158,6 +3047,7 @@ export default function AdminOrders() {
         </div>
       )}
 
+      {/* No results message */}
       {filteredOrders.length === 0 && (
         <div className="no-results">
           <h3>Aucune commande trouvée</h3>
@@ -3168,6 +3058,7 @@ export default function AdminOrders() {
         </div>
       )}
 
+      {/* Orders Table */}
       {filteredOrders.length > 0 && (
         <>
           <div className="table-wrapper">
@@ -3193,7 +3084,9 @@ export default function AdminOrders() {
                   const deliveryStatus = tracking?.deliveryStatus || order.statut;
                   const secondaryStatus = tracking?.secondaryStatus || order.statut_second;
                   const paymentStatus = tracking?.paymentStatus || order.payment_status;
+                  const paymentText = tracking?.paymentText || order.payment_status_text;
                   
+                  // Translate statuses for display
                   const translatedDeliveryStatus = translateStatus(deliveryStatus);
                   const translatedSecondaryStatus = secondaryStatus ? translateStatus(secondaryStatus) : null;
                   const translatedPaymentStatus = translateStatus(paymentStatus);

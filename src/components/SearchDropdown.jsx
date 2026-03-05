@@ -15,17 +15,38 @@ export default function SearchDropdown({ isMobile = false }) {
   const inputRef = useRef(null);
   const { getTextDirection, getTextStyle } = useLanguageDirection();
 
-  // Filter books based on search term
+  // Normalize Arabic text function
+  const normalizeArabicText = (text) => {
+    if (!text) return '';
+    
+    // Convert to string if not already
+    text = String(text);
+    
+    // Normalize Arabic characters
+    return text
+      // Normalize Alif variations to ا
+      .replace(/[أإآ]/g, 'ا')
+      // Normalize Teh Marbuta (ة) to Heh (ه)
+      .replace(/ة/g, 'ه')
+      // Normalize Alef Maksura (ى) to Yeh (ي)
+      .replace(/ى/g, 'ي')
+      // Remove diacritics (Tashkeel)
+      .replace(/[ًٌٍَُِّْ]|[\u064B-\u065F]/g, '')
+      // Convert to lowercase for case-insensitive comparison
+      .toLowerCase();
+  };
+
+  // Filter books based on search term with Arabic normalization
   const filteredBooks = books.filter((book) => {
-    const title = book.titre || "";
-    const author = book.auteur || "";
-    const category = book.categorie || "";
-    const term = searchTerm.toLowerCase();
+    const title = normalizeArabicText(book.titre || "");
+    const author = normalizeArabicText(book.auteur || "");
+    const category = normalizeArabicText(book.categorie || "");
+    const term = normalizeArabicText(searchTerm);
 
     return (
-      title.toLowerCase().includes(term) ||
-      author.toLowerCase().includes(term) ||
-      category.toLowerCase().includes(term)
+      title.includes(term) ||
+      author.includes(term) ||
+      category.includes(term)
     );
   }).slice(0, 10); // Limit to 10 results
 
@@ -96,17 +117,17 @@ export default function SearchDropdown({ isMobile = false }) {
       <form onSubmit={handleSearchSubmit} className="search-form">
         <Search size={18} className="search-icon" />
         <input
-  ref={inputRef}
-  type="text"
-  placeholder="ابحث عن كتاب أو مؤلف..."
-  value={searchTerm}
-  onChange={(e) => setSearchTerm(e.target.value)}
-  className="search-input"
-  dir={getTextDirection(searchTerm) || 'rtl'} // Default to rtl for Arabic placeholder
-  style={{ 
-    textAlign: (getTextDirection(searchTerm) || 'rtl') === 'rtl' ? 'right' : 'left' 
-  }}
-/>
+          ref={inputRef}
+          type="text"
+          placeholder="ابحث عن كتاب أو مؤلف..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="search-input"
+          dir={getTextDirection(searchTerm) || 'rtl'} // Default to rtl for Arabic placeholder
+          style={{ 
+            textAlign: (getTextDirection(searchTerm) || 'rtl') === 'rtl' ? 'right' : 'left' 
+          }}
+        />
         {searchTerm && (
           <button
             type="button"

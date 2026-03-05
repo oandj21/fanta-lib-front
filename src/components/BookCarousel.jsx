@@ -4,7 +4,7 @@ import { useSelector } from "react-redux";
 import BookCard from "./BookCard";
 import "../css/BookCarousel.css";
 
-const BookCarousel = forwardRef(({ onShowDetails }, ref) => {
+const BookCarousel = forwardRef(({ onShowDetails, allBooks = [] }, ref) => {
   const { list: books } = useSelector((state) => state.livres);
   const trackRef = useRef(null);
   const animRef = useRef(null);
@@ -222,7 +222,11 @@ const BookCarousel = forwardRef(({ onShowDetails }, ref) => {
               className="carousel-item carousel-book-card"
               onClick={(e) => handleCardClick(book, e)}
             >
-              <BookCard book={book} />
+              <BookCard 
+                book={book} 
+                allBooks={allBooks.length > 0 ? allBooks : books}
+                onShowDetails={onShowDetails}
+              />
             </div>
           ))}
         </div>

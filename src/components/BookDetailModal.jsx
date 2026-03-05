@@ -5,29 +5,67 @@ import { ShoppingCart, Check, X } from "lucide-react";
 import useLanguageDirection from "../utils/useLanguageDirection";
 import "../css/BookDetailModal.css";
 
-export default function BookDetailModal({ book, onClose }) {
+export default function BookDetailModal({ book, allBooks = [], onClose }) {
   const [added, setAdded] = useState(false);
   const [imageError, setImageError] = useState(false);
   const { getTextDirection } = useLanguageDirection();
 
-  const handleAdd = () => {
-    const cartItem = {
-      id: book.id,
-      titre: book.titre,
-      auteur: book.auteur,
-      prix_achat: book.prix_achat,
-      images: book.images,
-      quantity: 1
-    };
+  // Helper function to find books with same ISBN
+  const findBooksByISBN = (currentBook, booksList) => {
+    if (!currentBook.isbn || !booksList || booksList.length === 0) {
+      return [currentBook];
+    }
     
+    const sameISBNBooks = booksList.filter(b => 
+      b.isbn && b.isbn.toString().trim() === currentBook.isbn.toString().trim()
+    );
+    
+    return sameISBNBooks.length > 0 ? sameISBNBooks : [currentBook];
+  };
+
+  const handleAdd = () => {
+    // Get current cart
     const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-    cart.push(cartItem);
+    
+    // Find all books with the same ISBN
+    const booksToAdd = findBooksByISBN(book, allBooks);
+    let addedCount = 0;
+    let newItemsCount = 0;
+    
+    // Add each book to cart (avoiding duplicates)
+    booksToAdd.forEach(bookToAdd => {
+      const existingItemIndex = cart.findIndex(item => item.id === bookToAdd.id);
+      
+      if (existingItemIndex >= 0) {
+        // If already exists, increment quantity
+        cart[existingItemIndex].quantity = (cart[existingItemIndex].quantity || 1) + 1;
+        addedCount++;
+      } else {
+        // If not exists, add new item
+        cart.push({
+          id: bookToAdd.id,
+          titre: bookToAdd.titre,
+          auteur: bookToAdd.auteur,
+          prix_achat: bookToAdd.prix_achat,
+          images: bookToAdd.images,
+          isbn: bookToAdd.isbn,
+          categorie: bookToAdd.categorie,
+          quantity: 1
+        });
+        addedCount++;
+        newItemsCount++;
+      }
+    });
+    
+    // Save updated cart
     localStorage.setItem('cart', JSON.stringify(cart));
     
+    // Dispatch events
     window.dispatchEvent(new Event('storage'));
+    window.dispatchEvent(new Event('cartUpdated'));
     
     setAdded(true);
-    setTimeout(() => setAdded(false), 1500);
+    setTimeout(() => setAdded(false), 3000);
   };
 
   const handleOverlayClick = (e) => {
@@ -73,6 +111,11 @@ export default function BookDetailModal({ book, onClose }) {
   const handleImageError = () => {
     setImageError(true);
   };
+
+  // Get books with same ISBN for display (excluding current book)
+  const sameISBNBooks = book.isbn && allBooks.length > 0 
+    ? allBooks.filter(b => b.isbn && b.isbn.toString().trim() === book.isbn.toString().trim() && b.id !== book.id)
+    : [];
 
   return (
     <Portal>
@@ -122,7 +165,36 @@ export default function BookDetailModal({ book, onClose }) {
                 {book.categorie || "غير مصنف"}
               </span>
 
-              
+              {/* ISBN Display - Show if available */}
+              {book.isbn && (
+                <div className="book-isbn">
+                  <span className="isbn-label">ISBN:</span>
+                  <span className="isbn-value">{book.isbn}</span>
+                </div>
+              )}
+
+              {/* Other Editions Section - Show if there are books with same ISBN */}
+              {sameISBNBooks.length > 0 && (
+                <div className="other-editions">
+                  <h3>إصدارات أخرى من نفس ISBN:</h3>
+                  <ul className="editions-list">
+                    {sameISBNBooks.map(otherBook => (
+                      <li key={otherBook.id} className="edition-item">
+                        <span className="edition-title">{otherBook.titre}</span>
+                        <span className="edition-author"> - {otherBook.auteur || "مؤلف غير معروف"}</span>
+                        {otherBook.status === "available" ? (
+                          <span className="edition-status available">متوفر</span>
+                        ) : (
+                          <span className="edition-status unavailable">غير متوفر</span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="edition-note">
+                    *عند إضافة هذا الكتاب إلى السلة، سيتم إضافة جميع الإصدارات المتاحة من نفس ISBN
+                  </p>
+                </div>
+              )}
 
               <div className="book-description">
                 <h3>الوصف</h3>
@@ -144,12 +216,16 @@ export default function BookDetailModal({ book, onClose }) {
                   {added ? (
                     <>
                       <Check size={18} className="btn-icon1" />
-                      تمت الإضافة إلى السلة!
+                      {sameISBNBooks.length > 0 
+                        ? `تمت إضافة ${sameISBNBooks.length + 1} كتب إلى السلة!` 
+                        : "تمت الإضافة إلى السلة!"}
                     </>
                   ) : (
                     <>
                       <ShoppingCart size={18} className="btn-icon1" />
-                      أضف إلى السلة
+                      {sameISBNBooks.length > 0 
+                        ? `أضف إلى السلة (+${sameISBNBooks.length} إصدارات أخرى)` 
+                        : "أضف إلى السلة"}
                     </>
                   )}
                 </button>

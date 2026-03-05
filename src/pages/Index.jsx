@@ -9,7 +9,7 @@ import BookDetailModal from "../components/BookDetailModal";
 import BookCarousel from "../components/BookCarousel";
 import Header from "../components/Header";
 import WhatsAppFloat from "../components/WhatsAppFloat";
-import HeroSlider from "../components/HeroSlider"; // Import the new HeroSlider component
+import HeroSlider from "../components/HeroSlider";
 import "../css/Index.css";
 
 export default function Index() {
@@ -22,7 +22,7 @@ export default function Index() {
   useEffect(() => {
     window.scrollTo({
       top: 0,
-      behavior: 'smooth' // Smooth scrolling animation
+      behavior: 'smooth'
     });
   }, []);
   
@@ -50,7 +50,6 @@ export default function Index() {
     <div className="homepage">
       <Header />
       
-      {/* Replace the old hero section with the new HeroSlider */}
       <HeroSlider />
 
       <section className="carousel-section">
@@ -60,7 +59,8 @@ export default function Index() {
         </div>
         <BookCarousel 
           ref={carouselRef}
-          onShowDetails={handleShowDetails} 
+          onShowDetails={handleShowDetails}
+          allBooks={books}
         />
       </section>
 
@@ -80,7 +80,11 @@ export default function Index() {
           <div className="books-grid">
             {books.slice(0, 8).map((book, i) => (
               <div key={book.id} style={{ animationDelay: `${i * 80}ms` }} className="animate-fade-up">
-                <BookCard book={book} onShowDetails={handleShowDetails} />
+                <BookCard 
+                  book={book} 
+                  allBooks={books}
+                  onShowDetails={handleShowDetails}
+                />
               </div>
             ))}
           </div>
@@ -114,7 +118,11 @@ export default function Index() {
       
       {/* Modal rendered at root level */}
       {selectedBook && (
-        <BookDetailModal book={selectedBook} onClose={handleCloseDetails} />
+        <BookDetailModal 
+          book={selectedBook} 
+          allBooks={books}
+          onClose={handleCloseDetails} 
+        />
       )}
     </div>
   );

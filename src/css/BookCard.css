@@ -296,3 +296,28 @@
 .book-card.rtl .btn-details {
   flex-direction: row;
 }
+.isbn-badge {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  background: rgba(92, 2, 2, 0.9);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  z-index: 2;
+  backdrop-filter: blur(2px);
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

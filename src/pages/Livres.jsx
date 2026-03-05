@@ -179,7 +179,11 @@ export default function Livres() {
               <div className="books-grid">
                 {filtered.map((book, i) => (
                   <div key={book.id} style={{ animationDelay: `${i * 60}ms` }} className="animate-fade-up">
-                    <BookCard book={book} onShowDetails={handleShowDetails} />
+                    <BookCard 
+                      book={book} 
+                      allBooks={books}
+                      onShowDetails={handleShowDetails}
+                    />
                   </div>
                 ))}
               </div>
@@ -192,7 +196,11 @@ export default function Livres() {
       
       {/* Modal rendered at root level */}
       {selectedBook && (
-        <BookDetailModal book={selectedBook} onClose={handleCloseDetails} />
+        <BookDetailModal 
+          book={selectedBook} 
+          allBooks={books}
+          onClose={handleCloseDetails} 
+        />
       )}
     </div>
   );

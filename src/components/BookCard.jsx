@@ -5,11 +5,11 @@ import { Eye, ShoppingCart, Check, BookOpen } from "lucide-react";
 import useLanguageDirection from "../utils/useLanguageDirection";
 import "../css/BookCard.css";
 
-export default function BookCard({ book }) {
+export default function BookCard({ book, allBooks = [], onShowDetails }) {
   const [showDetail, setShowDetail] = useState(false);
   const [added, setAdded] = useState(false);
   const [imageError, setImageError] = useState(false);
-  const { getTextDirection, getClassName } = useLanguageDirection();
+  const { getTextDirection } = useLanguageDirection();
 
   // Local SVG placeholder (no external dependency)
   const getPlaceholderSVG = () => {
@@ -43,26 +43,63 @@ export default function BookCard({ book }) {
     setImageError(true);
   };
 
+  // Helper function to find books with same ISBN
+  const findBooksByISBN = (currentBook, booksList) => {
+    if (!currentBook.isbn || !booksList || booksList.length === 0) {
+      return [currentBook];
+    }
+    
+    // Find all books with the same ISBN (case-insensitive, trim whitespace)
+    const sameISBNBooks = booksList.filter(b => 
+      b.isbn && b.isbn.toString().trim() === currentBook.isbn.toString().trim()
+    );
+    
+    // If we found books with same ISBN, return them, otherwise return just the current book
+    return sameISBNBooks.length > 0 ? sameISBNBooks : [currentBook];
+  };
+
   const handleAdd = (e) => {
     e.preventDefault();
     e.stopPropagation();
     if (book.status !== "available") return;
     
-    const cartItem = {
-      id: book.id,
-      titre: book.titre,
-      auteur: book.auteur,
-      prix_achat: book.prix_achat,
-      images: book.images,
-      quantity: 1
-    };
-    
+    // Get current cart
     const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-    cart.push(cartItem);
+    
+    // Find all books with the same ISBN
+    const booksToAdd = findBooksByISBN(book, allBooks);
+    
+    // Add each book to cart (avoiding duplicates by checking if already in cart)
+    booksToAdd.forEach(bookToAdd => {
+      // Check if this specific book (by ID) is already in cart
+      const existingItemIndex = cart.findIndex(item => item.id === bookToAdd.id);
+      
+      if (existingItemIndex >= 0) {
+        // If already exists, increment quantity
+        cart[existingItemIndex].quantity = (cart[existingItemIndex].quantity || 1) + 1;
+      } else {
+        // If not exists, add new item
+        cart.push({
+          id: bookToAdd.id,
+          titre: bookToAdd.titre,
+          auteur: bookToAdd.auteur,
+          prix_achat: bookToAdd.prix_achat,
+          images: bookToAdd.images,
+          isbn: bookToAdd.isbn,
+          categorie: bookToAdd.categorie,
+          quantity: 1
+        });
+      }
+    });
+    
+    // Save updated cart
     localStorage.setItem('cart', JSON.stringify(cart));
     
+    // Dispatch events to update other components
     window.dispatchEvent(new Event('storage'));
+    window.dispatchEvent(new Event('cartUpdated'));
     
+    // Show success animation
     setAdded(true);
     setTimeout(() => setAdded(false), 1400);
   };
@@ -70,9 +107,17 @@ export default function BookCard({ book }) {
   const handleDetailsClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log("فتح التفاصيل للكتاب:", book);
-    setShowDetail(true);
+    if (onShowDetails) {
+      onShowDetails(book);
+    } else {
+      setShowDetail(true);
+    }
   };
+
+  // Get count of books with same ISBN
+  const sameISBNCount = book.isbn && allBooks.length > 0 
+    ? allBooks.filter(b => b.isbn === book.isbn).length 
+    : 1;
 
   return (
     <>
@@ -87,6 +132,12 @@ export default function BookCard({ book }) {
           {book.status && (
             <span className={`status-bad ${book.status}`}>
               {book.status === "available" ? "متوفر" : "غير متوفر"}
+            </span>
+          )}
+          {/* ISBN Badge - Show if book has ISBN and there are multiple versions */}
+          {book.isbn && sameISBNCount > 1 && (
+            <span className="isbn-badge" title="يوجد إصدارات متعددة لهذا الكتاب">
+              📚 {sameISBNCount} إصدارات
             </span>
           )}
         </div>
@@ -129,7 +180,7 @@ export default function BookCard({ book }) {
               onClick={handleAdd}
               disabled={book.status !== "available"}
               className={`btn-cart ${added ? 'added' : ''} ${book.status !== "available" ? 'disabled' : ''}`}
-              title="أضف إلى السلة"
+              title={sameISBNCount > 1 ? `إضافة جميع الإصدارات (${sameISBNCount})` : "أضف إلى السلة"}
               type="button"
             >
               {added ? <Check size={18} /> : <ShoppingCart size={18} />}
@@ -138,9 +189,10 @@ export default function BookCard({ book }) {
         </div>
       </div>
 
-      {showDetail && (
+      {showDetail && !onShowDetails && (
         <BookDetailModal 
           book={book} 
+          allBooks={allBooks}
           onClose={() => {
             console.log("إغلاق النافذة");
             setShowDetail(false);

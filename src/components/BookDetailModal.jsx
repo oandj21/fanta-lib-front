@@ -65,7 +65,11 @@ export default function BookDetailModal({ book, allBooks = [], onClose }) {
     window.dispatchEvent(new Event('cartUpdated'));
     
     setAdded(true);
-    setTimeout(() => setAdded(false), 3000);
+    
+    // Close modal after a short delay to show the success message
+    setTimeout(() => {
+      onClose();
+    }, 800); // 800ms delay to show "تمت الإضافة" message before closing
   };
 
   const handleOverlayClick = (e) => {
@@ -164,7 +168,6 @@ export default function BookDetailModal({ book, allBooks = [], onClose }) {
               <span className="book-category-badge">
                 {book.categorie || "غير مصنف"}
               </span>
-
 
               {/* Other Editions Section - Show if there are books with same ISBN */}
               {sameISBNBooks.length > 0 && (

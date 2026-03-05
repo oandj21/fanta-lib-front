@@ -107,14 +107,30 @@ export default function Cart() {
     }, 200);
   };
 
-  // Remove item from cart
+  // Remove item from cart - Modified to remove all books with same ISBN
   const removeItem = (id) => {
+    // Find the item to get its ISBN
+    const itemToRemove = cartItems.find(item => item.id === id);
+    
+    if (!itemToRemove) return;
+    
     setRemovingId(id);
     
     setTimeout(() => {
-      const updatedCart = cartItems.filter(item => item.id !== id);
-      localStorage.setItem('cart', JSON.stringify(updatedCart));
-      setCartItems(updatedCart);
+      // If the item has an ISBN, remove all items with the same ISBN
+      if (itemToRemove.isbn) {
+        const updatedCart = cartItems.filter(item => 
+          !item.isbn || item.isbn.toString().trim() !== itemToRemove.isbn.toString().trim()
+        );
+        localStorage.setItem('cart', JSON.stringify(updatedCart));
+        setCartItems(updatedCart);
+      } else {
+        // If no ISBN, just remove the specific item
+        const updatedCart = cartItems.filter(item => item.id !== id);
+        localStorage.setItem('cart', JSON.stringify(updatedCart));
+        setCartItems(updatedCart);
+      }
+      
       setRemovingId(null);
       
       // Trigger storage event for header update
@@ -307,6 +323,11 @@ ${items}
                       <div className="item-details">
                         <h3 className="item-title">{item.titre || item.title || "عنوان غير معروف"}</h3>
                         <p className="item-author">{item.auteur || item.author || "مؤلف غير معروف"}</p>
+                        {item.isbn && (
+                          <p className="item-isbn" style={{ fontSize: '0.75rem', color: '#999', margin: '0.25rem 0 0' }}>
+                            ISBN: {item.isbn}
+                          </p>
+                        )}
                       </div>
 
                       <div className="item-actions">

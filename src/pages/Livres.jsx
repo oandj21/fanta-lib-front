@@ -171,7 +171,8 @@ export default function Livres() {
             
             {filtered.length === 0 ? (
               <div className="empty-state">
-
+                <BookOpen />
+                <p>لم يتم العثور على كتب</p>
               </div>
             ) : (
               <div className="books-grid">

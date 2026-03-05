@@ -421,7 +421,7 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
 };
 
 // Book Selection Component
-// Book Selection Component with Arabic text normalization
+// Book Selection Component with Arabic text normalization and auto-select all same ISBN
 const BookSelector = ({ selectedBooks, onBooksChange, onTotalQuantityChange }) => {
   const dispatch = useDispatch();
   const { list: booksList = [], loading: booksLoading } = useSelector((state) => state.livres);
@@ -459,37 +459,57 @@ const BookSelector = ({ selectedBooks, onBooksChange, onTotalQuantityChange }) =
     }
   }, [selectedBooks, onTotalQuantityChange]);
 
-  const addBook = (book) => {
-    const existingBook = selectedBooks.find(b => b.id === book.id);
-    if (existingBook) {
-      onBooksChange(
-        selectedBooks.map(b => 
-          b.id === book.id 
-            ? { 
-                ...b, 
-                quantity: b.quantity + 1, 
-                total: (b.quantity + 1) * b.prix_achat,
-                price: b.prix_achat
-              }
-            : b
-        )
-      );
-    } else {
-      onBooksChange([
-        ...selectedBooks,
-        {
+  // Find all books with the same ISBN
+  const findBooksWithSameIsbn = (book) => {
+    if (!book.isbn || book.isbn.trim() === '') return [book];
+    
+    return booksList.filter(b => 
+      b.isbn && 
+      b.isbn.trim() !== '' && 
+      b.isbn === book.isbn
+    );
+  };
+
+  // Add all books with the same ISBN
+  const addAllBooksWithSameIsbn = (selectedBook) => {
+    const booksToAdd = findBooksWithSameIsbn(selectedBook);
+    
+    // Create a copy of current selected books
+    let updatedBooks = [...selectedBooks];
+    
+    booksToAdd.forEach(book => {
+      const existingBookIndex = updatedBooks.findIndex(b => b.id === book.id);
+      
+      if (existingBookIndex >= 0) {
+        // Book already exists, increase quantity
+        updatedBooks[existingBookIndex] = {
+          ...updatedBooks[existingBookIndex],
+          quantity: updatedBooks[existingBookIndex].quantity + 1,
+          total: (updatedBooks[existingBookIndex].quantity + 1) * book.prix_achat,
+          price: book.prix_achat
+        };
+      } else {
+        // New book, add to list
+        updatedBooks.push({
           id: book.id,
           titre: book.titre,
           auteur: book.auteur,
           prix_achat: book.prix_achat,
           price: book.prix_achat,
           quantity: 1,
-          total: book.prix_achat
-        }
-      ]);
-    }
+          total: book.prix_achat,
+          isbn: book.isbn
+        });
+      }
+    });
+    
+    onBooksChange(updatedBooks);
     setSearchTerm("");
     setShowDropdown(false);
+  };
+
+  const handleBookSelect = (book) => {
+    addAllBooksWithSameIsbn(book);
   };
 
   const updateQuantity = (bookId, newQuantity) => {
@@ -518,6 +538,22 @@ const BookSelector = ({ selectedBooks, onBooksChange, onTotalQuantityChange }) =
   const calculateSubtotal = () => {
     return selectedBooks.reduce((sum, book) => sum + book.total, 0);
   };
+
+  // Group selected books by ISBN for display
+  const groupedSelectedBooks = useMemo(() => {
+    const groups = {};
+    selectedBooks.forEach(book => {
+      const key = book.isbn || `no-isbn-${book.id}`;
+      if (!groups[key]) {
+        groups[key] = {
+          isbn: book.isbn,
+          books: []
+        };
+      }
+      groups[key].books.push(book);
+    });
+    return groups;
+  }, [selectedBooks]);
 
   return (
     <div className="book-selector">
@@ -550,22 +586,32 @@ const BookSelector = ({ selectedBooks, onBooksChange, onTotalQuantityChange }) =
         {showDropdown && searchTerm && (
           <div className="book-dropdown">
             {filteredBooks.length > 0 ? (
-              filteredBooks.map(book => (
-                <div
-                  key={book.id}
-                  className="book-dropdown-item"
-                  onClick={() => addBook(book)}
-                >
-                  <div className="book-dropdown-info">
-                    <span className="book-dropdown-title">{book.titre || "Sans titre"}</span>
-                    <span className="book-dropdown-author">{book.auteur || "Auteur inconnu"}</span>
-                    {book.isbn && (
-                      <span className="book-dropdown-isbn">ISBN: {book.isbn}</span>
-                    )}
+              filteredBooks.map(book => {
+                const sameIsbnCount = book.isbn ? 
+                  booksList.filter(b => b.isbn === book.isbn).length : 1;
+                
+                return (
+                  <div
+                    key={book.id}
+                    className="book-dropdown-item"
+                    onClick={() => handleBookSelect(book)}
+                  >
+                    <div className="book-dropdown-info">
+                      <span className="book-dropdown-title">{book.titre || "Sans titre"}</span>
+                      <span className="book-dropdown-author">{book.auteur || "Auteur inconnu"}</span>
+                      {book.isbn && (
+                        <span className="book-dropdown-isbn">
+                          ISBN: {book.isbn} 
+                          {sameIsbnCount > 1 && (
+                            <span className="isbn-count-badge">({sameIsbnCount} exemplaires)</span>
+                          )}
+                        </span>
+                      )}
+                    </div>
+                    <span className="book-dropdown-price">{book.prix_achat || 0} MAD</span>
                   </div>
-                  <span className="book-dropdown-price">{book.prix_achat || 0} MAD</span>
-                </div>
-              ))
+                );
+              })
             ) : (
               <div className="book-dropdown-empty">
                 <BookOpen size={24} />
@@ -584,45 +630,55 @@ const BookSelector = ({ selectedBooks, onBooksChange, onTotalQuantityChange }) =
             <span className="selected-count">{selectedBooks.length} livre(s)</span>
           </div>
           <div className="selected-books-list">
-            {selectedBooks.map(book => (
-              <div key={book.id} className="selected-book-item">
-                <div className="selected-book-info">
-                  <span className="selected-book-title">{book.titre || "Sans titre"}</span>
-                  <span className="selected-book-author">{book.auteur || "Auteur inconnu"}</span>
-                  <span className="selected-book-price">{book.prix_achat || 0} MAD</span>
-                </div>
-                
-                <div className="selected-book-actions">
-                  <div className="quantity-control">
-                    <button
-                      type="button"
-                      onClick={() => updateQuantity(book.id, book.quantity - 1)}
-                      className="quantity-btn"
-                      disabled={book.quantity <= 1}
-                      title="Diminuer"
-                    >
-                      <Minus size={14} />
-                    </button>
-                    <span className="quantity-value">{book.quantity}</span>
-                    <button
-                      type="button"
-                      onClick={() => updateQuantity(book.id, book.quantity + 1)}
-                      className="quantity-btn"
-                      title="Augmenter"
-                    >
-                      <PlusIcon size={14} />
-                    </button>
+            {Object.entries(groupedSelectedBooks).map(([key, group]) => (
+              <div key={key} className="isbn-group-container">
+                {group.isbn && (
+                  <div className="isbn-group-header-small">
+                    <span className="isbn-label">ISBN: {group.isbn}</span>
+                    <span className="isbn-count">{group.books.length} exemplaire(s)</span>
                   </div>
-                  <span className="selected-book-total">{book.total || 0} MAD</span>
-                  <button
-                    type="button"
-                    onClick={() => removeBook(book.id)}
-                    className="remove-book-btn"
-                    title="Retirer"
-                  >
-                    <X size={14} />
-                  </button>
-                </div>
+                )}
+                {group.books.map(book => (
+                  <div key={book.id} className="selected-book-item">
+                    <div className="selected-book-info">
+                      <span className="selected-book-title">{book.titre || "Sans titre"}</span>
+                      <span className="selected-book-author">{book.auteur || "Auteur inconnu"}</span>
+                      <span className="selected-book-price">{book.prix_achat || 0} MAD</span>
+                    </div>
+                    
+                    <div className="selected-book-actions">
+                      <div className="quantity-control">
+                        <button
+                          type="button"
+                          onClick={() => updateQuantity(book.id, book.quantity - 1)}
+                          className="quantity-btn"
+                          disabled={book.quantity <= 1}
+                          title="Diminuer"
+                        >
+                          <Minus size={14} />
+                        </button>
+                        <span className="quantity-value">{book.quantity}</span>
+                        <button
+                          type="button"
+                          onClick={() => updateQuantity(book.id, book.quantity + 1)}
+                          className="quantity-btn"
+                          title="Augmenter"
+                        >
+                          <PlusIcon size={14} />
+                        </button>
+                      </div>
+                      <span className="selected-book-total">{book.total || 0} MAD</span>
+                      <button
+                        type="button"
+                        onClick={() => removeBook(book.id)}
+                        className="remove-book-btn"
+                        title="Retirer"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             ))}
           </div>

@@ -1,7 +1,7 @@
 // Livres.jsx
 import { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom"; // Add useNavigate
 import { fetchLivres, selectLivres, selectLivresLoading } from "../store/store";
 import BookCard from "../components/BookCard";
 import BookDetailModal from "../components/BookDetailModal";
@@ -13,6 +13,7 @@ import "../css/Livres.css";
 export default function Livres() {
   const dispatch = useDispatch();
   const location = useLocation();
+  const navigate = useNavigate(); // Add navigate for programmatic navigation
   const books = useSelector(selectLivres);
   const loading = useSelector(selectLivresLoading);
   const [selectedBook, setSelectedBook] = useState(null);
@@ -21,6 +22,8 @@ export default function Livres() {
   const [genre, setGenre] = useState("الكل");
   const [canScroll, setCanScroll] = useState(false);
   const genresFilterRef = useRef(null);
+  const initialLoadRef = useRef(true); // Track initial load
+  const previousBookIdRef = useRef(null); // Track previous book ID
 
   useEffect(() => {
     window.scrollTo({
@@ -33,7 +36,7 @@ export default function Livres() {
     dispatch(fetchLivres());
   }, [dispatch]);
 
-  // Handle URL parameters
+  // Handle URL parameters - IMPROVED VERSION
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const searchParam = params.get("search");
@@ -43,13 +46,27 @@ export default function Livres() {
       setSearch(searchParam);
     }
 
+    // Only process book ID if books are loaded
     if (bookId && books.length > 0) {
-      const book = books.find(b => b.id === parseInt(bookId));
-      if (book) {
-        setSelectedBook(book);
+      const bookIdNum = parseInt(bookId);
+      
+      // Check if it's a different book than previously selected
+      if (previousBookIdRef.current !== bookIdNum) {
+        const book = books.find(b => b.id === bookIdNum);
+        if (book) {
+          // Small delay to ensure smooth transition
+          setTimeout(() => {
+            setSelectedBook(book);
+            previousBookIdRef.current = bookIdNum;
+          }, 100);
+        }
       }
+    } else if (!bookId) {
+      // If no book ID in URL, clear selected book
+      setSelectedBook(null);
+      previousBookIdRef.current = null;
     }
-  }, [location.search, books]);
+  }, [location.search, books]); // Add books as dependency
 
   // Get unique genres from books, filtering out empty/null values
   const genres = ["الكل", ...Array.from(new Set(
@@ -88,14 +105,20 @@ export default function Livres() {
 
   const handleShowDetails = (book) => {
     setSelectedBook(book);
+    previousBookIdRef.current = book.id;
+    // Update URL with book ID without causing a navigation/reload
+    const url = new URL(window.location);
+    url.searchParams.set("book", book.id);
+    window.history.pushState({}, "", url);
   };
 
   const handleCloseDetails = () => {
     setSelectedBook(null);
+    previousBookIdRef.current = null;
     // Remove book param from URL
     const url = new URL(window.location);
     url.searchParams.delete("book");
-    window.history.replaceState({}, "", url);
+    window.history.pushState({}, "", url); // Use pushState instead of replaceState for better history management
   };
 
   const scrollLeft = () => {
@@ -197,6 +220,7 @@ export default function Livres() {
       {/* Modal rendered at root level */}
       {selectedBook && (
         <BookDetailModal 
+          key={selectedBook.id} // Add key to force re-render when book changes
           book={selectedBook} 
           allBooks={books}
           onClose={handleCloseDetails} 

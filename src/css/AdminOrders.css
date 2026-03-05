@@ -3383,3 +3383,205 @@ textarea:focus-visible {
     width: 100%;
   }
 }
+/* Enhanced Book Selector Styles */
+
+.book-search-icon {
+  position: absolute;
+  left: 1rem;
+  color: #8b5e3c;
+  pointer-events: none;
+}
+
+.book-search-input {
+  width: 100%;
+  padding: 0.85rem 1rem 0.85rem 2.75rem;
+  border: 1px solid #e0d6cc;
+  border-radius: 0.75rem;
+  font-family: 'Lato', sans-serif;
+  font-size: 1rem;
+  color: #5c0202;
+  background-color: white;
+  transition: all 0.2s;
+  box-sizing: border-box;
+}
+
+.book-search-input:focus {
+  outline: none;
+  border-color: #8b5e3c;
+  box-shadow: 0 0 0 3px rgba(139, 94, 60, 0.15);
+}
+
+.clear-book-search {
+  position: absolute;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+  z-index: 2;
+}
+
+.clear-book-search:hover {
+  background-color: #f1f5f9;
+  color: #64748b;
+}
+
+.book-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: 300px;
+  overflow-y: auto;
+  background-color: white;
+  border: 1px solid #e0d6cc;
+  border-radius: 0.5rem;
+  margin-top: 0.25rem;
+  z-index: 100;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.book-dropdown-item {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.2s;
+  border-bottom: 1px solid #f0e8e0;
+  gap: 1rem;
+}
+
+.book-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.book-dropdown-item:hover {
+  background-color: #f8f4f0;
+}
+
+.book-dropdown-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.book-dropdown-title {
+  font-family: 'Lato', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #5c0202;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.book-dropdown-author {
+  font-family: 'Lato', sans-serif;
+  font-size: 0.8rem;
+  color: #8b5e3c;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.book-dropdown-isbn {
+  font-family: 'Lato', sans-serif;
+  font-size: 0.7rem;
+  color: #6b5752;
+}
+
+.book-dropdown-price {
+  font-family: 'Lato', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #10b981;
+  white-space: nowrap;
+}
+
+.book-dropdown-empty {
+  padding: 2rem 1rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  color: #a38f89;
+}
+
+.book-dropdown-empty svg {
+  color: #c9b9ae;
+  margin-bottom: 0.5rem;
+}
+
+.book-dropdown-empty small {
+  font-size: 0.8rem;
+  color: #c9b9ae;
+}
+
+/* Compact form adjustments */
+.order-form.compact .book-search-input {
+  padding: 0.6rem 1rem 0.6rem 2.5rem !important;
+  font-size: 0.95rem !important;
+}
+
+.order-form.compact .book-search-icon {
+  width: 16px;
+  height: 16px;
+  left: 0.75rem;
+}
+
+.order-form.compact .clear-book-search {
+  right: 0.5rem;
+  padding: 2px;
+}
+
+.order-form.compact .book-dropdown-item {
+  padding: 0.5rem 0.75rem;
+}
+
+.order-form.compact .book-dropdown-title {
+  font-size: 0.85rem;
+}
+
+.order-form.compact .book-dropdown-author {
+  font-size: 0.7rem;
+}
+
+.order-form.compact .book-dropdown-price {
+  font-size: 0.85rem;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .book-dropdown-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .book-dropdown-price {
+    align-self: flex-end;
+  }
+  
+  .selected-book-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .selected-book-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .selected-book-info {
+    min-width: 100%;
+  }
+}

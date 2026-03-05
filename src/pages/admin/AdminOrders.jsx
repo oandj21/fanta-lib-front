@@ -421,6 +421,7 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
 };
 
 // Book Selection Component
+// Book Selection Component with Arabic text normalization
 const BookSelector = ({ selectedBooks, onBooksChange, onTotalQuantityChange }) => {
   const dispatch = useDispatch();
   const { list: booksList = [], loading: booksLoading } = useSelector((state) => state.livres);
@@ -431,12 +432,21 @@ const BookSelector = ({ selectedBooks, onBooksChange, onTotalQuantityChange }) =
     dispatch(fetchLivres());
   }, [dispatch]);
 
+  // Filter books with Arabic text normalization
   const filteredBooks = useMemo(() => {
-    return booksList.filter(book => 
-      book.titre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      book.auteur?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      book.isbn?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    if (!searchTerm) return booksList;
+    
+    const normalizedSearchTerm = normalizeArabicText(searchTerm);
+    
+    return booksList.filter(book => {
+      const normalizedTitle = normalizeArabicText(book.titre || "");
+      const normalizedAuthor = normalizeArabicText(book.auteur || "");
+      const normalizedIsbn = normalizeArabicText(book.isbn || "");
+      
+      return normalizedTitle.includes(normalizedSearchTerm) ||
+             normalizedAuthor.includes(normalizedSearchTerm) ||
+             normalizedIsbn.includes(normalizedSearchTerm);
+    });
   }, [booksList, searchTerm]);
 
   // Update total quantity whenever selected books change
@@ -513,6 +523,7 @@ const BookSelector = ({ selectedBooks, onBooksChange, onTotalQuantityChange }) =
     <div className="book-selector">
       <div className="book-search-container">
         <div className="book-search-input-wrapper">
+          <BookOpen size={18} className="book-search-icon" />
           <input
             type="text"
             placeholder="Rechercher un livre par titre, auteur ou ISBN..."
@@ -522,6 +533,18 @@ const BookSelector = ({ selectedBooks, onBooksChange, onTotalQuantityChange }) =
             className="book-search-input"
           />
           {booksLoading && <Loader size={16} className="book-search-spinner" />}
+          {searchTerm && (
+            <button 
+              onClick={() => {
+                setSearchTerm("");
+                setShowDropdown(false);
+              }} 
+              className="clear-book-search"
+              title="Effacer la recherche"
+            >
+              <X size={16} />
+            </button>
+          )}
         </div>
         
         {showDropdown && searchTerm && (
@@ -534,14 +557,21 @@ const BookSelector = ({ selectedBooks, onBooksChange, onTotalQuantityChange }) =
                   onClick={() => addBook(book)}
                 >
                   <div className="book-dropdown-info">
-                    <span className="book-dropdown-title">{book.titre}</span>
-                    <span className="book-dropdown-author">{book.auteur}</span>
+                    <span className="book-dropdown-title">{book.titre || "Sans titre"}</span>
+                    <span className="book-dropdown-author">{book.auteur || "Auteur inconnu"}</span>
+                    {book.isbn && (
+                      <span className="book-dropdown-isbn">ISBN: {book.isbn}</span>
+                    )}
                   </div>
-                  <span className="book-dropdown-price">{book.prix_achat} MAD</span>
+                  <span className="book-dropdown-price">{book.prix_achat || 0} MAD</span>
                 </div>
               ))
             ) : (
-              <div className="book-dropdown-empty">Aucun livre trouvé</div>
+              <div className="book-dropdown-empty">
+                <BookOpen size={24} />
+                <span>Aucun livre trouvé</span>
+                <small>Essayez avec d'autres termes</small>
+              </div>
             )}
           </div>
         )}
@@ -549,13 +579,17 @@ const BookSelector = ({ selectedBooks, onBooksChange, onTotalQuantityChange }) =
 
       {selectedBooks.length > 0 && (
         <div className="selected-books">
+          <div className="selected-books-header">
+            <h4>Livres sélectionnés</h4>
+            <span className="selected-count">{selectedBooks.length} livre(s)</span>
+          </div>
           <div className="selected-books-list">
             {selectedBooks.map(book => (
               <div key={book.id} className="selected-book-item">
                 <div className="selected-book-info">
-                  <span className="selected-book-title">{book.titre}</span>
-                  <span className="selected-book-author">{book.auteur}</span>
-                  <span className="selected-book-price">{book.prix_achat} MAD</span>
+                  <span className="selected-book-title">{book.titre || "Sans titre"}</span>
+                  <span className="selected-book-author">{book.auteur || "Auteur inconnu"}</span>
+                  <span className="selected-book-price">{book.prix_achat || 0} MAD</span>
                 </div>
                 
                 <div className="selected-book-actions">
@@ -565,6 +599,7 @@ const BookSelector = ({ selectedBooks, onBooksChange, onTotalQuantityChange }) =
                       onClick={() => updateQuantity(book.id, book.quantity - 1)}
                       className="quantity-btn"
                       disabled={book.quantity <= 1}
+                      title="Diminuer"
                     >
                       <Minus size={14} />
                     </button>
@@ -573,11 +608,12 @@ const BookSelector = ({ selectedBooks, onBooksChange, onTotalQuantityChange }) =
                       type="button"
                       onClick={() => updateQuantity(book.id, book.quantity + 1)}
                       className="quantity-btn"
+                      title="Augmenter"
                     >
                       <PlusIcon size={14} />
                     </button>
                   </div>
-                  <span className="selected-book-total">{book.total} MAD</span>
+                  <span className="selected-book-total">{book.total || 0} MAD</span>
                   <button
                     type="button"
                     onClick={() => removeBook(book.id)}
@@ -593,7 +629,7 @@ const BookSelector = ({ selectedBooks, onBooksChange, onTotalQuantityChange }) =
           
           <div className="selected-books-summary">
             <span>Total livres:</span>
-            <span>{calculateSubtotal()} MAD</span>
+            <span className="summary-amount">{calculateSubtotal()} MAD</span>
           </div>
         </div>
       )}

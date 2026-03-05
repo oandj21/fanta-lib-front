@@ -1,3 +1,4 @@
+// SearchDropdown.jsx
 import { useState, useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -13,26 +14,19 @@ export default function SearchDropdown({ isMobile = false }) {
   const navigate = useNavigate();
   const searchRef = useRef(null);
   const inputRef = useRef(null);
-  const { getTextDirection, getTextStyle } = useLanguageDirection();
+  const { getTextDirection } = useLanguageDirection();
 
   // Normalize Arabic text function
   const normalizeArabicText = (text) => {
     if (!text) return '';
     
-    // Convert to string if not already
     text = String(text);
     
-    // Normalize Arabic characters
     return text
-      // Normalize Alif variations to ا
       .replace(/[أإآ]/g, 'ا')
-      // Normalize Teh Marbuta (ة) to Heh (ه)
       .replace(/ة/g, 'ه')
-      // Normalize Alef Maksura (ى) to Yeh (ي)
       .replace(/ى/g, 'ي')
-      // Remove diacritics (Tashkeel)
       .replace(/[ًٌٍَُِّْ]|[\u064B-\u065F]/g, '')
-      // Convert to lowercase for case-insensitive comparison
       .toLowerCase();
   };
 
@@ -48,7 +42,7 @@ export default function SearchDropdown({ isMobile = false }) {
       author.includes(term) ||
       category.includes(term)
     );
-  }).slice(0, 10); // Limit to 10 results
+  }).slice(0, 10);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -74,18 +68,25 @@ export default function SearchDropdown({ isMobile = false }) {
   }, [searchTerm]);
 
   const handleBookClick = (book) => {
-    // Navigate to livres page and open the book modal
+    // Navigate to livres page with book ID
     navigate(`/livres?book=${book.id}`);
     setSearchTerm("");
     setShowResults(false);
+    
+    // Clear input focus
+    if (inputRef.current) {
+      inputRef.current.blur();
+    }
   };
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     if (searchTerm.trim().length >= 2) {
-      // Navigate to livres page with search query
       navigate(`/livres?search=${encodeURIComponent(searchTerm)}`);
       setShowResults(false);
+      if (inputRef.current) {
+        inputRef.current.blur();
+      }
     }
   };
 
@@ -100,7 +101,6 @@ export default function SearchDropdown({ isMobile = false }) {
           return `https://fanta-lib-back-production-76f4.up.railway.app/storage/${parsed[0]}`;
         }
       } catch (e) {
-        // If parsing fails, treat as direct filename
         return `https://fanta-lib-back-production-76f4.up.railway.app/storage/${images}`;
       }
     }
@@ -123,7 +123,7 @@ export default function SearchDropdown({ isMobile = false }) {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="search-input"
-          dir={getTextDirection(searchTerm) || 'rtl'} // Default to rtl for Arabic placeholder
+          dir={getTextDirection(searchTerm) || 'rtl'}
           style={{ 
             textAlign: (getTextDirection(searchTerm) || 'rtl') === 'rtl' ? 'right' : 'left' 
           }}
@@ -131,7 +131,10 @@ export default function SearchDropdown({ isMobile = false }) {
         {searchTerm && (
           <button
             type="button"
-            onClick={() => setSearchTerm("")}
+            onClick={() => {
+              setSearchTerm("");
+              setShowResults(false);
+            }}
             className="clear-sear"
           >
             <X size={16} />

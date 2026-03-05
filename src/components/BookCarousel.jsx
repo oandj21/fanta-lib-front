@@ -19,7 +19,9 @@ const BookCarousel = forwardRef(({ onShowDetails, allBooks = [] }, ref) => {
   const autoScrollEnabledRef = useRef(true);
   const clickProcessedRef = useRef(false);
 
-  const loopedBooks = [...books, ...books, ...books];
+  // Get only the 20 latest books (assuming books are sorted by date added)
+  const latestBooks = books.slice(0, 20);
+  const loopedBooks = [...latestBooks, ...latestBooks, ...latestBooks];
 
   // Expose methods to parent component
   useImperativeHandle(ref, () => ({
@@ -44,7 +46,7 @@ const BookCarousel = forwardRef(({ onShowDetails, allBooks = [] }, ref) => {
 
   useEffect(() => {
     const track = trackRef.current;
-    if (!track || books.length === 0) return;
+    if (!track || latestBooks.length === 0) return;
 
     const SPEED = 0.8;
 
@@ -55,7 +57,7 @@ const BookCarousel = forwardRef(({ onShowDetails, allBooks = [] }, ref) => {
         const gap = 20;
         const itemWidth = cardWidth + gap;
         
-        if (posRef.current >= itemWidth * books.length) {
+        if (posRef.current >= itemWidth * latestBooks.length) {
           posRef.current = 0;
         }
         
@@ -71,7 +73,7 @@ const BookCarousel = forwardRef(({ onShowDetails, allBooks = [] }, ref) => {
         cancelAnimationFrame(animRef.current);
       }
     };
-  }, [books.length]);
+  }, [latestBooks.length]);
 
   // Mouse/Touch drag handlers
   const handleMouseDown = (e) => {
@@ -188,7 +190,7 @@ const BookCarousel = forwardRef(({ onShowDetails, allBooks = [] }, ref) => {
     }
   };
 
-  if (books.length === 0) {
+  if (latestBooks.length === 0) {
     return null;
   }
 
@@ -224,7 +226,7 @@ const BookCarousel = forwardRef(({ onShowDetails, allBooks = [] }, ref) => {
             >
               <BookCard 
                 book={book} 
-                allBooks={allBooks.length > 0 ? allBooks : books}
+                allBooks={allBooks.length > 0 ? allBooks : latestBooks}
                 onShowDetails={onShowDetails}
               />
             </div>

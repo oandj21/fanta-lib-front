@@ -1,7 +1,7 @@
 // Livres.jsx
 import { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useLocation, useNavigate } from "react-router-dom"; // Add useNavigate
+import { useLocation, useNavigate } from "react-router-dom";
 import { fetchLivres, selectLivres, selectLivresLoading } from "../store/store";
 import BookCard from "../components/BookCard";
 import BookDetailModal from "../components/BookDetailModal";
@@ -13,7 +13,7 @@ import "../css/Livres.css";
 export default function Livres() {
   const dispatch = useDispatch();
   const location = useLocation();
-  const navigate = useNavigate(); // Add navigate for programmatic navigation
+  const navigate = useNavigate();
   const books = useSelector(selectLivres);
   const loading = useSelector(selectLivresLoading);
   const [selectedBook, setSelectedBook] = useState(null);
@@ -22,8 +22,7 @@ export default function Livres() {
   const [genre, setGenre] = useState("الكل");
   const [canScroll, setCanScroll] = useState(false);
   const genresFilterRef = useRef(null);
-  const initialLoadRef = useRef(true); // Track initial load
-  const previousBookIdRef = useRef(null); // Track previous book ID
+  const previousBookIdRef = useRef(null);
 
   useEffect(() => {
     window.scrollTo({
@@ -36,7 +35,7 @@ export default function Livres() {
     dispatch(fetchLivres());
   }, [dispatch]);
 
-  // Handle URL parameters - IMPROVED VERSION
+  // Handle URL parameters - FIXED VERSION
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const searchParam = params.get("search");
@@ -50,11 +49,18 @@ export default function Livres() {
     if (bookId && books.length > 0) {
       const bookIdNum = parseInt(bookId);
       
-      // Check if it's a different book than previously selected
-      if (previousBookIdRef.current !== bookIdNum) {
-        const book = books.find(b => b.id === bookIdNum);
-        if (book) {
-          // Small delay to ensure smooth transition
+      // Always try to open the book when ID is in URL
+      const book = books.find(b => b.id === bookIdNum);
+      if (book) {
+        // If it's the same book that's already open, we need to force a re-open
+        if (previousBookIdRef.current === bookIdNum && selectedBook) {
+          // Close and reopen to ensure modal shows
+          setSelectedBook(null);
+          setTimeout(() => {
+            setSelectedBook(book);
+          }, 50);
+        } else {
+          // Open new book
           setTimeout(() => {
             setSelectedBook(book);
             previousBookIdRef.current = bookIdNum;
@@ -118,7 +124,7 @@ export default function Livres() {
     // Remove book param from URL
     const url = new URL(window.location);
     url.searchParams.delete("book");
-    window.history.pushState({}, "", url); // Use pushState instead of replaceState for better history management
+    window.history.pushState({}, "", url);
   };
 
   const scrollLeft = () => {

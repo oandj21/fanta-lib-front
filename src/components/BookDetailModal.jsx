@@ -165,13 +165,6 @@ export default function BookDetailModal({ book, allBooks = [], onClose }) {
                 {book.categorie || "غير مصنف"}
               </span>
 
-              {/* ISBN Display - Show if available */}
-              {book.isbn && (
-                <div className="book-isbn">
-                  <span className="isbn-label">ISBN:</span>
-                  <span className="isbn-value">{book.isbn}</span>
-                </div>
-              )}
 
               {/* Other Editions Section - Show if there are books with same ISBN */}
               {sameISBNBooks.length > 0 && (

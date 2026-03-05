@@ -68,6 +68,26 @@ const sendWebhookUpdate = async (payload) => {
   }
 };
 
+// Add this helper function at the top of the component, after the imports
+const normalizeArabicText = (text) => {
+  if (!text) return '';
+  
+  // Convert to string if not already
+  text = String(text);
+  
+  // Normalize Arabic characters
+  return text
+    // Normalize Alif variations to ا
+    .replace(/[أإآ]/g, 'ا')
+    // Normalize Teh Marbuta (ة) to Heh (ه)
+    .replace(/ة/g, 'ه')
+    // Normalize Alef Maksura (ى) to Yeh (ي)
+    .replace(/ى/g, 'ي')
+    // Remove diacritics (Tashkeel)
+    .replace(/[ًٌٍَُِّْ]|[\u064B-\u065F]/g, '')
+    // Convert to lowercase for case-insensitive comparison
+    .toLowerCase();
+};
 // French translations for statuses
 const statusTranslations = {
   // Primary delivery statuses
@@ -2680,23 +2700,27 @@ export default function AdminOrders() {
     await dispatch(fetchCommandes());
   };
 
-  const filteredOrders = useMemo(() => {
-    return orderList.filter(order => {
-      const matchesSearch = searchTerm === "" || 
-        order.parcel_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.parcel_receiver?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.parcel_city?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.parcel_phone?.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      const matchesStatus = statusFilter === "all" || 
-        order.statut === statusFilter || 
-        order.statut_second === statusFilter;
-      
-      return matchesSearch && matchesStatus;
-    }).sort((a, b) => {
-      return new Date(b.date || 0) - new Date(a.date || 0);
-    });
-  }, [orderList, searchTerm, statusFilter]);
+ // Then update the filteredOrders useMemo:
+const filteredOrders = useMemo(() => {
+  // Normalize search term once
+  const normalizedSearchTerm = normalizeArabicText(searchTerm);
+  
+  return orderList.filter(order => {
+    const matchesSearch = searchTerm === "" || 
+      normalizeArabicText(order.parcel_code || "").includes(normalizedSearchTerm) ||
+      normalizeArabicText(order.parcel_receiver || "").includes(normalizedSearchTerm) ||
+      normalizeArabicText(order.parcel_city || "").includes(normalizedSearchTerm) ||
+      normalizeArabicText(order.parcel_phone || "").includes(normalizedSearchTerm);
+    
+    const matchesStatus = statusFilter === "all" || 
+      order.statut === statusFilter || 
+      order.statut_second === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  }).sort((a, b) => {
+    return new Date(b.date || 0) - new Date(a.date || 0);
+  });
+}, [orderList, searchTerm, statusFilter]);
 
   const currentOrders = useMemo(() => {
     const indexOfLastItem = currentPage * itemsPerPage;

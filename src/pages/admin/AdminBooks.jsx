@@ -8,6 +8,27 @@ import {
 import { fetchLivres, createLivre, updateLivre, deleteLivre, deleteLivreImage } from "../../store/store";
 import "../../css/AdminBooks.css";
 
+// Add this helper function at the top of the component, after the imports
+const normalizeArabicText = (text) => {
+  if (!text) return '';
+  
+  // Convert to string if not already
+  text = String(text);
+  
+  // Normalize Arabic characters
+  return text
+    // Normalize Alif variations to ا
+    .replace(/[أإآ]/g, 'ا')
+    // Normalize Teh Marbuta (ة) to Heh (ه)
+    .replace(/ة/g, 'ه')
+    // Normalize Alef Maksura (ى) to Yeh (ي)
+    .replace(/ى/g, 'ي')
+    // Remove diacritics (Tashkeel)
+    .replace(/[ًٌٍَُِّْ]|[\u064B-\u065F]/g, '')
+    // Convert to lowercase for case-insensitive comparison
+    .toLowerCase();
+};
+
 // Image compression utility function
 const compressImage = async (file, maxWidth = 1200, quality = 0.8) => {
   return new Promise((resolve, reject) => {
@@ -161,38 +182,42 @@ export default function AdminBooks() {
 
   // Filter and search books
   const filteredBooks = useMemo(() => {
-    return bookList.filter(book => {
-      const matchesSearch = searchTerm === "" || 
-        book.titre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        book.auteur?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        book.isbn?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        book.categorie?.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      const matchesStatus = statusFilter === "all" || book.status === statusFilter;
-      
-      const matchesCategory = categoryFilter === "all" || 
-        book.categorie?.toLowerCase() === categoryFilter.toLowerCase();
-      
-      return matchesSearch && matchesStatus && matchesCategory;
-    }).sort((a, b) => {
-      let aVal = a[sortBy] || "";
-      let bVal = b[sortBy] || "";
-      
-      if (sortBy === "prix_achat") {
-        aVal = Number(aVal) || 0;
-        bVal = Number(bVal) || 0;
-      } else {
-        aVal = String(aVal).toLowerCase();
-        bVal = String(bVal).toLowerCase();
-      }
-      
-      if (sortOrder === "asc") {
-        return aVal > bVal ? 1 : -1;
-      } else {
-        return aVal < bVal ? 1 : -1;
-      }
-    });
-  }, [bookList, searchTerm, statusFilter, categoryFilter, sortBy, sortOrder]);
+  return bookList.filter(book => {
+    // Normalize search term and book fields
+    const normalizedSearchTerm = normalizeArabicText(searchTerm);
+    
+    const matchesSearch = searchTerm === "" || 
+      normalizeArabicText(book.titre || "").includes(normalizedSearchTerm) ||
+      normalizeArabicText(book.auteur || "").includes(normalizedSearchTerm) ||
+      normalizeArabicText(book.isbn || "").includes(normalizedSearchTerm) ||
+      normalizeArabicText(book.categorie || "").includes(normalizedSearchTerm);
+    
+    const matchesStatus = statusFilter === "all" || book.status === statusFilter;
+    
+    const matchesCategory = categoryFilter === "all" || 
+      normalizeArabicText(book.categorie || "") === normalizeArabicText(categoryFilter);
+    
+    return matchesSearch && matchesStatus && matchesCategory;
+  }).sort((a, b) => {
+    // ... rest of sorting logic remains the same
+    let aVal = a[sortBy] || "";
+    let bVal = b[sortBy] || "";
+    
+    if (sortBy === "prix_achat") {
+      aVal = Number(aVal) || 0;
+      bVal = Number(bVal) || 0;
+    } else {
+      aVal = String(aVal).toLowerCase();
+      bVal = String(bVal).toLowerCase();
+    }
+    
+    if (sortOrder === "asc") {
+      return aVal > bVal ? 1 : -1;
+    } else {
+      return aVal < bVal ? 1 : -1;
+    }
+  });
+}, [bookList, searchTerm, statusFilter, categoryFilter, sortBy, sortOrder]);
 
   // Get current page books
   const currentBooks = useMemo(() => {

@@ -1,7 +1,7 @@
 // Livres.jsx
 import { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useLocation, useNavigate } from "react-router-dom"; // Add useNavigate
+import { useLocation, useNavigate } from "react-router-dom";
 import { fetchLivres, selectLivres, selectLivresLoading } from "../store/store";
 import BookCard from "../components/BookCard";
 import BookDetailModal from "../components/BookDetailModal";
@@ -13,7 +13,7 @@ import "../css/Livres.css";
 export default function Livres() {
   const dispatch = useDispatch();
   const location = useLocation();
-  const navigate = useNavigate(); // Add navigate for programmatic navigation
+  const navigate = useNavigate();
   const books = useSelector(selectLivres);
   const loading = useSelector(selectLivresLoading);
   const [selectedBook, setSelectedBook] = useState(null);
@@ -22,8 +22,8 @@ export default function Livres() {
   const [genre, setGenre] = useState("الكل");
   const [canScroll, setCanScroll] = useState(false);
   const genresFilterRef = useRef(null);
-  const initialLoadRef = useRef(true); // Track initial load
-  const previousBookIdRef = useRef(null); // Track previous book ID
+  const previousBookIdRef = useRef(null);
+  const lastClickTimeRef = useRef(0); // Add this to track click time
 
   useEffect(() => {
     window.scrollTo({
@@ -36,7 +36,7 @@ export default function Livres() {
     dispatch(fetchLivres());
   }, [dispatch]);
 
-  // Handle URL parameters - IMPROVED VERSION
+  // Handle URL parameters - FIXED VERSION
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const searchParam = params.get("search");
@@ -49,24 +49,36 @@ export default function Livres() {
     // Only process book ID if books are loaded
     if (bookId && books.length > 0) {
       const bookIdNum = parseInt(bookId);
+      const book = books.find(b => b.id === bookIdNum);
       
-      // Check if it's a different book than previously selected
-      if (previousBookIdRef.current !== bookIdNum) {
-        const book = books.find(b => b.id === bookIdNum);
-        if (book) {
-          // Small delay to ensure smooth transition
-          setTimeout(() => {
-            setSelectedBook(book);
-            previousBookIdRef.current = bookIdNum;
-          }, 100);
-        }
+      if (book) {
+        // Always open the modal, even if it's the same book
+        // This allows re-opening the same book modal
+        setSelectedBook(book);
+        previousBookIdRef.current = bookIdNum;
       }
     } else if (!bookId) {
       // If no book ID in URL, clear selected book
       setSelectedBook(null);
       previousBookIdRef.current = null;
     }
-  }, [location.search, books]); // Add books as dependency
+  }, [location.search, books]); // Keep books as dependency
+
+  // Add this new useEffect to handle popstate events (browser back/forward)
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const bookId = params.get("book");
+      
+      if (!bookId && selectedBook) {
+        setSelectedBook(null);
+        previousBookIdRef.current = null;
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [selectedBook]);
 
   // Get unique genres from books, filtering out empty/null values
   const genres = ["الكل", ...Array.from(new Set(
@@ -104,8 +116,12 @@ export default function Livres() {
   });
 
   const handleShowDetails = (book) => {
+    const now = Date.now();
+    
     setSelectedBook(book);
     previousBookIdRef.current = book.id;
+    lastClickTimeRef.current = now;
+    
     // Update URL with book ID without causing a navigation/reload
     const url = new URL(window.location);
     url.searchParams.set("book", book.id);
@@ -115,10 +131,12 @@ export default function Livres() {
   const handleCloseDetails = () => {
     setSelectedBook(null);
     previousBookIdRef.current = null;
+    lastClickTimeRef.current = 0;
+    
     // Remove book param from URL
     const url = new URL(window.location);
     url.searchParams.delete("book");
-    window.history.pushState({}, "", url); // Use pushState instead of replaceState for better history management
+    window.history.pushState({}, "", url);
   };
 
   const scrollLeft = () => {
@@ -220,7 +238,7 @@ export default function Livres() {
       {/* Modal rendered at root level */}
       {selectedBook && (
         <BookDetailModal 
-          key={selectedBook.id} // Add key to force re-render when book changes
+          key={selectedBook.id + (selectedBook.id === previousBookIdRef.current ? Date.now() : '')} // Force re-render when same book is clicked
           book={selectedBook} 
           allBooks={books}
           onClose={handleCloseDetails} 

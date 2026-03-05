@@ -1,4 +1,3 @@
-// SearchDropdown.jsx
 import { useState, useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -14,9 +13,9 @@ export default function SearchDropdown({ isMobile = false }) {
   const navigate = useNavigate();
   const searchRef = useRef(null);
   const inputRef = useRef(null);
-  const { getTextDirection } = useLanguageDirection();
+  const { getTextDirection, getTextStyle } = useLanguageDirection();
 
-  // Normalize Arabic text function for better search
+  // Normalize Arabic text function
   const normalizeArabicText = (text) => {
     if (!text) return '';
     
@@ -39,8 +38,6 @@ export default function SearchDropdown({ isMobile = false }) {
 
   // Filter books based on search term with Arabic normalization
   const filteredBooks = books.filter((book) => {
-    if (searchTerm.trim().length < 2) return false;
-    
     const title = normalizeArabicText(book.titre || "");
     const author = normalizeArabicText(book.auteur || "");
     const category = normalizeArabicText(book.categorie || "");
@@ -76,40 +73,19 @@ export default function SearchDropdown({ isMobile = false }) {
     }
   }, [searchTerm]);
 
-  // FIXED: Handle book click with proper navigation and state management
   const handleBookClick = (book) => {
-    // Navigate to livres page with book ID in URL
+    // Navigate to livres page and open the book modal
     navigate(`/livres?book=${book.id}`);
-    
-    // Clear search term and hide results after navigation
-    // The setTimeout ensures navigation completes before clearing
-    setTimeout(() => {
-      setSearchTerm("");
-      setShowResults(false);
-    }, 100);
+    setSearchTerm("");
+    setShowResults(false);
   };
 
-  // Handle search form submission
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     if (searchTerm.trim().length >= 2) {
       // Navigate to livres page with search query
       navigate(`/livres?search=${encodeURIComponent(searchTerm)}`);
-      
-      // Clear search term and hide results after navigation
-      setTimeout(() => {
-        setSearchTerm("");
-        setShowResults(false);
-      }, 100);
-    }
-  };
-
-  // Handle clear button click
-  const handleClearSearch = () => {
-    setSearchTerm("");
-    setShowResults(false);
-    if (inputRef.current) {
-      inputRef.current.focus();
+      setShowResults(false);
     }
   };
 
@@ -136,12 +112,6 @@ export default function SearchDropdown({ isMobile = false }) {
     return 'https://via.placeholder.com/40x60?text=No+Cover';
   };
 
-  // Handle image error
-  const handleImageError = (e) => {
-    e.target.onerror = null;
-    e.target.src = "https://via.placeholder.com/40x60?text=Error";
-  };
-
   return (
     <div className={`search-dropdown ${isMobile ? 'mobile-search' : ''}`} ref={searchRef}>
       <form onSubmit={handleSearchSubmit} className="search-form">
@@ -153,18 +123,16 @@ export default function SearchDropdown({ isMobile = false }) {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="search-input"
-          dir={getTextDirection(searchTerm) || 'rtl'}
+          dir={getTextDirection(searchTerm) || 'rtl'} // Default to rtl for Arabic placeholder
           style={{ 
             textAlign: (getTextDirection(searchTerm) || 'rtl') === 'rtl' ? 'right' : 'left' 
           }}
-          autoComplete="off"
         />
         {searchTerm && (
           <button
             type="button"
-            onClick={handleClearSearch}
-            className="clear-search"
-            aria-label="مسح البحث"
+            onClick={() => setSearchTerm("")}
+            className="clear-sear"
           >
             <X size={16} />
           </button>
@@ -184,9 +152,11 @@ export default function SearchDropdown({ isMobile = false }) {
                   <div className="result-image">
                     <img
                       src={getImageUrl(book.images)}
-                      alt={book.titre || "غلاف الكتاب"}
-                      onError={handleImageError}
-                      loading="lazy"
+                      alt={book.titre}
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = "https://via.placeholder.com/40x60?text=Error";
+                      }}
                     />
                   </div>
                   <div className="result-info">
@@ -204,17 +174,14 @@ export default function SearchDropdown({ isMobile = false }) {
                     >
                       {book.auteur || "مؤلف غير معروف"}
                     </p>
-                    {book.categorie && (
-                      <span className="result-category">
-                        {book.categorie}
-                      </span>
-                    )}
                   </div>
                 </div>
               ))}
               <div 
                 className="search-footer" 
                 onClick={handleSearchSubmit}
+                dir={getTextDirection(searchTerm)}
+                style={{ textAlign: getTextDirection(searchTerm) === 'rtl' ? 'right' : 'left' }}
               >
                 <Search size={14} />
                 <span>عرض جميع النتائج لـ "{searchTerm}"</span>
@@ -223,12 +190,6 @@ export default function SearchDropdown({ isMobile = false }) {
           ) : (
             <div className="search-no-results">
               <p>لا توجد نتائج لـ "{searchTerm}"</p>
-              <button 
-                onClick={handleSearchSubmit}
-                className="search-all-btn"
-              >
-                ابحث عن "{searchTerm}" في جميع الكتب
-              </button>
             </div>
           )}
         </div>

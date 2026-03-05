@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ShoppingCart, Trash2, Plus, Minus, ArrowLeft, BookOpen, AlertCircle } from "lucide-react";
-import Header from "./Header";
+import Header from "../components/Header";
 import WhatsAppFloat from "./WhatsAppFloat";
 import "../css/Cart.css";
 

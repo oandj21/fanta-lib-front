@@ -20,53 +20,7 @@ import {
 } from "../../store/store";
 import "../../css/AdminOrders.css";
 
-// 🔔 WEBHOOK AUTO-SYNC: Webhook secret from your .env
-const WEBHOOK_SECRET = 'mJHbyDfVB4F90aa+MpNU6LDsrqQx4NlaSMy5lR4TfpU=';
 
-// 🔔 WEBHOOK AUTO-SYNC: Helper function to send webhook-style updates
-const sendWebhookUpdate = async (payload) => {
-  try {
-    const payloadString = JSON.stringify(payload);
-    const encoder = new TextEncoder();
-    
-    // Import the secret key
-    const key = await crypto.subtle.importKey(
-      'raw',
-      encoder.encode(WEBHOOK_SECRET),
-      { name: 'HMAC', hash: 'SHA-256' },
-      false,
-      ['sign']
-    );
-    
-    // Generate signature
-    const signature = await crypto.subtle.sign(
-      'HMAC',
-      key,
-      encoder.encode(payloadString)
-    );
-    
-    // Convert to hex
-    const signatureHex = Array.from(new Uint8Array(signature))
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('');
-    
-    // Send to your own webhook endpoint
-    const response = await fetch('https://fanta-lib-back-production-76f4.up.railway.app/api/welivexpress/webhook', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Webhook-Signature': signatureHex
-      },
-      body: payloadString
-    });
-    
-    const result = await response.json();
-    console.log('✅ Webhook auto-update sent:', result);
-    return result;
-  } catch (error) {
-    console.error('❌ Error sending webhook update:', error);
-  }
-};
 
 // Add this helper function at the top of the component, after the imports
 const normalizeArabicText = (text) => {
@@ -1456,24 +1410,12 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
     setAddError(null);
 
     try {
+        // ✅ JUST CREATE THE ORDER - NO FAKE WEBHOOK
         const result = await onSubmit(orderToCreate);
         
-        // Send webhook with the created order data
-        const webhookPayload = {
-          event: 'order_created',
-          parcel: {
-            code: orderToCreate.parcel_code,
-            price: orderToCreate.parcel_price,
-            receiver: orderToCreate.parcel_receiver,
-            city: orderToCreate.parcel_city,
-            address: orderToCreate.parcel_address,
-            total_books: orderToCreate.parcel_prd_qty,
-            status: orderToCreate.statut
-          }
-        };
-        await sendWebhookUpdate(webhookPayload);
-        
+        // Go back to list view
         onBack();
+        
     } catch (error) {
         console.error("❌ Create failed:", error);
         setAddError(
@@ -1483,7 +1425,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
     } finally {
         setAddLoading(false);
     }
-  };
+};
 
   return (
     <div className="add-order-page">

@@ -184,7 +184,26 @@ const getStatusDescription = (status) => {
 // ==============================================
 // PROMPT COMPONENTS
 // ==============================================
-
+// Add this function near the top of the component, after the other helper functions
+const sendWebhookUpdate = async (payload) => {
+  try {
+    const token = localStorage.getItem("token");
+    await axios.post(
+      "https://fanta-lib-back-production-76f4.up.railway.app/api/welivexpress/webhook",
+      payload,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      }
+    );
+    console.log("✅ Webhook update sent:", payload);
+  } catch (error) {
+    console.error("❌ Error sending webhook update:", error);
+  }
+};
 // Delete Confirmation Modal (only modal left as it's a confirmation)
 const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm, orderCode }) => {
   if (!isOpen) return null;

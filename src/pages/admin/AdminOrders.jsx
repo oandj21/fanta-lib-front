@@ -20,7 +20,53 @@ import {
 } from "../../store/store";
 import "../../css/AdminOrders.css";
 
+// 🔔 WEBHOOK AUTO-SYNC: Webhook secret from your .env
+const WEBHOOK_SECRET = 'mJHbyDfVB4F90aa+MpNU6LDsrqQx4NlaSMy5lR4TfpU=';
 
+// 🔔 WEBHOOK AUTO-SYNC: Helper function to send webhook-style updates
+const sendWebhookUpdate = async (payload) => {
+  try {
+    const payloadString = JSON.stringify(payload);
+    const encoder = new TextEncoder();
+    
+    // Import the secret key
+    const key = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(WEBHOOK_SECRET),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    
+    // Generate signature
+    const signature = await crypto.subtle.sign(
+      'HMAC',
+      key,
+      encoder.encode(payloadString)
+    );
+    
+    // Convert to hex
+    const signatureHex = Array.from(new Uint8Array(signature))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+    
+    // Send to your own webhook endpoint
+    const response = await fetch('https://fanta-lib-back-production-76f4.up.railway.app/api/welivexpress/webhook', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Webhook-Signature': signatureHex
+      },
+      body: payloadString
+    });
+    
+    const result = await response.json();
+    console.log('✅ Webhook auto-update sent:', result);
+    return result;
+  } catch (error) {
+    console.error('❌ Error sending webhook update:', error);
+  }
+};
 
 // Add this helper function at the top of the component, after the imports
 const normalizeArabicText = (text) => {
@@ -184,26 +230,7 @@ const getStatusDescription = (status) => {
 // ==============================================
 // PROMPT COMPONENTS
 // ==============================================
-// Add this function near the top of the component, after the other helper functions
-const sendWebhookUpdate = async (payload) => {
-  try {
-    const token = localStorage.getItem("token");
-    await axios.post(
-      "https://fanta-lib-back-production-76f4.up.railway.app/api/welivexpress/webhook",
-      payload,
-      {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      }
-    );
-    console.log("✅ Webhook update sent:", payload);
-  } catch (error) {
-    console.error("❌ Error sending webhook update:", error);
-  }
-};
+
 // Delete Confirmation Modal (only modal left as it's a confirmation)
 const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm, orderCode }) => {
   if (!isOpen) return null;
@@ -2559,164 +2586,143 @@ export default function AdminOrders() {
   }, [dispatch]);
 
   // OPTIMIZED: Fetch all tracking info in a single batch when orders are loaded
-  // OPTIMIZED: Fetch all tracking info in a single batch when orders are loaded
-useEffect(() => {
-  const fetchAllTrackingInfo = async () => {
-    // Don't fetch if already done or no orders or fetch in progress
-    if (initialFetchDone.current || orderList.length === 0 || fetchInProgress.current) {
-      return;
-    }
-    
-    fetchInProgress.current = true;
-    setLoadingTracking(true);
-    
-    try {
-      const token = localStorage.getItem("token");
-      const trackingPromises = [];
-      const validOrders = [];
-      
-      // Collect all valid parcel codes
-      for (const order of orderList) {
-        if (order.parcel_code) {
-          trackingPromises.push(
-            axios.get(
-              `https://fanta-lib-back-production-76f4.up.railway.app/api/welivexpress/trackparcel`,
-              {
-                params: { parcel_code: order.parcel_code },
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'Accept': 'application/json'
-                }
-              }
-            ).catch(err => {
-              console.error(`Error fetching tracking for ${order.parcel_code}:`, err);
-              return null;
-            })
-          );
-          validOrders.push(order);
-        }
-      }
-
-      if (trackingPromises.length === 0) {
-        initialFetchDone.current = true;
-        setLoadingTracking(false);
-        fetchInProgress.current = false;
+  useEffect(() => {
+    const fetchAllTrackingInfo = async () => {
+      // Don't fetch if already done or no orders or fetch in progress
+      if (initialFetchDone.current || orderList.length === 0 || fetchInProgress.current) {
         return;
       }
-
-      // Execute all promises in parallel
-      const results = await Promise.all(trackingPromises);
       
-      const newTrackingMap = {};
-      const updatesToDispatch = [];
-
-      // Process results
-      results.forEach((response, index) => {
-        const order = validOrders[index];
-        if (response && response.data && response.data.success && response.data.data) {
-          const trackingData = response.data.data;
-          newTrackingMap[order.parcel_code] = trackingData;
-          
-          // Check for status changes
-          if (trackingData.parcel?.delivery_status) {
-            const deliveryStatus = trackingData.parcel.delivery_status;
-            const secondaryStatus = trackingData.parcel.status_second;
-            const paymentStatus = trackingData.parcel.payment_status;
-            const paymentStatusText = trackingData.parcel.payment_status_text;
-            const displayStatus = secondaryStatus 
-              ? `${deliveryStatus} - ${secondaryStatus}`
-              : deliveryStatus;
-            
-            // Prepare update data with ALL fields that might have changed
-            const updateData = {};
-            
-            if (order.statut !== deliveryStatus) {
-              updateData.statut = deliveryStatus;
-            }
-            
-            // FIX: Compare secondary status properly (handle null/undefined/empty)
-            const currentSecondary = order.statut_second || '';
-            const newSecondary = secondaryStatus || '';
-            if (currentSecondary !== newSecondary) {
-              updateData.statut_second = secondaryStatus || null;
-            }
-            
-            if (order.payment_status !== paymentStatus) {
-              updateData.payment_status = paymentStatus;
-              updateData.payment_status_text = paymentStatusText;
-            }
-            
-            // Only proceed if there are actual changes
-            if (Object.keys(updateData).length > 0) {
-              // Add display status if either status changed
-              if (updateData.statut || updateData.statut_second !== undefined) {
-                updateData.statut_display = secondaryStatus 
-                  ? `${deliveryStatus} - ${secondaryStatus}`
-                  : deliveryStatus;
-              }
-              
-              // Calculate profit based on parcel_price - total formula
-              let profit = (order.parcel_price || 0) - ((order.total || 0) + (order.frais_livraison || 0) + (order.frais_packaging || 0));
-              updateData.profit = profit;
-              
-              console.log(`🔔 Status changed for ${order.parcel_code}:`, {
-                old: { 
-                  statut: order.statut, 
-                  secondary: order.statut_second,
-                  payment: order.payment_status 
-                },
-                new: { 
-                  statut: deliveryStatus, 
-                  secondary: secondaryStatus,
-                  payment: paymentStatus 
-                },
-                updates: updateData
-              });
-              
-              // Send webhook update
-              const payload = {
-                parcel: {
-                  code: order.parcel_code,
-                  status: deliveryStatus,
-                  status_second: secondaryStatus,
-                  payment_status: paymentStatus,
-                  payment_status_text: paymentStatusText
+      fetchInProgress.current = true;
+      setLoadingTracking(true);
+      
+      try {
+        const token = localStorage.getItem("token");
+        const trackingPromises = [];
+        const validOrders = [];
+        
+        // Collect all valid parcel codes
+        for (const order of orderList) {
+          if (order.parcel_code) {
+            trackingPromises.push(
+              axios.get(
+                `https://fanta-lib-back-production-76f4.up.railway.app/api/welivexpress/trackparcel`,
+                {
+                  params: { parcel_code: order.parcel_code },
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
+                  }
                 }
-              };
-              
-              sendWebhookUpdate(payload);
-              
-              // Prepare Redux update
-              updatesToDispatch.push(
-                dispatch(updateCommande({ 
-                  id: order.id, 
-                  ...updateData
-                }))
-              );
-            }
+              ).catch(err => {
+                console.error(`Error fetching tracking for ${order.parcel_code}:`, err);
+                return null;
+              })
+            );
+            validOrders.push(order);
           }
         }
-      });
 
-      // Update tracking map
-      setTrackingInfoMap(newTrackingMap);
-      
-      // Execute all Redux updates in parallel
-      if (updatesToDispatch.length > 0) {
-        await Promise.all(updatesToDispatch);
+        if (trackingPromises.length === 0) {
+          initialFetchDone.current = true;
+          setLoadingTracking(false);
+          fetchInProgress.current = false;
+          return;
+        }
+
+        // Execute all promises in parallel
+        const results = await Promise.all(trackingPromises);
+        
+        const newTrackingMap = {};
+        const updatesToDispatch = [];
+
+        // Process results
+        results.forEach((response, index) => {
+          const order = validOrders[index];
+          if (response && response.data && response.data.success && response.data.data) {
+            const trackingData = response.data.data;
+            newTrackingMap[order.parcel_code] = trackingData;
+            
+            // Check for status changes
+            if (trackingData.parcel?.delivery_status) {
+              const deliveryStatus = trackingData.parcel.delivery_status;
+              const secondaryStatus = trackingData.parcel.status_second;
+              const paymentStatus = trackingData.parcel.payment_status;
+              const paymentStatusText = trackingData.parcel.payment_status_text;
+              const displayStatus = secondaryStatus 
+                ? `${deliveryStatus} - ${secondaryStatus}`
+                : deliveryStatus;
+              
+              // If status changed, prepare update
+              if (order.statut !== deliveryStatus || 
+                  order.statut_second !== secondaryStatus || 
+                  order.payment_status !== paymentStatus) {
+                
+                console.log(`🔔 Status changed for ${order.parcel_code}:`, {
+                  old: { 
+                    statut: order.statut, 
+                    secondary: order.statut_second,
+                    payment: order.payment_status 
+                  },
+                  new: { 
+                    statut: deliveryStatus, 
+                    secondary: secondaryStatus,
+                    payment: paymentStatus 
+                  }
+                });
+                
+                // Calculate profit based on parcel_price - total formula
+                let profit = (order.parcel_price || 0) - ((order.total || 0) + (order.frais_livraison || 0) + (order.frais_packaging || 0));
+                
+                // Send webhook update
+                const payload = {
+                  parcel: {
+                    code: order.parcel_code,
+                    status: deliveryStatus,
+                    status_second: secondaryStatus,
+                    payment_status: paymentStatus,
+                    payment_status_text: paymentStatusText
+                  }
+                };
+                
+                sendWebhookUpdate(payload);
+                
+                // Prepare Redux update with profit recalculation
+                updatesToDispatch.push(
+                  dispatch(updateCommande({ 
+                    id: order.id, 
+                    statut: deliveryStatus,
+                    statut_second: secondaryStatus,
+                    statut_display: displayStatus,
+                    payment_status: paymentStatus,
+                    payment_status_text: paymentStatusText,
+                    profit: profit
+                  }))
+                );
+              }
+            }
+          }
+        });
+
+        // Update tracking map
+        setTrackingInfoMap(newTrackingMap);
+        
+        // Execute all Redux updates in parallel
+        if (updatesToDispatch.length > 0) {
+          await Promise.all(updatesToDispatch);
+        }
+        
+      } catch (error) {
+        console.error("Error fetching tracking info:", error);
+      } finally {
+        setLoadingTracking(false);
+        initialFetchDone.current = true;
+        fetchInProgress.current = false;
       }
-      
-    } catch (error) {
-      console.error("Error fetching tracking info:", error);
-    } finally {
-      setLoadingTracking(false);
-      initialFetchDone.current = true;
-      fetchInProgress.current = false;
-    }
-  };
+    };
 
-  fetchAllTrackingInfo();
-}, [orderList, dispatch]);
+    fetchAllTrackingInfo();
+  }, [orderList, dispatch]);
 
   // Reset to first page when filters change
   useEffect(() => {

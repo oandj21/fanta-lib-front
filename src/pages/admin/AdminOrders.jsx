@@ -20,6 +20,43 @@ import {
 } from "../../store/store";
 import "../../css/AdminOrders.css";
 
+// Helper function to generate code with city prefix, month, year, random numbers and letters
+const generateOrderCode = (cityName) => {
+  // Get first 3 letters of city (uppercase) - clean the city name first
+  let cityPrefix = 'CITY'; // Default
+  
+  if (cityName && typeof cityName === 'string' && cityName.trim() !== '') {
+    // Remove any special characters and take first 3 letters
+    const cleanCity = cityName.trim().replace(/[^a-zA-Z\u0600-\u06FF]/g, '');
+    if (cleanCity.length >= 3) {
+      cityPrefix = cleanCity.substring(0, 3).toUpperCase();
+    } else if (cleanCity.length > 0) {
+      // If city name is less than 3 chars, pad with X
+      cityPrefix = cleanCity.toUpperCase().padEnd(3, 'X');
+    }
+  }
+  
+  // Get current month (2 digits)
+  const month = (new Date().getMonth() + 1).toString().padStart(2, '0');
+  
+  // Get current year (last 2 digits)
+  const year = new Date().getFullYear().toString().slice(-2);
+  
+  // Generate 4 random numbers (1000-9999)
+  const randomNumbers = Math.floor(1000 + Math.random() * 9000);
+  
+  // Generate 2 random letters
+  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const randomLetters = Array(2).fill()
+    .map(() => letters.charAt(Math.floor(Math.random() * letters.length)))
+    .join('');
+  
+  // Combine all parts: CITYMMYY-####LL
+  const generatedCode = `${cityPrefix}${month}${year}-${randomNumbers}${randomLetters}`;
+  
+  return generatedCode;
+};
+
 // 🔔 WEBHOOK AUTO-SYNC: Webhook secret from your .env
 const WEBHOOK_SECRET = 'mJHbyDfVB4F90aa+MpNU6LDsrqQx4NlaSMy5lR4TfpU=';
 
@@ -1261,9 +1298,9 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
   // Track if total was manually edited
   const [totalManuallyEdited, setTotalManuallyEdited] = useState(false);
   
-  // Form state for new order
+  // Form state for new order - Generate initial code with default 'CITY' prefix
   const [newOrderData, setNewOrderData] = useState({
-    parcel_code: `CMD-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    parcel_code: generateOrderCode(""), // Use default 'CITY' as prefix
     parcel_receiver: "",
     parcel_phone: "",
     parcel_prd_qty: 0,
@@ -1382,9 +1419,13 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
   };
 
   const handleNewCitySelect = (city, cityId) => {
+    // Generate new order code with the selected city
+    const newCode = generateOrderCode(city);
+    
     setNewOrderData(prev => ({
       ...prev,
-      parcel_city: city
+      parcel_city: city,
+      parcel_code: newCode // Update the code with city prefix
     }));
   };
 
@@ -1505,6 +1546,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
                 readOnly
                 className="readonly-input"
               />
+              <small className="field-hint">Généré automatiquement</small>
             </div>
 
             <div className="form-group">
@@ -1559,6 +1601,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
                 onChange={(value) => setNewOrderData(prev => ({ ...prev, parcel_city: value }))}
                 onSelect={handleNewCitySelect}
               />
+              <small className="field-hint">La sélection met à jour le code</small>
             </div>
 
             <div className="form-group">
@@ -1718,7 +1761,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
           <div className="price-info-warning compact">
             <Info size={16} />
             <span>
-              <strong>Important:</strong> Prix colis: <strong>{newOrderData.parcel_price || '---'} MAD</strong>
+              <strong>Code généré:</strong> {newOrderData.parcel_code}
             </span>
           </div>
 
@@ -1978,6 +2021,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
     setFormData(prev => ({
       ...prev,
       parcel_city: city
+      // Note: We don't update parcel_code here as it's read-only in edit mode
     }));
   };
 
@@ -2361,7 +2405,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
           <div className="price-info-warning compact">
             <Info size={16} />
             <span>
-              <strong>Important:</strong> Prix colis: <strong>{formData.parcel_price || '---'} MAD</strong>
+              <strong>Code:</strong> {order.parcel_code}
             </span>
           </div>
 
@@ -2580,16 +2624,32 @@ export default function AdminOrders() {
   const initialFetchDone = useRef(false);
   const fetchInProgress = useRef(false);
 
-  // Initial fetch of orders
+  // Initial fetch of orders - FIXED: Now with async/await to ensure orders are loaded
   useEffect(() => {
-    dispatch(fetchCommandes());
+    const loadOrders = async () => {
+      try {
+        await dispatch(fetchCommandes()).unwrap();
+        initialFetchDone.current = false; // allow tracking fetch
+      } catch (error) {
+        console.error("Error loading orders:", error);
+      }
+    };
+
+    loadOrders();
   }, [dispatch]);
+
+  // Reset tracking when page refreshes
+  useEffect(() => {
+    initialFetchDone.current = false;
+    fetchInProgress.current = false;
+    setTrackingInfoMap({}); // Clear existing tracking info
+  }, []);
 
   // OPTIMIZED: Fetch all tracking info in a single batch when orders are loaded
   useEffect(() => {
     const fetchAllTrackingInfo = async () => {
-      // Don't fetch if already done or no orders or fetch in progress
-      if (initialFetchDone.current || orderList.length === 0 || fetchInProgress.current) {
+      // Don't fetch if no orders or fetch in progress
+      if (orderList.length === 0 || fetchInProgress.current) {
         return;
       }
       

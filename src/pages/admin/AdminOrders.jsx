@@ -88,6 +88,7 @@ const normalizeArabicText = (text) => {
     // Convert to lowercase for case-insensitive comparison
     .toLowerCase();
 };
+
 // French translations for statuses
 const statusTranslations = {
   // Primary delivery statuses
@@ -115,6 +116,7 @@ const statusTranslations = {
   'ENVG': 'En voyage',
   'RETURN_BY_AMANA': 'Retour par Amana',
   'SENT_BY_AMANA': 'Envoyé par Amana',
+  'CANCELED': 'Annulé',
   
   // Payment statuses
   'PAID': 'Payé',
@@ -189,6 +191,7 @@ const getStatusColor = (status) => {
   if (status === 'ENVG' || statusLower.includes('en voyage')) return '#0891b2';
   if (status === 'RETURN_BY_AMANA' || statusLower.includes('retour amana')) return '#b91c1c';
   if (status === 'SENT_BY_AMANA' || statusLower.includes('envoyé amana')) return '#1e40af';
+  if (status === 'CANCELED' || statusLower.includes('annulé')) return '#6b7280';
   
   // Payment statuses
   if (statusLower.includes('payé') || statusLower.includes('paid')) return '#10b981';
@@ -211,6 +214,7 @@ const getStatusDescription = (status) => {
     'SENT': 'Colis expédié',
     'RECEIVED': 'Colis reçu',
     'CANCELLED': 'Colis annulé',
+    'CANCELED': 'Colis annulé',
     'REFUSE': 'Colis refusé par le destinataire',
     'NOANSWER': 'Pas de réponse du destinataire',
     'UNREACHABLE': 'Destinataire injoignable',
@@ -281,7 +285,6 @@ const CopyNotification = ({ message, isVisible, onClose }) => {
 };
 
 // City Autocomplete Component
-// City Autocomplete Component
 const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
   const [query, setQuery] = useState(value || "");
   const [suggestions, setSuggestions] = useState([]);
@@ -331,7 +334,7 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
     } catch (err) {
       console.error("Error fetching cities:", err);
       setError("Impossible de charger les villes");
-      setCities([]); // Set empty array on error instead of fallback
+      setCities([]);
     } finally {
       setLoading(false);
     }
@@ -420,7 +423,6 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
   );
 };
 
-// Book Selection Component
 // Book Selection Component with Arabic text normalization and auto-select all same ISBN
 const BookSelector = ({ selectedBooks, onBooksChange, onTotalQuantityChange }) => {
   const dispatch = useDispatch();
@@ -751,7 +753,7 @@ const OrderDetailsPage = ({ order, onBack }) => {
 
   // Get statuses from tracking info or order
   const deliveryStatus = trackingInfo?.parcel?.delivery_status || order.statut;
-  const secondaryStatus = trackingInfo?.parcel?.status_second || order.statut_second;
+  const secondaryStatus = trackingInfo?.parcel?.delivery_status_second || order.statut_second;
   const paymentStatus = trackingInfo?.parcel?.payment_status || order.payment_status;
   const paymentStatusText = trackingInfo?.parcel?.payment_status_text || order.payment_status_text;
   
@@ -1249,7 +1251,6 @@ const OrderDetailsPage = ({ order, onBack }) => {
   );
 };
 
-// Add Order Page Component - UPDATED with larger inputs, no scroll, manual price, always checked, phone validation
 // Add Order Page Component - COMPACT VERSION (no scroll)
 const AddOrderPage = ({ onBack, onSubmit }) => {
   const dispatch = useDispatch();
@@ -1755,8 +1756,6 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
   );
 };
 
-// Update Order Page Component - UPDATED with larger inputs, no scroll, manual price, always checked, phone validation
-// Update Order Page Component - COMPLETE with all fields from add form
 // Update Order Page Component - COMPLETE with proper data mapping from DB
 const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
   const dispatch = useDispatch();
@@ -2208,6 +2207,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
                 <option value="ENVG">En voyage</option>
                 <option value="RETURN_BY_AMANA">Retour par Amana</option>
                 <option value="SENT_BY_AMANA">Envoyé par Amana</option>
+                <option value="CANCELED">Annulé</option>
               </select>
             </div>
           </div>
@@ -2646,7 +2646,7 @@ export default function AdminOrders() {
             // Check for status changes
             if (trackingData.parcel?.delivery_status) {
               const deliveryStatus = trackingData.parcel.delivery_status;
-              const secondaryStatus = trackingData.parcel.status_second;
+              const secondaryStatus = trackingData.parcel.delivery_status_second;
               const paymentStatus = trackingData.parcel.payment_status;
               const paymentStatusText = trackingData.parcel.payment_status_text;
               const displayStatus = secondaryStatus 
@@ -2919,18 +2919,19 @@ const filteredOrders = useMemo(() => {
     );
   };
 
-  // Helper to get tracking info for an order
+  // Helper to get tracking info for an order - FIXED to use delivery_status_second
   const getTrackingStatus = (parcelCode) => {
     if (!parcelCode) return null;
     const info = trackingInfoMap[parcelCode];
     if (!info || !info.parcel) return null;
+    
     return {
       deliveryStatus: info.parcel.delivery_status,
-      secondaryStatus: info.parcel.status_second,
+      secondaryStatus: info.parcel.delivery_status_second, // Fixed: use delivery_status_second
       paymentStatus: info.parcel.payment_status,
       paymentText: info.parcel.payment_status_text,
-      displayStatus: info.parcel.status_second 
-        ? `${info.parcel.delivery_status} - ${info.parcel.status_second}`
+      displayStatus: info.parcel.delivery_status_second 
+        ? `${info.parcel.delivery_status} - ${info.parcel.delivery_status_second}` // Fixed
         : info.parcel.delivery_status
     };
   };

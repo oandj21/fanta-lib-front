@@ -758,8 +758,7 @@ const OrderDetailsPage = ({ order, onBack }) => {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Accept': 'application/json'
-          },
-          timeout: 10000
+          }
         }
       );
 
@@ -2629,7 +2628,6 @@ export default function AdminOrders() {
   useEffect(() => {
     const loadOrders = async () => {
       try {
-        console.log("📦 Fetching orders...");
         await dispatch(fetchCommandes()).unwrap();
         initialFetchDone.current = false; // allow tracking fetch
       } catch (error) {
@@ -2647,20 +2645,11 @@ export default function AdminOrders() {
     setTrackingInfoMap({}); // Clear existing tracking info
   }, []);
 
-  // OPTIMIZED: Fetch tracking info with rate limiting and error handling
+  // OPTIMIZED: Fetch all tracking info in a single batch when orders are loaded
   useEffect(() => {
     const fetchAllTrackingInfo = async () => {
       // Don't fetch if no orders or fetch in progress
       if (orderList.length === 0 || fetchInProgress.current) {
-        return;
-      }
-      
-      // Don't fetch if we already have tracking info for all orders
-      const allOrdersHaveTracking = orderList.every(order => 
-        !order.parcel_code || trackingInfoMap[order.parcel_code]
-      );
-      
-      if (allOrdersHaveTracking && initialFetchDone.current) {
         return;
       }
       
@@ -2669,120 +2658,122 @@ export default function AdminOrders() {
       
       try {
         const token = localStorage.getItem("token");
-        const BATCH_SIZE = 3; // Process 3 orders at a time
-        const DELAY_MS = 500; // 500ms delay between batches
+        const trackingPromises = [];
+        const validOrders = [];
         
-        const newTrackingMap = { ...trackingInfoMap };
-        const updatesToDispatch = [];
-        
-        // Filter orders that need tracking
-        const ordersToProcess = orderList.filter(order => 
-          order.parcel_code && !newTrackingMap[order.parcel_code]
-        );
-        
-        if (ordersToProcess.length === 0) {
-          initialFetchDone.current = true;
-          setLoadingTracking(false);
-          fetchInProgress.current = false;
-          return;
-        }
-        
-        console.log(`📡 Fetching tracking for ${ordersToProcess.length} orders in batches of ${BATCH_SIZE}`);
-        
-        // Process in batches
-        for (let i = 0; i < ordersToProcess.length; i += BATCH_SIZE) {
-          const batch = ordersToProcess.slice(i, i + BATCH_SIZE);
-          
-          // Process batch in parallel
-          const batchPromises = batch.map(async (order) => {
-            try {
-              const response = await axios.get(
+        // Collect all valid parcel codes
+        for (const order of orderList) {
+          if (order.parcel_code) {
+            trackingPromises.push(
+              axios.get(
                 `https://fanta-lib-back-production-76f4.up.railway.app/api/welivexpress/trackparcel`,
                 {
                   params: { parcel_code: order.parcel_code },
                   headers: {
                     'Authorization': `Bearer ${token}`,
                     'Accept': 'application/json'
-                  },
-                  timeout: 10000 // 10 second timeout per request
-                }
-              );
-              
-              if (response.data && response.data.success && response.data.data) {
-                const trackingData = response.data.data;
-                newTrackingMap[order.parcel_code] = trackingData;
-                
-                // Check for status changes
-                if (trackingData.parcel?.delivery_status) {
-                  const deliveryStatus = trackingData.parcel.delivery_status;
-                  const secondaryStatus = trackingData.parcel.delivery_status_second;
-                  const paymentStatus = trackingData.parcel.payment_status;
-                  
-                  // If status changed, prepare update
-                  if (order.statut !== deliveryStatus || 
-                      order.statut_second !== secondaryStatus || 
-                      order.payment_status !== paymentStatus) {
-                    
-                    console.log(`🔔 Status changed for ${order.parcel_code}:`, {
-                      old: order.statut,
-                      new: deliveryStatus,
-                      secondary: secondaryStatus
-                    });
-                    
-                    // Calculate profit
-                    const profit = (order.parcel_price || 0) - 
-                                  ((order.total || 0) + 
-                                   (order.frais_livraison || 0) + 
-                                   (order.frais_packaging || 0));
-                    
-                    // Send webhook update
-                    sendWebhookUpdate({
-                      parcel: {
-                        code: order.parcel_code,
-                        status: deliveryStatus,
-                        status_second: secondaryStatus,
-                        payment_status: paymentStatus
-                      }
-                    });
-                    
-                    // Prepare Redux update
-                    updatesToDispatch.push(
-                      dispatch(updateCommande({ 
-                        id: order.id, 
-                        statut: deliveryStatus,
-                        statut_second: secondaryStatus,
-                        payment_status: paymentStatus,
-                        profit: profit
-                      }))
-                    );
                   }
                 }
-              }
-            } catch (err) {
-              console.error(`Error fetching tracking for ${order.parcel_code}:`, err.message);
-              // Don't update tracking map for failed requests
-            }
-          });
-          
-          // Wait for batch to complete
-          await Promise.all(batchPromises);
-          
-          // Update tracking map after each batch
-          setTrackingInfoMap(newTrackingMap);
-          
-          // Delay before next batch (except for last batch)
-          if (i + BATCH_SIZE < ordersToProcess.length) {
-            await new Promise(resolve => setTimeout(resolve, DELAY_MS));
+              ).catch(err => {
+                console.error(`Error fetching tracking for ${order.parcel_code}:`, err);
+                return null;
+              })
+            );
+            validOrders.push(order);
           }
         }
+
+        if (trackingPromises.length === 0) {
+          initialFetchDone.current = true;
+          setLoadingTracking(false);
+          fetchInProgress.current = false;
+          return;
+        }
+
+        // Execute all promises in parallel
+        const results = await Promise.all(trackingPromises);
         
-        // Execute all Redux updates
+        const newTrackingMap = {};
+        const updatesToDispatch = [];
+
+        // Process results
+        results.forEach((response, index) => {
+          const order = validOrders[index];
+          if (response && response.data && response.data.success && response.data.data) {
+            const trackingData = response.data.data;
+            newTrackingMap[order.parcel_code] = trackingData;
+            
+            // Check for status changes
+            if (trackingData.parcel?.delivery_status) {
+              const deliveryStatus = trackingData.parcel.delivery_status;
+              const secondaryStatus = trackingData.parcel.delivery_status_second;
+              const paymentStatus = trackingData.parcel.payment_status;
+              const paymentStatusText = trackingData.parcel.payment_status_text;
+              const displayStatus = secondaryStatus 
+                ? `${deliveryStatus} - ${secondaryStatus}`
+                : deliveryStatus;
+              
+              // If status changed, prepare update
+              if (order.statut !== deliveryStatus || 
+                  order.statut_second !== secondaryStatus || 
+                  order.payment_status !== paymentStatus) {
+                
+                console.log(`🔔 Status changed for ${order.parcel_code}:`, {
+                  old: { 
+                    statut: order.statut, 
+                    secondary: order.statut_second,
+                    payment: order.payment_status 
+                  },
+                  new: { 
+                    statut: deliveryStatus, 
+                    secondary: secondaryStatus,
+                    payment: paymentStatus 
+                  }
+                });
+                
+                // Calculate profit based on parcel_price - total formula
+                let profit = (order.parcel_price || 0) - ((order.total || 0) + (order.frais_livraison || 0) + (order.frais_packaging || 0));
+                
+                // Send webhook update
+                const payload = {
+                  parcel: {
+                    code: order.parcel_code,
+                    status: deliveryStatus,
+                    status_second: secondaryStatus,
+                    payment_status: paymentStatus,
+                    payment_status_text: paymentStatusText
+                  }
+                };
+                
+                sendWebhookUpdate(payload);
+                
+                // Prepare Redux update with profit recalculation
+                updatesToDispatch.push(
+                  dispatch(updateCommande({ 
+                    id: order.id, 
+                    statut: deliveryStatus,
+                    statut_second: secondaryStatus,
+                    statut_display: displayStatus,
+                    payment_status: paymentStatus,
+                    payment_status_text: paymentStatusText,
+                    profit: profit
+                  }))
+                );
+              }
+            }
+          }
+        });
+
+        // Update tracking map
+        setTrackingInfoMap(newTrackingMap);
+        
+        // Execute all Redux updates in parallel
         if (updatesToDispatch.length > 0) {
           await Promise.all(updatesToDispatch);
         }
         
       } catch (error) {
-        console.error("Error in batch tracking fetch:", error);
+        console.error("Error fetching tracking info:", error);
       } finally {
         setLoadingTracking(false);
         initialFetchDone.current = true;
@@ -2791,7 +2782,7 @@ export default function AdminOrders() {
     };
 
     fetchAllTrackingInfo();
-  }, [orderList, dispatch]); // Remove trackingInfoMap from dependencies
+  }, [orderList, dispatch]);
 
   // Reset to first page when filters change
   useEffect(() => {

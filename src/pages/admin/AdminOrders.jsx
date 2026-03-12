@@ -1,3 +1,5 @@
+// AdminOrders.jsx - Optimized version with database statuses in list
+
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { 
@@ -55,54 +57,6 @@ const generateOrderCode = (cityName) => {
   const generatedCode = `${cityPrefix}${month}${year}-${randomNumbers}${randomLetters}`;
   
   return generatedCode;
-};
-
-// 🔔 WEBHOOK AUTO-SYNC: Webhook secret from your .env
-const WEBHOOK_SECRET = 'mJHbyDfVB4F90aa+MpNU6LDsrqQx4NlaSMy5lR4TfpU=';
-
-// 🔔 WEBHOOK AUTO-SYNC: Helper function to send webhook-style updates
-const sendWebhookUpdate = async (payload) => {
-  try {
-    const payloadString = JSON.stringify(payload);
-    const encoder = new TextEncoder();
-    
-    // Import the secret key
-    const key = await crypto.subtle.importKey(
-      'raw',
-      encoder.encode(WEBHOOK_SECRET),
-      { name: 'HMAC', hash: 'SHA-256' },
-      false,
-      ['sign']
-    );
-    
-    // Generate signature
-    const signature = await crypto.subtle.sign(
-      'HMAC',
-      key,
-      encoder.encode(payloadString)
-    );
-    
-    // Convert to hex
-    const signatureHex = Array.from(new Uint8Array(signature))
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('');
-    
-    // Send to your own webhook endpoint
-    const response = await fetch('https://fanta-lib-back-production-76f4.up.railway.app/api/welivexpress/webhook', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Webhook-Signature': signatureHex
-      },
-      body: payloadString
-    });
-    
-    const result = await response.json();
-    console.log('✅ Webhook auto-update sent:', result);
-    return result;
-  } catch (error) {
-    console.error('❌ Error sending webhook update:', error);
-  }
 };
 
 // Add this helper function at the top of the component, after the imports
@@ -272,7 +226,7 @@ const getStatusDescription = (status) => {
 // PROMPT COMPONENTS
 // ==============================================
 
-// Delete Confirmation Modal (only modal left as it's a confirmation)
+// Delete Confirmation Modal
 const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm, orderCode }) => {
   if (!isOpen) return null;
 
@@ -460,7 +414,7 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
   );
 };
 
-// Book Selection Component with Arabic text normalization and auto-select all same ISBN
+// Book Selection Component
 const BookSelector = ({ selectedBooks, onBooksChange, onTotalQuantityChange }) => {
   const dispatch = useDispatch();
   const { list: booksList = [], loading: booksLoading } = useSelector((state) => state.livres);
@@ -732,7 +686,9 @@ const BookSelector = ({ selectedBooks, onBooksChange, onTotalQuantityChange }) =
   );
 };
 
-// Order Details Page Component
+// ==============================================
+// ORDER DETAILS PAGE (with real-time tracking)
+// ==============================================
 const OrderDetailsPage = ({ order, onBack }) => {
   const [trackingInfo, setTrackingInfo] = useState(null);
   const [loadingTracking, setLoadingTracking] = useState(false);
@@ -788,7 +744,7 @@ const OrderDetailsPage = ({ order, onBack }) => {
 
   if (!order) return null;
 
-  // Get statuses from tracking info or order
+  // Use tracking info if available, otherwise fallback to order data
   const deliveryStatus = trackingInfo?.parcel?.delivery_status || order.statut;
   const secondaryStatus = trackingInfo?.parcel?.delivery_status_second || order.statut_second;
   const paymentStatus = trackingInfo?.parcel?.payment_status || order.payment_status;
@@ -845,7 +801,7 @@ const OrderDetailsPage = ({ order, onBack }) => {
                   <span className="tracking-live-badge">LIVE</span>
                 </div>
                 
-                {/* Status Cards with Secondary Status */}
+                {/* Status Cards */}
                 <div className="tracking-status-grid">
                   <div className="tracking-status-card">
                     <div className="tracking-status-label">
@@ -1140,20 +1096,16 @@ const OrderDetailsPage = ({ order, onBack }) => {
                     Statut principal
                   </div>
                   <div className="order-info-value">
-                    {loadingTracking ? (
-                      <RefreshCw size={14} className="spinning" />
-                    ) : (
-                      <span 
-                        className="status-badge"
-                        style={{ 
-                          backgroundColor: `${getStatusColor(deliveryStatus)}15`,
-                          color: getStatusColor(deliveryStatus),
-                          border: `1px solid ${getStatusColor(deliveryStatus)}30`
-                        }}
-                      >
-                        {translatedDeliveryStatus}
-                      </span>
-                    )}
+                    <span 
+                      className="status-badge"
+                      style={{ 
+                        backgroundColor: `${getStatusColor(deliveryStatus)}15`,
+                        color: getStatusColor(deliveryStatus),
+                        border: `1px solid ${getStatusColor(deliveryStatus)}30`
+                      }}
+                    >
+                      {translatedDeliveryStatus}
+                    </span>
                   </div>
                 </div>
 
@@ -1288,7 +1240,7 @@ const OrderDetailsPage = ({ order, onBack }) => {
   );
 };
 
-// Add Order Page Component - COMPACT VERSION (no scroll)
+// Add Order Page Component
 const AddOrderPage = ({ onBack, onSubmit }) => {
   const dispatch = useDispatch();
   const [addLoading, setAddLoading] = useState(false);
@@ -1498,12 +1450,8 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
     setAddError(null);
 
     try {
-        // ✅ JUST CREATE THE ORDER - NO FAKE WEBHOOK
-        const result = await onSubmit(orderToCreate);
-        
-        // Go back to list view
+        await onSubmit(orderToCreate);
         onBack();
-        
     } catch (error) {
         console.error("❌ Create failed:", error);
         setAddError(
@@ -1799,7 +1747,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
   );
 };
 
-// Update Order Page Component - COMPLETE with proper data mapping from DB
+// Update Order Page Component
 const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
   const dispatch = useDispatch();
   const [updateLoading, setUpdateLoading] = useState(false);
@@ -1838,7 +1786,6 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
       let formattedDate = "";
       if (order.date) {
         try {
-          // Handle different date formats
           const dateObj = new Date(order.date);
           if (!isNaN(dateObj.getTime())) {
             formattedDate = dateObj.toISOString().split('T')[0];
@@ -1848,7 +1795,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
         }
       }
 
-      // Process livres data - handle different possible structures
+      // Process livres data
       let processedLivres = [];
       if (order.livres && Array.isArray(order.livres)) {
         processedLivres = order.livres.map(book => ({
@@ -1895,20 +1842,11 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
           ? parseFloat(order.profit)
           : null,
         parcel_note: order.parcel_note || order.note || order.notes || "",
-        parcel_open: 1, // Force to checked
+        parcel_open: 1,
         statut: order.statut || order.status || order.delivery_status || "NEW_PARCEL",
         statut_second: order.statut_second || order.secondary_status || "",
         livres: processedLivres,
         date: formattedDate || new Date().toISOString().split('T')[0]
-      });
-
-      // Log what we've mapped for debugging
-      console.log("📋 Mapped form data:", {
-        receiver: order.parcel_receiver || order.receiver,
-        city: order.parcel_city || order.city,
-        qty: calculatedQty,
-        livres: processedLivres.length,
-        date: formattedDate
       });
     }
   }, [order]);
@@ -2021,93 +1959,86 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
     setFormData(prev => ({
       ...prev,
       parcel_city: city
-      // Note: We don't update parcel_code here as it's read-only in edit mode
     }));
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  if (!order) return;
+    e.preventDefault();
+    if (!order) return;
 
-  // Validate phone if provided
-  if (formData.parcel_phone && !validatePhone(formData.parcel_phone)) {
-      setUpdateError(phoneError);
-      return;
-  }
+    // Validate phone if provided
+    if (formData.parcel_phone && !validatePhone(formData.parcel_phone)) {
+        setUpdateError(phoneError);
+        return;
+    }
 
-  setUpdateLoading(true);
-  setUpdateError(null);
+    setUpdateLoading(true);
+    setUpdateError(null);
 
-  try {
-    const updateData = {};
-    
-    // Check all fields for changes
-    Object.keys(formData).forEach(key => {
-      // Special handling for livres - always include if they exist and are different
-      if (key === 'livres') {
-        // Compare livres arrays
-        const currentLivres = JSON.stringify(formData.livres);
-        const originalLivres = JSON.stringify(order.livres || []);
-        
-        if (currentLivres !== originalLivres) {
-          updateData.livres = formData.livres;
+    try {
+      const updateData = {};
+      
+      // Check all fields for changes
+      Object.keys(formData).forEach(key => {
+        if (key === 'livres') {
+          const currentLivres = JSON.stringify(formData.livres);
+          const originalLivres = JSON.stringify(order.livres || []);
+          
+          if (currentLivres !== originalLivres) {
+            updateData.livres = formData.livres;
+          }
+          return;
         }
+        
+        const formValue = formData[key] === null || formData[key] === undefined ? '' : String(formData[key]);
+        const orderValue = order[key] === null || order[key] === undefined ? '' : String(order[key]);
+        
+        if (formValue !== orderValue) {
+          if (key === 'statut_second' && formData[key] === '') {
+            updateData[key] = null;
+          } else {
+            updateData[key] = formData[key];
+          }
+        }
+      });
+
+      // Also update quantity based on livres total
+      if (formData.livres && formData.livres.length > 0) {
+        const totalQty = formData.livres.reduce((sum, book) => sum + (book.quantity || 1), 0);
+        if (totalQty !== order.parcel_prd_qty) {
+          updateData.parcel_prd_qty = totalQty;
+        }
+      }
+
+      console.log("📤 Sending update data:", updateData);
+
+      if (Object.keys(updateData).length === 0) {
+        onBack();
         return;
       }
-      
-      // Convert to string for comparison to handle numbers vs strings
-      const formValue = formData[key] === null || formData[key] === undefined ? '' : String(formData[key]);
-      const orderValue = order[key] === null || order[key] === undefined ? '' : String(order[key]);
-      
-      if (formValue !== orderValue) {
-        // For statut_second, if it's empty string, send as null to backend
-        if (key === 'statut_second' && formData[key] === '') {
-          updateData[key] = null;
-        } else {
-          updateData[key] = formData[key];
-        }
-      }
-    });
 
-    // Also update quantity based on livres total
-    if (formData.livres && formData.livres.length > 0) {
-      const totalQty = formData.livres.reduce((sum, book) => sum + (book.quantity || 1), 0);
-      if (totalQty !== order.parcel_prd_qty) {
-        updateData.parcel_prd_qty = totalQty;
-      }
-    }
-
-    // Log what we're sending for debugging
-    console.log("📤 Sending update data:", updateData);
-
-    if (Object.keys(updateData).length === 0) {
+      await onSubmit(order.id, updateData);
       onBack();
-      return;
+      
+    } catch (error) {
+      console.error("Update failed:", error);
+      
+      if (error.response) {
+        console.error("Server error response:", error.response.data);
+        setUpdateError(
+          error.response.data?.message || 
+          error.response.data?.error ||
+          `Erreur ${error.response.status}: ${JSON.stringify(error.response.data)}`
+        );
+      } else {
+        setUpdateError(
+          error?.message || 
+          "Erreur lors de la mise à jour. Veuillez réessayer."
+        );
+      }
+    } finally {
+      setUpdateLoading(false);
     }
-
-    await onSubmit(order.id, updateData);
-    onBack();
-    
-  } catch (error) {
-    console.error("Update failed:", error);
-    
-    // Log the actual error response from server
-    if (error.response) {
-      console.error("Server error response:", error.response.data);
-      setUpdateError(
-        error.response.data?.message || 
-        error.response.data?.error ||
-        `Erreur ${error.response.status}: ${JSON.stringify(error.response.data)}`
-      );
-    } else {
-      setUpdateError(
-        error?.message || 
-        "Erreur lors de la mise à jour. Veuillez réessayer."
-      );
-    }
-  } finally {
-    setUpdateLoading(false);
-  }
 };
 
   if (!order) return null;
@@ -2591,7 +2522,9 @@ const WebhookTestPanel = ({ onClose }) => {
   );
 };
 
-// Main AdminOrders Component
+// ==============================================
+// MAIN ADMIN ORDERS COMPONENT
+// ==============================================
 export default function AdminOrders() {
   const dispatch = useDispatch();
   const { list: orderList = [], loading } = useSelector((state) => state.commandes);
@@ -2615,21 +2548,12 @@ export default function AdminOrders() {
   const [orderToDelete, setOrderToDelete] = useState(null);
   const [showCopyNotification, setShowCopyNotification] = useState(false);
   const [copyMessage, setCopyMessage] = useState("");
-  
-  // Tracking info for all orders
-  const [trackingInfoMap, setTrackingInfoMap] = useState({});
-  const [loadingTracking, setLoadingTracking] = useState(false);
-  
-  // Use ref to track if initial fetch has been done
-  const initialFetchDone = useRef(false);
-  const fetchInProgress = useRef(false);
 
-  // Initial fetch of orders - FIXED: Now with async/await to ensure orders are loaded
+  // Initial fetch of orders
   useEffect(() => {
     const loadOrders = async () => {
       try {
         await dispatch(fetchCommandes()).unwrap();
-        initialFetchDone.current = false; // allow tracking fetch
       } catch (error) {
         console.error("Error loading orders:", error);
       }
@@ -2637,152 +2561,6 @@ export default function AdminOrders() {
 
     loadOrders();
   }, [dispatch]);
-
-  // Reset tracking when page refreshes
-  useEffect(() => {
-    initialFetchDone.current = false;
-    fetchInProgress.current = false;
-    setTrackingInfoMap({}); // Clear existing tracking info
-  }, []);
-
-  // OPTIMIZED: Fetch all tracking info in a single batch when orders are loaded
-  useEffect(() => {
-    const fetchAllTrackingInfo = async () => {
-      // Don't fetch if no orders or fetch in progress
-      if (orderList.length === 0 || fetchInProgress.current) {
-        return;
-      }
-      
-      fetchInProgress.current = true;
-      setLoadingTracking(true);
-      
-      try {
-        const token = localStorage.getItem("token");
-        const trackingPromises = [];
-        const validOrders = [];
-        
-        // Collect all valid parcel codes
-        for (const order of orderList) {
-          if (order.parcel_code) {
-            trackingPromises.push(
-              axios.get(
-                `https://fanta-lib-back-production-76f4.up.railway.app/api/welivexpress/trackparcel`,
-                {
-                  params: { parcel_code: order.parcel_code },
-                  headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/json'
-                  }
-                }
-              ).catch(err => {
-                console.error(`Error fetching tracking for ${order.parcel_code}:`, err);
-                return null;
-              })
-            );
-            validOrders.push(order);
-          }
-        }
-
-        if (trackingPromises.length === 0) {
-          initialFetchDone.current = true;
-          setLoadingTracking(false);
-          fetchInProgress.current = false;
-          return;
-        }
-
-        // Execute all promises in parallel
-        const results = await Promise.all(trackingPromises);
-        
-        const newTrackingMap = {};
-        const updatesToDispatch = [];
-
-        // Process results
-        results.forEach((response, index) => {
-          const order = validOrders[index];
-          if (response && response.data && response.data.success && response.data.data) {
-            const trackingData = response.data.data;
-            newTrackingMap[order.parcel_code] = trackingData;
-            
-            // Check for status changes
-            if (trackingData.parcel?.delivery_status) {
-              const deliveryStatus = trackingData.parcel.delivery_status;
-              const secondaryStatus = trackingData.parcel.delivery_status_second;
-              const paymentStatus = trackingData.parcel.payment_status;
-              const paymentStatusText = trackingData.parcel.payment_status_text;
-              const displayStatus = secondaryStatus 
-                ? `${deliveryStatus} - ${secondaryStatus}`
-                : deliveryStatus;
-              
-              // If status changed, prepare update
-              if (order.statut !== deliveryStatus || 
-                  order.statut_second !== secondaryStatus || 
-                  order.payment_status !== paymentStatus) {
-                
-                console.log(`🔔 Status changed for ${order.parcel_code}:`, {
-                  old: { 
-                    statut: order.statut, 
-                    secondary: order.statut_second,
-                    payment: order.payment_status 
-                  },
-                  new: { 
-                    statut: deliveryStatus, 
-                    secondary: secondaryStatus,
-                    payment: paymentStatus 
-                  }
-                });
-                
-                // Calculate profit based on parcel_price - total formula
-                let profit = (order.parcel_price || 0) - ((order.total || 0) + (order.frais_livraison || 0) + (order.frais_packaging || 0));
-                
-                // Send webhook update
-                const payload = {
-                  parcel: {
-                    code: order.parcel_code,
-                    status: deliveryStatus,
-                    status_second: secondaryStatus,
-                    payment_status: paymentStatus,
-                    payment_status_text: paymentStatusText
-                  }
-                };
-                
-                sendWebhookUpdate(payload);
-                
-                // Prepare Redux update with profit recalculation
-                updatesToDispatch.push(
-                  dispatch(updateCommande({ 
-                    id: order.id, 
-                    statut: deliveryStatus,
-                    statut_second: secondaryStatus,
-                    statut_display: displayStatus,
-                    payment_status: paymentStatus,
-                    payment_status_text: paymentStatusText,
-                    profit: profit
-                  }))
-                );
-              }
-            }
-          }
-        });
-
-        // Update tracking map
-        setTrackingInfoMap(newTrackingMap);
-        
-        // Execute all Redux updates in parallel
-        if (updatesToDispatch.length > 0) {
-          await Promise.all(updatesToDispatch);
-        }
-        
-      } catch (error) {
-        console.error("Error fetching tracking info:", error);
-      } finally {
-        setLoadingTracking(false);
-        initialFetchDone.current = true;
-        fetchInProgress.current = false;
-      }
-    };
-
-    fetchAllTrackingInfo();
-  }, [orderList, dispatch]);
 
   // Reset to first page when filters change
   useEffect(() => {
@@ -2840,27 +2618,25 @@ export default function AdminOrders() {
     await dispatch(fetchCommandes());
   };
 
- // Then update the filteredOrders useMemo:
-const filteredOrders = useMemo(() => {
-  // Normalize search term once
-  const normalizedSearchTerm = normalizeArabicText(searchTerm);
-  
-  return orderList.filter(order => {
-    const matchesSearch = searchTerm === "" || 
-      normalizeArabicText(order.parcel_code || "").includes(normalizedSearchTerm) ||
-      normalizeArabicText(order.parcel_receiver || "").includes(normalizedSearchTerm) ||
-      normalizeArabicText(order.parcel_city || "").includes(normalizedSearchTerm) ||
-      normalizeArabicText(order.parcel_phone || "").includes(normalizedSearchTerm);
+  const filteredOrders = useMemo(() => {
+    const normalizedSearchTerm = normalizeArabicText(searchTerm);
     
-    const matchesStatus = statusFilter === "all" || 
-      order.statut === statusFilter || 
-      order.statut_second === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  }).sort((a, b) => {
-    return new Date(b.date || 0) - new Date(a.date || 0);
-  });
-}, [orderList, searchTerm, statusFilter]);
+    return orderList.filter(order => {
+      const matchesSearch = searchTerm === "" || 
+        normalizeArabicText(order.parcel_code || "").includes(normalizedSearchTerm) ||
+        normalizeArabicText(order.parcel_receiver || "").includes(normalizedSearchTerm) ||
+        normalizeArabicText(order.parcel_city || "").includes(normalizedSearchTerm) ||
+        normalizeArabicText(order.parcel_phone || "").includes(normalizedSearchTerm);
+      
+      const matchesStatus = statusFilter === "all" || 
+        order.statut === statusFilter || 
+        order.statut_second === statusFilter;
+      
+      return matchesSearch && matchesStatus;
+    }).sort((a, b) => {
+      return new Date(b.date || 0) - new Date(a.date || 0);
+    });
+  }, [orderList, searchTerm, statusFilter]);
 
   const currentOrders = useMemo(() => {
     const indexOfLastItem = currentPage * itemsPerPage;
@@ -2977,23 +2753,6 @@ const filteredOrders = useMemo(() => {
         </div>
       </div>
     );
-  };
-
-  // Helper to get tracking info for an order - FIXED to use delivery_status_second
-  const getTrackingStatus = (parcelCode) => {
-    if (!parcelCode) return null;
-    const info = trackingInfoMap[parcelCode];
-    if (!info || !info.parcel) return null;
-    
-    return {
-      deliveryStatus: info.parcel.delivery_status,
-      secondaryStatus: info.parcel.delivery_status_second, // Fixed: use delivery_status_second
-      paymentStatus: info.parcel.payment_status,
-      paymentText: info.parcel.payment_status_text,
-      displayStatus: info.parcel.delivery_status_second 
-        ? `${info.parcel.delivery_status} - ${info.parcel.delivery_status_second}` // Fixed
-        : info.parcel.delivery_status
-    };
   };
 
   if (loading) {
@@ -3223,7 +2982,7 @@ const filteredOrders = useMemo(() => {
         </div>
       )}
 
-      {/* Orders Table */}
+      {/* Orders Table - Using database statuses (no API calls) */}
       {filteredOrders.length > 0 && (
         <>
           <div className="table-wrapper">
@@ -3245,11 +3004,10 @@ const filteredOrders = useMemo(() => {
               </thead>
               <tbody>
                 {currentOrders.map((order) => {
-                  const tracking = getTrackingStatus(order.parcel_code);
-                  const deliveryStatus = tracking?.deliveryStatus || order.statut;
-                  const secondaryStatus = tracking?.secondaryStatus || order.statut_second;
-                  const paymentStatus = tracking?.paymentStatus || order.payment_status;
-                  const paymentText = tracking?.paymentText || order.payment_status_text;
+                  // Use statuses directly from database (already synced via webhooks)
+                  const deliveryStatus = order.statut;
+                  const secondaryStatus = order.statut_second;
+                  const paymentStatus = order.payment_status;
                   
                   // Translate statuses for display
                   const translatedDeliveryStatus = translateStatus(deliveryStatus);
@@ -3264,51 +3022,43 @@ const filteredOrders = useMemo(() => {
                       <td className="order-qty">{order.parcel_prd_qty || 0}</td>
                       <td>{order.parcel_city || "-"}</td>
                       <td>
-                        {loadingTracking ? (
-                          <RefreshCw size={14} className="spinning" />
-                        ) : (
-                          <div className="status-container">
-                            <span 
-                              className="status-badge"
-                              style={{ 
-                                backgroundColor: `${getStatusColor(deliveryStatus)}15`,
-                                color: getStatusColor(deliveryStatus),
-                                border: `1px solid ${getStatusColor(deliveryStatus)}30`
-                              }}
-                            >
-                              {translatedDeliveryStatus}
-                            </span>
-                            {secondaryStatus && secondaryStatus !== '' && (
-                              <span 
-                                className="status-badge secondary"
-                                style={{ 
-                                  backgroundColor: `${getStatusColor(secondaryStatus)}15`,
-                                  color: getStatusColor(secondaryStatus),
-                                  border: `1px solid ${getStatusColor(secondaryStatus)}30`,
-                                  marginLeft: '4px'
-                                }}
-                              >
-                                {translatedSecondaryStatus}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </td>
-                      <td>
-                        {loadingTracking ? (
-                          <RefreshCw size={14} className="spinning" />
-                        ) : (
+                        <div className="status-container">
                           <span 
                             className="status-badge"
                             style={{ 
-                              backgroundColor: `${getStatusColor(paymentStatus)}15`,
-                              color: getStatusColor(paymentStatus),
-                              border: `1px solid ${getStatusColor(paymentStatus)}30`
+                              backgroundColor: `${getStatusColor(deliveryStatus)}15`,
+                              color: getStatusColor(deliveryStatus),
+                              border: `1px solid ${getStatusColor(deliveryStatus)}30`
                             }}
                           >
-                            {translatedPaymentStatus}
+                            {translatedDeliveryStatus}
                           </span>
-                        )}
+                          {secondaryStatus && secondaryStatus !== '' && (
+                            <span 
+                              className="status-badge secondary"
+                              style={{ 
+                                backgroundColor: `${getStatusColor(secondaryStatus)}15`,
+                                color: getStatusColor(secondaryStatus),
+                                border: `1px solid ${getStatusColor(secondaryStatus)}30`,
+                                marginLeft: '4px'
+                              }}
+                            >
+                              {translatedSecondaryStatus}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td>
+                        <span 
+                          className="status-badge"
+                          style={{ 
+                            backgroundColor: `${getStatusColor(paymentStatus)}15`,
+                            color: getStatusColor(paymentStatus),
+                            border: `1px solid ${getStatusColor(paymentStatus)}30`
+                          }}
+                        >
+                          {translatedPaymentStatus}
+                        </span>
                       </td>
                       <td className="order-pri">{order.parcel_price ? `${order.parcel_price} MAD` : "-"}</td>
                       <td className={`order-profit ${order.profit < 0 ? 'negative' : ''}`}>

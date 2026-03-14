@@ -196,7 +196,7 @@ export default function Livres() {
             
             {/* Arabic Categories Filter - Top */}
             <div className="filter-group">
-              <h3 className="filter-title">التصنيفات العربية</h3>
+              <h3 className="filter-title">التصنيفات</h3>
               <div className="genres-filter-wrapper">
                 {canScrollArabic && (
                   <button 
@@ -235,7 +235,7 @@ export default function Livres() {
 
             {/* English Categories Filter - Bottom */}
             <div className="filter-group">
-              <h3 className="filter-title">English Categories</h3>
+              
               <div className="genres-filter-wrapper">
                 {canScrollEnglish && (
                   <button 
@@ -283,7 +283,6 @@ export default function Livres() {
         ) : (
           <>
             <p className="results-count">
-              {filtered.length} {filtered.length === 1 ? 'كتاب' : 'كتب'} متاح
             </p>
             {filtered.length === 0 ? (
               <div className="empty-state">

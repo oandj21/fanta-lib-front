@@ -19,8 +19,7 @@ export default function Livres() {
   const [selectedBook, setSelectedBook] = useState(null);
   
   const [search, setSearch] = useState("");
-  const [arabicGenre, setArabicGenre] = useState("الكل");
-  const [englishGenre, setEnglishGenre] = useState("All");
+  const [selectedGenre, setSelectedGenre] = useState("الكل"); // Unified selected genre
   const [canScrollArabic, setCanScrollArabic] = useState(false);
   const [canScrollEnglish, setCanScrollEnglish] = useState(false);
   
@@ -127,23 +126,28 @@ export default function Livres() {
     const title = b.titre || "";
     const author = b.auteur || "";
     const category = b.categorie || "";
-    const isArabicCategory = /[\u0600-\u06FF]/.test(category);
 
     const matchSearch =
       title.toLowerCase().includes(search.toLowerCase()) ||
       author.toLowerCase().includes(search.toLowerCase());
 
-    // Check if matches either Arabic or English genre filter based on category language
+    // Unified genre filter logic
     let matchGenre = true;
     
-    if (isArabicCategory) {
-      matchGenre = arabicGenre === "الكل" || category === arabicGenre;
+    if (selectedGenre === "الكل" || selectedGenre === "All") {
+      // If "الكل" or "All" is selected, show all books
+      matchGenre = true;
     } else {
-      matchGenre = englishGenre === "All" || category === englishGenre;
+      // Otherwise, match the exact category
+      matchGenre = category === selectedGenre;
     }
     
     return matchSearch && matchGenre;
   });
+
+  const handleGenreSelect = (genre) => {
+    setSelectedGenre(genre);
+  };
 
   const handleShowDetails = (book) => {
     const now = Date.now();
@@ -176,24 +180,6 @@ export default function Livres() {
   const scrollRight = (ref) => {
     if (ref.current) {
       ref.current.scrollBy({ left: 200, behavior: 'smooth' });
-    }
-  };
-
-  // Handle Arabic genre selection
-  const handleArabicGenreSelect = (genre) => {
-    setArabicGenre(genre);
-    // If selecting a specific Arabic genre (not "الكل"), reset English to "All"
-    if (genre !== "الكل") {
-      setEnglishGenre("All");
-    }
-  };
-
-  // Handle English genre selection
-  const handleEnglishGenreSelect = (genre) => {
-    setEnglishGenre(genre);
-    // If selecting a specific English genre (not "All"), reset Arabic to "الكل"
-    if (genre !== "All") {
-      setArabicGenre("الكل");
     }
   };
 
@@ -232,8 +218,8 @@ export default function Livres() {
                   {arabicCategories.map((g) => (
                     <button
                       key={g}
-                      onClick={() => handleArabicGenreSelect(g)}
-                      className={`genre-btn ${arabicGenre === g ? "active" : ""}`}
+                      onClick={() => handleGenreSelect(g)}
+                      className={`genre-btn ${selectedGenre === g ? "active" : ""}`}
                     >
                       {g}
                     </button>
@@ -253,7 +239,7 @@ export default function Livres() {
 
             {/* English Categories Filter - Bottom */}
             <div className="filter-group">
-              
+              <h3 className="filter-title">Categories</h3>
               <div className="genres-filter-wrapper">
                 {canScrollEnglish && (
                   <button 
@@ -271,8 +257,8 @@ export default function Livres() {
                   {englishCategories.map((g) => (
                     <button
                       key={g}
-                      onClick={() => handleEnglishGenreSelect(g)}
-                      className={`genre-btn ${englishGenre === g ? "active" : ""}`}
+                      onClick={() => handleGenreSelect(g)}
+                      className={`genre-btn ${selectedGenre === g ? "active" : ""}`}
                     >
                       {g}
                     </button>

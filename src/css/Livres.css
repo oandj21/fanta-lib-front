@@ -688,72 +688,112 @@ html {
     max-width: 1536px;
   }
 }
-/* Add to your existing Livres.css file */
+/* Add to Livres.css */
 
-/* Filter Rows */
-.filter-row {
+/* Filter Groups */
+.filter-group {
   width: 100%;
   margin-bottom: 1.5rem;
 }
 
-.filter-row:last-child {
+.filter-group:last-child {
   margin-bottom: 0;
 }
 
-.filter-row-title {
-  font-size: 1rem;
+.filter-title {
+  font-size: 1.1rem;
   font-weight: 600;
   color: #5c0202;
   margin-bottom: 0.75rem;
   font-family: 'Inter', sans-serif;
+  text-align: center;
+  position: relative;
+  display: inline-block;
+  padding-bottom: 0.25rem;
 }
 
-/* Arabic title - right aligned */
-.filter-row:first-child .filter-row-title {
-  text-align: right;
-  padding-right: 0.5rem;
+.filter-title::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #5c0202, transparent);
 }
 
-/* English title - left aligned */
-.filter-row:last-child .filter-row-title {
-  text-align: left;
-  padding-left: 0.5rem;
+/* Update filters-section */
+.filters-section {
+  padding: 1.5rem 1.5rem;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e8e0d8;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  border-radius: 20px;
+  margin-bottom: 2rem;
+  position: sticky;
+  top: 0;
+  z-index: 90;
 }
 
-/* RTL support */
-[dir="rtl"] .filter-row:first-child .filter-row-title {
-  text-align: right;
-}
-
-[dir="rtl"] .filter-row:last-child .filter-row-title {
-  text-align: left;
-}
-
-/* Adjust spacing between filter rows */
+/* Update filters-container for vertical layout */
 .filters-container {
+  max-width: 1400px;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  align-items: stretch;
+  justify-content: center;
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .filter-row {
-    margin-bottom: 1rem;
-  }
-  
-  .filter-row-title {
-    font-size: 0.9rem;
-    margin-bottom: 0.5rem;
-  }
-  
+/* Adjust for larger screens */
+@media (min-width: 768px) {
   .filters-container {
-    gap: 1rem;
+    flex-direction: column;
+    gap: 2rem;
+  }
+  
+  .filter-title {
+    font-size: 1.2rem;
   }
 }
 
+@media (min-width: 1024px) {
+  .filters-container {
+    flex-direction: row;
+    gap: 3rem;
+  }
+  
+  .filter-group {
+    flex: 1;
+    margin-bottom: 0;
+  }
+}
+
+/* Fix for RTL in filter titles */
+[dir="rtl"] .filter-title {
+  text-align: center;
+}
+
+/* Adjust scroll buttons positioning for dual filters */
+.filter-group .genres-filter-wrapper {
+  width: 100%;
+}
+
+/* Make sure genres-filter takes full width */
+.filter-group .genres-filter {
+  width: 100%;
+  justify-content: flex-start;
+}
+
+/* Responsive adjustments for filter titles on mobile */
 @media (max-width: 480px) {
-  .filter-row-title {
-    font-size: 0.85rem;
+  .filter-title {
+    font-size: 1rem;
+  }
+  
+  .filters-section {
+    padding: 1rem;
   }
 }

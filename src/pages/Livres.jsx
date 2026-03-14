@@ -192,9 +192,9 @@ export default function Livres() {
 
       <section className="books-section">
         <section className="filters-section">
-          <div className="filters-container">
+          <div className="filters-container-vertical">
             
-            {/* Arabic Categories Filter */}
+            {/* Arabic Categories Filter - Top */}
             <div className="filter-group">
               <h3 className="filter-title">التصنيفات العربية</h3>
               <div className="genres-filter-wrapper">
@@ -233,7 +233,7 @@ export default function Livres() {
               </div>
             </div>
 
-            {/* English Categories Filter */}
+            {/* English Categories Filter - Bottom */}
             <div className="filter-group">
               <h3 className="filter-title">English Categories</h3>
               <div className="genres-filter-wrapper">

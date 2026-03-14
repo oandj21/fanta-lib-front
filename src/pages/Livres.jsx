@@ -179,6 +179,24 @@ export default function Livres() {
     }
   };
 
+  // Handle Arabic genre selection
+  const handleArabicGenreSelect = (genre) => {
+    setArabicGenre(genre);
+    // If selecting a specific Arabic genre (not "الكل"), reset English to "All"
+    if (genre !== "الكل") {
+      setEnglishGenre("All");
+    }
+  };
+
+  // Handle English genre selection
+  const handleEnglishGenreSelect = (genre) => {
+    setEnglishGenre(genre);
+    // If selecting a specific English genre (not "All"), reset Arabic to "الكل"
+    if (genre !== "All") {
+      setArabicGenre("الكل");
+    }
+  };
+
   return (
     <div className="livres-page">
       <Header />
@@ -214,7 +232,7 @@ export default function Livres() {
                   {arabicCategories.map((g) => (
                     <button
                       key={g}
-                      onClick={() => setArabicGenre(g)}
+                      onClick={() => handleArabicGenreSelect(g)}
                       className={`genre-btn ${arabicGenre === g ? "active" : ""}`}
                     >
                       {g}
@@ -253,7 +271,7 @@ export default function Livres() {
                   {englishCategories.map((g) => (
                     <button
                       key={g}
-                      onClick={() => setEnglishGenre(g)}
+                      onClick={() => handleEnglishGenreSelect(g)}
                       className={`genre-btn ${englishGenre === g ? "active" : ""}`}
                     >
                       {g}

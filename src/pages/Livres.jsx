@@ -131,14 +131,17 @@ export default function Livres() {
       title.toLowerCase().includes(search.toLowerCase()) ||
       author.toLowerCase().includes(search.toLowerCase());
 
-    // Unified genre filter logic
+    // Modified filter logic: "All" shows only English books
     let matchGenre = true;
     
-    if (selectedGenre === "الكل" || selectedGenre === "All") {
-      // If "الكل" or "All" is selected, show all books
+    if (selectedGenre === "الكل") {
+      // "الكل" shows all books (original behavior)
       matchGenre = true;
+    } else if (selectedGenre === "All") {
+      // "All" shows only English (non-Arabic) books
+      matchGenre = category && !/[\u0600-\u06FF]/.test(category);
     } else {
-      // Otherwise, match the exact category
+      // Otherwise, match the exact selected category
       matchGenre = category === selectedGenre;
     }
     

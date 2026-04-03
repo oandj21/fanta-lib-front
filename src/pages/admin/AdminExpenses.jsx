@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Plus, Pencil, Trash2, X, Check, AlertCircle, Search, Filter, XCircle, Calendar, Tag, DollarSign } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Check, AlertCircle, Search, Filter, XCircle, Calendar, Tag, DollarSign, ChevronLeft, ChevronRight } from "lucide-react";
 import { fetchDepenses, createDepense, updateDepense, deleteDepense } from "../../store/store";
 import "../../css/AdminExpenses.css";
 
@@ -10,10 +10,13 @@ export default function AdminExpenses() {
   const dispatch = useDispatch();
   const { list: expenseList = [], loading } = useSelector((state) => state.depenses);
   
+  // Month/Year selection state
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  
   // Search and filter states
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const [monthFilter, setMonthFilter] = useState("all");
   const [showFilters, setShowFilters] = useState(false);
   const [sortBy, setSortBy] = useState("date");
   const [sortOrder, setSortOrder] = useState("desc");
@@ -39,26 +42,57 @@ export default function AdminExpenses() {
   // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, categoryFilter, monthFilter, sortBy, sortOrder]);
+  }, [searchTerm, categoryFilter, selectedMonth, selectedYear, sortBy, sortOrder]);
 
-  // Get unique months for filter
-  const availableMonths = useMemo(() => {
-    const months = expenseList.map(expense => {
-      const date = new Date(expense.date || expense.created_at);
-      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-    });
-    return [...new Set(months)].sort().reverse();
-  }, [expenseList]);
+  // Generate available years
+  const availableYears = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    const years = [];
+    for (let i = currentYear - 2; i <= currentYear + 1; i++) {
+      years.push(i);
+    }
+    return years;
+  }, []);
 
-  // Filter and search expenses
+  // Month names
+  const monthNames = [
+    "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+    "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+  ];
+
+  // Navigate to previous month
+  const goToPreviousMonth = () => {
+    if (selectedMonth === 1) {
+      setSelectedMonth(12);
+      setSelectedYear(selectedYear - 1);
+    } else {
+      setSelectedMonth(selectedMonth - 1);
+    }
+  };
+
+  // Navigate to next month
+  const goToNextMonth = () => {
+    if (selectedMonth === 12) {
+      setSelectedMonth(1);
+      setSelectedYear(selectedYear + 1);
+    } else {
+      setSelectedMonth(selectedMonth + 1);
+    }
+  };
+
+  // Filter expenses by selected month/year
   const filteredExpenses = useMemo(() => {
     return expenseList.filter(expense => {
       const amount = expense.montant || expense.amount || 0;
       const category = expense.categorie || expense.category || "";
       const description = expense.description || "";
       const date = new Date(expense.date || expense.created_at);
-      const expenseMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      const expenseMonth = date.getMonth() + 1;
+      const expenseYear = date.getFullYear();
 
+      // Month/Year filter
+      const matchesMonthYear = expenseMonth === selectedMonth && expenseYear === selectedYear;
+      
       // Search filter
       const matchesSearch = searchTerm === "" || 
         description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -68,10 +102,7 @@ export default function AdminExpenses() {
       // Category filter
       const matchesCategory = categoryFilter === "all" || category === categoryFilter;
       
-      // Month filter
-      const matchesMonth = monthFilter === "all" || expenseMonth === monthFilter;
-      
-      return matchesSearch && matchesCategory && matchesMonth;
+      return matchesMonthYear && matchesSearch && matchesCategory;
     }).sort((a, b) => {
       // Sorting
       let aVal, bVal;
@@ -96,7 +127,7 @@ export default function AdminExpenses() {
         return aVal < bVal ? 1 : -1;
       }
     });
-  }, [expenseList, searchTerm, categoryFilter, monthFilter, sortBy, sortOrder]);
+  }, [expenseList, searchTerm, categoryFilter, selectedMonth, selectedYear, sortBy, sortOrder]);
 
   // Get current page expenses
   const currentExpenses = useMemo(() => {
@@ -108,33 +139,24 @@ export default function AdminExpenses() {
   // Calculate total pages
   const totalPages = Math.ceil(filteredExpenses.length / itemsPerPage);
 
-  // Calculate statistics
+  // Calculate statistics for selected month
   const stats = useMemo(() => {
-    const total = expenseList.reduce((sum, e) => sum + Number(e.montant || e.amount || 0), 0);
+    const selectedMonthExpenses = filteredExpenses;
+    const total = selectedMonthExpenses.reduce((sum, e) => sum + Number(e.montant || e.amount || 0), 0);
     const byCategory = {};
-    const currentMonth = new Date().toISOString().slice(0, 7);
     
     categories.forEach(cat => {
-      byCategory[cat] = expenseList
+      byCategory[cat] = selectedMonthExpenses
         .filter(e => (e.categorie || e.category) === cat)
         .reduce((sum, e) => sum + Number(e.montant || e.amount || 0), 0);
     });
 
-    const thisMonth = expenseList
-      .filter(e => {
-        const date = new Date(e.date || e.created_at);
-        const expenseMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-        return expenseMonth === currentMonth;
-      })
-      .reduce((sum, e) => sum + Number(e.montant || e.amount || 0), 0);
-
     return {
       total,
       byCategory,
-      thisMonth,
-      count: expenseList.length
+      count: selectedMonthExpenses.length
     };
-  }, [expenseList]);
+  }, [filteredExpenses]);
 
   const openAdd = () => {
     setEditing(null);
@@ -193,7 +215,6 @@ export default function AdminExpenses() {
   const clearFilters = () => {
     setSearchTerm("");
     setCategoryFilter("all");
-    setMonthFilter("all");
     setSortBy("date");
     setSortOrder("desc");
   };
@@ -284,8 +305,8 @@ export default function AdminExpenses() {
           <h2>Gestion des Dépenses</h2>
           <p className="admin-subtitle">
             {filteredExpenses.length > 0 
-              ? `Affichage ${Math.min((currentPage - 1) * itemsPerPage + 1, filteredExpenses.length)} - ${Math.min(currentPage * itemsPerPage, filteredExpenses.length)} sur ${filteredExpenses.length} dépense${filteredExpenses.length !== 1 ? 's' : ''} (${stats.count} total)`
-              : `0 dépense affichée sur ${stats.count} total`
+              ? `Affichage ${Math.min((currentPage - 1) * itemsPerPage + 1, filteredExpenses.length)} - ${Math.min(currentPage * itemsPerPage, filteredExpenses.length)} sur ${filteredExpenses.length} dépense${filteredExpenses.length !== 1 ? 's' : ''} pour ${monthNames[selectedMonth - 1]} ${selectedYear}`
+              : `0 dépense pour ${monthNames[selectedMonth - 1]} ${selectedYear}`
             }
           </p>
         </div>
@@ -293,6 +314,48 @@ export default function AdminExpenses() {
           <Plus size={18} />
           Nouvelle dépense
         </button>
+      </div>
+
+      {/* Month Selector Panel */}
+      <div className="month-selector-panel">
+        <div className="month-selector-content">
+          <button onClick={goToPreviousMonth} className="month-nav-btn">
+            <ChevronLeft size={20} />
+          </button>
+          
+          <div className="month-year-display">
+            <Calendar size={20} className="calendar-icon" />
+            <select 
+              value={selectedMonth} 
+              onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+              className="month-select"
+            >
+              {monthNames.map((month, index) => (
+                <option key={index} value={index + 1}>{month}</option>
+              ))}
+            </select>
+            <select 
+              value={selectedYear} 
+              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+              className="year-select"
+            >
+              {availableYears.map(year => (
+                <option key={year} value={year}>{year}</option>
+              ))}
+            </select>
+          </div>
+          
+          <button onClick={goToNextMonth} className="month-nav-btn">
+            <ChevronRight size={20} />
+          </button>
+        </div>
+        
+        {filteredExpenses.length === 0 && (
+          <div className="no-data-message">
+            <AlertCircle size={16} />
+            <span>Aucune dépense pour {monthNames[selectedMonth - 1]} {selectedYear}</span>
+          </div>
+        )}
       </div>
 
       {/* Stats Cards */}
@@ -304,16 +367,6 @@ export default function AdminExpenses() {
           <div className="expense-stat-content">
             <span className="expense-stat-label">Total des dépenses</span>
             <span className="expense-stat-value">{Number(stats.total).toFixed(2)} DH</span>
-          </div>
-        </div>
-
-        <div className="expense-stat-card month">
-          <div className="expense-stat-icon">
-            <Calendar size={24} />
-          </div>
-          <div className="expense-stat-content">
-            <span className="expense-stat-label">Ce mois-ci</span>
-            <span className="expense-stat-value">{Number(stats.thisMonth).toFixed(2)} DH</span>
           </div>
         </div>
 
@@ -330,7 +383,7 @@ export default function AdminExpenses() {
 
       {/* Category Stats */}
       <div className="category-stats">
-        <h3>Répartition par catégorie</h3>
+        <h3>Répartition par catégorie - {monthNames[selectedMonth - 1]} {selectedYear}</h3>
         <div className="category-stats-grid">
           {categories.map(category => (
             <div key={category} className="category-stat-item">
@@ -383,26 +436,6 @@ export default function AdminExpenses() {
                 {categories.map(cat => (
                   <option key={cat} value={cat}>{cat}</option>
                 ))}
-              </select>
-            </div>
-
-            <div className="filter-group">
-              <label>Mois</label>
-              <select 
-                value={monthFilter} 
-                onChange={(e) => setMonthFilter(e.target.value)}
-                className="filter-select"
-              >
-                <option value="all">Tous les mois</option>
-                {availableMonths.map(month => {
-                  const [year, monthNum] = month.split('-');
-                  const date = new Date(year, monthNum - 1);
-                  return (
-                    <option key={month} value={month}>
-                      {date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
-                    </option>
-                  );
-                })}
               </select>
             </div>
 
@@ -541,7 +574,7 @@ export default function AdminExpenses() {
               {filteredExpenses.length > 0 && (
                 <tfoot>
                   <tr className="total-row">
-                    <td colSpan="3" className="total-label">Total des dépenses affichées</td>
+                    <td colSpan="3" className="total-label">Total des dépenses pour {monthNames[selectedMonth - 1]} {selectedYear}</td>
                     <td className="total-value">
                       {Number(currentExpenses.reduce((sum, e) => sum + Number(e.montant || e.amount || 0), 0)).toFixed(2)} DH
                     </td>

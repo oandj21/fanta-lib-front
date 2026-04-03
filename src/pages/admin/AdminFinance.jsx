@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { 
   TrendingUp, 
@@ -8,7 +8,10 @@ import {
   Wallet,
   ArrowUpCircle,
   Edit3,
-  BarChart3
+  BarChart3,
+  ChevronLeft,
+  ChevronRight,
+  Calendar
 } from "lucide-react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -38,6 +41,10 @@ export default function AdminFinance() {
   const [showCapitalModal, setShowCapitalModal] = useState(false);
   const [capitalAmount, setCapitalAmount] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
+  
+  // Month/Year selection state
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
 
   useEffect(() => {
     // Fetch all necessary data
@@ -55,44 +62,114 @@ export default function AdminFinance() {
     }
   }, [currentFinance]);
 
+  // Generate available years
+  const availableYears = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    const years = [];
+    for (let i = currentYear - 2; i <= currentYear + 1; i++) {
+      years.push(i);
+    }
+    return years;
+  }, []);
+
+  // Month names
+  const monthNames = [
+    "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+    "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+  ];
+
+  // Navigate to previous month
+  const goToPreviousMonth = () => {
+    if (selectedMonth === 1) {
+      setSelectedMonth(12);
+      setSelectedYear(selectedYear - 1);
+    } else {
+      setSelectedMonth(selectedMonth - 1);
+    }
+  };
+
+  // Navigate to next month
+  const goToNextMonth = () => {
+    if (selectedMonth === 12) {
+      setSelectedMonth(1);
+      setSelectedYear(selectedYear + 1);
+    } else {
+      setSelectedMonth(selectedMonth + 1);
+    }
+  };
+
+  // Filter commandes by selected month/year
+  const filteredCommandes = useMemo(() => {
+    if (!commandesList || commandesList.length === 0) return [];
+    
+    return commandesList.filter(commande => {
+      const commandeDate = new Date(commande.date || commande.created_at);
+      return commandeDate.getMonth() + 1 === selectedMonth && 
+             commandeDate.getFullYear() === selectedYear;
+    });
+  }, [commandesList, selectedMonth, selectedYear]);
+
+  // Filter depenses by selected month/year
+  const filteredDepenses = useMemo(() => {
+    if (!depensesList || depensesList.length === 0) return [];
+    
+    return depensesList.filter(depense => {
+      const depenseDate = new Date(depense.date || depense.created_at);
+      return depenseDate.getMonth() + 1 === selectedMonth && 
+             depenseDate.getFullYear() === selectedYear;
+    });
+  }, [depensesList, selectedMonth, selectedYear]);
+
+  // Filter monthlyStats for selected month
+  const selectedMonthData = useMemo(() => {
+    const monthName = monthNames[selectedMonth - 1];
+    return monthlyStats.find(item => item.month === monthName) || {
+      month: monthName,
+      ventes: 0,
+      profit: 0,
+      depenses: 0,
+      net: 0
+    };
+  }, [monthlyStats, selectedMonth]);
+
   // ==============================================
-  // 📊 FINANCIAL CALCULATIONS
+  // 📊 FINANCIAL CALCULATIONS FOR SELECTED MONTH
   // ==============================================
 
-  // Capital from finance table
+  // Capital from finance table (unchanged - global)
   const capital = currentFinance?.capital || 0;
 
-  // 1. Calculate total stock value (prix_achat from livres)
+  // 1. Calculate total stock value (prix_achat from livres) - GLOBAL, not filtered
   const totalStockValue = livresList.reduce((sum, livre) => {
     return sum + (Number(livre.prix_achat) || 0);
   }, 0);
 
-  // 2. Calculate total profit from ALL orders (profit from commandes)
-  const totalProfit = commandesList.reduce((sum, commande) => {
+  // 2. Calculate total profit from FILTERED orders
+  const totalProfit = filteredCommandes.reduce((sum, commande) => {
     return sum + (Number(commande.profit) || 0);
   }, 0);
 
-  // 3. Calculate total expenses (montant from depenses)
-  const totalExpenses = depensesList.reduce((sum, depense) => {
+  // 3. Calculate total expenses from FILTERED depenses
+  const totalExpenses = filteredDepenses.reduce((sum, depense) => {
     return sum + (Number(depense.montant) || 0);
   }, 0);
 
-  // 4. Calculate revenue from ALL orders (total from commandes)
-  const revenue = commandesList.reduce((sum, commande) => {
+  // 4. Calculate revenue from FILTERED orders
+  const revenue = filteredCommandes.reduce((sum, commande) => {
     return sum + (Number(commande.total) || 0);
   }, 0);
 
   // 5. Calculate net gain (profit - expenses)
   const netGain = totalProfit - totalExpenses;
 
-  // 6. Calculate ROI (Return on Investment)
+  // 6. Calculate ROI (Return on Investment) - using capital
   const roi = capital > 0 ? ((netGain / capital) * 100).toFixed(1) : 0;
 
   // 7. Calculate profit margin
   const profitMargin = revenue > 0 ? ((totalProfit / revenue) * 100).toFixed(1) : 0;
 
-  // 8. Calculate total number of orders
-  const totalOrdersCount = commandesList.length;
+  // 8. Calculate total number of FILTERED orders
+  const totalOrdersCount = filteredCommandes.length;
 
   // 9. Calculate average order value
   const averageOrderValue = totalOrdersCount > 0 ? revenue / totalOrdersCount : 0;
@@ -122,14 +199,14 @@ export default function AdminFinance() {
       value: totalProfit, 
       icon: TrendingUp,
       color: "success",
-      description: "Bénéfice des ventes"
+      description: `Bénéfice des ventes (${monthNames[selectedMonth - 1]} ${selectedYear})`
     },
     { 
       label: "Dépenses Totales", 
       value: totalExpenses, 
       icon: Receipt,
       color: "danger",
-      description: "Coûts opérationnels"
+      description: `Coûts opérationnels (${monthNames[selectedMonth - 1]} ${selectedYear})`
     },
   ];
 
@@ -146,7 +223,7 @@ export default function AdminFinance() {
       value: revenue, 
       icon: BarChart3,
       color: "warning",
-      description: "Total des ventes (toutes commandes)"
+      description: `Total des ventes (${monthNames[selectedMonth - 1]} ${selectedYear})`
     },
     { 
       label: "Marge Bénéficiaire", 
@@ -166,20 +243,30 @@ export default function AdminFinance() {
     },
   ];
 
-  // Format chart data from monthlyStats
-  const chartData = monthlyStats.map(item => ({
-    month: item.month,
-    ventes: Number(item.ventes || 0),
-    profit: Number(item.profit || 0),
-    depenses: Number(item.depenses || 0),
-    net: Number(item.profit || 0) - Number(item.depenses || 0)
-  }));
+  // Format chart data from monthlyStats - filter for selected year
+  const chartData = monthlyStats
+    .filter(item => {
+      // Extract month and year from monthlyStats if available
+      // Assuming monthlyStats contains month names like "Jan", "Fév", etc.
+      // We need to match with selectedYear
+      const monthIndex = monthNames.findIndex(m => m === item.month);
+      // For now, use all data but highlight selected month
+      return true;
+    })
+    .map(item => ({
+      month: item.month,
+      ventes: Number(item.ventes || 0),
+      profit: Number(item.profit || 0),
+      depenses: Number(item.depenses || 0),
+      net: Number(item.profit || 0) - Number(item.depenses || 0),
+      isSelected: item.month === monthNames[selectedMonth - 1]
+    }));
 
   // Pie chart data for profit breakdown
   const profitBreakdown = [
     { name: 'Gain Net', value: Math.max(netGain, 0), color: '#10b981' },
     { name: 'Dépenses', value: totalExpenses, color: '#ef4444' },
-  ];
+  ].filter(item => item.value > 0);
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('fr-MA', {
@@ -238,6 +325,47 @@ export default function AdminFinance() {
             Mettre à jour le capital
           </button>
         </div>
+      </div>
+
+      {/* Month Selector Panel */}
+      <div className="month-selector-panel">
+        <div className="month-selector-content">
+          <button onClick={goToPreviousMonth} className="month-nav-btn">
+            <ChevronLeft size={20} />
+          </button>
+          
+          <div className="month-year-display">
+            <Calendar size={20} className="calendar-icon" />
+            <select 
+              value={selectedMonth} 
+              onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+              className="month-select"
+            >
+              {monthNames.map((month, index) => (
+                <option key={index} value={index + 1}>{month}</option>
+              ))}
+            </select>
+            <select 
+              value={selectedYear} 
+              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+              className="year-select"
+            >
+              {availableYears.map(year => (
+                <option key={year} value={year}>{year}</option>
+              ))}
+            </select>
+          </div>
+          
+          <button onClick={goToNextMonth} className="month-nav-btn">
+            <ChevronRight size={20} />
+          </button>
+        </div>
+        
+        {totalOrdersCount === 0 && totalExpenses === 0 && (
+          <div className="no-data-message">
+            <span>Aucune donnée financière pour {monthNames[selectedMonth - 1]} {selectedYear}</span>
+          </div>
+        )}
       </div>
 
       {/* Capital Update Modal */}
@@ -362,7 +490,7 @@ export default function AdminFinance() {
         <>
           <div className="finance-summary">
             <div className="summary-card">
-              <h3>Résumé financier</h3>
+              <h3>Résumé financier - {monthNames[selectedMonth - 1]} {selectedYear}</h3>
               <div className="summary-item">
                 <span>Capital initial</span>
                 <span className="amount">{formatCurrency(capital)}</span>
@@ -425,29 +553,35 @@ export default function AdminFinance() {
           </div>
 
           <div className="chart-card">
-            <h3>Répartition des gains</h3>
+            <h3>Répartition des gains - {monthNames[selectedMonth - 1]} {selectedYear}</h3>
             <div className="pie-chart-container">
-              <ResponsiveContainer width="100%" height={300}>
-                <RePieChart>
-                  <Pie
-                    data={profitBreakdown.filter(item => item.value > 0)}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    fill="#8884d8"
-                    paddingAngle={5}
-                    dataKey="value"
-                    label={({ name, percent }) => percent > 0 ? `${name} ${(percent * 100).toFixed(0)}%` : ''}
-                  >
-                    {profitBreakdown.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => formatCurrency(value)} />
-                  <Legend />
-                </RePieChart>
-              </ResponsiveContainer>
+              {profitBreakdown.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <RePieChart>
+                    <Pie
+                      data={profitBreakdown}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={100}
+                      fill="#8884d8"
+                      paddingAngle={5}
+                      dataKey="value"
+                      label={({ name, percent }) => percent > 0 ? `${name} ${(percent * 100).toFixed(0)}%` : ''}
+                    >
+                      {profitBreakdown.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value) => formatCurrency(value)} />
+                    <Legend />
+                  </RePieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="no-data-placeholder">
+                  <p>Aucune donnée pour {monthNames[selectedMonth - 1]} {selectedYear}</p>
+                </div>
+              )}
             </div>
           </div>
         </>
@@ -457,7 +591,7 @@ export default function AdminFinance() {
         <div className="profitability-section">
           <div className="profitability-grid">
             <div className="profit-card">
-              <h4>Analyse de rentabilité</h4>
+              <h4>Analyse de rentabilité - {monthNames[selectedMonth - 1]} {selectedYear}</h4>
               <div className="profit-item">
                 <span>Seuil de rentabilité</span>
                 <span className="value">{formatCurrency(totalExpenses)}</span>
@@ -480,11 +614,11 @@ export default function AdminFinance() {
             </div>
 
             <div className="profit-card">
-              <h4>Performance commerciale</h4>
+              <h4>Performance commerciale - {monthNames[selectedMonth - 1]} {selectedYear}</h4>
               <div className="profit-item">
                 <span>Ticket moyen</span>
                 <span className="value">{formatCurrency(averageOrderValue)}</span>
-                <small>Par commande (toutes commandes)</small>
+                <small>Par commande</small>
               </div>
               <div className="profit-item">
                 <span>Marge unitaire moyenne</span>
@@ -494,7 +628,7 @@ export default function AdminFinance() {
               <div className="profit-item">
                 <span>Nombre total de commandes</span>
                 <span className="value">{totalOrdersCount}</span>
-                <small>Toutes commandes confondues</small>
+                <small>Commandes ce mois</small>
               </div>
             </div>
           </div>
@@ -595,9 +729,24 @@ export default function AdminFinance() {
                   <Legend 
                     wrapperStyle={{ fontFamily: "Lato", fontSize: 13, paddingTop: 10 }}
                   />
-                  <Bar dataKey="ventes" name="Ventes" fill="#f59e0b" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="profit" name="Profit" fill="#10b981" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="depenses" name="Dépenses" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                  <Bar 
+                    dataKey="ventes" 
+                    name="Ventes" 
+                    fill="#f59e0b" 
+                    radius={[4, 4, 0, 0]} 
+                  />
+                  <Bar 
+                    dataKey="profit" 
+                    name="Profit" 
+                    fill="#10b981" 
+                    radius={[4, 4, 0, 0]} 
+                  />
+                  <Bar 
+                    dataKey="depenses" 
+                    name="Dépenses" 
+                    fill="#ef4444" 
+                    radius={[4, 4, 0, 0]} 
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>

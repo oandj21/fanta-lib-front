@@ -28,9 +28,7 @@ import {
   Info,
   Filter,
   Bell,
-  Download,
-  ChevronLeft,
-  ChevronRight
+  Download
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell } from "recharts";
 import axios from "axios";
@@ -51,7 +49,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import "../../css/AdminDashboard.css";
 
-// Helper to get status color based on status text
+// Helper to get status color based on status text (same as AdminOrders)
 const getStatusColor = (status) => {
   if (!status) return '#6b7280';
   
@@ -169,12 +167,13 @@ const PIE_COLORS = {
   'SENT_BY_AMANA': '#1e40af'
 };
 
-// Helper to check if a status is "in progress"
+// Helper to check if a status is "in progress" (not final)
 const isStatusInProgress = (status) => {
   if (!status) return false;
   
   const statusLower = status.toLowerCase();
   
+  // Define in-progress statuses (all statuses except final states)
   const inProgressKeywords = [
     'en cours', 'distribution', 'ramassé', 'expédié', 'attente',
     'nouveau', 'confirmé', 'programmé', 'reporté', 'voyage',
@@ -188,6 +187,7 @@ const isStatusInProgress = (status) => {
     'REFUSE', 'NOANSWER', 'UNREACHABLE', 'HORS_ZONE'
   ];
   
+  // Final states that should NOT trigger notifications
   const finalKeywords = [
     'livré', 'delivered', 'retourné', 'returned', 'annulé', 'cancelled',
     'DELIVERED', 'RETURNED', 'CANCELLED', 'RETURN_BY_AMANA', 'SENT_BY_AMANA'
@@ -207,83 +207,25 @@ const isStatusInProgress = (status) => {
 export default function AdminDashboard() {
   const dispatch = useDispatch();
   
+  // Use selectors instead of direct state access (better practice)
   const stats = useSelector(selectDashboardStats);
   const monthlyStats = useSelector(selectMonthlyStats);
   const commandes = useSelector(selectCommandes);
   const depenses = useSelector(selectDepenses);
 
-  // Month/Year selection state
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
-  
   const [trackingInfoMap, setTrackingInfoMap] = useState({});
   const [loadingTracking, setLoadingTracking] = useState({});
   const [showFilters, setShowFilters] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
   
+  // Notification state
   const [notifications, setNotifications] = useState([]);
   const [notifiedOrderIds, setNotifiedOrderIds] = useState(new Set());
   
+  // Use ref to track if initial processing has been done
   const initialProcessingDone = useRef(false);
 
-  // Generate available years (last 5 years to next year)
-  const availableYears = useMemo(() => {
-    const currentYear = new Date().getFullYear();
-    const years = [];
-    for (let i = currentYear - 2; i <= currentYear + 1; i++) {
-      years.push(i);
-    }
-    return years;
-  }, []);
-
-  // Month names
-  const monthNames = [
-    "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
-    "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
-  ];
-
-  // Navigate to previous month
-  const goToPreviousMonth = () => {
-    if (selectedMonth === 1) {
-      setSelectedMonth(12);
-      setSelectedYear(selectedYear - 1);
-    } else {
-      setSelectedMonth(selectedMonth - 1);
-    }
-  };
-
-  // Navigate to next month
-  const goToNextMonth = () => {
-    if (selectedMonth === 12) {
-      setSelectedMonth(1);
-      setSelectedYear(selectedYear + 1);
-    } else {
-      setSelectedMonth(selectedMonth + 1);
-    }
-  };
-
-  // Filter data by selected month/year
-  const filteredCommandes = useMemo(() => {
-    if (!commandes || commandes.length === 0) return [];
-    
-    return commandes.filter(commande => {
-      const commandeDate = new Date(commande.date || commande.created_at);
-      return commandeDate.getMonth() + 1 === selectedMonth && 
-             commandeDate.getFullYear() === selectedYear;
-    });
-  }, [commandes, selectedMonth, selectedYear]);
-
-  const filteredDepenses = useMemo(() => {
-    if (!depenses || depenses.length === 0) return [];
-    
-    return depenses.filter(depense => {
-      const depenseDate = new Date(depense.date || depense.created_at);
-      return depenseDate.getMonth() + 1 === selectedMonth && 
-             depenseDate.getFullYear() === selectedYear;
-    });
-  }, [depenses, selectedMonth, selectedYear]);
-
-  // Load notifications from localStorage
+  // Load notifications and notified IDs from localStorage on mount
   useEffect(() => {
     const savedNotifications = localStorage.getItem('dashboard_notifications');
     if (savedNotifications) {
@@ -309,23 +251,28 @@ export default function AdminDashboard() {
     localStorage.setItem('dashboard_notifications', JSON.stringify(notifications));
   }, [notifications]);
 
+  // Save notified IDs to localStorage
   useEffect(() => {
     localStorage.setItem('notified_order_ids', JSON.stringify(Array.from(notifiedOrderIds)));
   }, [notifiedOrderIds]);
 
-  // Notification logic for filtered commandes
+  // FIXED: SHOW ALL COMMANDS WITH STATUS IN PROGRESS IN NOTIFICATIONS - NO DUPLICATES
   useEffect(() => {
-    if (filteredCommandes && filteredCommandes.length > 0 && !initialProcessingDone.current) {
+    // Only run if we have commandes and initial processing hasn't been done yet
+    if (commandes && commandes.length > 0 && !initialProcessingDone.current) {
       
+      // Get all order IDs that are currently in our notifications
       const existingNotificationOrderIds = new Set(
         notifications
           .filter(n => n.type === 'commande')
           .map(n => n.orderId)
       );
       
+      // Combine with already notified IDs
       const allNotifiedIds = new Set([...Array.from(notifiedOrderIds), ...Array.from(existingNotificationOrderIds)]);
       
-      const inProgressOrders = filteredCommandes.filter(order => {
+      // Find all orders that are in progress and not yet notified
+      const inProgressOrders = commandes.filter(order => {
         const status = order.statut || order.status || '';
         return isStatusInProgress(status) && !allNotifiedIds.has(order.id);
       });
@@ -333,6 +280,7 @@ export default function AdminDashboard() {
       if (inProgressOrders.length > 0) {
         console.log(`Found ${inProgressOrders.length} new in-progress orders to notify`);
         
+        // Create notifications for each in-progress order
         const newNotifications = inProgressOrders.map(order => {
           const status = order.statut || order.status || '';
           
@@ -357,8 +305,10 @@ export default function AdminDashboard() {
           };
         });
 
+        // Update notifications - prepend new ones and keep only last 50
         setNotifications(prev => [...newNotifications, ...prev].slice(0, 50));
         
+        // Mark these orders as notified
         const newNotifiedIds = new Set([
           ...Array.from(notifiedOrderIds),
           ...inProgressOrders.map(o => o.id)
@@ -366,25 +316,354 @@ export default function AdminDashboard() {
         setNotifiedOrderIds(newNotifiedIds);
       }
       
+      // Mark initial processing as done
       initialProcessingDone.current = true;
     }
-  }, [filteredCommandes]);
+  }, [commandes]); // Only depend on commandes
 
-  // Fetch all data
+  // Listen for CRUD events - FIXED to prevent duplicates
   useEffect(() => {
+    const handleCrudEvent = (event) => {
+      const { type, action, item, user } = event.detail;
+      
+      // Only show notifications for commandes (orders)
+      if (type !== 'commande') {
+        return;
+      }
+      
+      // Check if the status is in progress
+      const status = item.statut || item.status || item.deliveryStatus || '';
+      
+      // Skip if status is not in progress
+      if (!isStatusInProgress(status)) {
+        console.log('Skipping notification for non-in-progress order:', status);
+        return;
+      }
+      
+      // Skip if this order was already notified (check both state and existing notifications)
+      const existingNotification = notifications.find(n => n.orderId === item.id);
+      if (existingNotification || notifiedOrderIds.has(item.id)) {
+        console.log('Skipping duplicate notification for order:', item.id);
+        return;
+      }
+      
+      let message = '';
+      let details = '';
+      
+      switch(action) {
+        case 'create':
+          message = `📦 Nouvelle commande en cours`;
+          details = `${item.parcel_receiver || 'Client'} • ${statusLabels[status] || status}`;
+          break;
+        case 'update':
+          message = `✏️ Commande mise à jour`;
+          details = `${item.parcel_receiver || `#${item.id}`} • ${statusLabels[status] || status}`;
+          break;
+        case 'status_change':
+          message = `🔄 Statut de commande modifié`;
+          details = `${item.parcel_receiver || `#${item.id}`}: ${statusLabels[item.old_status] || item.old_status} → ${statusLabels[item.new_status] || item.new_status}`;
+          break;
+        default:
+          return;
+      }
+
+      const newNotification = {
+        id: Date.now() + Math.random() + item.id,
+        type,
+        action,
+        message,
+        details,
+        timestamp: new Date().toISOString(),
+        read: false,
+        user: user || 'Système',
+        status: status,
+        orderId: item.id,
+        parcelCode: item.parcel_code,
+        clientName: item.parcel_receiver,
+        clientPhone: item.parcel_phone,
+        city: item.parcel_city,
+        address: item.parcel_address,
+        parcelPrice: item.parcel_price,
+        quantity: item.parcel_prd_qty
+      };
+
+      setNotifications(prev => [newNotification, ...prev].slice(0, 50));
+      
+      // Mark this order as notified
+      setNotifiedOrderIds(prev => new Set([...Array.from(prev), item.id]));
+    };
+
+    window.addEventListener('crud-event', handleCrudEvent);
+    return () => window.removeEventListener('crud-event', handleCrudEvent);
+  }, [notifiedOrderIds, notifications]);
+
+  // Notification handlers
+  const handleMarkAsRead = (id) => {
+    setNotifications(prev => 
+      prev.map(n => n.id === id ? { ...n, read: true } : n)
+    );
+  };
+
+  const handleMarkAllAsRead = () => {
+    setNotifications(prev => 
+      prev.map(n => ({ ...n, read: true }))
+    );
+  };
+
+  const handleClearAll = () => {
+    setNotifications([]);
+    // Also clear notified IDs when clearing all notifications
+    setNotifiedOrderIds(new Set());
+    // Reset initial processing flag to allow reprocessing if needed
+    initialProcessingDone.current = false;
+  };
+
+  const handleDeleteNotification = (id) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
+  };
+
+  // Export handlers
+  const handleDownload = (format) => {
+    if (format === 'excel') {
+      exportToExcel();
+    } else if (format === 'pdf') {
+      exportToPDF();
+    }
+  };
+
+  const exportToExcel = () => {
+    try {
+      // Prepare data for Excel
+      const financialData = [
+        ['Aperçu Financier'],
+        ['Métrique', 'Valeur (MAD)'],
+        ['Total dépenses', stats?.total_expenses || 0],
+        ['Profit total', commandesStats.totalProfit],
+        ['Total des ventes', commandesStats.totalSales],
+        ['Revenu net', commandesStats.totalProfit - Number(stats?.total_expenses || 0)],
+        [],
+        ['Statistiques des Commandes'],
+        ['Statut', 'Nombre'],
+        ['Total Commandes', commandesStats.total],
+        ...Object.entries(commandesStats)
+          .filter(([key, value]) => 
+            !['totalSales', 'totalProfit', 'revenue', 'conversionRate', 'pending', 'completed'].includes(key) && 
+            typeof value === 'number' && 
+            value > 0
+          )
+          .map(([key, value]) => {
+            const displayName = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            return [displayName, value];
+          }),
+        [],
+        ['Évolution Mensuelle'],
+        ['Mois', 'Dépenses', 'Profit', 'Ventes']
+      ];
+
+      // Add monthly data
+      monthlyData.forEach(m => {
+        financialData.push([m.month, m.depenses, m.profit, m.ventes]);
+      });
+
+      // Add recent orders
+      financialData.push([], ['Commandes Récentes']);
+      financialData.push(['Client', 'Code', 'Date', 'Total', 'Statut']);
+      
+      recentOrders.forEach(order => {
+        const tracking = getTrackingStatus(order.parcel_code);
+        const deliveryStatus = tracking?.deliveryStatus || order.statut;
+        financialData.push([
+          order.parcel_receiver || 'Client',
+          order.parcel_code || `#${order.id}`,
+          new Date(order.date || order.created_at).toLocaleDateString('fr-FR'),
+          order.parcel_price || 0,
+          statusLabels[deliveryStatus] || deliveryStatus
+        ]);
+      });
+
+      // Create worksheet
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet(financialData);
+      
+      // Style the worksheet
+      ws['!cols'] = [
+        { wch: 25 }, // First column width
+        { wch: 20 }, // Second column width
+        { wch: 20 }, // Third column width
+        { wch: 20 }  // Fourth column width
+      ];
+
+      XLSX.utils.book_append_sheet(wb, ws, 'Dashboard');
+      XLSX.writeFile(wb, `dashboard_${new Date().toISOString().split('T')[0]}.xlsx`);
+      
+    } catch (error) {
+      console.error('Error generating Excel:', error);
+      alert('Erreur lors de la génération du fichier Excel. Veuillez réessayer.');
+    }
+  };
+
+  const exportToPDF = () => {
+    try {
+      // Create new PDF document
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      
+      // Title
+      doc.setFontSize(20);
+      doc.setTextColor(92, 2, 2);
+      doc.text('Tableau de bord - Fantasia', pageWidth / 2, 20, { align: 'center' });
+      
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Généré le ${new Date().toLocaleDateString('fr-FR')}`, pageWidth / 2, 28, { align: 'center' });
+
+      // Financial Overview
+      doc.setFontSize(14);
+      doc.setTextColor(92, 2, 2);
+      doc.text('Aperçu Financier', 14, 40);
+      
+      const financialData = [
+        ['Métrique', 'Valeur (MAD)'],
+        ['Total dépenses', `${(stats?.total_expenses || 0).toLocaleString()} DH`],
+        ['Profit total', `${commandesStats.totalProfit.toLocaleString()} DH`],
+        ['Total des ventes', `${commandesStats.totalSales.toLocaleString()} DH`],
+        ['Revenu net', `${(commandesStats.totalProfit - Number(stats?.total_expenses || 0)).toLocaleString()} DH`]
+      ];
+
+      autoTable(doc, {
+        startY: 45,
+        head: [financialData[0]],
+        body: financialData.slice(1),
+        theme: 'striped',
+        headStyles: { fillColor: [92, 2, 2], textColor: [255, 255, 255] },
+        styles: { fontSize: 10 }
+      });
+
+      // Orders Statistics
+      doc.addPage();
+      doc.setFontSize(14);
+      doc.setTextColor(92, 2, 2);
+      doc.text('Statistiques des Commandes', 14, 20);
+
+      const statusData = [
+        ['Statut', 'Nombre'],
+        ...Object.entries(commandesStats)
+          .filter(([key, value]) => 
+            !['totalSales', 'totalProfit', 'revenue', 'conversionRate', 'pending', 'completed'].includes(key) && 
+            typeof value === 'number' && 
+            value > 0
+          )
+          .map(([key, value]) => {
+            const displayName = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            return [displayName, value.toString()];
+          })
+      ];
+
+      autoTable(doc, {
+        startY: 25,
+        head: [statusData[0]],
+        body: statusData.slice(1),
+        theme: 'striped',
+        headStyles: { fillColor: [92, 2, 2], textColor: [255, 255, 255] },
+        styles: { fontSize: 9 },
+        columnStyles: {
+          0: { cellWidth: 80 },
+          1: { cellWidth: 40, halign: 'center' }
+        }
+      });
+
+      // Monthly Evolution
+      doc.addPage();
+      doc.setFontSize(14);
+      doc.setTextColor(92, 2, 2);
+      doc.text('Évolution Mensuelle', 14, 20);
+
+      const monthlyTableData = [
+        ['Mois', 'Dépenses (DH)', 'Profit (DH)', 'Ventes (DH)'],
+        ...monthlyData.map(m => [
+          m.month,
+          m.depenses.toLocaleString(),
+          m.profit.toLocaleString(),
+          m.ventes.toLocaleString()
+        ])
+      ];
+
+      autoTable(doc, {
+        startY: 25,
+        head: [monthlyTableData[0]],
+        body: monthlyTableData.slice(1),
+        theme: 'striped',
+        headStyles: { fillColor: [92, 2, 2], textColor: [255, 255, 255] },
+        styles: { fontSize: 10 },
+        columnStyles: {
+          0: { cellWidth: 40 },
+          1: { cellWidth: 50, halign: 'right' },
+          2: { cellWidth: 50, halign: 'right' },
+          3: { cellWidth: 50, halign: 'right' }
+        }
+      });
+
+      // Recent Orders
+      doc.addPage();
+      doc.setFontSize(14);
+      doc.setTextColor(92, 2, 2);
+      doc.text('Commandes Récentes', 14, 20);
+
+      const recentOrdersData = [
+        ['Client', 'Code', 'Date', 'Total (DH)', 'Statut'],
+        ...recentOrders.map(order => {
+          const tracking = getTrackingStatus(order.parcel_code);
+          const deliveryStatus = tracking?.deliveryStatus || order.statut;
+          return [
+            order.parcel_receiver || 'Client',
+            order.parcel_code || `#${order.id}`,
+            new Date(order.date || order.created_at).toLocaleDateString('fr-FR'),
+            (order.parcel_price || 0).toLocaleString(),
+            statusLabels[deliveryStatus] || deliveryStatus
+          ];
+        })
+      ];
+
+      autoTable(doc, {
+        startY: 25,
+        head: [recentOrdersData[0]],
+        body: recentOrdersData.slice(1),
+        theme: 'striped',
+        headStyles: { fillColor: [92, 2, 2], textColor: [255, 255, 255] },
+        styles: { fontSize: 9 },
+        columnStyles: {
+          0: { cellWidth: 50 },
+          1: { cellWidth: 40 },
+          2: { cellWidth: 40 },
+          3: { cellWidth: 40, halign: 'right' },
+          4: { cellWidth: 50 }
+        }
+      });
+
+      // Save the PDF
+      doc.save(`dashboard_${new Date().toISOString().split('T')[0]}.pdf`);
+      
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Erreur lors de la génération du PDF. Veuillez réessayer.');
+    }
+  };
+
+  useEffect(() => {
+    // Fetch all dashboard data
     dispatch(fetchDashboardStats());
     dispatch(fetchMonthlyStats());
     dispatch(fetchCommandes());
     dispatch(fetchDepenses());
   }, [dispatch]);
 
-  // Fetch tracking info
+  // Fetch tracking info for real-time status updates
   useEffect(() => {
-    if (filteredCommandes.length > 0) {
+    if (commandes.length > 0) {
       const fetchAllTrackingInfo = async () => {
         const token = localStorage.getItem("token");
         
-        for (const order of filteredCommandes) {
+        for (const order of commandes) {
           if (order.parcel_code && !trackingInfoMap[order.parcel_code]) {
             setLoadingTracking(prev => ({ ...prev, [order.parcel_code]: true }));
             
@@ -418,8 +697,9 @@ export default function AdminDashboard() {
 
       fetchAllTrackingInfo();
     }
-  }, [filteredCommandes]);
+  }, [commandes]);
 
+  // Helper to get tracking info for an order
   const getTrackingStatus = (parcelCode) => {
     if (!parcelCode) return null;
     const info = trackingInfoMap[parcelCode];
@@ -435,11 +715,12 @@ export default function AdminDashboard() {
     };
   };
 
-  // Calculate statistics for filtered month
+  // Calculate all commandes statistics with real-time status updates
   const commandesStats = useMemo(() => {
-    if (!filteredCommandes || filteredCommandes.length === 0) {
+    if (!commandes || commandes.length === 0) {
       return {
         total: 0,
+        // Primary status counts
         new_parcel: 0,
         parcel_confirmed: 0,
         picked_up: 0,
@@ -451,6 +732,7 @@ export default function AdminDashboard() {
         cancelled: 0,
         waiting_pickup: 0,
         received: 0,
+        // Secondary status counts
         refuse: 0,
         noanswer: 0,
         unreachable: 0,
@@ -462,6 +744,7 @@ export default function AdminDashboard() {
         envg: 0,
         return_by_amana: 0,
         sent_by_amana: 0,
+        // Summary stats
         pending: 0,
         completed: 0,
         totalSales: 0,
@@ -472,7 +755,8 @@ export default function AdminDashboard() {
     }
 
     const stats = {
-      total: filteredCommandes.length,
+      total: commandes.length,
+      // Primary status counts
       new_parcel: 0,
       parcel_confirmed: 0,
       picked_up: 0,
@@ -484,6 +768,7 @@ export default function AdminDashboard() {
       cancelled: 0,
       waiting_pickup: 0,
       received: 0,
+      // Secondary status counts
       refuse: 0,
       noanswer: 0,
       unreachable: 0,
@@ -495,6 +780,7 @@ export default function AdminDashboard() {
       envg: 0,
       return_by_amana: 0,
       sent_by_amana: 0,
+      // Summary stats
       pending: 0,
       completed: 0,
       totalSales: 0,
@@ -503,7 +789,7 @@ export default function AdminDashboard() {
       conversionRate: 0
     };
 
-    filteredCommandes.forEach(commande => {
+    commandes.forEach(commande => {
       const tracking = getTrackingStatus(commande.parcel_code);
       const deliveryStatus = tracking?.deliveryStatus || commande.statut || '';
       const secondaryStatus = tracking?.secondaryStatus || commande.statut_second || '';
@@ -511,6 +797,7 @@ export default function AdminDashboard() {
       const statusUpper = deliveryStatus.toUpperCase();
       const secondaryUpper = secondaryStatus.toUpperCase();
       
+      // Count primary statuses
       if (statusUpper === 'NEW_PARCEL' || statusUpper.includes('NOUVEAU')) stats.new_parcel++;
       else if (statusUpper === 'PARCEL_CONFIRMED' || statusUpper.includes('CONFIRM')) stats.parcel_confirmed++;
       else if (statusUpper === 'PICKED_UP' || statusUpper.includes('RAMASSÉ')) stats.picked_up++;
@@ -523,6 +810,7 @@ export default function AdminDashboard() {
       else if (statusUpper === 'WAITING_PICKUP' || statusUpper.includes('ATTENTE')) stats.waiting_pickup++;
       else if (statusUpper === 'RECEIVED' || statusUpper.includes('REÇU')) stats.received++;
       
+      // Count secondary statuses
       if (secondaryUpper === 'REFUSE' || secondaryUpper.includes('REFUSÉ')) stats.refuse++;
       else if (secondaryUpper === 'NOANSWER' || secondaryUpper.includes('PAS DE RÉPONSE')) stats.noanswer++;
       else if (secondaryUpper === 'UNREACHABLE' || secondaryUpper.includes('INJOIGNABLE')) stats.unreachable++;
@@ -535,57 +823,109 @@ export default function AdminDashboard() {
       else if (secondaryUpper === 'RETURN_BY_AMANA' || secondaryUpper.includes('RETOUR AMANA')) stats.return_by_amana++;
       else if (secondaryUpper === 'SENT_BY_AMANA' || secondaryUpper.includes('ENVOYÉ AMANA')) stats.sent_by_amana++;
 
+      // Count pending orders (not in final state)
       const finalStates = ['DELIVERED', 'LIVRÉ', 'RETURNED', 'RETOURNÉ', 'CANCELLED', 'ANNULÉ'];
       if (!finalStates.includes(statusUpper)) {
         stats.pending++;
       }
 
+      // Count completed orders
       if (statusUpper === 'DELIVERED' || statusUpper.includes('LIVRÉ')) {
         stats.completed++;
         stats.revenue += Number(commande.total || 0);
       }
 
+      // Calculate total sales from all commandes (using parcel_price)
       const parcelPrice = Number(commande.parcel_price || commande.total || 0);
       stats.totalSales += parcelPrice;
 
+      // Calculate total profit from all commandes
       const profit = Number(commande.profit || 0);
       stats.totalProfit += profit;
     });
 
+    // Calculate conversion rate
     stats.conversionRate = stats.total > 0 ? (stats.delivered / stats.total) * 100 : 0;
 
     return stats;
-  }, [filteredCommandes, trackingInfoMap]);
+  }, [commandes, trackingInfoMap]);
 
-  // Monthly summary for the selected month
-  const selectedMonthStats = useMemo(() => {
-    const totalDepenses = filteredDepenses.reduce((sum, d) => sum + (Number(d.montant) || 0), 0);
+  // Calculate monthly data directly from commandes
+  const monthlyData = useMemo(() => {
+    const last6Months = [];
+    const now = new Date();
     
-    return {
-      depenses: totalDepenses,
-      profit: commandesStats.totalProfit,
-      ventes: commandesStats.totalSales,
-      net: commandesStats.totalProfit - totalDepenses
-    };
-  }, [filteredDepenses, commandesStats]);
+    // Create array of last 6 months
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthName = date.toLocaleDateString('fr-FR', { month: 'short' });
+      const year = date.getFullYear();
+      const month = date.getMonth() + 1;
+      
+      last6Months.push({
+        month: monthName,
+        monthNumber: month,
+        year: year,
+        key: `${year}-${month}`
+      });
+    }
 
-  // Recent orders for selected month
+    // Calculate totals for each month
+    return last6Months.map(monthData => {
+      // Filter commandes for this month
+      const monthCommandes = commandes.filter(commande => {
+        const commandeDate = new Date(commande.date || commande.created_at);
+        return commandeDate.getMonth() + 1 === monthData.monthNumber && 
+               commandeDate.getFullYear() === monthData.year;
+      });
+
+      // Filter depenses for this month
+      const monthDepenses = depenses.filter(depense => {
+        const depenseDate = new Date(depense.date || depense.created_at);
+        return depenseDate.getMonth() + 1 === monthData.monthNumber && 
+               depenseDate.getFullYear() === monthData.year;
+      });
+
+      // Calculate totals
+      const totalDepenses = monthDepenses.reduce((sum, d) => sum + (Number(d.montant) || 0), 0);
+      
+      // For sales and profit, only count delivered orders
+      const deliveredCommandes = monthCommandes.filter(c => {
+        const status = (c.statut || '').toUpperCase();
+        return status === 'DELIVERED' || status.includes('LIVRÉ');
+      });
+      
+      const totalSales = deliveredCommandes.reduce((sum, c) => sum + (Number(c.parcel_price || c.total || 0)), 0);
+      const totalProfit = deliveredCommandes.reduce((sum, c) => sum + (Number(c.profit || 0)), 0);
+
+      return {
+        month: monthData.month,
+        monthNumber: monthData.monthNumber,
+        year: monthData.year,
+        depenses: totalDepenses,      // First bar - Dépenses
+        profit: totalProfit,           // Second bar - Profit
+        ventes: totalSales             // Third bar - Ventes
+      };
+    });
+  }, [commandes, depenses]);
+
+  // Get recent orders (last 5)
   const recentOrders = useMemo(() => {
-    if (!filteredCommandes || filteredCommandes.length === 0) return [];
+    if (!commandes || commandes.length === 0) return [];
     
-    return [...filteredCommandes]
+    return [...commandes]
       .sort((a, b) => new Date(b.date || b.created_at) - new Date(a.date || a.created_at))
-      .slice(0, 10);
-  }, [filteredCommandes]);
+      .slice(0, 5);
+  }, [commandes]);
 
-  // Financial cards for selected month
+  // Main financial cards - Reordered: Total dépenses, Profit total, Total des ventes, Revenu net
   const financialCards = [
     { 
       title: "Total dépenses", 
-      value: selectedMonthStats.depenses, 
+      value: Number(stats?.total_expenses || 0), 
       icon: DollarSign,
       color: "danger",
-      trend: `${filteredDepenses.length} dépenses`
+      trend: `${depenses.length} dépenses`
     },
     { 
       title: "Profit total", 
@@ -603,46 +943,200 @@ export default function AdminDashboard() {
     },
     { 
       title: "Revenu net", 
-      value: selectedMonthStats.net,
+      value: commandesStats.totalProfit - Number(stats?.total_expenses || 0),
       icon: BookOpen,
-      color: selectedMonthStats.net >= 0 ? "success" : "danger",
-      trend: selectedMonthStats.net >= 0 ? "Positif" : "Négatif"
+      color: (commandesStats.totalProfit - Number(stats?.total_expenses || 0)) >= 0 ? "success" : "danger",
+      trend: (commandesStats.totalProfit - Number(stats?.total_expenses || 0)) >= 0 ? "Positif" : "Négatif"
     },
   ];
 
-  // All status cards
+  // All Commandes Status Cards - Complete list from API
   const commandesStatusCards = [
-    { title: "Total Commandes", value: commandesStats.total, icon: ShoppingCart, color: "primary" },
-    { title: "Nouveaux", value: commandesStats.new_parcel, icon: Clock, color: "info" },
-    { title: "Confirmés", value: commandesStats.parcel_confirmed, icon: CheckCircle, color: "success" },
-    { title: "Ramassés", value: commandesStats.picked_up, icon: Package, color: "purple" },
-    { title: "Distribution", value: commandesStats.distribution, icon: Truck, color: "warning" },
-    { title: "En cours", value: commandesStats.in_progress, icon: RefreshCw, color: "warning" },
-    { title: "Expédiés", value: commandesStats.sent, icon: Truck, color: "info" },
-    { title: "Livrés", value: commandesStats.delivered, icon: PackageCheck, color: "success" },
-    { title: "Retournés", value: commandesStats.returned, icon: PackageX, color: "danger" },
-    { title: "Annulés", value: commandesStats.cancelled, icon: XCircle, color: "secondary" },
-    { title: "En attente", value: commandesStats.waiting_pickup, icon: Clock, color: "warning" },
-    { title: "Reçus", value: commandesStats.received, icon: PackageCheck, color: "success" },
-    { title: "Refusés", value: commandesStats.refuse, icon: XCircle, color: "danger" },
-    { title: "Pas de réponse", value: commandesStats.noanswer, icon: Clock, color: "warning" },
-    { title: "Injoignables", value: commandesStats.unreachable, icon: AlertCircle, color: "danger" },
-    { title: "Hors zone", value: commandesStats.hors_zone, icon: MapPin, color: "purple" },
-    { title: "Reportés", value: commandesStats.postponed, icon: Clock, color: "warning" },
-    { title: "Programmés", value: commandesStats.programmer, icon: Calendar, color: "info" },
-    { title: "2ème tentative", value: commandesStats.deux, icon: RefreshCw, color: "warning" },
-    { title: "3ème tentative", value: commandesStats.trois, icon: RefreshCw, color: "warning" },
-    { title: "En voyage", value: commandesStats.envg, icon: Truck, color: "info" },
-    { title: "Retour Amana", value: commandesStats.return_by_amana, icon: PackageX, color: "danger" },
-    { title: "Envoyé Amana", value: commandesStats.sent_by_amana, icon: Package, color: "purple" },
-    { title: "En attente (total)", value: commandesStats.pending, icon: Clock, color: "warning" }
-  ].filter(card => card.value > 0);
+    {
+      title: "Total Commandes",
+      value: commandesStats.total,
+      icon: ShoppingCart,
+      color: "primary"
+    },
+    {
+      title: "Nouveaux",
+      value: commandesStats.new_parcel,
+      icon: Clock,
+      color: "info"
+    },
+    {
+      title: "Confirmés",
+      value: commandesStats.parcel_confirmed,
+      icon: CheckCircle,
+      color: "success"
+    },
+    {
+      title: "Ramassés",
+      value: commandesStats.picked_up,
+      icon: Package,
+      color: "purple"
+    },
+    {
+      title: "Distribution",
+      value: commandesStats.distribution,
+      icon: Truck,
+      color: "warning"
+    },
+    {
+      title: "En cours",
+      value: commandesStats.in_progress,
+      icon: RefreshCw,
+      color: "warning"
+    },
+    {
+      title: "Expédiés",
+      value: commandesStats.sent,
+      icon: Truck,
+      color: "info"
+    },
+    {
+      title: "Livrés",
+      value: commandesStats.delivered,
+      icon: PackageCheck,
+      color: "success"
+    },
+    {
+      title: "Retournés",
+      value: commandesStats.returned,
+      icon: PackageX,
+      color: "danger"
+    },
+    {
+      title: "Annulés",
+      value: commandesStats.cancelled,
+      icon: XCircle,
+      color: "secondary"
+    },
+    {
+      title: "En attente",
+      value: commandesStats.waiting_pickup,
+      icon: Clock,
+      color: "warning"
+    },
+    {
+      title: "Reçus",
+      value: commandesStats.received,
+      icon: PackageCheck,
+      color: "success"
+    },
+    {
+      title: "Refusés",
+      value: commandesStats.refuse,
+      icon: XCircle,
+      color: "danger"
+    },
+    {
+      title: "Pas de réponse",
+      value: commandesStats.noanswer,
+      icon: Clock,
+      color: "warning"
+    },
+    {
+      title: "Injoignables",
+      value: commandesStats.unreachable,
+      icon: AlertCircle,
+      color: "danger"
+    },
+    {
+      title: "Hors zone",
+      value: commandesStats.hors_zone,
+      icon: MapPin,
+      color: "purple"
+    },
+    {
+      title: "Reportés",
+      value: commandesStats.postponed,
+      icon: Clock,
+      color: "warning"
+    },
+    {
+      title: "Programmés",
+      value: commandesStats.programmer,
+      icon: Calendar,
+      color: "info"
+    },
+    {
+      title: "2ème tentative",
+      value: commandesStats.deux,
+      icon: RefreshCw,
+      color: "warning"
+    },
+    {
+      title: "3ème tentative",
+      value: commandesStats.trois,
+      icon: RefreshCw,
+      color: "warning"
+    },
+    {
+      title: "En voyage",
+      value: commandesStats.envg,
+      icon: Truck,
+      color: "info"
+    },
+    {
+      title: "Retour Amana",
+      value: commandesStats.return_by_amana,
+      icon: PackageX,
+      color: "danger"
+    },
+    {
+      title: "Envoyé Amana",
+      value: commandesStats.sent_by_amana,
+      icon: Package,
+      color: "purple"
+    },
+    {
+      title: "En attente (total)",
+      value: commandesStats.pending,
+      icon: Clock,
+      color: "warning"
+    }
+  ].filter(card => card.value > 0); // Only show statuses that have orders
 
-  // Pie chart data
+  // Format month data for chart display - Use calculated monthlyData instead of monthlyStats
+  const chartData = monthlyData;
+
+  // Get unique statuses from orders for filter dropdown
+  const uniqueStatuses = useMemo(() => {
+    const statuses = new Set();
+    commandes.forEach(order => {
+      const tracking = getTrackingStatus(order.parcel_code);
+      const deliveryStatus = tracking?.deliveryStatus || order.statut;
+      const secondaryStatus = tracking?.secondaryStatus || order.statut_second;
+      
+      if (deliveryStatus) {
+        statuses.add(deliveryStatus);
+      }
+      if (secondaryStatus && secondaryStatus !== '') {
+        statuses.add(secondaryStatus);
+      }
+    });
+    return Array.from(statuses).sort();
+  }, [commandes, trackingInfoMap]);
+
+  // Filtered orders for recent orders
+  const filteredRecentOrders = useMemo(() => {
+    if (statusFilter === "all") return recentOrders;
+    
+    return recentOrders.filter(order => {
+      const tracking = getTrackingStatus(order.parcel_code);
+      const deliveryStatus = tracking?.deliveryStatus || order.statut;
+      const secondaryStatus = tracking?.secondaryStatus || order.statut_second;
+      
+      return deliveryStatus === statusFilter || secondaryStatus === statusFilter;
+    });
+  }, [recentOrders, statusFilter, trackingInfoMap]);
+
+  // Pie chart data for status distribution - Now shows all statuses with counts
   const pieChartData = useMemo(() => {
     const statusCounts = {};
     
-    filteredCommandes.forEach(commande => {
+    commandes.forEach(commande => {
       const tracking = getTrackingStatus(commande.parcel_code);
       const deliveryStatus = tracking?.deliveryStatus || commande.statut;
       const secondaryStatus = tracking?.secondaryStatus || commande.statut_second;
@@ -664,36 +1158,10 @@ export default function AdminDashboard() {
       }))
       .filter(item => item.value > 0)
       .sort((a, b) => b.value - a.value)
-      .slice(0, 8);
-  }, [filteredCommandes, trackingInfoMap]);
+      .slice(0, 8); // Show top 8 statuses for readability
+  }, [commandes, trackingInfoMap]);
 
-  // Unique statuses for filter
-  const uniqueStatuses = useMemo(() => {
-    const statuses = new Set();
-    filteredCommandes.forEach(order => {
-      const tracking = getTrackingStatus(order.parcel_code);
-      const deliveryStatus = tracking?.deliveryStatus || order.statut;
-      const secondaryStatus = tracking?.secondaryStatus || order.statut_second;
-      
-      if (deliveryStatus) statuses.add(deliveryStatus);
-      if (secondaryStatus && secondaryStatus !== '') statuses.add(secondaryStatus);
-    });
-    return Array.from(statuses).sort();
-  }, [filteredCommandes, trackingInfoMap]);
-
-  // Filtered recent orders
-  const filteredRecentOrders = useMemo(() => {
-    if (statusFilter === "all") return recentOrders;
-    
-    return recentOrders.filter(order => {
-      const tracking = getTrackingStatus(order.parcel_code);
-      const deliveryStatus = tracking?.deliveryStatus || order.statut;
-      const secondaryStatus = tracking?.secondaryStatus || order.statut_second;
-      
-      return deliveryStatus === statusFilter || secondaryStatus === statusFilter;
-    });
-  }, [recentOrders, statusFilter, trackingInfoMap]);
-
+  // Format currency
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('fr-MA', {
       style: 'currency',
@@ -710,185 +1178,6 @@ export default function AdminDashboard() {
     });
   };
 
-  // Export handlers
-  const handleDownload = (format) => {
-    if (format === 'excel') {
-      exportToExcel();
-    } else if (format === 'pdf') {
-      exportToPDF();
-    }
-  };
-
-  const exportToExcel = () => {
-    try {
-      const financialData = [
-        [`Tableau de bord - ${monthNames[selectedMonth - 1]} ${selectedYear}`],
-        [],
-        ['Aperçu Financier'],
-        ['Métrique', 'Valeur (MAD)'],
-        ['Total dépenses', selectedMonthStats.depenses || 0],
-        ['Profit total', commandesStats.totalProfit],
-        ['Total des ventes', commandesStats.totalSales],
-        ['Revenu net', selectedMonthStats.net],
-        [],
-        ['Statistiques des Commandes'],
-        ['Statut', 'Nombre'],
-        ['Total Commandes', commandesStats.total],
-        ...Object.entries(commandesStats)
-          .filter(([key, value]) => 
-            !['totalSales', 'totalProfit', 'revenue', 'conversionRate', 'pending', 'completed'].includes(key) && 
-            typeof value === 'number' && 
-            value > 0
-          )
-          .map(([key, value]) => {
-            const displayName = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-            return [displayName, value];
-          }),
-        [],
-        ['Commandes Récentes'],
-        ['Client', 'Code', 'Date', 'Total', 'Statut']
-      ];
-      
-      filteredRecentOrders.forEach(order => {
-        const tracking = getTrackingStatus(order.parcel_code);
-        const deliveryStatus = tracking?.deliveryStatus || order.statut;
-        financialData.push([
-          order.parcel_receiver || 'Client',
-          order.parcel_code || `#${order.id}`,
-          new Date(order.date || order.created_at).toLocaleDateString('fr-FR'),
-          order.parcel_price || 0,
-          statusLabels[deliveryStatus] || deliveryStatus
-        ]);
-      });
-
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.aoa_to_sheet(financialData);
-      XLSX.utils.book_append_sheet(wb, ws, `Dashboard_${monthNames[selectedMonth - 1]}_${selectedYear}`);
-      XLSX.writeFile(wb, `dashboard_${monthNames[selectedMonth - 1]}_${selectedYear}.xlsx`);
-      
-    } catch (error) {
-      console.error('Error generating Excel:', error);
-      alert('Erreur lors de la génération du fichier Excel.');
-    }
-  };
-
-  const exportToPDF = () => {
-    try {
-      const doc = new jsPDF();
-      const pageWidth = doc.internal.pageSize.getWidth();
-      
-      doc.setFontSize(20);
-      doc.setTextColor(92, 2, 2);
-      doc.text(`Tableau de bord - ${monthNames[selectedMonth - 1]} ${selectedYear}`, pageWidth / 2, 20, { align: 'center' });
-      
-      doc.setFontSize(10);
-      doc.setTextColor(100, 100, 100);
-      doc.text(`Généré le ${new Date().toLocaleDateString('fr-FR')}`, pageWidth / 2, 28, { align: 'center' });
-
-      doc.setFontSize(14);
-      doc.setTextColor(92, 2, 2);
-      doc.text('Aperçu Financier', 14, 40);
-      
-      const financialData = [
-        ['Métrique', 'Valeur (MAD)'],
-        ['Total dépenses', `${selectedMonthStats.depenses.toLocaleString()} DH`],
-        ['Profit total', `${commandesStats.totalProfit.toLocaleString()} DH`],
-        ['Total des ventes', `${commandesStats.totalSales.toLocaleString()} DH`],
-        ['Revenu net', `${selectedMonthStats.net.toLocaleString()} DH`]
-      ];
-
-      autoTable(doc, {
-        startY: 45,
-        head: [financialData[0]],
-        body: financialData.slice(1),
-        theme: 'striped',
-        headStyles: { fillColor: [92, 2, 2], textColor: [255, 255, 255] },
-        styles: { fontSize: 10 }
-      });
-
-      doc.addPage();
-      doc.setFontSize(14);
-      doc.setTextColor(92, 2, 2);
-      doc.text('Statistiques des Commandes', 14, 20);
-
-      const statusData = [
-        ['Statut', 'Nombre'],
-        ...Object.entries(commandesStats)
-          .filter(([key, value]) => 
-            !['totalSales', 'totalProfit', 'revenue', 'conversionRate', 'pending', 'completed'].includes(key) && 
-            typeof value === 'number' && 
-            value > 0
-          )
-          .map(([key, value]) => {
-            const displayName = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-            return [displayName, value.toString()];
-          })
-      ];
-
-      autoTable(doc, {
-        startY: 25,
-        head: [statusData[0]],
-        body: statusData.slice(1),
-        theme: 'striped',
-        headStyles: { fillColor: [92, 2, 2], textColor: [255, 255, 255] },
-        styles: { fontSize: 9 }
-      });
-
-      doc.addPage();
-      doc.setFontSize(14);
-      doc.setTextColor(92, 2, 2);
-      doc.text('Commandes Récentes', 14, 20);
-
-      const recentOrdersData = [
-        ['Client', 'Code', 'Date', 'Total (DH)', 'Statut'],
-        ...filteredRecentOrders.map(order => {
-          const tracking = getTrackingStatus(order.parcel_code);
-          const deliveryStatus = tracking?.deliveryStatus || order.statut;
-          return [
-            order.parcel_receiver || 'Client',
-            order.parcel_code || `#${order.id}`,
-            new Date(order.date || order.created_at).toLocaleDateString('fr-FR'),
-            (order.parcel_price || 0).toLocaleString(),
-            statusLabels[deliveryStatus] || deliveryStatus
-          ];
-        })
-      ];
-
-      autoTable(doc, {
-        startY: 25,
-        head: [recentOrdersData[0]],
-        body: recentOrdersData.slice(1),
-        theme: 'striped',
-        headStyles: { fillColor: [92, 2, 2], textColor: [255, 255, 255] },
-        styles: { fontSize: 9 }
-      });
-
-      doc.save(`dashboard_${monthNames[selectedMonth - 1]}_${selectedYear}.pdf`);
-      
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      alert('Erreur lors de la génération du PDF.');
-    }
-  };
-
-  const handleMarkAsRead = (id) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
-  };
-
-  const handleMarkAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-  };
-
-  const handleClearAll = () => {
-    setNotifications([]);
-    setNotifiedOrderIds(new Set());
-    initialProcessingDone.current = false;
-  };
-
-  const handleDeleteNotification = (id) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
-  };
-
   return (
     <div className="admin-dashboard">
       <div className="dashboard-header">
@@ -902,6 +1191,7 @@ export default function AdminDashboard() {
             {commandesStats.total} commandes • {formatCurrency(commandesStats.totalSales)} DH de ventes
           </span>
           
+          {/* Notification Bell */}
           <NotificationCenter 
             notifications={notifications}
             onMarkAsRead={handleMarkAsRead}
@@ -910,6 +1200,7 @@ export default function AdminDashboard() {
             onDeleteNotification={handleDeleteNotification}
           />
 
+          {/* Download Button */}
           <DownloadMenu onDownload={handleDownload} />
 
           <button 
@@ -920,48 +1211,6 @@ export default function AdminDashboard() {
             Filtres statuts
           </button>
         </div>
-      </div>
-
-      {/* Month/Year Selection Panel */}
-      <div className="month-selector-panel">
-        <div className="month-selector-content">
-          <button onClick={goToPreviousMonth} className="month-nav-btn">
-            <ChevronLeft size={20} />
-          </button>
-          
-          <div className="month-year-display">
-            <Calendar size={20} className="calendar-icon" />
-            <select 
-              value={selectedMonth} 
-              onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-              className="month-select"
-            >
-              {monthNames.map((month, index) => (
-                <option key={index} value={index + 1}>{month}</option>
-              ))}
-            </select>
-            <select 
-              value={selectedYear} 
-              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-              className="year-select"
-            >
-              {availableYears.map(year => (
-                <option key={year} value={year}>{year}</option>
-              ))}
-            </select>
-          </div>
-          
-          <button onClick={goToNextMonth} className="month-nav-btn">
-            <ChevronRight size={20} />
-          </button>
-        </div>
-        
-        {filteredCommandes.length === 0 && (
-          <div className="no-data-message">
-            <AlertCircle size={16} />
-            <span>Aucune donnée pour {monthNames[selectedMonth - 1]} {selectedYear}</span>
-          </div>
-        )}
       </div>
 
       {/* Filter Panel */}
@@ -994,9 +1243,9 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* Financial Stats Cards */}
+      {/* Financial Stats Cards - Reordered */}
       <div className="section-title">
-        <h3>Aperçu financier - {monthNames[selectedMonth - 1]} {selectedYear}</h3>
+        <h3>Aperçu financier</h3>
       </div>
       <div className="stats-grid">
         {financialCards.map((card) => (
@@ -1018,7 +1267,7 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      {/* Commandes Status Cards */}
+      {/* Commandes Status Cards - All Statuses from API */}
       <div className="section-title" style={{ marginTop: '2rem' }}>
         <h3>Statistiques des commandes</h3>
         <p>Tous les statuts en temps réel</p>
@@ -1029,6 +1278,17 @@ export default function AdminDashboard() {
             <div className="stat-content">
               <p className="stat-title">{card.title}</p>
               <h3 className="stat-value">{card.value}</h3>
+              {card.title === "Livrés" && card.value > 0 && (
+                <span className="stat-trend">
+                  <ArrowUpRight size={12} />
+                  {formatCurrency(commandesStats.revenue)} DH
+                </span>
+              )}
+              {card.title === "Total Commandes" && commandesStats.total > 0 && (
+                <span className="stat-trend">
+                  {commandesStats.conversionRate.toFixed(1)}% converties
+                </span>
+              )}
             </div>
             <div className="stat-icon">
               <card.icon size={24} />
@@ -1037,29 +1297,21 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      {/* Charts Section */}
+      {/* Charts Section - Bar Chart and Pie Chart */}
       <div className="charts-grid">
-        {/* Monthly Comparison Chart - Single month as bar chart */}
+        {/* Monthly Evolution Bar Chart - Reordered: Dépenses, Profit, Ventes */}
         <div className="chart-card">
           <div className="chart-header">
             <BarChart3 size={18} />
-            <h3>Résumé du mois</h3>
+            <h3>Évolution mensuelle</h3>
           </div>
           <div className="chart-container">
-            {selectedMonthStats.ventes > 0 || selectedMonthStats.depenses > 0 ? (
+            {chartData.length > 0 ? (
               <ResponsiveContainer width="100%" height={280}>
-                <BarChart 
-                  data={[{
-                    name: monthNames[selectedMonth - 1],
-                    Dépenses: selectedMonthStats.depenses,
-                    Profit: commandesStats.totalProfit,
-                    Ventes: commandesStats.totalSales
-                  }]} 
-                  margin={{ top: 10, right: 10, left: 0, bottom: 20 }}
-                >
+                <BarChart data={chartData} barGap={4} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e0d6cc" />
                   <XAxis 
-                    dataKey="name" 
+                    dataKey="month" 
                     tick={{ fontFamily: "Lato", fontSize: 12, fill: "#6b5752" }} 
                     axisLine={false} 
                     tickLine={false} 
@@ -1078,27 +1330,37 @@ export default function AdminDashboard() {
                       background: "white",
                       boxShadow: "0 4px 6px rgba(0,0,0,0.1)"
                     }}
-                    formatter={(value, name) => [`${formatCurrency(value)} DH`, name]}
+                    formatter={(value, name) => {
+                      const labels = {
+                        depenses: 'Dépenses',
+                        profit: 'Profit',
+                        ventes: 'Ventes'
+                      };
+                      return [`${formatCurrency(value)} DH`, labels[name] || name];
+                    }}
                   />
                   <Bar 
-                    dataKey="Dépenses" 
+                    dataKey="depenses" 
+                    name="Dépenses" 
                     fill="#ef4444" 
                     radius={[6, 6, 0, 0]} 
                   />
                   <Bar 
-                    dataKey="Profit" 
+                    dataKey="profit" 
+                    name="Profit" 
                     fill="#10b981" 
                     radius={[6, 6, 0, 0]} 
                   />
                   <Bar 
-                    dataKey="Ventes" 
+                    dataKey="ventes" 
+                    name="Ventes" 
                     fill="#5c0202" 
                     radius={[6, 6, 0, 0]} 
                   />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="no-data">Aucune donnée pour ce mois</div>
+              <div className="no-data">Aucune donnée mensuelle disponible</div>
             )}
           </div>
         </div>
@@ -1156,10 +1418,10 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Recent Orders */}
+      {/* Recent Orders with Status Badges */}
       <div className="recent-orders-section">
         <div className="section-title">
-          <h3>Commandes récentes - {monthNames[selectedMonth - 1]} {selectedYear}</h3>
+          <h3>Commandes récentes</h3>
           {statusFilter !== "all" && (
             <span className="filter-badge">
               Filtré par: {statusLabels[statusFilter] || statusFilter}
@@ -1181,6 +1443,7 @@ export default function AdminDashboard() {
                   <div key={order.id} className="order-item">
                     <div className="order-info">
                       <div className="order-main">
+                        {/* Status Circle */}
                         <span 
                           className="status-circle" 
                           style={{ backgroundColor: getStatusColor(deliveryStatus) }}
@@ -1253,7 +1516,7 @@ export default function AdminDashboard() {
             ) : (
               <div className="no-data">
                 <AlertCircle size={24} />
-                <p>Aucune commande pour {monthNames[selectedMonth - 1]} {selectedYear}</p>
+                <p>Aucune commande récente</p>
               </div>
             )}
           </div>
@@ -1262,18 +1525,18 @@ export default function AdminDashboard() {
 
       {/* Financial Summary */}
       <div className="summary-card" style={{ marginTop: '1.5rem' }}>
-        <h3>Résumé financier - {monthNames[selectedMonth - 1]} {selectedYear}</h3>
+        <h3>Résumé financier</h3>
         <div className="summary-item">
-          <span>Total des ventes</span>
+          <span>Total des ventes (toutes commandes)</span>
           <span className="amount positive">{formatCurrency(commandesStats.totalSales)} DH</span>
         </div>
         <div className="summary-item">
-          <span>Profit total</span>
+          <span>Profit total (toutes commandes)</span>
           <span className="amount positive">{formatCurrency(commandesStats.totalProfit)} DH</span>
         </div>
         <div className="summary-item">
           <span>Dépenses totales</span>
-          <span className="amount negative">{formatCurrency(selectedMonthStats.depenses)} DH</span>
+          <span className="amount negative">{formatCurrency(stats?.total_expenses || 0)} DH</span>
         </div>
         <div className="summary-item">
           <span>Revenu des commandes livrées</span>
@@ -1285,8 +1548,8 @@ export default function AdminDashboard() {
         </div>
         <div className="summary-total">
           <span>Résultat net (Profit - Dépenses)</span>
-          <span className={`amount ${selectedMonthStats.net >= 0 ? 'positive' : 'negative'}`}>
-            {formatCurrency(selectedMonthStats.net)} DH
+          <span className={`amount ${(commandesStats.totalProfit - Number(stats?.total_expenses || 0)) >= 0 ? 'positive' : 'negative'}`}>
+            {formatCurrency(commandesStats.totalProfit - Number(stats?.total_expenses || 0))} DH
           </span>
         </div>
       </div>

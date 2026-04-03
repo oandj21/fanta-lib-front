@@ -30,9 +30,7 @@ import {
   Bell,
   Download,
   ChevronLeft,
-  ChevronRight,
-  Globe,
-  CalendarDays
+  ChevronRight
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell } from "recharts";
 import axios from "axios";
@@ -53,8 +51,158 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import "../../css/AdminDashboard.css";
 
-// Helper functions (getStatusColor, statusLabels, statusIcons, PIE_COLORS, isStatusInProgress remain the same)
-// ... [keep all the helper functions from your original code] ...
+// Helper to get status color based on status text
+const getStatusColor = (status) => {
+  if (!status) return '#6b7280';
+  
+  const statusLower = status.toLowerCase();
+  
+  // Primary delivery statuses
+  if (status === 'NEW_PARCEL' || statusLower.includes('nouveau')) return '#3b82f6';
+  if (status === 'PARCEL_CONFIRMED' || statusLower.includes('confirm')) return '#007bff';
+  if (status === 'PICKED_UP' || statusLower.includes('ramassé')) return '#8b5cf6';
+  if (status === 'DISTRIBUTION' || statusLower.includes('distribution')) return '#f59e0b';
+  if (status === 'IN_PROGRESS' || statusLower.includes('en cours')) return '#f97316';
+  if (status === 'SENT' || statusLower.includes('expédié')) return '#0891b2';
+  if (status === 'DELIVERED' || statusLower.includes('livré')) return '#10b981';
+  if (status === 'RETURNED' || statusLower.includes('retourné')) return '#ef4444';
+  if (status === 'CANCELLED' || statusLower.includes('annulé')) return '#6b7280';
+  if (status === 'WAITING_PICKUP' || statusLower.includes('attente')) return '#f59e0b';
+  if (status === 'RECEIVED' || statusLower.includes('reçu')) return '#10b981';
+  
+  // Secondary statuses (specific)
+  if (status === 'REFUSE' || statusLower.includes('refusé')) return '#dc2626';
+  if (status === 'NOANSWER' || statusLower.includes('pas de réponse')) return '#f59e0b';
+  if (status === 'UNREACHABLE' || statusLower.includes('injoignable')) return '#d97706';
+  if (status === 'HORS_ZONE' || statusLower.includes('hors zone')) return '#7c3aed';
+  if (status === 'POSTPONED' || statusLower.includes('reporté')) return '#8b5cf6';
+  if (status === 'PROGRAMMER' || statusLower.includes('programmé')) return '#2563eb';
+  if (status === 'DEUX' || statusLower.includes('2ème')) return '#f97316';
+  if (status === 'TROIS' || statusLower.includes('3ème')) return '#ea580c';
+  if (status === 'ENVG' || statusLower.includes('en voyage')) return '#0891b2';
+  if (status === 'RETURN_BY_AMANA' || statusLower.includes('retour amana')) return '#b91c1c';
+  if (status === 'SENT_BY_AMANA' || statusLower.includes('envoyé amana')) return '#1e40af';
+  
+  // Payment statuses
+  if (statusLower.includes('payé') || statusLower.includes('paid')) return '#10b981';
+  if (statusLower.includes('non payé') || statusLower.includes('not_paid')) return '#ef4444';
+  if (statusLower.includes('facturé') || statusLower.includes('invoiced')) return '#8b5cf6';
+  
+  return '#6b7280';
+};
+
+// Status labels for display
+const statusLabels = {
+  'NEW_PARCEL': 'Nouveau',
+  'PARCEL_CONFIRMED': 'Confirmé',
+  'PICKED_UP': 'Ramassé',
+  'DISTRIBUTION': 'Distribution',
+  'IN_PROGRESS': 'En cours',
+  'SENT': 'Expédié',
+  'DELIVERED': 'Livré',
+  'RETURNED': 'Retourné',
+  'CANCELLED': 'Annulé',
+  'WAITING_PICKUP': 'En attente',
+  'RECEIVED': 'Reçu',
+  'REFUSE': 'Refusé',
+  'NOANSWER': 'Pas de réponse',
+  'UNREACHABLE': 'Injoignable',
+  'HORS_ZONE': 'Hors zone',
+  'POSTPONED': 'Reporté',
+  'PROGRAMMER': 'Programmé',
+  'DEUX': '2ème tentative',
+  'TROIS': '3ème tentative',
+  'ENVG': 'En voyage',
+  'RETURN_BY_AMANA': 'Retour Amana',
+  'SENT_BY_AMANA': 'Envoyé Amana'
+};
+
+// Status icons mapping
+const statusIcons = {
+  'NEW_PARCEL': Clock,
+  'PARCEL_CONFIRMED': CheckCircle,
+  'PICKED_UP': Package,
+  'DISTRIBUTION': Truck,
+  'IN_PROGRESS': RefreshCw,
+  'SENT': Truck,
+  'DELIVERED': PackageCheck,
+  'RETURNED': PackageX,
+  'CANCELLED': XCircle,
+  'WAITING_PICKUP': Clock,
+  'RECEIVED': PackageCheck,
+  'REFUSE': XCircle,
+  'NOANSWER': Clock,
+  'UNREACHABLE': AlertCircle,
+  'HORS_ZONE': MapPin,
+  'POSTPONED': Clock,
+  'PROGRAMMER': Calendar,
+  'DEUX': RefreshCw,
+  'TROIS': RefreshCw,
+  'ENVG': Truck,
+  'RETURN_BY_AMANA': PackageX,
+  'SENT_BY_AMANA': Package
+};
+
+// Colors for pie chart
+const PIE_COLORS = {
+  'NEW_PARCEL': '#3b82f6',
+  'PARCEL_CONFIRMED': '#007bff',
+  'PICKED_UP': '#8b5cf6',
+  'DISTRIBUTION': '#f59e0b',
+  'IN_PROGRESS': '#f97316',
+  'SENT': '#0891b2',
+  'DELIVERED': '#10b981',
+  'RETURNED': '#ef4444',
+  'CANCELLED': '#6b7280',
+  'WAITING_PICKUP': '#f59e0b',
+  'RECEIVED': '#10b981',
+  'REFUSE': '#dc2626',
+  'NOANSWER': '#f59e0b',
+  'UNREACHABLE': '#d97706',
+  'HORS_ZONE': '#7c3aed',
+  'POSTPONED': '#8b5cf6',
+  'PROGRAMMER': '#2563eb',
+  'DEUX': '#f97316',
+  'TROIS': '#ea580c',
+  'ENVG': '#0891b2',
+  'RETURN_BY_AMANA': '#b91c1c',
+  'SENT_BY_AMANA': '#1e40af'
+};
+
+// Helper to check if a status is "in progress"
+const isStatusInProgress = (status) => {
+  if (!status) return false;
+  
+  const statusLower = status.toLowerCase();
+  
+  const inProgressKeywords = [
+    'en cours', 'distribution', 'ramassé', 'expédié', 'attente',
+    'nouveau', 'confirmé', 'programmé', 'reporté', 'voyage',
+    'in_progress', 'picked_up', 'sent', 'waiting', 'new_parcel',
+    'parcel_confirmed', 'programmer', 'postponed', 'envg',
+    'deux', 'trois', '2ème', '3ème', 'refusé', 'noanswer',
+    'pas de réponse', 'injoignable', 'hors zone',
+    'PICKED_UP', 'DISTRIBUTION', 'IN_PROGRESS', 'SENT', 
+    'WAITING_PICKUP', 'NEW_PARCEL', 'PARCEL_CONFIRMED', 
+    'PROGRAMMER', 'POSTPONED', 'ENVG', 'DEUX', 'TROIS', 
+    'REFUSE', 'NOANSWER', 'UNREACHABLE', 'HORS_ZONE'
+  ];
+  
+  const finalKeywords = [
+    'livré', 'delivered', 'retourné', 'returned', 'annulé', 'cancelled',
+    'DELIVERED', 'RETURNED', 'CANCELLED', 'RETURN_BY_AMANA', 'SENT_BY_AMANA'
+  ];
+  
+  const isInProgress = inProgressKeywords.some(keyword => 
+    statusLower.includes(keyword.toLowerCase())
+  );
+  
+  const isFinal = finalKeywords.some(keyword => 
+    statusLower.includes(keyword.toLowerCase())
+  );
+  
+  return isInProgress && !isFinal;
+};
 
 export default function AdminDashboard() {
   const dispatch = useDispatch();
@@ -64,10 +212,7 @@ export default function AdminDashboard() {
   const commandes = useSelector(selectCommandes);
   const depenses = useSelector(selectDepenses);
 
-  // View mode: 'month' or 'all'
-  const [viewMode, setViewMode] = useState('month');
-  
-  // Month/Year selection state (only used when viewMode === 'month')
+  // Month/Year selection state
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   
@@ -81,7 +226,7 @@ export default function AdminDashboard() {
   
   const initialProcessingDone = useRef(false);
 
-  // Generate available years
+  // Generate available years (last 5 years to next year)
   const availableYears = useMemo(() => {
     const currentYear = new Date().getFullYear();
     const years = [];
@@ -117,34 +262,26 @@ export default function AdminDashboard() {
     }
   };
 
-  // Filter data based on view mode
+  // Filter data by selected month/year
   const filteredCommandes = useMemo(() => {
     if (!commandes || commandes.length === 0) return [];
-    
-    if (viewMode === 'all') {
-      return commandes;
-    }
     
     return commandes.filter(commande => {
       const commandeDate = new Date(commande.date || commande.created_at);
       return commandeDate.getMonth() + 1 === selectedMonth && 
              commandeDate.getFullYear() === selectedYear;
     });
-  }, [commandes, selectedMonth, selectedYear, viewMode]);
+  }, [commandes, selectedMonth, selectedYear]);
 
   const filteredDepenses = useMemo(() => {
     if (!depenses || depenses.length === 0) return [];
-    
-    if (viewMode === 'all') {
-      return depenses;
-    }
     
     return depenses.filter(depense => {
       const depenseDate = new Date(depense.date || depense.created_at);
       return depenseDate.getMonth() + 1 === selectedMonth && 
              depenseDate.getFullYear() === selectedYear;
     });
-  }, [depenses, selectedMonth, selectedYear, viewMode]);
+  }, [depenses, selectedMonth, selectedYear]);
 
   // Load notifications from localStorage
   useEffect(() => {
@@ -176,7 +313,7 @@ export default function AdminDashboard() {
     localStorage.setItem('notified_order_ids', JSON.stringify(Array.from(notifiedOrderIds)));
   }, [notifiedOrderIds]);
 
-  // Notification logic
+  // Notification logic for filtered commandes
   useEffect(() => {
     if (filteredCommandes && filteredCommandes.length > 0 && !initialProcessingDone.current) {
       
@@ -298,7 +435,7 @@ export default function AdminDashboard() {
     };
   };
 
-  // Calculate statistics
+  // Calculate statistics for filtered month
   const commandesStats = useMemo(() => {
     if (!filteredCommandes || filteredCommandes.length === 0) {
       return {
@@ -420,7 +557,7 @@ export default function AdminDashboard() {
     return stats;
   }, [filteredCommandes, trackingInfoMap]);
 
-  // Monthly summary
+  // Monthly summary for the selected month
   const selectedMonthStats = useMemo(() => {
     const totalDepenses = filteredDepenses.reduce((sum, d) => sum + (Number(d.montant) || 0), 0);
     
@@ -432,7 +569,7 @@ export default function AdminDashboard() {
     };
   }, [filteredDepenses, commandesStats]);
 
-  // Recent orders
+  // Recent orders for selected month
   const recentOrders = useMemo(() => {
     if (!filteredCommandes || filteredCommandes.length === 0) return [];
     
@@ -441,7 +578,7 @@ export default function AdminDashboard() {
       .slice(0, 10);
   }, [filteredCommandes]);
 
-  // Financial cards
+  // Financial cards for selected month
   const financialCards = [
     { 
       title: "Total dépenses", 
@@ -584,12 +721,8 @@ export default function AdminDashboard() {
 
   const exportToExcel = () => {
     try {
-      const titleText = viewMode === 'all' 
-        ? 'Tableau de bord - Toutes les données'
-        : `Tableau de bord - ${monthNames[selectedMonth - 1]} ${selectedYear}`;
-      
       const financialData = [
-        [titleText],
+        [`Tableau de bord - ${monthNames[selectedMonth - 1]} ${selectedYear}`],
         [],
         ['Aperçu Financier'],
         ['Métrique', 'Valeur (MAD)'],
@@ -630,11 +763,8 @@ export default function AdminDashboard() {
 
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.aoa_to_sheet(financialData);
-      const fileName = viewMode === 'all' 
-        ? `dashboard_all_data.xlsx`
-        : `dashboard_${monthNames[selectedMonth - 1]}_${selectedYear}.xlsx`;
-      XLSX.utils.book_append_sheet(wb, ws, 'Dashboard');
-      XLSX.writeFile(wb, fileName);
+      XLSX.utils.book_append_sheet(wb, ws, `Dashboard_${monthNames[selectedMonth - 1]}_${selectedYear}`);
+      XLSX.writeFile(wb, `dashboard_${monthNames[selectedMonth - 1]}_${selectedYear}.xlsx`);
       
     } catch (error) {
       console.error('Error generating Excel:', error);
@@ -647,13 +777,9 @@ export default function AdminDashboard() {
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
       
-      const titleText = viewMode === 'all' 
-        ? 'Tableau de bord - Toutes les données'
-        : `Tableau de bord - ${monthNames[selectedMonth - 1]} ${selectedYear}`;
-      
       doc.setFontSize(20);
       doc.setTextColor(92, 2, 2);
-      doc.text(titleText, pageWidth / 2, 20, { align: 'center' });
+      doc.text(`Tableau de bord - ${monthNames[selectedMonth - 1]} ${selectedYear}`, pageWidth / 2, 20, { align: 'center' });
       
       doc.setFontSize(10);
       doc.setTextColor(100, 100, 100);
@@ -737,10 +863,7 @@ export default function AdminDashboard() {
         styles: { fontSize: 9 }
       });
 
-      const fileName = viewMode === 'all' 
-        ? `dashboard_all_data.pdf`
-        : `dashboard_${monthNames[selectedMonth - 1]}_${selectedYear}.pdf`;
-      doc.save(fileName);
+      doc.save(`dashboard_${monthNames[selectedMonth - 1]}_${selectedYear}.pdf`);
       
     } catch (error) {
       console.error('Error generating PDF:', error);
@@ -764,14 +887,6 @@ export default function AdminDashboard() {
 
   const handleDeleteNotification = (id) => {
     setNotifications(prev => prev.filter(n => n.id !== id));
-  };
-
-  // Get display title based on view mode
-  const getDisplayTitle = () => {
-    if (viewMode === 'all') {
-      return "Toutes les données";
-    }
-    return `${monthNames[selectedMonth - 1]} ${selectedYear}`;
   };
 
   return (
@@ -807,67 +922,47 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* View Mode Toggle Buttons */}
-      <div className="view-mode-toggle">
-        <button 
-          className={`view-mode-btn ${viewMode === 'month' ? 'active' : ''}`}
-          onClick={() => setViewMode('month')}
-        >
-          <CalendarDays size={18} />
-          Par Mois
-        </button>
-        <button 
-          className={`view-mode-btn ${viewMode === 'all' ? 'active' : ''}`}
-          onClick={() => setViewMode('all')}
-        >
-          <Globe size={18} />
-          Toutes les données
-        </button>
-      </div>
-
-      {/* Month/Year Selection Panel (only visible when viewMode === 'month') */}
-      {viewMode === 'month' && (
-        <div className="month-selector-panel">
-          <div className="month-selector-content">
-            <button onClick={goToPreviousMonth} className="month-nav-btn">
-              <ChevronLeft size={20} />
-            </button>
-            
-            <div className="month-year-display">
-              <Calendar size={20} className="calendar-icon" />
-              <select 
-                value={selectedMonth} 
-                onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-                className="month-select"
-              >
-                {monthNames.map((month, index) => (
-                  <option key={index} value={index + 1}>{month}</option>
-                ))}
-              </select>
-              <select 
-                value={selectedYear} 
-                onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                className="year-select"
-              >
-                {availableYears.map(year => (
-                  <option key={year} value={year}>{year}</option>
-                ))}
-              </select>
-            </div>
-            
-            <button onClick={goToNextMonth} className="month-nav-btn">
-              <ChevronRight size={20} />
-            </button>
+      {/* Month/Year Selection Panel */}
+      <div className="month-selector-panel">
+        <div className="month-selector-content">
+          <button onClick={goToPreviousMonth} className="month-nav-btn">
+            <ChevronLeft size={20} />
+          </button>
+          
+          <div className="month-year-display">
+            <Calendar size={20} className="calendar-icon" />
+            <select 
+              value={selectedMonth} 
+              onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+              className="month-select"
+            >
+              {monthNames.map((month, index) => (
+                <option key={index} value={index + 1}>{month}</option>
+              ))}
+            </select>
+            <select 
+              value={selectedYear} 
+              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+              className="year-select"
+            >
+              {availableYears.map(year => (
+                <option key={year} value={year}>{year}</option>
+              ))}
+            </select>
           </div>
           
-          {filteredCommandes.length === 0 && (
-            <div className="no-data-message">
-              <AlertCircle size={16} />
-              <span>Aucune donnée pour {monthNames[selectedMonth - 1]} {selectedYear}</span>
-            </div>
-          )}
+          <button onClick={goToNextMonth} className="month-nav-btn">
+            <ChevronRight size={20} />
+          </button>
         </div>
-      )}
+        
+        {filteredCommandes.length === 0 && (
+          <div className="no-data-message">
+            <AlertCircle size={16} />
+            <span>Aucune donnée pour {monthNames[selectedMonth - 1]} {selectedYear}</span>
+          </div>
+        )}
+      </div>
 
       {/* Filter Panel */}
       {showFilters && (
@@ -901,7 +996,7 @@ export default function AdminDashboard() {
 
       {/* Financial Stats Cards */}
       <div className="section-title">
-        <h3>Aperçu financier - {getDisplayTitle()}</h3>
+        <h3>Aperçu financier - {monthNames[selectedMonth - 1]} {selectedYear}</h3>
       </div>
       <div className="stats-grid">
         {financialCards.map((card) => (
@@ -944,18 +1039,18 @@ export default function AdminDashboard() {
 
       {/* Charts Section */}
       <div className="charts-grid">
-        {/* Monthly Comparison Chart */}
+        {/* Monthly Comparison Chart - Single month as bar chart */}
         <div className="chart-card">
           <div className="chart-header">
             <BarChart3 size={18} />
-            <h3>Résumé - {getDisplayTitle()}</h3>
+            <h3>Résumé du mois</h3>
           </div>
           <div className="chart-container">
             {selectedMonthStats.ventes > 0 || selectedMonthStats.depenses > 0 ? (
               <ResponsiveContainer width="100%" height={280}>
                 <BarChart 
                   data={[{
-                    name: viewMode === 'all' ? 'Total général' : monthNames[selectedMonth - 1],
+                    name: monthNames[selectedMonth - 1],
                     Dépenses: selectedMonthStats.depenses,
                     Profit: commandesStats.totalProfit,
                     Ventes: commandesStats.totalSales
@@ -1003,7 +1098,7 @@ export default function AdminDashboard() {
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="no-data">Aucune donnée disponible</div>
+              <div className="no-data">Aucune donnée pour ce mois</div>
             )}
           </div>
         </div>
@@ -1064,7 +1159,7 @@ export default function AdminDashboard() {
       {/* Recent Orders */}
       <div className="recent-orders-section">
         <div className="section-title">
-          <h3>Commandes récentes - {getDisplayTitle()}</h3>
+          <h3>Commandes récentes - {monthNames[selectedMonth - 1]} {selectedYear}</h3>
           {statusFilter !== "all" && (
             <span className="filter-badge">
               Filtré par: {statusLabels[statusFilter] || statusFilter}
@@ -1158,7 +1253,7 @@ export default function AdminDashboard() {
             ) : (
               <div className="no-data">
                 <AlertCircle size={24} />
-                <p>Aucune commande pour {getDisplayTitle()}</p>
+                <p>Aucune commande pour {monthNames[selectedMonth - 1]} {selectedYear}</p>
               </div>
             )}
           </div>
@@ -1167,7 +1262,7 @@ export default function AdminDashboard() {
 
       {/* Financial Summary */}
       <div className="summary-card" style={{ marginTop: '1.5rem' }}>
-        <h3>Résumé financier - {getDisplayTitle()}</h3>
+        <h3>Résumé financier - {monthNames[selectedMonth - 1]} {selectedYear}</h3>
         <div className="summary-item">
           <span>Total des ventes</span>
           <span className="amount positive">{formatCurrency(commandesStats.totalSales)} DH</span>

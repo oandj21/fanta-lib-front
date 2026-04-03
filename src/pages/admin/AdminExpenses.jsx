@@ -1,6 +1,10 @@
 import { useState, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Plus, Pencil, Trash2, X, Check, AlertCircle, Search, Filter, XCircle, Calendar, Tag, DollarSign, ChevronLeft, ChevronRight } from "lucide-react";
+import { 
+  Plus, Pencil, Trash2, X, Check, AlertCircle, Search, Filter, 
+  XCircle, Calendar, Tag, DollarSign, ChevronLeft, ChevronRight,
+  Globe, CalendarDays
+} from "lucide-react";
 import { fetchDepenses, createDepense, updateDepense, deleteDepense } from "../../store/store";
 import "../../css/AdminExpenses.css";
 
@@ -10,7 +14,10 @@ export default function AdminExpenses() {
   const dispatch = useDispatch();
   const { list: expenseList = [], loading } = useSelector((state) => state.depenses);
   
-  // Month/Year selection state
+  // View mode: 'month' or 'all'
+  const [viewMode, setViewMode] = useState('month');
+  
+  // Month/Year selection state (only used when viewMode === 'month')
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   
@@ -42,7 +49,7 @@ export default function AdminExpenses() {
   // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, categoryFilter, selectedMonth, selectedYear, sortBy, sortOrder]);
+  }, [searchTerm, categoryFilter, selectedMonth, selectedYear, sortBy, sortOrder, viewMode]);
 
   // Generate available years
   const availableYears = useMemo(() => {
@@ -80,31 +87,41 @@ export default function AdminExpenses() {
     }
   };
 
-  // Filter expenses by selected month/year
+  // Filter expenses based on view mode
   const filteredExpenses = useMemo(() => {
-    return expenseList.filter(expense => {
+    let filtered = expenseList;
+    
+    // Apply month/year filter only if viewMode is 'month'
+    if (viewMode === 'month') {
+      filtered = filtered.filter(expense => {
+        const date = new Date(expense.date || expense.created_at);
+        const expenseMonth = date.getMonth() + 1;
+        const expenseYear = date.getFullYear();
+        return expenseMonth === selectedMonth && expenseYear === selectedYear;
+      });
+    }
+    
+    // Apply search filter
+    filtered = filtered.filter(expense => {
       const amount = expense.montant || expense.amount || 0;
       const category = expense.categorie || expense.category || "";
       const description = expense.description || "";
-      const date = new Date(expense.date || expense.created_at);
-      const expenseMonth = date.getMonth() + 1;
-      const expenseYear = date.getFullYear();
-
-      // Month/Year filter
-      const matchesMonthYear = expenseMonth === selectedMonth && expenseYear === selectedYear;
       
-      // Search filter
-      const matchesSearch = searchTerm === "" || 
+      return searchTerm === "" || 
         description.toLowerCase().includes(searchTerm.toLowerCase()) ||
         category.toLowerCase().includes(searchTerm.toLowerCase()) ||
         amount.toString().includes(searchTerm);
-      
-      // Category filter
-      const matchesCategory = categoryFilter === "all" || category === categoryFilter;
-      
-      return matchesMonthYear && matchesSearch && matchesCategory;
-    }).sort((a, b) => {
-      // Sorting
+    });
+    
+    // Apply category filter
+    if (categoryFilter !== "all") {
+      filtered = filtered.filter(expense => 
+        (expense.categorie || expense.category) === categoryFilter
+      );
+    }
+    
+    // Apply sorting
+    filtered.sort((a, b) => {
       let aVal, bVal;
       
       if (sortBy === "date") {
@@ -127,7 +144,9 @@ export default function AdminExpenses() {
         return aVal < bVal ? 1 : -1;
       }
     });
-  }, [expenseList, searchTerm, categoryFilter, selectedMonth, selectedYear, sortBy, sortOrder]);
+    
+    return filtered;
+  }, [expenseList, searchTerm, categoryFilter, selectedMonth, selectedYear, sortBy, sortOrder, viewMode]);
 
   // Get current page expenses
   const currentExpenses = useMemo(() => {
@@ -139,14 +158,13 @@ export default function AdminExpenses() {
   // Calculate total pages
   const totalPages = Math.ceil(filteredExpenses.length / itemsPerPage);
 
-  // Calculate statistics for selected month
+  // Calculate statistics based on view mode
   const stats = useMemo(() => {
-    const selectedMonthExpenses = filteredExpenses;
-    const total = selectedMonthExpenses.reduce((sum, e) => sum + Number(e.montant || e.amount || 0), 0);
+    const total = filteredExpenses.reduce((sum, e) => sum + Number(e.montant || e.amount || 0), 0);
     const byCategory = {};
     
     categories.forEach(cat => {
-      byCategory[cat] = selectedMonthExpenses
+      byCategory[cat] = filteredExpenses
         .filter(e => (e.categorie || e.category) === cat)
         .reduce((sum, e) => sum + Number(e.montant || e.amount || 0), 0);
     });
@@ -154,7 +172,7 @@ export default function AdminExpenses() {
     return {
       total,
       byCategory,
-      count: selectedMonthExpenses.length
+      count: filteredExpenses.length
     };
   }, [filteredExpenses]);
 
@@ -222,6 +240,14 @@ export default function AdminExpenses() {
   const paginate = (pageNumber) => {
     setCurrentPage(pageNumber);
     document.querySelector('.table-wrapper')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  // Get display title
+  const getDisplayTitle = () => {
+    if (viewMode === 'all') {
+      return "Toutes les données";
+    }
+    return `${monthNames[selectedMonth - 1]} ${selectedYear}`;
   };
 
   // Pagination component
@@ -305,8 +331,8 @@ export default function AdminExpenses() {
           <h2>Gestion des Dépenses</h2>
           <p className="admin-subtitle">
             {filteredExpenses.length > 0 
-              ? `Affichage ${Math.min((currentPage - 1) * itemsPerPage + 1, filteredExpenses.length)} - ${Math.min(currentPage * itemsPerPage, filteredExpenses.length)} sur ${filteredExpenses.length} dépense${filteredExpenses.length !== 1 ? 's' : ''} pour ${monthNames[selectedMonth - 1]} ${selectedYear}`
-              : `0 dépense pour ${monthNames[selectedMonth - 1]} ${selectedYear}`
+              ? `Affichage ${Math.min((currentPage - 1) * itemsPerPage + 1, filteredExpenses.length)} - ${Math.min(currentPage * itemsPerPage, filteredExpenses.length)} sur ${filteredExpenses.length} dépense${filteredExpenses.length !== 1 ? 's' : ''} pour ${getDisplayTitle()}`
+              : `0 dépense pour ${getDisplayTitle()}`
             }
           </p>
         </div>
@@ -316,47 +342,67 @@ export default function AdminExpenses() {
         </button>
       </div>
 
-      {/* Month Selector Panel */}
-      <div className="month-selector-panel">
-        <div className="month-selector-content">
-          <button onClick={goToPreviousMonth} className="month-nav-btn">
-            <ChevronLeft size={20} />
-          </button>
-          
-          <div className="month-year-display">
-            <Calendar size={20} className="calendar-icon" />
-            <select 
-              value={selectedMonth} 
-              onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-              className="month-select"
-            >
-              {monthNames.map((month, index) => (
-                <option key={index} value={index + 1}>{month}</option>
-              ))}
-            </select>
-            <select 
-              value={selectedYear} 
-              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-              className="year-select"
-            >
-              {availableYears.map(year => (
-                <option key={year} value={year}>{year}</option>
-              ))}
-            </select>
-          </div>
-          
-          <button onClick={goToNextMonth} className="month-nav-btn">
-            <ChevronRight size={20} />
-          </button>
-        </div>
-        
-        {filteredExpenses.length === 0 && (
-          <div className="no-data-message">
-            <AlertCircle size={16} />
-            <span>Aucune dépense pour {monthNames[selectedMonth - 1]} {selectedYear}</span>
-          </div>
-        )}
+      {/* View Mode Toggle Buttons */}
+      <div className="view-mode-toggle">
+        <button 
+          className={`view-mode-btn ${viewMode === 'month' ? 'active' : ''}`}
+          onClick={() => setViewMode('month')}
+        >
+          <CalendarDays size={18} />
+          Par Mois
+        </button>
+        <button 
+          className={`view-mode-btn ${viewMode === 'all' ? 'active' : ''}`}
+          onClick={() => setViewMode('all')}
+        >
+          <Globe size={18} />
+          Toutes les données
+        </button>
       </div>
+
+      {/* Month Selector Panel (only visible when viewMode === 'month') */}
+      {viewMode === 'month' && (
+        <div className="month-selector-panel">
+          <div className="month-selector-content">
+            <button onClick={goToPreviousMonth} className="month-nav-btn">
+              <ChevronLeft size={20} />
+            </button>
+            
+            <div className="month-year-display">
+              <Calendar size={20} className="calendar-icon" />
+              <select 
+                value={selectedMonth} 
+                onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+                className="month-select"
+              >
+                {monthNames.map((month, index) => (
+                  <option key={index} value={index + 1}>{month}</option>
+                ))}
+              </select>
+              <select 
+                value={selectedYear} 
+                onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                className="year-select"
+              >
+                {availableYears.map(year => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
+            </div>
+            
+            <button onClick={goToNextMonth} className="month-nav-btn">
+              <ChevronRight size={20} />
+            </button>
+          </div>
+          
+          {filteredExpenses.length === 0 && (
+            <div className="no-data-message">
+              <AlertCircle size={16} />
+              <span>Aucune dépense pour {monthNames[selectedMonth - 1]} {selectedYear}</span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Stats Cards */}
       <div className="expenses-stats-grid">
@@ -383,7 +429,7 @@ export default function AdminExpenses() {
 
       {/* Category Stats */}
       <div className="category-stats">
-        <h3>Répartition par catégorie - {monthNames[selectedMonth - 1]} {selectedYear}</h3>
+        <h3>Répartition par catégorie - {getDisplayTitle()}</h3>
         <div className="category-stats-grid">
           {categories.map(category => (
             <div key={category} className="category-stat-item">
@@ -574,7 +620,7 @@ export default function AdminExpenses() {
               {filteredExpenses.length > 0 && (
                 <tfoot>
                   <tr className="total-row">
-                    <td colSpan="3" className="total-label">Total des dépenses pour {monthNames[selectedMonth - 1]} {selectedYear}</td>
+                    <td colSpan="3" className="total-label">Total des dépenses pour {getDisplayTitle()}</td>
                     <td className="total-value">
                       {Number(currentExpenses.reduce((sum, e) => sum + Number(e.montant || e.amount || 0), 0)).toFixed(2)} DH
                     </td>

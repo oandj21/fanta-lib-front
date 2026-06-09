@@ -12,7 +12,8 @@ import {
   Mail, 
   User,
   LogOut,
-  Shield
+  Shield,
+  Truck // Import the Truck icon for Fournisseur command
 } from "lucide-react";
 import { logoutFromSlice, selectAuthUser } from "../../store/store";
 import "../../css/AdminLayout.css";
@@ -47,18 +48,19 @@ export default function AdminLayout() {
       { to: "/books", icon: BookOpen, label: "Livres" },
       { to: "/orders", icon: ShoppingCart, label: "Commandes" },
       { to: "/expenses", icon: Receipt, label: "Dépenses" },
+      { to: "/fournisseur-command", icon: Truck, label: "Fournisseur" }, // New menu item
       { to: "/finance", icon: TrendingUp, label: "Finance" },
       { to: "/profile", icon: User, label: "Profil" },
     ];
 
     // Add Users menu only for Super Admin and Admin
     if (isSuperAdmin || isAdmin) {
-      items.splice(5, 0, { to: "/users", icon: Users, label: "Utilisateurs" });
+      items.splice(6, 0, { to: "/users", icon: Users, label: "Utilisateurs" });
     }
 
     // Add Messages menu only for Super Admin and Admin
     if (isSuperAdmin || isAdmin) {
-      items.splice(6, 0, { to: "/messages", icon: Mail, label: "Messages" });
+      items.splice(7, 0, { to: "/messages", icon: Mail, label: "Messages" });
     }
 
     return items;

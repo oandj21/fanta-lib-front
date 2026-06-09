@@ -705,7 +705,7 @@
 
 .filter-row {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   gap: 1rem;
   flex-wrap: wrap;
 }
@@ -1097,4 +1097,149 @@
   border-radius: 8px;
   color: #d97706;
   font-size: 0.85rem;
+}/* Day selector styles */
+.day-selector-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+
+.day-select {
+  padding: 8px 12px;
+  border: 2px solid #e0d6cc;
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: 'Lato', sans-serif;
+  background: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 120px;
+}
+
+.day-select:hover {
+  border-color: #5c0202;
+}
+
+.day-select:focus {
+  outline: none;
+  border-color: #5c0202;
+  box-shadow: 0 0 0 3px rgba(92, 2, 2, 0.1);
+}
+
+.clear-day-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  color: #ef4444;
+}
+
+.clear-day-btn:hover {
+  background: #fee2e2;
+  transform: scale(1.05);
+}
+
+/* Adjust month selector content for better spacing */
+.month-selector-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.month-year-display {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #f9f7f5;
+  padding: 8px 20px;
+  border-radius: 50px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .month-selector-content {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .month-year-display {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+  }
+  
+  .day-selector-wrapper {
+    width: 100%;
+  }
+  
+  .day-select {
+    flex: 1;
+    min-width: auto;
+  }
+}/* Fix for Pie Chart Tooltip - Add this to your CSS file */
+.pie-chart-container {
+  position: relative;
+  width: 100%;
+  height: auto;
+  min-height: 280px;
+  overflow: visible !important;
+}
+
+.recharts-wrapper {
+  overflow: visible !important;
+}
+
+.recharts-surface {
+  overflow: visible !important;
+}
+
+.recharts-tooltip-wrapper {
+  z-index: 9999 !important;
+  pointer-events: none;
+}
+
+.recharts-default-tooltip {
+  z-index: 9999 !important;
+  background-color: white !important;
+  border-radius: 8px !important;
+  border: 1px solid #e0d6cc !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  padding: 8px 12px !important;
+}
+
+.recharts-tooltip-label {
+  font-weight: 600 !important;
+  color: #5c0202 !important;
+  margin-bottom: 4px !important;
+}
+
+.recharts-tooltip-item {
+  color: #6b5752 !important;
+  font-size: 12px !important;
+  padding: 2px 0 !important;
+}
+
+/* Ensure the chart container doesn't clip the tooltip */
+.chart-card {
+  overflow: visible !important;
+}
+
+.chart-container,
+.pie-chart-container {
+  overflow: visible !important;
+}
+
+/* For the wrapper div */
+.recharts-responsive-container {
+  overflow: visible !important;
 }

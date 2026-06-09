@@ -110,7 +110,6 @@
 /* Add separator between filter groups */
 .filter-group:first-child {
   border-bottom: 1px solid #e8e0d8;
-  padding-bottom: 1.5rem;
 }
 
 .filter-title {

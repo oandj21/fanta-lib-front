@@ -294,7 +294,7 @@ export default function NotificationCenter({
                 <button 
                   className={`filter-btn ${showOnlyInProgress ? 'active' : ''}`}
                   onClick={() => setShowOnlyInProgress(!showOnlyInProgress)}
-                  title="Filtrer les commandes en cours"
+                 
                 >
                   <Filter size={14} />
                   <span>En cours</span>

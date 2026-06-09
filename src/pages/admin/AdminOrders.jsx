@@ -9,7 +9,7 @@ import {
   Loader, ChevronDown, BookOpen, Minus, Plus as PlusIcon,
   Eye, RefreshCw, AlertCircle, CheckCircle, Box, Layers,
   Clock, CreditCard, Calendar, PackageCheck, PackageX,
-  Info, Copy, Bell, Webhook, Edit, ArrowLeft
+  Info, Copy, Bell, Webhook, Edit, ArrowLeft, MessageCircle, Send
 } from "lucide-react";
 import axios from "axios";
 import { 
@@ -18,7 +18,8 @@ import {
   deleteCommande, 
   markCommandeAsDelivered,
   createCommande,
-  fetchLivres
+  fetchLivres,
+  markCommandeAsSent
 } from "../../store/store";
 import "../../css/AdminOrders.css";
 
@@ -59,25 +60,104 @@ const generateOrderCode = (cityName) => {
   return generatedCode;
 };
 
-// Add this helper function at the top of the component, after the imports
+// Enhanced Arabic text normalization for better search matching
 const normalizeArabicText = (text) => {
   if (!text) return '';
   
-  // Convert to string if not already
-  text = String(text);
+  // Convert to string
+  let normalized = String(text);
   
-  // Normalize Arabic characters
-  return text
-    // Normalize Alif variations to ا
-    .replace(/[أإآ]/g, 'ا')
-    // Normalize Teh Marbuta (ة) to Heh (ه)
-    .replace(/ة/g, 'ه')
-    // Normalize Alef Maksura (ى) to Yeh (ي)
-    .replace(/ى/g, 'ي')
-    // Remove diacritics (Tashkeel)
-    .replace(/[ًٌٍَُِّْ]|[\u064B-\u065F]/g, '')
-    // Convert to lowercase for case-insensitive comparison
-    .toLowerCase();
+  // 1. Normalize Arabic character variations
+  const charMap = {
+    'أ': 'ا',
+    'إ': 'ا',
+    'آ': 'ا',
+    'ة': 'ه',
+    'ى': 'ي',
+    'ؤ': 'و',
+    'ئ': 'ي',
+    'ا': 'ا',  // Keep Alif as is
+    'ب': 'ب',
+    'ت': 'ت',
+    'ث': 'ث',
+    'ج': 'ج',
+    'ح': 'ح',
+    'خ': 'خ',
+    'د': 'د',
+    'ذ': 'ذ',
+    'ر': 'ر',
+    'ز': 'ز',
+    'س': 'س',
+    'ش': 'ش',
+    'ص': 'ص',
+    'ض': 'ض',
+    'ط': 'ط',
+    'ظ': 'ظ',
+    'ع': 'ع',
+    'غ': 'غ',
+    'ف': 'ف',
+    'ق': 'ق',
+    'ك': 'ك',
+    'ل': 'ل',
+    'م': 'م',
+    'ن': 'ن',
+    'ه': 'ه',
+    'و': 'و',
+    'ي': 'ي'
+  };
+  
+  // Apply character mapping
+  normalized = normalized.replace(/[أإآةىؤئ]/g, match => charMap[match] || match);
+  
+  // 2. Remove diacritics (Tashkeel) - حركات التشكيل
+  normalized = normalized.replace(/[\u064B-\u065F\u0670]/g, '');
+  
+  // 3. Remove Tatweel/Kashida (ـ) - المد
+  normalized = normalized.replace(/[\u0640]/g, '');
+  
+  // 4. Remove extra spaces and normalize whitespace
+  normalized = normalized.replace(/\s+/g, ' ').trim();
+  
+  // 5. Convert to lowercase for case-insensitive comparison
+  normalized = normalized.toLowerCase();
+  
+  // 6. For better matching, also create a version without spaces (optional)
+  // This helps match "سعدالله" with "سعد الله"
+  // But we keep the original normalized version with spaces
+  
+  return normalized;
+};
+
+// Helper function for searching with flexible space handling
+const matchesArabicText = (text, searchTerm) => {
+  if (!text || !searchTerm) return false;
+  
+  const normalizedText = normalizeArabicText(text);
+  const normalizedSearch = normalizeArabicText(searchTerm);
+  
+  // Check exact match
+  if (normalizedText.includes(normalizedSearch)) {
+    return true;
+  }
+  
+  // Check without spaces (e.g., "سعدالله" vs "سعد الله")
+  const textNoSpaces = normalizedText.replace(/\s/g, '');
+  const searchNoSpaces = normalizedSearch.replace(/\s/g, '');
+  
+  if (textNoSpaces.includes(searchNoSpaces)) {
+    return true;
+  }
+  
+  // Check with partial word matching for long names
+  const searchWords = normalizedSearch.split(/\s+/);
+  if (searchWords.length > 1) {
+    // If search has multiple words, try matching each word
+    return searchWords.some(word => 
+      word.length >= 2 && normalizedText.includes(word)
+    );
+  }
+  
+  return false;
 };
 
 // French translations for statuses
@@ -442,15 +522,7 @@ const BookSelector = ({ selectedBooks, onBooksChange, onTotalQuantityChange }) =
     });
   }, [booksList, searchTerm]);
 
-  // Update total quantity whenever selected books change
-  useEffect(() => {
-    if (selectedBooks.length > 0) {
-      const totalQty = selectedBooks.reduce((sum, book) => sum + book.quantity, 0);
-      if (onTotalQuantityChange) onTotalQuantityChange(totalQty);
-    } else {
-      if (onTotalQuantityChange) onTotalQuantityChange(0);
-    }
-  }, [selectedBooks, onTotalQuantityChange]);
+ 
 
   // Find all books with the same ISBN
   const findBooksWithSameIsbn = (book) => {
@@ -1052,6 +1124,16 @@ const OrderDetailsPage = ({ order, onBack }) => {
 
                 <div className="order-info-card">
                   <div className="order-info-label">
+                    <MessageCircle size={14} />
+                    WhatsApp
+                  </div>
+                  <div className="order-info-value">
+                    {order.nmr_whatsapp || "-"}
+                  </div>
+                </div>
+
+                <div className="order-info-card">
+                  <div className="order-info-label">
                     <Layers size={14} />
                     Quantité totale
                   </div>
@@ -1239,13 +1321,124 @@ const OrderDetailsPage = ({ order, onBack }) => {
     </div>
   );
 };
+// Professional Toast Component with Premium Icon
+const ToastNotification = ({ message, details, onClose, autoDismiss = 8000 }) => {
+  const [isClosing, setIsClosing] = useState(false);
+  const timeoutRef = useRef(null);
 
+  useEffect(() => {
+    timeoutRef.current = setTimeout(() => {
+      handleClose();
+    }, autoDismiss);
+
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [autoDismiss]);
+
+  const handleClose = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      onClose();
+    }, 300);
+  };
+
+  const getCurrentTime = () => {
+    const now = new Date();
+    return now.toLocaleTimeString('fr-FR', { 
+      hour: '2-digit', 
+      minute: '2-digit', 
+      second: '2-digit',
+      hour12: false 
+    });
+  };
+
+  // Calculate total shortage
+  const totalShortage = details?.reduce((sum, detail) => sum + (detail.shortage || 0), 0) || 0;
+
+  return (
+    <div className={`toast-notification ${isClosing ? 'closing' : ''}`} onClick={handleClose}>
+      <div className="toast-content" onClick={e => e.stopPropagation()}>
+        <div className="toast-header">
+          <div className="toast-title">
+            {/* Professional Stock Icon */}
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M20 7L12 12L4 7M20 7L12 2L4 7M20 7V17L12 22M4 7V17L12 22M12 22V12" 
+                stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <circle cx="12" cy="12" r="2" fill="currentColor" stroke="currentColor" strokeWidth="1.5"/>
+              <path d="M16 9.5L20 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              <path d="M8 9.5L4 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+            <span>⚠️ STOCK INSUFFISANT</span>
+          </div>
+          <button onClick={handleClose} className="toast-close">
+            <X size={16} />
+          </button>
+        </div>
+        
+        <div className="toast-body">
+          <div className="toast-message">
+            <AlertCircle size={18} />
+            <span>
+              <strong>{message}</strong>
+              {totalShortage > 0 && (
+                <span style={{ marginLeft: '8px', fontSize: '0.8rem', color: '#ef4444' }}>
+                  (Manque total: {totalShortage} exemplaire{totalShortage > 1 ? 's' : ''})
+                </span>
+              )}
+            </span>
+          </div>
+          
+          {details && details.length > 0 && (
+            <div className="toast-details">
+              {details.map((detail, idx) => (
+                <div key={idx} className="stock-error-item">
+                  <div className="stock-book-title">
+                    <BookOpen size={14} />
+                    <span>{detail.title}</span>
+                  </div>
+                  <div className="stock-details">
+                    <span className="stock-available">
+                      📦 {detail.available}
+                    </span>
+                    <span className="stock-requested">
+                      📋 {detail.requested}
+                    </span>
+                    {detail.shortage > 0 && (
+                      <span className="stock-shortage">
+                        ⚠️ -{detail.shortage}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          <div className="toast-time">
+            <Clock size={12} />
+            <span>{getCurrentTime()}</span>
+            <span style={{ marginLeft: 'auto', fontSize: '0.65rem' }}>
+              Cliquez pour fermer
+            </span>
+          </div>
+        </div>
+        
+        <div className="toast-progress" />
+      </div>
+    </div>
+  );
+};
 // Add Order Page Component
 const AddOrderPage = ({ onBack, onSubmit }) => {
   const dispatch = useDispatch();
   const [addLoading, setAddLoading] = useState(false);
   const [addError, setAddError] = useState(null);
   const [phoneError, setPhoneError] = useState("");
+  const [whatsappError, setWhatsappError] = useState("");
+  const [toastError, setToastError] = useState(null);
   
   // Track if total was manually edited
   const [totalManuallyEdited, setTotalManuallyEdited] = useState(false);
@@ -1255,6 +1448,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
     parcel_code: generateOrderCode(""), // Use default 'CITY' as prefix
     parcel_receiver: "",
     parcel_phone: "",
+    nmr_whatsapp: "",
     parcel_prd_qty: 0,
     parcel_city: "",
     parcel_address: "",
@@ -1283,6 +1477,21 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
       return false;
     }
     setPhoneError("");
+    return true;
+  };
+
+  // Validate WhatsApp number (optional, but if provided should be valid)
+  const validateWhatsapp = (whatsapp) => {
+    if (!whatsapp) {
+      setWhatsappError("");
+      return true;
+    }
+    const phoneRegex = /^[0-9]{10}$/;
+    if (!phoneRegex.test(whatsapp)) {
+      setWhatsappError("Le numéro WhatsApp doit contenir exactement 10 chiffres");
+      return false;
+    }
+    setWhatsappError("");
     return true;
   };
 
@@ -1343,6 +1552,10 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
       validatePhone(value);
     }
     
+    if (name === 'nmr_whatsapp') {
+      validateWhatsapp(value);
+    }
+    
     // Track manual edits
     if (name === 'total') {
       setTotalManuallyEdited(true);
@@ -1381,6 +1594,10 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
     }));
   };
 
+  const handleCloseToast = () => {
+    setToastError(null);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -1400,9 +1617,85 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
         return;
     }
 
+    // Validate WhatsApp if provided
+    if (newOrderData.nmr_whatsapp && !validateWhatsapp(newOrderData.nmr_whatsapp)) {
+        setAddError(whatsappError);
+        return;
+    }
+
     // Validate that parcel price is entered
     if (newOrderData.parcel_price === null || newOrderData.parcel_price === '') {
         setAddError("Veuillez entrer le prix du colis");
+        return;
+    }
+
+    // ✅ CHECK STOCK BEFORE CREATING ORDER
+    setAddLoading(true);
+    setAddError(null);
+    
+    try {
+        // Prepare stock check data
+        const stockCheckData = newOrderData.livres.map(book => ({
+            id: book.id,
+            quantity: book.quantity
+        }));
+        
+        // Call stock check endpoint
+        const stockCheckResponse = await axios.post(
+            "https://fanta-lib-back-production-76f4.up.railway.app/api/commandes/check-stock",
+            { livres: stockCheckData },
+            {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem("token")}`,
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+        
+        const stockCheckResult = stockCheckResponse.data;
+        
+        if (stockCheckResult.has_insufficient_stock) {
+            // Find books with insufficient stock
+            const insufficientBooks = stockCheckResult.books.filter(b => !b.sufficient);
+            
+            // Prepare detailed error message for toast
+            const stockDetails = insufficientBooks.map(book => ({
+                title: book.titre || `Livre ID: ${book.id}`,
+                available: book.available_stock,
+                requested: book.requested_quantity,
+                shortage: book.shortage
+            }));
+            
+            const errorMessage = `Stock insuffisant pour ${insufficientBooks.length} livre${insufficientBooks.length > 1 ? 's' : ''}`;
+            
+            // Show toast notification instead of inline error
+            setToastError({
+                message: errorMessage,
+                details: stockDetails
+            });
+            
+            setAddLoading(false);
+            return;
+        }
+        
+    } catch (error) {
+        console.error("Stock check failed:", error);
+        
+        // Check if it's a stock error from the server response
+        if (error.response?.data?.errors) {
+            setToastError({
+                message: "Erreur de stock",
+                details: error.response.data.errors.map(err => ({
+                    title: err.book || err.titre || "Livre",
+                    available: err.available_stock || 0,
+                    requested: err.requested_quantity || 0,
+                    shortage: err.shortage || 0
+                }))
+            });
+        } else {
+            setAddError("Erreur lors de la vérification du stock. Veuillez réessayer.");
+        }
+        setAddLoading(false);
         return;
     }
 
@@ -1429,6 +1722,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
         parcel_code: newOrderData.parcel_code,
         parcel_receiver: newOrderData.parcel_receiver,
         parcel_phone: newOrderData.parcel_phone || "",
+        nmr_whatsapp: newOrderData.nmr_whatsapp || "",
         parcel_prd_qty: newOrderData.parcel_prd_qty,
         parcel_city: newOrderData.parcel_city,
         parcel_address: newOrderData.parcel_address || "",
@@ -1446,25 +1740,47 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
 
     console.log("📦 Order to create:", orderToCreate);
 
-    setAddLoading(true);
-    setAddError(null);
-
     try {
         await onSubmit(orderToCreate);
         onBack();
     } catch (error) {
         console.error("❌ Create failed:", error);
-        setAddError(
-            error?.message || 
-            "Erreur lors de la création de la commande. Veuillez réessayer."
-        );
+        
+        // Check if it's a stock error from the server
+        if (error.response?.data?.errors) {
+            setToastError({
+                message: "Erreur de stock",
+                details: error.response.data.errors.map(err => ({
+                    title: err.book || err.titre || "Livre",
+                    available: err.available_stock || 0,
+                    requested: err.requested_quantity || 0,
+                    shortage: err.shortage || 0
+                }))
+            });
+        } else {
+            setAddError(
+                error?.response?.data?.message || 
+                error?.message || 
+                "Erreur lors de la création de la commande. Veuillez réessayer."
+            );
+        }
     } finally {
         setAddLoading(false);
     }
-};
+  };
 
   return (
     <div className="add-order-page">
+      {/* Toast Notification */}
+      {toastError && (
+        <ToastNotification 
+          message={toastError.message}
+          details={toastError.details}
+          onClose={handleCloseToast}
+          autoDismiss={8000}
+        />
+      )}
+      
       <div className="page-header">
         <button onClick={onBack} className="btn-back">
           <ArrowLeft size={20} />
@@ -1540,7 +1856,29 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
             </div>
           </div>
 
-          {/* Row 3: City and Address */}
+          {/* Row 3: WhatsApp Number */}
+          <div className="form-row">
+            <div className="form-group">
+              <label>WhatsApp <span className="optional">(optionnel)</span></label>
+              <div className="input-with-icon">
+                <MessageCircle size={20} className="input-icon" />
+                <input
+                  type="text"
+                  name="nmr_whatsapp"
+                  value={newOrderData.nmr_whatsapp}
+                  onChange={handleNewOrderChange}
+                  placeholder="10 chiffres"
+                  maxLength="10"
+                  pattern="[0-9]{10}"
+                  className={whatsappError ? "input-error" : ""}
+                />
+              </div>
+              {whatsappError && <small className="error-hint">{whatsappError}</small>}
+              <small className="field-hint">Numéro WhatsApp du client (optionnel)</small>
+            </div>
+          </div>
+
+          {/* Row 4: City and Address */}
           <div className="form-row">
             <div className="form-group">
               <label>Ville <span className="required">*</span></label>
@@ -1565,7 +1903,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
             </div>
           </div>
 
-          {/* Row 4: Book Selector - takes full width */}
+          {/* Row 5: Book Selector - takes full width */}
           <div className="form-group full-width">
             <label>Livres <span className="required">*</span></label>
             <BookSelector 
@@ -1575,7 +1913,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
             />
           </div>
 
-          {/* Row 5: Quantity and Parcel Price */}
+          {/* Row 6: Quantity and Parcel Price */}
           <div className="form-row">
             <div className="form-group">
               <label>Quantité totale</label>
@@ -1613,7 +1951,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
             </div>
           </div>
 
-          {/* Row 6: Delivery Fee and Packaging Fee */}
+          {/* Row 7: Delivery Fee and Packaging Fee */}
           <div className="form-row">
             <div className="form-group">
               <label>Frais livraison</label>
@@ -1648,7 +1986,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
             </div>
           </div>
 
-          {/* Row 7: Total and Profit */}
+          {/* Row 8: Total and Profit */}
           <div className="form-row">
             <div className="form-group">
               <label>Total livres</label>
@@ -1681,7 +2019,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
             </div>
           </div>
 
-          {/* Row 8: Note */}
+          {/* Row 9: Note */}
           <div className="form-group full-width">
             <label>Note</label>
             <input
@@ -1693,7 +2031,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
             />
           </div>
 
-          {/* Row 9: Checkbox */}
+          {/* Row 10: Checkbox */}
           <div className="form-checkbox">
             <input
               type="checkbox"
@@ -1753,6 +2091,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
   const [updateLoading, setUpdateLoading] = useState(false);
   const [updateError, setUpdateError] = useState(null);
   const [phoneError, setPhoneError] = useState("");
+  const [whatsappError, setWhatsappError] = useState("");
   
   // Track if total was manually edited
   const [totalManuallyEdited, setTotalManuallyEdited] = useState(false);
@@ -1761,6 +2100,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
   const [formData, setFormData] = useState({
     parcel_receiver: "",
     parcel_phone: "",
+    nmr_whatsapp: "",
     parcel_prd_qty: 0,
     parcel_city: "",
     parcel_address: "",
@@ -1823,6 +2163,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
       setFormData({
         parcel_receiver: order.parcel_receiver || order.receiver || order.client_nom || "",
         parcel_phone: order.parcel_phone || order.phone || order.client_telephone || "",
+        nmr_whatsapp: order.nmr_whatsapp || "",
         parcel_prd_qty: calculatedQty || 0,
         parcel_city: order.parcel_city || order.city || order.ville || "",
         parcel_address: order.parcel_address || order.address || order.adresse || "",
@@ -1867,6 +2208,21 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
     return true;
   };
 
+  // Validate WhatsApp number
+  const validateWhatsapp = (whatsapp) => {
+    if (!whatsapp) {
+      setWhatsappError("");
+      return true;
+    }
+    const phoneRegex = /^[0-9]{10}$/;
+    if (!phoneRegex.test(whatsapp)) {
+      setWhatsappError("Le numéro WhatsApp doit contenir exactement 10 chiffres");
+      return false;
+    }
+    setWhatsappError("");
+    return true;
+  };
+
   // Calculate books subtotal, total, and profit
   useEffect(() => {
     const booksSubtotal = (formData.livres || []).reduce(
@@ -1883,7 +2239,6 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
       total = parseFloat(formData.total) || 0;
     }
     
-    // Update quantity based on livres
     const totalQty = (formData.livres || []).reduce((sum, book) => sum + (book.quantity || 1), 0);
     
     // Use parcel price from form
@@ -1928,6 +2283,10 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
       validatePhone(value);
     }
     
+    if (name === 'nmr_whatsapp') {
+      validateWhatsapp(value);
+    }
+    
     // Track manual edits for total
     if (name === 'total') {
       setTotalManuallyEdited(true);
@@ -1969,6 +2328,12 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
     // Validate phone if provided
     if (formData.parcel_phone && !validatePhone(formData.parcel_phone)) {
         setUpdateError(phoneError);
+        return;
+    }
+
+    // Validate WhatsApp if provided
+    if (formData.nmr_whatsapp && !validateWhatsapp(formData.nmr_whatsapp)) {
+        setUpdateError(whatsappError);
         return;
     }
 
@@ -2116,7 +2481,29 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
             </div>
           </div>
 
-          {/* Row 3: City and Address */}
+          {/* Row 3: WhatsApp Number */}
+          <div className="form-row">
+            <div className="form-group">
+              <label>WhatsApp <span className="optional">(optionnel)</span></label>
+              <div className="input-with-icon">
+                <MessageCircle size={20} className="input-icon" />
+                <input
+                  type="text"
+                  name="nmr_whatsapp"
+                  value={formData.nmr_whatsapp}
+                  onChange={handleInputChange}
+                  placeholder="10 chiffres"
+                  maxLength="10"
+                  pattern="[0-9]{10}"
+                  className={whatsappError ? "input-error" : ""}
+                />
+              </div>
+              {whatsappError && <small className="error-hint">{whatsappError}</small>}
+              <small className="field-hint">Numéro WhatsApp du client (optionnel)</small>
+            </div>
+          </div>
+
+          {/* Row 4: City and Address */}
           <div className="form-row">
             <div className="form-group">
               <label>Ville <span className="required">*</span></label>
@@ -2140,7 +2527,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
             </div>
           </div>
 
-          {/* Row 4: Statuses */}
+          {/* Row 5: Statuses */}
           <div className="form-row">
             <div className="form-group">
               <label>Statut principal</label>
@@ -2187,7 +2574,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
             </div>
           </div>
 
-          {/* Row 5: Book Selector - takes full width */}
+          {/* Row 6: Book Selector - takes full width */}
           <div className="form-group full-width">
             <label>Livres <span className="required">*</span></label>
             <BookSelector 
@@ -2197,7 +2584,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
             />
           </div>
 
-          {/* Row 6: Quantity and Parcel Price */}
+          {/* Row 7: Quantity and Parcel Price */}
           <div className="form-row">
             <div className="form-group">
               <label>Quantité totale</label>
@@ -2236,7 +2623,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
             </div>
           </div>
 
-          {/* Row 7: Delivery Fee and Packaging Fee */}
+          {/* Row 8: Delivery Fee and Packaging Fee */}
           <div className="form-row">
             <div className="form-group">
               <label>Frais livraison</label>
@@ -2271,7 +2658,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
             </div>
           </div>
 
-          {/* Row 8: Total and Profit */}
+          {/* Row 9: Total and Profit */}
           <div className="form-row">
             <div className="form-group">
               <label>Total livres</label>
@@ -2308,7 +2695,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
             </div>
           </div>
 
-          {/* Row 9: Note */}
+          {/* Row 10: Note */}
           <div className="form-group full-width">
             <label>Note</label>
             <textarea
@@ -2320,7 +2707,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
             />
           </div>
 
-          {/* Row 10: Checkbox */}
+          {/* Row 11: Checkbox */}
           <div className="form-checkbox">
             <input
               type="checkbox"
@@ -2522,6 +2909,116 @@ const WebhookTestPanel = ({ onClose }) => {
   );
 };
 
+// WhatsApp Send Button Component - FIXED: Turns gray after clicking
+const WhatsAppSendButton = ({ order, onSent }) => {
+  const dispatch = useDispatch();
+  const [isSending, setIsSending] = useState(false);
+  
+  const generateWhatsAppMessage = (orderData) => {
+    const trackingLink = `${window.location.origin}/track/${orderData.parcel_code}`;
+    
+    return `*مرحبًا ${orderData.parcel_receiver} 🌸*
+
+*تم تسجيل طلبيتكم 📦 بنجاح✅*
+*رقم الطلبية:*
+ *${orderData.parcel_code}* 
+
+*👤 الاسم:* ${orderData.parcel_receiver}
+*📞 رقم الهاتف:* ${orderData.nmr_whatsapp || orderData.parcel_phone || "-"}
+*📍 العنوان:* ${orderData.parcel_address || "-"}
+*🏙️ المدينة:* ${orderData.parcel_city || "-"}
+             ━━━━━━━━━━━━
+
+*🔗 رابط تتبع الطلبية:*
+${trackingLink}
+
+*📦 يمكنكم متابعة حالة الطلبية في أي وقت بسهولة عبر الرابط أعلاه.*
+
+*​نتمنى أن تصحبكم هذه الطلبية في رحلة ممتعة بين السطور، وأن تنال إعجابكم!* 📖✨
+
+🛎️*نحن دائمًا رهن إشارتكم لأي استفسار.*
+
+*مع خالص الشكر،*
+🌿*فريق مكتبة فانتازيا*🌿`;
+  };
+
+  const handleSendWhatsApp = async () => {
+    // Check if already sent
+    if (order.is_sent) {
+      return;
+    }
+    
+    // Check if WhatsApp number exists
+    if (!order.nmr_whatsapp && !order.parcel_phone) {
+      alert("⚠️ Aucun numéro de téléphone ou WhatsApp disponible pour cette commande.");
+      return;
+    }
+    
+    setIsSending(true);
+    
+    try {
+      // Use WhatsApp number if available, otherwise use regular phone
+      const phoneNumber = order.nmr_whatsapp || order.parcel_phone;
+      
+      // Remove any non-digit characters
+      const cleanNumber = phoneNumber.replace(/\D/g, '');
+      
+      // Ensure number has country code (212 for Morocco)
+      let whatsappNumber = cleanNumber;
+      if (!cleanNumber.startsWith('212') && cleanNumber.length === 10) {
+        whatsappNumber = '212' + cleanNumber.substring(1);
+      } else if (cleanNumber.startsWith('0')) {
+        whatsappNumber = '212' + cleanNumber.substring(1);
+      }
+      
+      const message = generateWhatsAppMessage(order);
+      const encodedMessage = encodeURIComponent(message);
+      
+      // Open WhatsApp Web/App with pre-filled message
+      window.open(`https://wa.me/${whatsappNumber}?text=${encodedMessage}`, '_blank');
+      
+      // Mark as sent in the database
+      await dispatch(markCommandeAsSent({ id: order.id, is_sent: true })).unwrap();
+      
+      // Update the order in the UI by refreshing the orders list
+      if (onSent) {
+        onSent(order.id);
+      }
+      
+      // Also refresh the orders list to update the is_sent status
+      await dispatch(fetchCommandes());
+      
+    } catch (error) {
+      console.error("Error sending WhatsApp message:", error);
+      alert("❌ Une erreur est survenue lors de l'envoi du message WhatsApp.");
+    } finally {
+      setIsSending(false);
+    }
+  };
+  
+  // Determine button color: Green if not sent, Gray if sent
+  const buttonColor = order.is_sent ? '#9ca3af' : '#25D366';
+  
+  return (
+    <button
+      onClick={handleSendWhatsApp}
+      className={`btn-whatsapp-send ${order.is_sent ? 'sent' : ''}`}
+      style={{ 
+        backgroundColor: buttonColor,
+        cursor: order.is_sent ? 'not-allowed' : 'pointer',
+        opacity: order.is_sent ? 0.6 : 1
+      }}
+      disabled={order.is_sent || isSending}
+    >
+      {isSending ? (
+        <Loader size={18} className="spinning" />
+      ) : (
+        <Send size={18} />
+      )}
+    </button>
+  );
+};
+
 // ==============================================
 // MAIN ADMIN ORDERS COMPONENT
 // ==============================================
@@ -2566,7 +3063,35 @@ export default function AdminOrders() {
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, statusFilter]);
-
+  // ✅ READ FILTER FROM DASHBOARD (Add this after the above useEffects)
+useEffect(() => {
+  // Check if there's a filter stored from dashboard
+  const filterType = localStorage.getItem('orders_filter_type');
+  const filterValue = localStorage.getItem('orders_filter_value');
+  const filterLabel = localStorage.getItem('orders_filter_label');
+  
+  if (filterType && filterValue) {
+    // Apply the filter
+    if (filterType === 'statut') {
+      setStatusFilter(filterValue);
+    } else if (filterType === 'statut_second') {
+      setStatusFilter(filterValue);
+    } else if (filterType === 'pending') {
+      // For pending orders, filter by statuses that are not final
+      setStatusFilter('pending');
+    }
+    
+    // Show a notification that filter was applied (optional)
+    console.log(`🔍 Filter applied from dashboard: ${filterLabel}`);
+    
+    // Clear the filters from localStorage after applying
+    setTimeout(() => {
+      localStorage.removeItem('orders_filter_type');
+      localStorage.removeItem('orders_filter_value');
+      localStorage.removeItem('orders_filter_label');
+    }, 1000);
+  }
+}, []);
   const copyTrackingLink = (parcelCode) => {
     const link = `${window.location.origin}/track/${parcelCode}`;
     navigator.clipboard.writeText(link).then(() => {
@@ -2617,26 +3142,32 @@ export default function AdminOrders() {
     await dispatch(createCommande(orderToCreate)).unwrap();
     await dispatch(fetchCommandes());
   };
+  
+  const handleWhatsAppSent = async (orderId) => {
+    // Refresh orders to update the is_sent status
+    await dispatch(fetchCommandes());
+  };
 
-  const filteredOrders = useMemo(() => {
-    const normalizedSearchTerm = normalizeArabicText(searchTerm);
+const filteredOrders = useMemo(() => {
+  const normalizedSearchTerm = normalizeArabicText(searchTerm);
+  
+  return orderList.filter(order => {
+    const matchesSearch = searchTerm === "" || 
+      normalizeArabicText(order.parcel_code || "").includes(normalizedSearchTerm) ||
+      normalizeArabicText(order.parcel_receiver || "").includes(normalizedSearchTerm) ||
+      normalizeArabicText(order.parcel_city || "").includes(normalizedSearchTerm) ||
+      normalizeArabicText(order.parcel_phone || "").includes(normalizedSearchTerm) ||
+      normalizeArabicText(order.nmr_whatsapp || "").includes(normalizedSearchTerm);
     
-    return orderList.filter(order => {
-      const matchesSearch = searchTerm === "" || 
-        normalizeArabicText(order.parcel_code || "").includes(normalizedSearchTerm) ||
-        normalizeArabicText(order.parcel_receiver || "").includes(normalizedSearchTerm) ||
-        normalizeArabicText(order.parcel_city || "").includes(normalizedSearchTerm) ||
-        normalizeArabicText(order.parcel_phone || "").includes(normalizedSearchTerm);
-      
-      const matchesStatus = statusFilter === "all" || 
-        order.statut === statusFilter || 
-        order.statut_second === statusFilter;
-      
-      return matchesSearch && matchesStatus;
-    }).sort((a, b) => {
-      return new Date(b.date || 0) - new Date(a.date || 0);
-    });
-  }, [orderList, searchTerm, statusFilter]);
+    const matchesStatus = statusFilter === "all" || 
+      order.statut === statusFilter || 
+      order.statut_second === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  }).sort((a, b) => {
+    return new Date(b.date || 0) - new Date(a.date || 0);
+  });
+}, [orderList, searchTerm, statusFilter]);
 
   const currentOrders = useMemo(() => {
     const indexOfLastItem = currentPage * itemsPerPage;
@@ -2836,6 +3367,75 @@ export default function AdminOrders() {
     );
   }
 
+  // Helper function to generate consistent colors for cities
+  const getCityColor = (cityName) => {
+    if (!cityName) return '#6b7280';
+    
+    // Predefined color palette for common cities
+    const cityColorMap = {
+      'Casablanca': '#3b82f6',
+      'Rabat': '#10b981',
+      'Marrakech': '#ef4444',
+      'Fès': '#f59e0b',
+      'Tanger': '#8b5cf6',
+      'Agadir': '#ec4898',
+      'Meknès': '#14b8a6',
+      'Oujda': '#f97316',
+      'Kenitra': '#06b6d4',
+      'Tétouan': '#84cc16',
+      'Safi': '#a855f7',
+      'El Jadida': '#22c55e',
+      'Nador': '#eab308',
+      'Beni Mellal': '#d946ef',
+      'Khouribga': '#f43f5e',
+      'Taza': '#0ea5e9',
+      'Settat': '#64748b',
+      'Larache': '#78716c',
+      'Khenifra': '#b45309',
+      'Guelmim': '#4f46e5',
+      'Essaouira': '#db2777',
+      'Laâyoune': '#ca8a04',
+      'Dakhla': '#16a34a',
+    };
+    
+    // Check if we have a predefined color for this city (case-insensitive)
+    const normalizedCity = cityName.trim().toLowerCase();
+    for (const [key, color] of Object.entries(cityColorMap)) {
+      if (normalizedCity === key.toLowerCase()) {
+        return color;
+      }
+    }
+    
+    // Generate a deterministic color based on city name hash
+    let hash = 0;
+    for (let i = 0; i < cityName.length; i++) {
+      hash = ((hash << 5) - hash) + cityName.charCodeAt(i);
+      hash |= 0;
+    }
+    
+    // Use a set of vibrant colors
+    const vibrantColors = [
+      '#3b82f6', '#10b981', '#ef4444', '#f59e0b', '#8b5cf6',
+      '#ec4898', '#14b8a6', '#f97316', '#06b6d4', '#84cc16',
+      '#a855f7', '#22c55e', '#eab308', '#d946ef', '#f43f5e',
+      '#0ea5e9', '#64748b', '#78716c', '#b45309', '#4f46e5',
+      '#db2777', '#ca8a04', '#16a34a', '#0284c7', '#059669'
+    ];
+    
+    const colorIndex = Math.abs(hash) % vibrantColors.length;
+    return vibrantColors[colorIndex];
+  };
+
+  // Format phone number for better display
+  const formatPhoneNumber = (phone) => {
+    if (!phone) return '-';
+    const phoneStr = String(phone).replace(/\D/g, '');
+    if (phoneStr.length === 10) {
+      return `${phoneStr.slice(0, 5)} ${phoneStr.slice(5)}`;
+    }
+    return phoneStr;
+  };
+
   // Default: List view
   return (
     <div className="admin-orders">
@@ -2922,7 +3522,7 @@ export default function AdminOrders() {
           <Search size={18} className="search-icon" />
           <input
             type="text"
-            placeholder="Rechercher par code, client, ville ou téléphone..."
+            placeholder="Rechercher par code, client, ville, téléphone ou WhatsApp..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="search-input"
@@ -2981,7 +3581,6 @@ export default function AdminOrders() {
           </button>
         </div>
       )}
-
       {/* Orders Table - Using database statuses (no API calls) */}
       {filteredOrders.length > 0 && (
         <>
@@ -2992,6 +3591,7 @@ export default function AdminOrders() {
                   <th>Code</th>
                   <th>Client</th>
                   <th>Téléphone</th>
+                  <th>WhatsApp</th>
                   <th>Quantité</th>
                   <th>Ville</th>
                   <th>Statut Livraison</th>
@@ -3018,9 +3618,35 @@ export default function AdminOrders() {
                     <tr key={order.id} className={order.profit < 0 ? 'negative-profit-row' : ''}>
                       <td className="order-code">{order.parcel_code || "-"}</td>
                       <td className="order-client">{order.parcel_receiver || "-"}</td>
-                      <td>{order.parcel_phone || "-"}</td>
+                      <td className="order-phone">
+                        <div className="phone-number-cell">
+                          <Phone size={14} className="phone-icon" />
+                          <span className="phone-number">{formatPhoneNumber(order.parcel_phone)}</span>
+                        </div>
+                      </td>
+                      <td className="order-whatsapp">
+                        {order.nmr_whatsapp ? (
+                          <div className="whatsapp-number-cell">
+                            <MessageCircle size={14} className="whatsapp-icon" />
+                            <span className="whatsapp-number">{formatPhoneNumber(order.nmr_whatsapp)}</span>
+                          </div>
+                        ) : (
+                          <span className="no-whatsapp">-</span>
+                        )}
+                      </td>
                       <td className="order-qty">{order.parcel_prd_qty || 0}</td>
-                      <td>{order.parcel_city || "-"}</td>
+                      <td className="orders-citys">
+                        <span 
+                          className="city-badge"
+                          style={{ 
+                            backgroundColor: `${getCityColor(order.parcel_city)}15`,
+                            color: getCityColor(order.parcel_city),
+                            border: `1px solid ${getCityColor(order.parcel_city)}30`
+                          }}
+                        >
+                          {order.parcel_city || "-"}
+                        </span>
+                      </td>
                       <td>
                         <div className="status-container">
                           <span 
@@ -3071,31 +3697,32 @@ export default function AdminOrders() {
                           <button
                             onClick={() => handleViewDetails(order)}
                             className="btn-icon view"
-                            title="Voir détails avec suivi en temps réel"
                           >
                             <Eye size={16} />
                           </button>
                           <button
                             onClick={() => handleEdit(order)}
                             className="btn-icon edit"
-                            title="Modifier la commande"
+                            
                           >
                             <Pencil size={16} />
                           </button>
                           <button
                             onClick={() => handleDelete(order)}
                             className="btn-icon delete"
-                            title="Supprimer"
                           >
                             <Trash2 size={16} />
                           </button>
                           <button
                             onClick={() => copyTrackingLink(order.parcel_code)}
                             className="btn-icon copy"
-                            title="Copier le lien de suivi"
                           >
                             <Copy size={16} />
                           </button>
+                          <WhatsAppSendButton 
+                            order={order} 
+                            onSent={handleWhatsAppSent}
+                          />
                         </div>
                       </td>
                     </tr>

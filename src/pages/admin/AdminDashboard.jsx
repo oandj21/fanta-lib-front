@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { 
   BookOpen, 
   ShoppingCart, 
@@ -13,7 +14,7 @@ import {
   XCircle,
   RefreshCw,
   AlertCircle,
-  PieChart as PieChartIcon,
+  PieChart,
   BarChart3,
   CreditCard,
   PackageX,
@@ -32,7 +33,7 @@ import {
   ChevronLeft,
   ChevronRight
 } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Area, LineChart, Line, PieChart as RePieChart, Pie, Cell } from "recharts";
 import axios from "axios";
 import { 
   fetchDashboardStats, 
@@ -82,6 +83,7 @@ const getStatusColor = (status) => {
   if (status === 'ENVG' || statusLower.includes('en voyage')) return '#0891b2';
   if (status === 'RETURN_BY_AMANA' || statusLower.includes('retour amana')) return '#b91c1c';
   if (status === 'SENT_BY_AMANA' || statusLower.includes('envoyé amana')) return '#1e40af';
+  if (status === 'CANCELED' || statusLower.includes('annulé')) return '#6b7280';
   
   // Payment statuses
   if (statusLower.includes('payé') || statusLower.includes('paid')) return '#10b981';
@@ -102,6 +104,7 @@ const statusLabels = {
   'DELIVERED': 'Livré',
   'RETURNED': 'Retourné',
   'CANCELLED': 'Annulé',
+  'CANCELED': 'Annulé',
   'WAITING_PICKUP': 'En attente',
   'RECEIVED': 'Reçu',
   'REFUSE': 'Refusé',
@@ -128,6 +131,7 @@ const statusIcons = {
   'DELIVERED': PackageCheck,
   'RETURNED': PackageX,
   'CANCELLED': XCircle,
+  'CANCELED': XCircle,
   'WAITING_PICKUP': Clock,
   'RECEIVED': PackageCheck,
   'REFUSE': XCircle,
@@ -190,7 +194,7 @@ const isStatusInProgress = (status) => {
   
   const finalKeywords = [
     'livré', 'delivered', 'retourné', 'returned', 'annulé', 'cancelled',
-    'DELIVERED', 'RETURNED', 'CANCELLED', 'RETURN_BY_AMANA', 'SENT_BY_AMANA'
+    'DELIVERED', 'RETURNED', 'CANCELLED', 'CANCELED', 'RETURN_BY_AMANA', 'SENT_BY_AMANA'
   ];
   
   const isInProgress = inProgressKeywords.some(keyword => 
@@ -206,15 +210,17 @@ const isStatusInProgress = (status) => {
 
 export default function AdminDashboard() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   
   const stats = useSelector(selectDashboardStats);
   const monthlyStats = useSelector(selectMonthlyStats);
   const commandes = useSelector(selectCommandes);
   const depenses = useSelector(selectDepenses);
 
-  // Month/Year selection state
+  // Date selection state - Added day selection
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [selectedDay, setSelectedDay] = useState(null); // null means "All days", otherwise specific day
   
   const [trackingInfoMap, setTrackingInfoMap] = useState({});
   const [loadingTracking, setLoadingTracking] = useState({});
@@ -242,6 +248,22 @@ export default function AdminDashboard() {
     "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
   ];
 
+  // Get number of days in selected month
+  const getDaysInMonth = (year, month) => {
+    return new Date(year, month, 0).getDate();
+  };
+
+  // Generate days array for selected month
+  const availableDays = useMemo(() => {
+    if (!selectedYear || !selectedMonth) return [];
+    const daysCount = getDaysInMonth(selectedYear, selectedMonth);
+    const days = [];
+    for (let i = 1; i <= daysCount; i++) {
+      days.push(i);
+    }
+    return days;
+  }, [selectedYear, selectedMonth]);
+
   // Navigate to previous month
   const goToPreviousMonth = () => {
     if (selectedMonth === 1) {
@@ -250,6 +272,7 @@ export default function AdminDashboard() {
     } else {
       setSelectedMonth(selectedMonth - 1);
     }
+    setSelectedDay(null); // Reset day selection when month changes
   };
 
   // Navigate to next month
@@ -260,28 +283,55 @@ export default function AdminDashboard() {
     } else {
       setSelectedMonth(selectedMonth + 1);
     }
+    setSelectedDay(null); // Reset day selection when month changes
   };
 
-  // Filter data by selected month/year
+  // Filter data by selected month/year/day
   const filteredCommandes = useMemo(() => {
     if (!commandes || commandes.length === 0) return [];
     
     return commandes.filter(commande => {
       const commandeDate = new Date(commande.date || commande.created_at);
-      return commandeDate.getMonth() + 1 === selectedMonth && 
-             commandeDate.getFullYear() === selectedYear;
+      const commandeYear = commandeDate.getFullYear();
+      const commandeMonth = commandeDate.getMonth() + 1;
+      
+      // First filter by year and month
+      if (commandeYear !== selectedYear || commandeMonth !== selectedMonth) {
+        return false;
+      }
+      
+      // Then filter by day if a specific day is selected
+      if (selectedDay !== null) {
+        const commandeDay = commandeDate.getDate();
+        return commandeDay === selectedDay;
+      }
+      
+      return true;
     });
-  }, [commandes, selectedMonth, selectedYear]);
+  }, [commandes, selectedMonth, selectedYear, selectedDay]);
 
   const filteredDepenses = useMemo(() => {
     if (!depenses || depenses.length === 0) return [];
     
     return depenses.filter(depense => {
       const depenseDate = new Date(depense.date || depense.created_at);
-      return depenseDate.getMonth() + 1 === selectedMonth && 
-             depenseDate.getFullYear() === selectedYear;
+      const depenseYear = depenseDate.getFullYear();
+      const depenseMonth = depenseDate.getMonth() + 1;
+      
+      // First filter by year and month
+      if (depenseYear !== selectedYear || depenseMonth !== selectedMonth) {
+        return false;
+      }
+      
+      // Then filter by day if a specific day is selected
+      if (selectedDay !== null) {
+        const depenseDay = depenseDate.getDate();
+        return depenseDay === selectedDay;
+      }
+      
+      return true;
     });
-  }, [depenses, selectedMonth, selectedYear]);
+  }, [depenses, selectedMonth, selectedYear, selectedDay]);
 
   // Load notifications from localStorage
   useEffect(() => {
@@ -435,7 +485,7 @@ export default function AdminDashboard() {
     };
   };
 
-  // Calculate statistics for filtered month
+  // Calculate statistics for filtered period (month or specific day)
   const commandesStats = useMemo(() => {
     if (!filteredCommandes || filteredCommandes.length === 0) {
       return {
@@ -535,7 +585,7 @@ export default function AdminDashboard() {
       else if (secondaryUpper === 'RETURN_BY_AMANA' || secondaryUpper.includes('RETOUR AMANA')) stats.return_by_amana++;
       else if (secondaryUpper === 'SENT_BY_AMANA' || secondaryUpper.includes('ENVOYÉ AMANA')) stats.sent_by_amana++;
 
-      const finalStates = ['DELIVERED', 'LIVRÉ', 'RETURNED', 'RETOURNÉ', 'CANCELLED', 'ANNULÉ'];
+      const finalStates = ['DELIVERED', 'LIVRÉ', 'RETURNED', 'RETOURNÉ', 'CANCELLED', 'ANNULÉ', 'CANCELED'];
       if (!finalStates.includes(statusUpper)) {
         stats.pending++;
       }
@@ -557,8 +607,8 @@ export default function AdminDashboard() {
     return stats;
   }, [filteredCommandes, trackingInfoMap]);
 
-  // Monthly summary for the selected month
-  const selectedMonthStats = useMemo(() => {
+  // Monthly summary for the selected period
+  const selectedPeriodStats = useMemo(() => {
     const totalDepenses = filteredDepenses.reduce((sum, d) => sum + (Number(d.montant) || 0), 0);
     
     return {
@@ -569,7 +619,70 @@ export default function AdminDashboard() {
     };
   }, [filteredDepenses, commandesStats]);
 
-  // Recent orders for selected month
+  // Generate daily cumulative data for the chart
+  const dailyChartData = useMemo(() => {
+    const daysInMonth = getDaysInMonth(selectedYear, selectedMonth);
+    const dailyData = [];
+    
+    for (let day = 1; day <= daysInMonth; day++) {
+      // Get commandes and depenses for this specific day
+      const dayCommandes = filteredCommandes.filter(commande => {
+        const commandeDate = new Date(commande.date || commande.created_at);
+        return commandeDate.getDate() === day;
+      });
+      
+      const dayDepenses = filteredDepenses.filter(depense => {
+        const depenseDate = new Date(depense.date || depense.created_at);
+        return depenseDate.getDate() === day;
+      });
+      
+      // Calculate cumulative profit and expenses up to this day
+      let cumulativeProfit = 0;
+      let cumulativeExpenses = 0;
+      
+      // Sum all profits from day 1 to current day
+      for (let d = 1; d <= day; d++) {
+        const dayCommandesCumulative = filteredCommandes.filter(commande => {
+          const commandeDate = new Date(commande.date || commande.created_at);
+          return commandeDate.getDate() === d;
+        });
+        
+        const dayDepensesCumulative = filteredDepenses.filter(depense => {
+          const depenseDate = new Date(depense.date || depense.created_at);
+          return depenseDate.getDate() === d;
+        });
+        
+        cumulativeProfit += dayCommandesCumulative.reduce((sum, cmd) => sum + (Number(cmd.profit) || 0), 0);
+        cumulativeExpenses += dayDepensesCumulative.reduce((sum, dep) => sum + (Number(dep.montant) || 0), 0);
+      }
+      
+      dailyData.push({
+        day: day,
+        date: `${day}/${selectedMonth}/${selectedYear}`,
+        profit: cumulativeProfit,
+        depenses: cumulativeExpenses,
+        dailyProfit: dayCommandes.reduce((sum, cmd) => sum + (Number(cmd.profit) || 0), 0),
+        dailyExpenses: dayDepenses.reduce((sum, dep) => sum + (Number(dep.montant) || 0), 0),
+        orderCount: dayCommandes.length
+      });
+    }
+    
+    // If a specific day is selected, only show data up to that day
+    if (selectedDay !== null) {
+      return dailyData.filter(d => d.day <= selectedDay);
+    }
+    
+    // If current month is selected, only show days up to today
+    const currentDate = new Date();
+    const isCurrentMonth = selectedYear === currentDate.getFullYear() && selectedMonth === currentDate.getMonth() + 1;
+    if (isCurrentMonth) {
+      return dailyData.filter(d => d.day <= currentDate.getDate());
+    }
+    
+    return dailyData;
+  }, [filteredCommandes, filteredDepenses, selectedYear, selectedMonth, selectedDay]);
+
+  // Recent orders for selected period
   const recentOrders = useMemo(() => {
     if (!filteredCommandes || filteredCommandes.length === 0) return [];
     
@@ -578,11 +691,11 @@ export default function AdminDashboard() {
       .slice(0, 10);
   }, [filteredCommandes]);
 
-  // Financial cards for selected month
+  // Financial cards for selected period
   const financialCards = [
     { 
       title: "Total dépenses", 
-      value: selectedMonthStats.depenses, 
+      value: selectedPeriodStats.depenses, 
       icon: DollarSign,
       color: "danger",
       trend: `${filteredDepenses.length} dépenses`
@@ -603,68 +716,117 @@ export default function AdminDashboard() {
     },
     { 
       title: "Revenu net", 
-      value: selectedMonthStats.net,
+      value: selectedPeriodStats.net,
       icon: BookOpen,
-      color: selectedMonthStats.net >= 0 ? "success" : "danger",
-      trend: selectedMonthStats.net >= 0 ? "Positif" : "Négatif"
+      color: selectedPeriodStats.net >= 0 ? "success" : "danger",
+      trend: selectedPeriodStats.net >= 0 ? "Positif" : "Négatif"
     },
   ];
 
-  // All status cards
+  // All status cards with click handlers
   const commandesStatusCards = [
-    { title: "Total Commandes", value: commandesStats.total, icon: ShoppingCart, color: "primary" },
-    { title: "Nouveaux", value: commandesStats.new_parcel, icon: Clock, color: "info" },
-    { title: "Confirmés", value: commandesStats.parcel_confirmed, icon: CheckCircle, color: "success" },
-    { title: "Ramassés", value: commandesStats.picked_up, icon: Package, color: "purple" },
-    { title: "Distribution", value: commandesStats.distribution, icon: Truck, color: "warning" },
-    { title: "En cours", value: commandesStats.in_progress, icon: RefreshCw, color: "warning" },
-    { title: "Expédiés", value: commandesStats.sent, icon: Truck, color: "info" },
-    { title: "Livrés", value: commandesStats.delivered, icon: PackageCheck, color: "success" },
-    { title: "Retournés", value: commandesStats.returned, icon: PackageX, color: "danger" },
-    { title: "Annulés", value: commandesStats.cancelled, icon: XCircle, color: "secondary" },
-    { title: "En attente", value: commandesStats.waiting_pickup, icon: Clock, color: "warning" },
-    { title: "Reçus", value: commandesStats.received, icon: PackageCheck, color: "success" },
-    { title: "Refusés", value: commandesStats.refuse, icon: XCircle, color: "danger" },
-    { title: "Pas de réponse", value: commandesStats.noanswer, icon: Clock, color: "warning" },
-    { title: "Injoignables", value: commandesStats.unreachable, icon: AlertCircle, color: "danger" },
-    { title: "Hors zone", value: commandesStats.hors_zone, icon: MapPin, color: "purple" },
-    { title: "Reportés", value: commandesStats.postponed, icon: Clock, color: "warning" },
-    { title: "Programmés", value: commandesStats.programmer, icon: Calendar, color: "info" },
-    { title: "2ème tentative", value: commandesStats.deux, icon: RefreshCw, color: "warning" },
-    { title: "3ème tentative", value: commandesStats.trois, icon: RefreshCw, color: "warning" },
-    { title: "En voyage", value: commandesStats.envg, icon: Truck, color: "info" },
-    { title: "Retour Amana", value: commandesStats.return_by_amana, icon: PackageX, color: "danger" },
-    { title: "Envoyé Amana", value: commandesStats.sent_by_amana, icon: Package, color: "purple" },
-    { title: "En attente (total)", value: commandesStats.pending, icon: Clock, color: "warning" }
+    { title: "Total Commandes", value: commandesStats.total, icon: ShoppingCart, color: "primary", filterKey: "total", filterValue: null },
+    { title: "Nouveaux", value: commandesStats.new_parcel, icon: Clock, color: "info", filterKey: "statut", filterValue: "NEW_PARCEL" },
+    { title: "Confirmés", value: commandesStats.parcel_confirmed, icon: CheckCircle, color: "success", filterKey: "statut", filterValue: "PARCEL_CONFIRMED" },
+    { title: "Ramassés", value: commandesStats.picked_up, icon: Package, color: "purple", filterKey: "statut", filterValue: "PICKED_UP" },
+    { title: "Distribution", value: commandesStats.distribution, icon: Truck, color: "warning", filterKey: "statut", filterValue: "DISTRIBUTION" },
+    { title: "En cours", value: commandesStats.in_progress, icon: RefreshCw, color: "warning", filterKey: "statut", filterValue: "IN_PROGRESS" },
+    { title: "Expédiés", value: commandesStats.sent, icon: Truck, color: "info", filterKey: "statut", filterValue: "SENT" },
+    { title: "Livrés", value: commandesStats.delivered, icon: PackageCheck, color: "success", filterKey: "statut", filterValue: "DELIVERED" },
+    { title: "Retournés", value: commandesStats.returned, icon: PackageX, color: "danger", filterKey: "statut", filterValue: "RETURNED" },
+    { title: "Annulés", value: commandesStats.cancelled, icon: XCircle, color: "secondary", filterKey: "statut", filterValue: "CANCELLED" },
+    { title: "En attente", value: commandesStats.waiting_pickup, icon: Clock, color: "warning", filterKey: "statut", filterValue: "WAITING_PICKUP" },
+    { title: "Reçus", value: commandesStats.received, icon: PackageCheck, color: "success", filterKey: "statut", filterValue: "RECEIVED" },
+    { title: "Refusés", value: commandesStats.refuse, icon: XCircle, color: "danger", filterKey: "statut_second", filterValue: "REFUSE" },
+    { title: "Pas de réponse", value: commandesStats.noanswer, icon: Clock, color: "warning", filterKey: "statut_second", filterValue: "NOANSWER" },
+    { title: "Injoignables", value: commandesStats.unreachable, icon: AlertCircle, color: "danger", filterKey: "statut_second", filterValue: "UNREACHABLE" },
+    { title: "Hors zone", value: commandesStats.hors_zone, icon: MapPin, color: "purple", filterKey: "statut_second", filterValue: "HORS_ZONE" },
+    { title: "Reportés", value: commandesStats.postponed, icon: Clock, color: "warning", filterKey: "statut_second", filterValue: "POSTPONED" },
+    { title: "Programmés", value: commandesStats.programmer, icon: Calendar, color: "info", filterKey: "statut_second", filterValue: "PROGRAMMER" },
+    { title: "2ème tentative", value: commandesStats.deux, icon: RefreshCw, color: "warning", filterKey: "statut_second", filterValue: "DEUX" },
+    { title: "3ème tentative", value: commandesStats.trois, icon: RefreshCw, color: "warning", filterKey: "statut_second", filterValue: "TROIS" },
+    { title: "En voyage", value: commandesStats.envg, icon: Truck, color: "info", filterKey: "statut_second", filterValue: "ENVG" },
+    { title: "Retour Amana", value: commandesStats.return_by_amana, icon: PackageX, color: "danger", filterKey: "statut_second", filterValue: "RETURN_BY_AMANA" },
+    { title: "Envoyé Amana", value: commandesStats.sent_by_amana, icon: Package, color: "purple", filterKey: "statut_second", filterValue: "SENT_BY_AMANA" },
+    { title: "En attente (total)", value: commandesStats.pending, icon: Clock, color: "warning", filterKey: "pending", filterValue: "pending" }
   ].filter(card => card.value > 0);
 
-  // Pie chart data
+  // Handle card click to navigate to orders page with filter
+  const handleStatusCardClick = (card) => {
+    // Store filter in localStorage to persist across navigation
+    if (card.filterKey && card.filterValue) {
+      localStorage.setItem('orders_filter_type', card.filterKey);
+      localStorage.setItem('orders_filter_value', card.filterValue);
+      localStorage.setItem('orders_filter_label', card.title);
+    } else if (card.filterKey === "pending") {
+      localStorage.setItem('orders_filter_type', 'pending');
+      localStorage.setItem('orders_filter_value', 'pending');
+      localStorage.setItem('orders_filter_label', card.title);
+    } else {
+      // For total commandes, clear filters
+      localStorage.removeItem('orders_filter_type');
+      localStorage.removeItem('orders_filter_value');
+      localStorage.removeItem('orders_filter_label');
+    }
+    
+    // Navigate to orders page
+    navigate('/orders');
+  };
+
+  // Pie chart data - Simplified version
   const pieChartData = useMemo(() => {
+    if (!filteredCommandes || filteredCommandes.length === 0) {
+      console.log('No filtered commandes for pie chart');
+      return [];
+    }
+    
     const statusCounts = {};
     
     filteredCommandes.forEach(commande => {
-      const tracking = getTrackingStatus(commande.parcel_code);
-      const deliveryStatus = tracking?.deliveryStatus || commande.statut;
-      const secondaryStatus = tracking?.secondaryStatus || commande.statut_second;
+      // Get the main status (prioritize delivery status)
+      let mainStatus = commande.statut || commande.status || 'UNKNOWN';
       
-      if (deliveryStatus && deliveryStatus !== '') {
-        statusCounts[deliveryStatus] = (statusCounts[deliveryStatus] || 0) + 1;
+      // If we have tracking info, use that instead
+      const tracking = trackingInfoMap[commande.parcel_code];
+      if (tracking && tracking.parcel) {
+        mainStatus = tracking.parcel.delivery_status || mainStatus;
       }
-      if (secondaryStatus && secondaryStatus !== '') {
-        const statusKey = `${secondaryStatus} (secondaire)`;
-        statusCounts[statusKey] = (statusCounts[statusKey] || 0) + 1;
-      }
+      
+      // Clean up the status
+      let cleanStatus = mainStatus.toUpperCase();
+      
+      // Map common status variations
+      if (cleanStatus.includes('LIVR') || cleanStatus === 'DELIVERED') cleanStatus = 'DELIVERED';
+      else if (cleanStatus.includes('RETOUR') || cleanStatus === 'RETURNED') cleanStatus = 'RETURNED';
+      else if (cleanStatus.includes('ANNUL') || cleanStatus === 'CANCELLED' || cleanStatus === 'CANCELED') cleanStatus = 'CANCELLED';
+      else if (cleanStatus.includes('NOUVEAU') || cleanStatus === 'NEW_PARCEL') cleanStatus = 'NEW_PARCEL';
+      else if (cleanStatus.includes('CONFIRM') || cleanStatus === 'PARCEL_CONFIRMED') cleanStatus = 'PARCEL_CONFIRMED';
+      else if (cleanStatus.includes('RAMASS') || cleanStatus === 'PICKED_UP') cleanStatus = 'PICKED_UP';
+      else if (cleanStatus.includes('DISTRIB') || cleanStatus === 'DISTRIBUTION') cleanStatus = 'DISTRIBUTION';
+      else if (cleanStatus.includes('EN COURS') || cleanStatus === 'IN_PROGRESS') cleanStatus = 'IN_PROGRESS';
+      else if (cleanStatus.includes('EXPEDI') || cleanStatus === 'SENT') cleanStatus = 'SENT';
+      else if (cleanStatus.includes('ATTENTE') || cleanStatus === 'WAITING_PICKUP') cleanStatus = 'WAITING_PICKUP';
+      else if (cleanStatus.includes('REÇU') || cleanStatus === 'RECEIVED') cleanStatus = 'RECEIVED';
+      
+      // Count the status
+      statusCounts[cleanStatus] = (statusCounts[cleanStatus] || 0) + 1;
     });
     
-    return Object.entries(statusCounts)
+    console.log('Status counts for pie chart:', statusCounts);
+    
+    // Convert to array format for pie chart
+    const pieData = Object.entries(statusCounts)
       .map(([name, value]) => ({
-        name,
-        value,
-        color: PIE_COLORS[name.split(' ')[0]] || getStatusColor(name.split(' ')[0])
+        name: name,
+        value: value,
+        color: PIE_COLORS[name] || getStatusColor(name)
       }))
       .filter(item => item.value > 0)
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 8);
+      .sort((a, b) => b.value - a.value);
+    
+    console.log('Final pie chart data:', pieData);
+    
+    return pieData;
   }, [filteredCommandes, trackingInfoMap]);
 
   // Unique statuses for filter
@@ -719,17 +881,26 @@ export default function AdminDashboard() {
     }
   };
 
+  const getPeriodDisplayText = () => {
+    if (selectedDay) {
+      return `${selectedDay} ${monthNames[selectedMonth - 1]} ${selectedYear}`;
+    }
+    return `${monthNames[selectedMonth - 1]} ${selectedYear}`;
+  };
+
   const exportToExcel = () => {
     try {
+      const periodText = getPeriodDisplayText();
+      
       const financialData = [
-        [`Tableau de bord - ${monthNames[selectedMonth - 1]} ${selectedYear}`],
+        [`Tableau de bord - ${periodText}`],
         [],
         ['Aperçu Financier'],
         ['Métrique', 'Valeur (MAD)'],
-        ['Total dépenses', selectedMonthStats.depenses || 0],
+        ['Total dépenses', selectedPeriodStats.depenses || 0],
         ['Profit total', commandesStats.totalProfit],
         ['Total des ventes', commandesStats.totalSales],
-        ['Revenu net', selectedMonthStats.net],
+        ['Revenu net', selectedPeriodStats.net],
         [],
         ['Statistiques des Commandes'],
         ['Statut', 'Nombre'],
@@ -763,8 +934,8 @@ export default function AdminDashboard() {
 
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.aoa_to_sheet(financialData);
-      XLSX.utils.book_append_sheet(wb, ws, `Dashboard_${monthNames[selectedMonth - 1]}_${selectedYear}`);
-      XLSX.writeFile(wb, `dashboard_${monthNames[selectedMonth - 1]}_${selectedYear}.xlsx`);
+      XLSX.utils.book_append_sheet(wb, ws, `Dashboard_${periodText.replace(/ /g, '_')}`);
+      XLSX.writeFile(wb, `dashboard_${periodText.replace(/ /g, '_')}.xlsx`);
       
     } catch (error) {
       console.error('Error generating Excel:', error);
@@ -774,12 +945,13 @@ export default function AdminDashboard() {
 
   const exportToPDF = () => {
     try {
+      const periodText = getPeriodDisplayText();
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
       
       doc.setFontSize(20);
       doc.setTextColor(92, 2, 2);
-      doc.text(`Tableau de bord - ${monthNames[selectedMonth - 1]} ${selectedYear}`, pageWidth / 2, 20, { align: 'center' });
+      doc.text(`Tableau de bord - ${periodText}`, pageWidth / 2, 20, { align: 'center' });
       
       doc.setFontSize(10);
       doc.setTextColor(100, 100, 100);
@@ -791,10 +963,10 @@ export default function AdminDashboard() {
       
       const financialData = [
         ['Métrique', 'Valeur (MAD)'],
-        ['Total dépenses', `${selectedMonthStats.depenses.toLocaleString()} DH`],
+        ['Total dépenses', `${selectedPeriodStats.depenses.toLocaleString()} DH`],
         ['Profit total', `${commandesStats.totalProfit.toLocaleString()} DH`],
         ['Total des ventes', `${commandesStats.totalSales.toLocaleString()} DH`],
-        ['Revenu net', `${selectedMonthStats.net.toLocaleString()} DH`]
+        ['Revenu net', `${selectedPeriodStats.net.toLocaleString()} DH`]
       ];
 
       autoTable(doc, {
@@ -863,7 +1035,7 @@ export default function AdminDashboard() {
         styles: { fontSize: 9 }
       });
 
-      doc.save(`dashboard_${monthNames[selectedMonth - 1]}_${selectedYear}.pdf`);
+      doc.save(`dashboard_${periodText.replace(/ /g, '_')}.pdf`);
       
     } catch (error) {
       console.error('Error generating PDF:', error);
@@ -922,7 +1094,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Month/Year Selection Panel */}
+      {/* Month/Year/Day Selection Panel */}
       <div className="month-selector-panel">
         <div className="month-selector-content">
           <button onClick={goToPreviousMonth} className="month-nav-btn">
@@ -933,7 +1105,10 @@ export default function AdminDashboard() {
             <Calendar size={20} className="calendar-icon" />
             <select 
               value={selectedMonth} 
-              onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+              onChange={(e) => {
+                setSelectedMonth(parseInt(e.target.value));
+                setSelectedDay(null);
+              }}
               className="month-select"
             >
               {monthNames.map((month, index) => (
@@ -942,13 +1117,42 @@ export default function AdminDashboard() {
             </select>
             <select 
               value={selectedYear} 
-              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+              onChange={(e) => {
+                setSelectedYear(parseInt(e.target.value));
+                setSelectedDay(null);
+              }}
               className="year-select"
             >
               {availableYears.map(year => (
                 <option key={year} value={year}>{year}</option>
               ))}
             </select>
+            
+            {/* Day Selection Dropdown */}
+            <div className="day-selector-wrapper">
+              <select 
+                value={selectedDay === null ? "" : selectedDay} 
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSelectedDay(value === "" ? null : parseInt(value));
+                }}
+                className="day-select"
+              >
+                <option value="">Tous les jours</option>
+                {availableDays.map(day => (
+                  <option key={day} value={day}>Jour {day}</option>
+                ))}
+              </select>
+              {selectedDay && (
+                <button 
+                  onClick={() => setSelectedDay(null)}
+                  className="clear-day-btn"
+                  title="Afficher tout le mois"
+                >
+                  <XCircle size={14} />
+                </button>
+              )}
+            </div>
           </div>
           
           <button onClick={goToNextMonth} className="month-nav-btn">
@@ -959,7 +1163,7 @@ export default function AdminDashboard() {
         {filteredCommandes.length === 0 && (
           <div className="no-data-message">
             <AlertCircle size={16} />
-            <span>Aucune donnée pour {monthNames[selectedMonth - 1]} {selectedYear}</span>
+            <span>Aucune donnée pour {getPeriodDisplayText()}</span>
           </div>
         )}
       </div>
@@ -996,7 +1200,7 @@ export default function AdminDashboard() {
 
       {/* Financial Stats Cards */}
       <div className="section-title">
-        <h3>Aperçu financier - {monthNames[selectedMonth - 1]} {selectedYear}</h3>
+        <h3>Aperçu financier - {getPeriodDisplayText()}</h3>
       </div>
       <div className="stats-grid">
         {financialCards.map((card) => (
@@ -1018,14 +1222,20 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      {/* Commandes Status Cards */}
+      {/* Commandes Status Cards - CLICKABLE */}
       <div className="section-title" style={{ marginTop: '2rem' }}>
         <h3>Statistiques des commandes</h3>
-        <p>Tous les statuts en temps réel</p>
+        <p>Tous les statuts en temps réel - Cliquez sur une carte pour filtrer les commandes</p>
       </div>
       <div className="stats-grid status-grid">
         {commandesStatusCards.map((card) => (
-          <div key={card.title} className={`stat-card ${card.color}`}>
+          <div 
+            key={card.title} 
+            className={`stat-card ${card.color} clickable`}
+            onClick={() => handleStatusCardClick(card)}
+            style={{ cursor: 'pointer' }}
+            title={`Cliquez pour voir toutes les commandes ${card.title.toLowerCase()}`}
+          >
             <div className="stat-content">
               <p className="stat-title">{card.title}</p>
               <h3 className="stat-value">{card.value}</h3>
@@ -1039,36 +1249,52 @@ export default function AdminDashboard() {
 
       {/* Charts Section */}
       <div className="charts-grid">
-        {/* Monthly Comparison Chart - Single month as bar chart */}
+        {/* Period Summary - TWO LINES CHART with daily progression */}
         <div className="chart-card">
           <div className="chart-header">
             <BarChart3 size={18} />
-            <h3>Résumé du mois</h3>
+            <h3>Résumé de la période - Évolution journalière</h3>
           </div>
           <div className="chart-container">
-            {selectedMonthStats.ventes > 0 || selectedMonthStats.depenses > 0 ? (
+            {dailyChartData.length > 0 ? (
               <ResponsiveContainer width="100%" height={280}>
-                <BarChart 
-                  data={[{
-                    name: monthNames[selectedMonth - 1],
-                    Dépenses: selectedMonthStats.depenses,
-                    Profit: commandesStats.totalProfit,
-                    Ventes: commandesStats.totalSales
-                  }]} 
-                  margin={{ top: 10, right: 10, left: 0, bottom: 20 }}
+                <LineChart 
+                  data={dailyChartData}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 10 }}
                 >
+                  <defs>
+                    <linearGradient id="expensesGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                    </linearGradient>
+                    <linearGradient id="profitGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e0d6cc" />
                   <XAxis 
-                    dataKey="name" 
+                    dataKey="day" 
                     tick={{ fontFamily: "Lato", fontSize: 12, fill: "#6b5752" }} 
                     axisLine={false} 
-                    tickLine={false} 
+                    tickLine={false}
+                    label={{ value: 'Jour du mois', position: 'insideBottom', offset: -5, fontSize: 11, fill: '#6b5752' }}
                   />
                   <YAxis 
                     tick={{ fontFamily: "Lato", fontSize: 12, fill: "#6b5752" }} 
                     axisLine={false} 
                     tickLine={false}
-                    tickFormatter={(value) => `${value/1000}k`}
+                    tickFormatter={(value) => {
+                      if (value >= 1000000) {
+                        return `${(value / 1000000).toFixed(1)}M`;
+                      } else if (value >= 1000) {
+                        return `${(value / 1000).toFixed(0)}k`;
+                      } else {
+                        return value.toString();
+                      }
+                    }}
+                    domain={[0, 'auto']}
+                    width={60}
                   />
                   <Tooltip
                     contentStyle={{ 
@@ -1079,51 +1305,62 @@ export default function AdminDashboard() {
                       boxShadow: "0 4px 6px rgba(0,0,0,0.1)"
                     }}
                     formatter={(value, name) => [`${formatCurrency(value)} DH`, name]}
+                    labelFormatter={(label) => `Jour ${label}`}
+                    labelStyle={{ fontWeight: 'bold', color: '#5c0202' }}
                   />
-                  <Bar 
-                    dataKey="Dépenses" 
-                    fill="#ef4444" 
-                    radius={[6, 6, 0, 0]} 
+
+                  {/* RED LINE for Dépenses (Cumulative) */}
+                  <Line
+                    type="monotone"
+                    dataKey="depenses"
+                    name="Dépenses (cumul)"
+                    stroke="#ef4444"
+                    strokeWidth={3}
+                    dot={{ r: 4, fill: "#ef4444", strokeWidth: 2, stroke: "white" }}
+                    activeDot={{ r: 6, fill: "#ef4444", stroke: "white", strokeWidth: 2 }}
                   />
-                  <Bar 
-                    dataKey="Profit" 
-                    fill="#10b981" 
-                    radius={[6, 6, 0, 0]} 
+                  
+                  {/* GREEN LINE for Profit (Cumulative) */}
+                  <Line
+                    type="monotone"
+                    dataKey="profit"
+                    name="Profit (cumul)"
+                    stroke="#10b981"
+                    strokeWidth={3}
+                    dot={{ r: 4, fill: "#10b981", strokeWidth: 2, stroke: "white" }}
+                    activeDot={{ r: 6, fill: "#10b981", stroke: "white", strokeWidth: 2 }}
                   />
-                  <Bar 
-                    dataKey="Ventes" 
-                    fill="#5c0202" 
-                    radius={[6, 6, 0, 0]} 
-                  />
-                </BarChart>
+                </LineChart>
               </ResponsiveContainer>
             ) : (
-              <div className="no-data">Aucune donnée pour ce mois</div>
+              <div className="no-data">Aucune donnée pour cette période</div>
             )}
           </div>
         </div>
 
-        {/* Status Distribution Pie Chart */}
+        {/* Status Distribution Pie Chart - FIXED VERSION */}
         <div className="chart-card">
           <div className="chart-header">
-            <PieChartIcon size={18} />
+            <PieChart size={18} />
             <h3>Répartition des statuts</h3>
           </div>
           <div className="pie-chart-container">
             {pieChartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={280}>
-                <PieChart>
+              <ResponsiveContainer width="100%" height={300}>
+                <RePieChart>
                   <Pie
                     data={pieChartData}
                     cx="50%"
                     cy="50%"
                     innerRadius={60}
-                    outerRadius={90}
+                    outerRadius={100}
                     paddingAngle={2}
                     dataKey="value"
+                    nameKey="name"
                     label={({ name, percent }) => {
-                      const displayName = name.length > 15 ? name.substring(0, 12) + '...' : name;
-                      return `${displayName} ${(percent * 100).toFixed(0)}%`;
+                      const displayName = statusLabels[name] || name;
+                      const shortName = displayName.length > 12 ? displayName.substring(0, 10) + '..' : displayName;
+                      return `${shortName} ${(percent * 100).toFixed(0)}%`;
                     }}
                     labelLine={{ stroke: '#6b5752', strokeWidth: 1 }}
                   >
@@ -1133,23 +1370,33 @@ export default function AdminDashboard() {
                   </Pie>
                   <Tooltip 
                     formatter={(value, name, props) => {
-                      const statusName = props.payload.name;
-                      const displayName = statusLabels[statusName.split(' ')[0]] || statusName;
+                      const displayName = statusLabels[name] || name;
                       return [`${value} commande${value > 1 ? 's' : ''}`, displayName];
                     }}
                     contentStyle={{ 
                       fontFamily: "Lato", 
                       borderRadius: 8, 
                       border: "1px solid #e0d6cc", 
-                      background: "white" 
+                      background: "white",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
                     }}
                   />
-                </PieChart>
+                </RePieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="no-data">
-                <PieChartIcon size={24} />
-                <p>Aucune donnée de statut disponible</p>
+              <div className="no-data" style={{ 
+                display: 'flex', 
+                flexDirection: 'column', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                height: 280,
+                color: '#6b5752'
+              }}>
+                <AlertCircle size={32} />
+                <p style={{ marginTop: '1rem' }}>Aucune donnée de statut disponible</p>
+                <p style={{ fontSize: '0.85rem', marginTop: '0.5rem' }}>
+                  {filteredCommandes.length} commandes trouvées
+                </p>
               </div>
             )}
           </div>
@@ -1159,7 +1406,7 @@ export default function AdminDashboard() {
       {/* Recent Orders */}
       <div className="recent-orders-section">
         <div className="section-title">
-          <h3>Commandes récentes - {monthNames[selectedMonth - 1]} {selectedYear}</h3>
+          <h3>Commandes récentes - {getPeriodDisplayText()}</h3>
           {statusFilter !== "all" && (
             <span className="filter-badge">
               Filtré par: {statusLabels[statusFilter] || statusFilter}
@@ -1253,7 +1500,7 @@ export default function AdminDashboard() {
             ) : (
               <div className="no-data">
                 <AlertCircle size={24} />
-                <p>Aucune commande pour {monthNames[selectedMonth - 1]} {selectedYear}</p>
+                <p>Aucune commande pour {getPeriodDisplayText()}</p>
               </div>
             )}
           </div>
@@ -1262,7 +1509,7 @@ export default function AdminDashboard() {
 
       {/* Financial Summary */}
       <div className="summary-card" style={{ marginTop: '1.5rem' }}>
-        <h3>Résumé financier - {monthNames[selectedMonth - 1]} {selectedYear}</h3>
+        <h3>Résumé financier - {getPeriodDisplayText()}</h3>
         <div className="summary-item">
           <span>Total des ventes</span>
           <span className="amount positive">{formatCurrency(commandesStats.totalSales)} DH</span>
@@ -1273,7 +1520,7 @@ export default function AdminDashboard() {
         </div>
         <div className="summary-item">
           <span>Dépenses totales</span>
-          <span className="amount negative">{formatCurrency(selectedMonthStats.depenses)} DH</span>
+          <span className="amount negative">{formatCurrency(selectedPeriodStats.depenses)} DH</span>
         </div>
         <div className="summary-item">
           <span>Revenu des commandes livrées</span>
@@ -1285,8 +1532,8 @@ export default function AdminDashboard() {
         </div>
         <div className="summary-total">
           <span>Résultat net (Profit - Dépenses)</span>
-          <span className={`amount ${selectedMonthStats.net >= 0 ? 'positive' : 'negative'}`}>
-            {formatCurrency(selectedMonthStats.net)} DH
+          <span className={`amount ${selectedPeriodStats.net >= 0 ? 'positive' : 'negative'}`}>
+            {formatCurrency(selectedPeriodStats.net)} DH
           </span>
         </div>
       </div>

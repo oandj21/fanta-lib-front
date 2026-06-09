@@ -354,7 +354,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
-  align-items: flex-end;
+  align-items: center;
 }
 
 .filter-group {
@@ -545,11 +545,11 @@
 }
 
 /* Action buttons */
-.action-buttons {
+.actions-buttons {
   display: flex;
   gap: 0.5rem;
   justify-content: flex-start;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .btn-icon {
@@ -1327,7 +1327,7 @@ textarea:focus-visible {
     font-size: 0.75rem;
   }
   
-  .action-buttons {
+  .actions-buttons {
     flex-direction: column;
   }
   
@@ -1365,7 +1365,7 @@ textarea:focus-visible {
   .btn-primary,
   .filters-toggle,
   .btn-clear-filters,
-  .action-buttons,
+  .actions-buttons,
   .modal-overlay,
   .category-suggestions,
   .category-hint {
@@ -1419,7 +1419,7 @@ textarea:focus-visible {
   .books-stats-grid,
   .filters-section,
   .filter-row,
-  .action-buttons,
+  .actions-buttons,
   .modal-actions,
   .pagination,
   .image-grid {
@@ -1429,7 +1429,7 @@ textarea:focus-visible {
   .books-stats-grid > *,
   .filters-section > *,
   .filter-row > *,
-  .action-buttons > *,
+  .actions-buttons > *,
   .modal-actions > *,
   .pagination > *,
   .image-grid > * {
@@ -1543,4 +1543,424 @@ textarea:focus-visible {
 
 .mt-4 {
   margin-top: 1rem;
+}/* Action buttons container */
+.actions-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: nowrap;
+}
+
+/* Base button styles */
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: transparent;
+  width: 32px;
+  height: 32px;
+}
+
+.btn-icon svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.btn-icon.edit {
+  color: #3b82f6;
+  background-color: #eff6ff;
+}
+
+.btn-icon.edit:hover {
+  background-color: #dbeafe;
+  transform: translateY(-1px);
+}
+
+.btn-icon.delete {
+  color: #ef4444;
+  background-color: #fee2e2;
+}
+
+.btn-icon.delete:hover {
+  background-color: #fecaca;
+  transform: translateY(-1px);
+}
+
+/* Activation/Deactivation button styles */
+.btn-icon.activate {
+  color: #10b981;
+  background-color: #d1fae5;
+}
+
+.btn-icon.activate:hover:not(:disabled) {
+  background-color: #a7f3d0;
+  transform: translateY(-1px);
+}
+
+.btn-icon.deactivate {
+  color: #f59e0b;
+  background-color: #fed7aa;
+}
+
+.btn-icon.deactivate:hover:not(:disabled) {
+  background-color: #fde68a;
+  transform: translateY(-1px);
+}
+
+.btn-icon:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Remove image button */
+.remove-image-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  border-radius: 12px;
+  background-color: #ef4444;
+  color: white;
+  border: 2px solid white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.remove-image-btn:hover {
+  background-color: #dc2626;
+  transform: scale(1.05);
+}
+
+.remove-image-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Removed images notification */
+.removed-images-notification {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 0.5rem;
+}
+
+.text-red {
+  color: #b91c1c;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin: 0 0 0.25rem 0;
+}
+
+.text-red-small {
+  color: #dc2626;
+  font-size: 0.75rem;
+  margin: 0;
+}
+
+.font-bold {
+  font-weight: 700;
+}
+
+/* Image count info */
+.image-count-info {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 0.5rem;
+}
+
+/* Form hint */
+.form-hint {
+  display: block;
+  font-size: 0.7rem;
+  color: #6b5752;
+  margin-top: 0.25rem;
+}
+
+/* Image grid */
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.image-item {
+  position: relative;
+  aspect-ratio: 2/3;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  border: 1px solid #e0d6cc;
+  background-color: #f8f4f0;
+}
+
+.image-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.image-item.preview {
+  border: 2px solid #059669;
+}
+
+/* Loading spinner animation */
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Stock badge styles */
+.stock-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.stock-badge.in-stock {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.stock-badge.no-stock {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+/* Status badge styles */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.status-badge.available {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.status-badge.out_of_stock {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .actions-buttons {
+    gap: 4px;
+  }
+  
+  .btn-icon {
+    width: 28px;
+    height: 28px;
+    padding: 6px;
+  }
+  
+  .btn-icon svg {
+    width: 14px;
+    height: 14px;
+  }
+  
+  .image-grid {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .actions-buttons {
+    flex-direction: column;
+  }
+  
+  .btn-icon {
+    width: 100%;
+  }
+}/* Stock Control Styles */
+.book-stock-cell {
+  padding: 0.5rem !important;
+}
+
+.stock-control {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: #f8f4f0;
+  border-radius: 2rem;
+  padding: 0.25rem;
+  width: fit-content;
+  margin: 0 auto;
+}
+
+.stock-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  background: white;
+  color: #5c0202;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.stock-btn:hover:not(:disabled) {
+  transform: scale(1.05);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.stock-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.stock-btn-minus {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+.stock-btn-minus:hover:not(:disabled) {
+  background-color: #fecaca;
+}
+
+.stock-btn-plus {
+  background-color: #d1fae5;
+  color: #059669;
+}
+
+.stock-btn-plus:hover:not(:disabled) {
+  background-color: #a7f3d0;
+}
+
+.stock-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.stock-value {
+  font-weight: 700;
+  font-size: 1rem;
+  min-width: 40px;
+  text-align: center;
+  color: #5c0202;
+  font-family: 'Lato', sans-serif;
+}
+
+.stock-value.zero-stock {
+  color: #ef4444;
+}
+
+/* Responsive adjustments for stock control */
+@media (max-width: 768px) {
+  .stock-control {
+    gap: 0.25rem;
+    padding: 0.2rem;
+  }
+  
+  .stock-btn {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .stock-btn svg {
+    width: 12px;
+    height: 12px;
+  }
+  
+  .stock-value {
+    font-size: 0.875rem;
+    min-width: 35px;
+  }
+}
+
+@media (max-width: 480px) {
+  .book-stock-cell {
+    padding: 0.75rem 0.5rem !important;
+  }
+  
+  .stock-control {
+    flex-direction: row;
+    gap: 0.5rem;
+  }
+  
+  .stock-btn {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+/* Table header adjustment for stock column */
+.data-table th.sortable[style*="width: 140px"] {
+  text-align: center;
+}/* Category Badge Styles - Dynamic Colors */
+.category-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-family: 'Lato', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  text-align: center;
+  border: 1px solid;
+  transition: all 0.2s ease;
+}
+
+.category-badge.no-category {
+  background-color: #f3f4f6;
+  color: #6b7280;
+  border-color: #e5e7eb;
+}
+
+/* Hover effect for category badges */
+.category-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive adjustments for category badges */
+@media (max-width: 768px) {
+  .category-badge {
+    padding: 0.2rem 0.6rem;
+    font-size: 0.7rem;
+    white-space: normal;
+    word-break: break-word;
+    max-width: 120px;
+  }
+}
+
+@media (max-width: 640px) {
+  .category-badge {
+    max-width: 100px;
+    font-size: 0.65rem;
+  }
 }

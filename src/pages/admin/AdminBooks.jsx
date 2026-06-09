@@ -3,7 +3,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { 
   Plus, Pencil, Trash2, X, Check, Upload, Image as ImageIcon, 
   AlertCircle, Search, Filter, BookOpen, BookX, BookMarked, 
-  ChevronDown, XCircle, Loader 
+  ChevronDown, XCircle, Loader, Package, Play, StopCircle,
+  Minus, Plus as PlusIcon
 } from "lucide-react";
 import { fetchLivres, createLivre, updateLivre, deleteLivre, deleteLivreImage } from "../../store/store";
 import "../../css/AdminBooks.css";
@@ -27,6 +28,35 @@ const normalizeArabicText = (text) => {
     .replace(/[ًٌٍَُِّْ]|[\u064B-\u065F]/g, '')
     // Convert to lowercase for case-insensitive comparison
     .toLowerCase();
+};
+
+// Function to generate consistent color for a category
+const getCategoryColor = (category) => {
+  if (!category) return { bg: '#f3f4f6', text: '#374151', border: '#e5e7eb' };
+  
+  // Generate a hash from the category name
+  let hash = 0;
+  for (let i = 0; i < category.length; i++) {
+    hash = ((hash << 5) - hash) + category.charCodeAt(i);
+    hash = hash & hash;
+  }
+  
+  // Predefined color palettes for better aesthetics
+  const colorPalettes = [
+    { bg: '#dbeafe', text: '#1e40af', border: '#bfdbfe' }, // Blue
+    { bg: '#dcfce7', text: '#166534', border: '#bbf7d0' }, // Green
+    { bg: '#fed7aa', text: '#9a3412', border: '#fdba74' }, // Orange
+    { bg: '#e9d5ff', text: '#6b21a8', border: '#d8b4fe' }, // Purple
+    { bg: '#fecdd3', text: '#9f1239', border: '#fda4af' }, // Pink
+    { bg: '#fef3c7', text: '#92400e', border: '#fde68a' }, // Amber
+    { bg: '#ccfbf1', text: '#115e59', border: '#99f6e4' }, // Teal
+    { bg: '#e0e7ff', text: '#3730a3', border: '#c7d2fe' }, // Indigo
+    { bg: '#ffedd5', text: '#9a3412', border: '#fed7aa' }, // Yellow-Orange
+    { bg: '#fce7f3', text: '#9d174d', border: '#fbcfe8' }, // Rose
+  ];
+  
+  const index = Math.abs(hash) % colorPalettes.length;
+  return colorPalettes[index];
 };
 
 // Image compression utility function
@@ -130,6 +160,10 @@ export default function AdminBooks() {
   const [removedImages, setRemovedImages] = useState([]);
   // Compression state
   const [compressing, setCompressing] = useState(false);
+  // State for toggling book activity
+  const [togglingActivity, setTogglingActivity] = useState(null);
+  // State for stock update loading
+  const [updatingStock, setUpdatingStock] = useState(null);
   
   const [form, setForm] = useState({
     titre: "",
@@ -139,6 +173,7 @@ export default function AdminBooks() {
     prix_achat: "",
     description: "",
     status: "available",
+    stock: 0
   });
 
   useEffect(() => {
@@ -182,42 +217,47 @@ export default function AdminBooks() {
 
   // Filter and search books
   const filteredBooks = useMemo(() => {
-  return bookList.filter(book => {
-    // Normalize search term and book fields
-    const normalizedSearchTerm = normalizeArabicText(searchTerm);
-    
-    const matchesSearch = searchTerm === "" || 
-      normalizeArabicText(book.titre || "").includes(normalizedSearchTerm) ||
-      normalizeArabicText(book.auteur || "").includes(normalizedSearchTerm) ||
-      normalizeArabicText(book.isbn || "").includes(normalizedSearchTerm) ||
-      normalizeArabicText(book.categorie || "").includes(normalizedSearchTerm);
-    
-    const matchesStatus = statusFilter === "all" || book.status === statusFilter;
-    
-    const matchesCategory = categoryFilter === "all" || 
-      normalizeArabicText(book.categorie || "") === normalizeArabicText(categoryFilter);
-    
-    return matchesSearch && matchesStatus && matchesCategory;
-  }).sort((a, b) => {
-    // ... rest of sorting logic remains the same
-    let aVal = a[sortBy] || "";
-    let bVal = b[sortBy] || "";
-    
-    if (sortBy === "prix_achat") {
-      aVal = Number(aVal) || 0;
-      bVal = Number(bVal) || 0;
-    } else {
-      aVal = String(aVal).toLowerCase();
-      bVal = String(bVal).toLowerCase();
-    }
-    
-    if (sortOrder === "asc") {
-      return aVal > bVal ? 1 : -1;
-    } else {
-      return aVal < bVal ? 1 : -1;
-    }
-  });
-}, [bookList, searchTerm, statusFilter, categoryFilter, sortBy, sortOrder]);
+    return bookList.filter(book => {
+      // Normalize search term and book fields
+      const normalizedSearchTerm = normalizeArabicText(searchTerm);
+      
+      const matchesSearch = searchTerm === "" || 
+        normalizeArabicText(book.titre || "").includes(normalizedSearchTerm) ||
+        normalizeArabicText(book.auteur || "").includes(normalizedSearchTerm) ||
+        normalizeArabicText(book.isbn || "").includes(normalizedSearchTerm) ||
+        normalizeArabicText(book.categorie || "").includes(normalizedSearchTerm);
+      
+      const matchesStatus = statusFilter === "all" || book.status === statusFilter;
+      
+      const matchesCategory = categoryFilter === "all" || 
+        normalizeArabicText(book.categorie || "") === normalizeArabicText(categoryFilter);
+      
+      return matchesSearch && matchesStatus && matchesCategory;
+    }).sort((a, b) => {
+      let aVal = a[sortBy] || "";
+      let bVal = b[sortBy] || "";
+      
+      if (sortBy === "prix_achat") {
+        aVal = Number(aVal) || 0;
+        bVal = Number(bVal) || 0;
+      } else if (sortBy === "stock") {
+        aVal = Number(a.stock) || 0;
+        bVal = Number(b.stock) || 0;
+      } else if (sortBy === "is_running") {
+        aVal = a.is_running ? 1 : 0;
+        bVal = b.is_running ? 1 : 0;
+      } else {
+        aVal = String(aVal).toLowerCase();
+        bVal = String(bVal).toLowerCase();
+      }
+      
+      if (sortOrder === "asc") {
+        return aVal > bVal ? 1 : -1;
+      } else {
+        return aVal < bVal ? 1 : -1;
+      }
+    });
+  }, [bookList, searchTerm, statusFilter, categoryFilter, sortBy, sortOrder]);
 
   // Get current page books
   const currentBooks = useMemo(() => {
@@ -234,8 +274,12 @@ export default function AdminBooks() {
     const available = bookList.filter(book => book.status === "available").length;
     const outOfStock = bookList.filter(book => book.status === "out_of_stock").length;
     const uniqueCategories = categories.length;
+    const totalStock = bookList.reduce((sum, book) => sum + (Number(book.stock) || 0), 0);
+    const runningBooks = bookList.filter(book => book.is_running === true).length;
+    const maxActiveBooks = 20;
+    const canAddMore = runningBooks < maxActiveBooks;
     
-    return { total, available, outOfStock, uniqueCategories };
+    return { total, available, outOfStock, uniqueCategories, totalStock, runningBooks, maxActiveBooks, canAddMore };
   }, [bookList, categories]);
 
   const openAdd = () => {
@@ -248,6 +292,7 @@ export default function AdminBooks() {
       prix_achat: "",
       description: "",
       status: "available",
+      stock: 0
     });
     setCategoryInput("");
     setSelectedImages([]);
@@ -266,6 +311,7 @@ export default function AdminBooks() {
       prix_achat: book.prix_achat || "",
       description: book.description || "",
       status: book.status || "available",
+      stock: book.stock || 0
     });
     setCategoryInput(book.categorie || "");
     setSelectedImages([]);
@@ -283,6 +329,63 @@ export default function AdminBooks() {
     setShowDeleteConfirm(null);
   };
 
+  // Function to update stock quantity
+  const handleUpdateStock = async (bookId, currentStock, delta) => {
+    const newStock = Math.max(0, currentStock + delta);
+    
+    if (newStock === currentStock) return;
+    
+    setUpdatingStock(bookId);
+    
+    try {
+      const formData = new FormData();
+      formData.append('stock', newStock.toString());
+      formData.append('_method', 'PUT');
+      
+      // Auto-update status based on stock
+      const newStatus = newStock > 0 ? "available" : "out_of_stock";
+      formData.append('status', newStatus);
+      
+      await dispatch(updateLivre({ id: bookId, formData })).unwrap();
+      dispatch(fetchLivres()); // Refresh the list
+      
+    } catch (error) {
+      console.error('Error updating stock:', error);
+      alert('Erreur lors de la mise à jour du stock');
+    } finally {
+      setUpdatingStock(null);
+    }
+  };
+
+  // Function to toggle book activity (activate/deactivate)
+  const handleToggleActivity = async (book) => {
+    // If trying to activate a book
+    if (!book.is_running) {
+      const currentRunningCount = stats.runningBooks;
+      if (currentRunningCount >= stats.maxActiveBooks) {
+        alert(`Impossible d'activer plus de ${stats.maxActiveBooks} livres. Veuillez d'abord désactiver un autre livre.`);
+        return;
+      }
+    }
+
+    setTogglingActivity(book.id);
+    
+    try {
+      const formData = new FormData();
+      formData.append('is_running', !book.is_running ? '1' : '0');
+      formData.append('_method', 'PUT');
+      
+      await dispatch(updateLivre({ id: book.id, formData })).unwrap();
+      dispatch(fetchLivres()); // Refresh the list
+      
+    } catch (error) {
+      console.error('Error toggling book activity:', error);
+      alert('Erreur lors de la modification de l\'état du livre');
+    } finally {
+      setTogglingActivity(null);
+    }
+  };
+
   const handleImageChange = async (e) => {
     const files = Array.from(e.target.files);
     
@@ -296,14 +399,11 @@ export default function AdminBooks() {
     try {
       const compressedImages = [];
       
-      // Show compression progress
-      let processed = 0;
-      
       // Process images in batches of 3 to avoid freezing
       const batchSize = 3;
       for (let i = 0; i < files.length; i += batchSize) {
         const batch = files.slice(i, i + batchSize);
-        const compressionPromises = batch.map(async (file, index) => {
+        const compressionPromises = batch.map(async (file) => {
           // Validate file size (max 10MB before compression)
           if (file.size > 10 * 1024 * 1024) {
             alert(`L'image ${file.name} est trop volumineuse. Maximum 10MB.`);
@@ -311,7 +411,6 @@ export default function AdminBooks() {
           }
           
           const compressedFile = await compressImage(file);
-          processed++;
           return compressedFile;
         });
         
@@ -366,17 +465,6 @@ export default function AdminBooks() {
     }
   };
 
-  // Handle permanent deletion from server (with confirmation)
-  const handleDeleteImage = (imagePath) => {
-    if (!editing || !editing.id) return;
-    
-    setShowImageDeleteConfirm({
-      bookId: editing.id,
-      imagePath: imagePath,
-      bookTitle: editing.titre
-    });
-  };
-
   const confirmDeleteImage = async () => {
     if (!showImageDeleteConfirm) return;
     
@@ -426,8 +514,12 @@ export default function AdminBooks() {
     
     // Append all form fields
     Object.keys(form).forEach(key => {
-      if (form[key] !== null && form[key] !== undefined && form[key] !== "") {
-        formData.append(key, form[key]);
+      if (form[key] !== null && form[key] !== undefined) {
+        if (key === 'stock') {
+          formData.append(key, form[key].toString());
+        } else if (form[key] !== "") {
+          formData.append(key, form[key]);
+        }
       }
     });
 
@@ -597,7 +689,7 @@ export default function AdminBooks() {
   return (
     <div className="admin-books">
       <div className="admin-header">
-        <div>
+        <div className="header-left">
           <h2>Gestion des Livres</h2>
           <p className="admin-subtitle">
             {filteredBooks.length > 0 
@@ -606,10 +698,12 @@ export default function AdminBooks() {
             }
           </p>
         </div>
-        <button onClick={openAdd} className="btn-primary">
-          <Plus size={18} />
-          Ajouter un livre
-        </button>
+        <div className="header-right">
+          <button onClick={openAdd} className="btn-primary">
+            <Plus size={18} />
+            Ajouter un livre
+          </button>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -651,6 +745,26 @@ export default function AdminBooks() {
           <div className="book-stat-content">
             <span className="book-stat-label">Catégories</span>
             <span className="book-stat-value">{stats.uniqueCategories}</span>
+          </div>
+        </div>
+
+        <div className="book-stat-card">
+          <div className="book-stat-icon stock">
+            <Package size={24} />
+          </div>
+          <div className="book-stat-content">
+            <span className="book-stat-label">Stock total</span>
+            <span className="book-stat-value">{stats.totalStock}</span>
+          </div>
+        </div>
+
+        <div className="book-stat-card">
+          <div className="book-stat-icon running">
+            <Play size={24} />
+          </div>
+          <div className="book-stat-content">
+            <span className="book-stat-label">En activité</span>
+            <span className="book-stat-value">{stats.runningBooks} / {stats.maxActiveBooks}</span>
           </div>
         </div>
       </div>
@@ -726,6 +840,8 @@ export default function AdminBooks() {
                 <option value="categorie">Catégorie</option>
                 <option value="prix_achat">Prix</option>
                 <option value="status">Statut</option>
+                <option value="stock">Stock</option>
+                <option value="is_running">Activité</option>
               </select>
             </div>
 
@@ -794,18 +910,22 @@ export default function AdminBooks() {
                   }} className="sortable">
                     Prix {sortBy === 'prix_achat' && (sortOrder === 'asc' ? '↑' : '↓')}
                   </th>
+                  <th style={{ width: '140px' }}>Stock</th>
                   <th style={{ width: '100px' }} onClick={() => {
                     setSortBy('status');
                     setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
                   }} className="sortable">
                     Statut {sortBy === 'status' && (sortOrder === 'asc' ? '↑' : '↓')}
                   </th>
-                  <th style={{ width: '100px' }}>Actions</th>
+                  <th style={{ width: '140px' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {currentBooks.map((book) => {
                   const bookImages = getImagesArray(book.images);
+                  const currentStock = Number(book.stock) || 0;
+                  const categoryColors = getCategoryColor(book.categorie);
+                  
                   return (
                     <tr key={book.id}>
                       <td>
@@ -828,9 +948,53 @@ export default function AdminBooks() {
                       <td className="book-tit">{book.titre || "-"}</td>
                       <td>{book.auteur || "-"}</td>
                       <td>{book.isbn || "-"}</td>
-                      <td>{book.categorie || "-"}</td>
+                      <td>
+                        {book.categorie ? (
+                          <span 
+                            className="category-badge"
+                            style={{
+                              backgroundColor: categoryColors.bg,
+                              color: categoryColors.text,
+                              borderColor: categoryColors.border
+                            }}
+                          >
+                            {book.categorie}
+                          </span>
+                        ) : (
+                          <span className="category-badge no-category">-</span>
+                        )}
+                      </td>
                       <td className="book-price">
                         {book.prix_achat ? Number(book.prix_achat).toFixed(2) : "0.00"} DH
+                      </td>
+                      <td className="book-stock-cell">
+                        <div className="stock-control">
+                          <button
+                            onClick={() => handleUpdateStock(book.id, currentStock, -1)}
+                            disabled={updatingStock === book.id || currentStock <= 0}
+                            className="stock-btn stock-btn-minus"
+                          >
+                            {updatingStock === book.id ? (
+                              <Loader size={14} className="spin" />
+                            ) : (
+                              <Minus size={14} />
+                            )}
+                          </button>
+                          <span className={`stock-value ${currentStock === 0 ? 'zero-stock' : ''}`}>
+                            {currentStock}
+                          </span>
+                          <button
+                            onClick={() => handleUpdateStock(book.id, currentStock, 1)}
+                            disabled={updatingStock === book.id}
+                            className="stock-btn stock-btn-plus"
+                          >
+                            {updatingStock === book.id ? (
+                              <Loader size={14} className="spin" />
+                            ) : (
+                              <PlusIcon size={14} />
+                            )}
+                          </button>
+                        </div>
                       </td>
                       <td>
                         <span className={`status-badge ${book.status === "available" ? "available" : "out_of_stock"}`}>
@@ -838,11 +1002,27 @@ export default function AdminBooks() {
                         </span>
                       </td>
                       <td>
-                        <div className="action-buttons">
-                          <button onClick={() => openEdit(book)} className="btn-icon edit" title="Modifier">
+                        <div className="actions-buttons">
+                          {/* Activation/Deactivation Button */}
+                          <button
+                            onClick={() => handleToggleActivity(book)}
+                            disabled={togglingActivity === book.id || (!book.is_running && !stats.canAddMore && stats.runningBooks >= stats.maxActiveBooks)}
+                            className={`btn-icon ${book.is_running ? 'deactivate' : 'activate'}`}
+                          >
+                            {togglingActivity === book.id ? (
+                              <Loader size={16} className="spin" />
+                            ) : book.is_running ? (
+                              <StopCircle size={16} />
+                            ) : (
+                              <Play size={16} />
+                            )}
+                          </button>
+                          
+                          <button onClick={() => openEdit(book)} className="btn-icon edit">
                             <Pencil size={16} />
                           </button>
-                          <button onClick={() => handleDelete(book.id)} className="btn-icon delete" title="Supprimer">
+                          
+                          <button onClick={() => handleDelete(book.id)} className="btn-icon delete">
                             <Trash2 size={16} />
                           </button>
                         </div>
@@ -1025,18 +1205,6 @@ export default function AdminBooks() {
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="status">Statut</label>
-                  <select
-                    id="status"
-                    value={form.status}
-                    onChange={(e) => setForm({...form, status: e.target.value})}
-                  >
-                    <option value="available">Disponible</option>
-                    <option value="out_of_stock">Rupture de stock</option>
-                  </select>
-                </div>
-
-                <div className="form-group" style={{ gridColumn: 'span 2' }}>
                   <label htmlFor="description">Description</label>
                   <textarea
                     id="description"
@@ -1070,31 +1238,14 @@ export default function AdminBooks() {
                                   e.target.src = 'https://dummyimage.com/40x52/cccccc/000000&text=No+Image';
                                 }}
                               />
-                              {/* Two buttons for existing images */}
                               <div className="image-actions">
-                                {/* Remove button (mark for deletion) */}
                                 <button 
                                   type="button"
                                   onClick={() => handleRemoveExistingImage(image)}
-                                  className="btn-icon remove-image-btn"
-                                  title="Retirer de la liste (sera supprimé lors de l'enregistrement)"
+                                  className="remove-image-btn"
                                   disabled={deletingImage}
-                                  style={{
-                                    backgroundColor: '#f50b0b',
-                                    color: 'white',
-                                    border: '2px solid white',
-                                    width: '24px',
-                                    height: '24px',
-                                    borderRadius: '12px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    cursor: 'pointer',
-                                    opacity: 1,
-                                    transform: 'scale(1)'
-                                  }}
                                 >
-                                  <Trash2 size={24} style={{ width: '100%', height: '100%' }} />
+                                  <Trash2 size={14} />
                                 </button>
                               </div>
                             </div>
@@ -1110,10 +1261,10 @@ export default function AdminBooks() {
                 {/* Show removed images count when editing */}
                 {editing && removedImages.length > 0 && (
                   <div className="removed-images-notification">
-                    <p className="text-sm text-red-700 font-medium">
+                    <p className="text-red">
                       <span className="font-bold">{removedImages.length}</span> image{removedImages.length !== 1 ? 's' : ''} marquée{removedImages.length !== 1 ? 's' : ''} pour suppression
                     </p>
-                    <p className="text-xs text-red-600 mt-1">
+                    <p className="text-red-small">
                       Ces images seront supprimées du serveur lorsque vous enregistrerez les modifications.
                     </p>
                   </div>
@@ -1154,19 +1305,17 @@ export default function AdminBooks() {
                       {imagePreviews.map((preview, index) => (
                         <div key={index} className="image-item preview">
                           <img src={preview} alt={`Preview ${index + 1}`} />
-                          {/* Remove button for new images */}
                           <button 
                             type="button"
                             onClick={() => handleRemoveNewImage(index)}
-                            className="btn-icon remove-image-btn"
-                            title="Retirer cette image"
+                            className="remove-image-btn"
                           >
                             <X size={14} />
                           </button>
                         </div>
                       ))}
                     </div>
-                    <p className="text-xs text-gray-500 mt-2">
+                    <p className="image-count-info">
                       {selectedImages.length} image(s) sélectionnée(s) - Seront compressées en WebP
                     </p>
                   </div>

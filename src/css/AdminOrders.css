@@ -370,7 +370,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
-  align-items: flex-end;
+  align-items: center;
 }
 
 .filter-group {
@@ -559,7 +559,7 @@
 .action-buttons {
   display: flex;
   gap: 0.25rem;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .btn-icon {
@@ -2586,7 +2586,7 @@ textarea:focus-visible {
 @media (max-width: 1024px) {
   .filter-row {
     flex-direction: column;
-    align-items: stretch;
+    align-items: center;
   }
   
   .filter-group {
@@ -3293,7 +3293,6 @@ textarea:focus-visible {
 }
 
 .order-form.compact .selected-books {
-  max-height: 120px;
   overflow-y: auto;
   margin-top: 0.5rem;
   border: 1px solid #e0d6cc;
@@ -3679,5 +3678,809 @@ textarea:focus-visible {
   .book-dropdown-isbn {
     flex-direction: column;
     align-items: flex-start;
+  }
+}/* WhatsApp Send Button Styles */
+.btn-whatsapp-send {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: #25D366; /* WhatsApp green */
+  color: white;
+}
+
+.btn-whatsapp-send:hover:not(:disabled) {
+  transform: scale(1.05);
+  filter: brightness(1.05);
+  box-shadow: 0 2px 8px rgba(37, 211, 102, 0.3);
+}
+
+.btn-whatsapp-send:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.btn-whatsapp-send.sent {
+  background-color: #9ca3af !important; /* Gray when sent */
+  cursor: not-allowed;
+}
+
+.btn-whatsapp-send:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn-whatsapp-send .spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Optional: Add tooltip on hover */
+.btn-whatsapp-send {
+  position: relative;
+}
+
+/* Professional Toast Notification - Premium Design */
+.toast-notification {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 9999;
+  animation: toastSlideIn 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  max-width: 420px;
+  width: calc(100% - 48px);
+  cursor: pointer;
+}
+
+.toast-notification.closing {
+  animation: toastSlideOut 0.3s ease-in forwards;
+}
+
+.toast-content {
+  background: linear-gradient(135deg, #ffffff 0%, #fefefe 100%);
+  border-radius: 20px;
+  box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.02);
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.toast-content:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 25px 40px -12px rgba(0, 0, 0, 0.25);
+}
+
+.toast-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  border-bottom: 2px solid rgba(239, 68, 68, 0.2);
+}
+
+.toast-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: 'Lato', sans-serif;
+  font-weight: 800;
+  font-size: 1rem;
+  letter-spacing: 0.02em;
+  color: #dc2626;
+  text-transform: uppercase;
+}
+
+.toast-title svg {
+  filter: drop-shadow(0 2px 4px rgba(220, 38, 38, 0.2));
+}
+
+.toast-close {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  cursor: pointer;
+  color: #9ca3af;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 28px;
+  height: 28px;
+}
+
+.toast-close:hover {
+  background: #ffffff;
+  color: #dc2626;
+  transform: scale(1.05);
+  border-color: rgba(220, 38, 38, 0.4);
+}
+
+.toast-body {
+  padding: 20px;
+}
+
+.toast-message {
+  font-family: 'Lato', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1f2937;
+  line-height: 1.5;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: #f8fafc;
+  padding: 12px 16px;
+  border-radius: 14px;
+  border-left: 4px solid #ef4444;
+}
+
+.toast-message svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: #ef4444;
+}
+
+.toast-details {
+  background: #f8fafc;
+  border-radius: 16px;
+  padding: 4px;
+  margin-top: 8px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+
+.stock-error-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  font-family: 'Lato', sans-serif;
+  font-size: 0.85rem;
+  border-bottom: 1px solid #e2e8f0;
+  transition: background 0.2s ease;
+}
+
+.stock-error-item:last-child {
+  border-bottom: none;
+}
+
+.stock-error-item:hover {
+  background: #f1f5f9;
+}
+
+.stock-book-title {
+  font-weight: 700;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.stock-book-title svg {
+  color: #8b5e3c;
+  width: 16px;
+  height: 16px;
+}
+
+.stock-details {
+  display: flex;
+  gap: 16px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.stock-available {
+  color: #ef4444;
+  font-weight: 700;
+  background: #fef2f2;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+.stock-requested {
+  color: #f59e0b;
+  font-weight: 700;
+  background: #fffbeb;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+.stock-shortage {
+  color: #dc2626;
+  font-weight: 800;
+  background: #fee2e2;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+.toast-time {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+  font-family: 'Lato', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: #94a3b8;
+}
+
+.toast-time svg {
+  flex-shrink: 0;
+  color: #cbd5e1;
+}
+
+/* Progress bar */
+.toast-progress {
+  height: 4px;
+  background: linear-gradient(90deg, #ef4444, #f97316);
+  width: 100%;
+  animation: toastProgress 8s linear forwards;
+  transform-origin: left;
+  position: relative;
+}
+
+@keyframes toastProgress {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+/* Toast Animations */
+@keyframes toastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(100%) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes toastSlideOut {
+  from {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%) scale(0.9);
+  }
+}
+
+/* Stock icon pulse animation */
+@keyframes stockPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.toast-title svg:first-child {
+  animation: stockPulse 0.6s ease-in-out;
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+  .toast-notification {
+    top: 16px;
+    right: 16px;
+    left: 16px;
+    max-width: none;
+    width: auto;
+  }
+  
+  .stock-error-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .stock-details {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .toast-header {
+    padding: 12px 16px;
+  }
+  
+  .toast-body {
+    padding: 16px;
+  }
+  
+  .toast-message {
+    font-size: 0.85rem;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .toast-content {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  }
+  
+  .toast-header {
+    background: linear-gradient(135deg, #450a0a 0%, #7f1d1d 100%);
+  }
+  
+  .toast-message {
+    background: #1e293b;
+    color: #e2e8f0;
+  }
+  
+  .toast-details {
+    background: #1e293b;
+    border-color: #334155;
+  }
+  
+  .stock-error-item {
+    border-bottom-color: #334155;
+  }
+  
+  .stock-error-item:hover {
+    background: #334155;
+  }
+  
+  .stock-book-title {
+    color: #f1f5f9;
+  }
+  
+  .toast-time {
+    border-top-color: #334155;
+    color: #64748b;
+  }
+}
+
+
+/* For the action buttons container */
+.action-buttons {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Base icon button styles (for consistency) */
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: #f3f4f6;
+  color: #4b5563;
+}
+
+.btn-icon:hover {
+  background-color: #e5e7eb;
+  transform: scale(1.05);
+}
+
+.btn-icon.view:hover {
+  background-color: #dbeafe;
+  color: #3b82f6;
+}
+
+.btn-icon.edit:hover {
+  background-color: #fed7aa;
+  color: #ea580c;
+}
+
+.btn-icon.delete:hover {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+.btn-icon.copy:hover {
+  background-color: #e0e7ff;
+  color: #4f46e5;
+}
+
+/* For the table row with negative profit */
+.negative-profit-row {
+  background-color: rgba(220, 38, 38, 0.05);
+}
+
+.order-profit.negative {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.loss-badge {
+  display: inline-block;
+  margin-left: 6px;
+  background-color: #fee2e2;
+  color: #dc2626;
+  font-size: 10px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-weight: 500;
+}/* WhatsApp Send Button Styles */
+.btn-whatsapp-send {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: #25D366;
+  color: white;
+}
+
+.btn-whatsapp-send:hover:not(:disabled) {
+  transform: scale(1.05);
+  filter: brightness(1.05);
+}
+
+.btn-whatsapp-send:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.btn-whatsapp-send.sent {
+  background-color: #9ca3af !important;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn-whatsapp-send.sent:hover {
+  transform: none;
+  filter: none;
+}
+
+/* Spinning animation for loader */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+/* Action buttons container */
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Individual action button styles */
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: #f3f4f6;
+  color: #4b5563;
+}
+
+.btn-icon:hover {
+  background-color: #e5e7eb;
+  transform: scale(1.05);
+}
+
+.btn-icon.view:hover {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.btn-icon.edit:hover {
+  background-color: #f59e0b;
+  color: white;
+}
+
+.btn-icon.delete:hover {
+  background-color: #ef4444;
+  color: white;
+}
+
+.btn-icon.copy:hover {
+  background-color: #10b981;
+  color: white;
+}
+
+/* WhatsApp button specific */
+.btn-whatsapp-send {
+  background-color: #25D366;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-whatsapp-send:hover:not(:disabled) {
+  background-color: #128C7E;
+  transform: scale(1.05);
+}
+
+.btn-whatsapp-send.sent {
+  background-color: #9ca3af !important;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn-whatsapp-send.sent:hover {
+  transform: none;
+  background-color: #9ca3af !important;
+}
+
+.btn-whatsapp-send:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}/* ==============================================
+   PHONE NUMBER & CITY BADGE STYLES
+   ============================================== */
+
+/* Fix table cell vertical alignment */
+.data-table td {
+  vertical-align: middle !important;
+  padding: 8px 12px !important;
+  line-height: 1.4 !important;
+}
+
+/* Phone Number Cell Styling */
+.order-phone,
+.order-whatsapp {
+  padding: 8px 12px !important;
+}
+
+.phone-number-cell,
+.whatsapp-number-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #f8fafc;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  letter-spacing: 0.3px;
+  transition: all 0.2s ease;
+  line-height: 1.2;
+  height: auto;
+}
+
+.phone-number-cell {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 1px solid #bae6fd;
+}
+
+.whatsapp-number-cell {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border: 1px solid #bbf7d0;
+}
+
+.phone-icon {
+  color: #3b82f6;
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+}
+
+.whatsapp-icon {
+  color: #25D366;
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+}
+
+.phone-number,
+.whatsapp-number {
+  color: #1e293b;
+  font-weight: 600;
+}
+
+/* Hover effect for phone cells */
+.phone-number-cell:hover,
+.whatsapp-number-cell:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.phone-number-cell:hover {
+  background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+}
+
+.whatsapp-number-cell:hover {
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+}
+
+/* No WhatsApp styling */
+.no-whatsapp {
+  color: #94a3b8;
+  font-style: italic;
+  font-size: 13px;
+  display: inline-block;
+  padding: 4px 8px;
+  background: #f1f5f9;
+  border-radius: 12px;
+  line-height: 1.2;
+}
+
+/* ==============================================
+   CITY BADGE STYLES - FIXED SPACING ISSUE
+   ============================================== */
+
+/* City column - remove extra spacing */
+.orders-citys {
+  padding: 8px 12px !important;
+  vertical-align: middle !important;
+}
+
+/* City Badge - Fixed version */
+.city-badge {
+  display: inline-block;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  background: rgba(107, 114, 128, 0.1);
+  color: #4b5563;
+  border: 1px solid rgba(107, 114, 128, 0.2);
+  line-height: 1.2;
+  vertical-align: middle;
+  margin: 0;
+}
+
+.city-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+/* Make sure the city cell doesn't have extra line-height */
+.orders-citys .city-badge {
+  display: inline-block;
+}
+
+/* ==============================================
+   PHONE COLUMN WIDTHS
+   ============================================== */
+
+/* Adjust column widths for better readability */
+.data-table th:nth-child(3), /* Phone */
+.data-table td:nth-child(3) {
+  min-width: 120px;
+}
+
+.data-table th:nth-child(4), /* WhatsApp */
+.data-table td:nth-child(4) {
+  min-width: 130px;
+}
+
+/* City column */
+.data-table th:nth-child(6),
+.data-table td:nth-child(6) {
+  min-width: 100px;
+  max-width: 150px;
+}
+
+/* ==============================================
+   RESPONSIVE ADJUSTMENTS
+   ============================================== */
+
+@media (max-width: 1200px) {
+  .phone-number-cell,
+  .whatsapp-number-cell {
+    padding: 3px 8px;
+    font-size: 11px;
+    gap: 5px;
+  }
+  
+  .phone-icon,
+  .whatsapp-icon {
+    width: 12px;
+    height: 12px;
+  }
+  
+  .city-badge {
+    padding: 3px 8px;
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 992px) {
+  .phone-number-cell,
+  .whatsapp-number-cell {
+    flex-direction: column;
+    gap: 4px;
+    align-items: center;
+    text-align: center;
+  }
+  
+  .city-badge {
+    white-space: normal;
+    word-break: keep-all;
+    display: inline-block;
+  }
+}
+
+/* ==============================================
+   DARK MODE SUPPORT (if needed)
+   ============================================== */
+
+@media (prefers-color-scheme: dark) {
+  .phone-number-cell {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    border-color: #334155;
+  }
+  
+  .whatsapp-number-cell {
+    background: linear-gradient(135deg, #1a2e1a 0%, #0f1f0f 100%);
+    border-color: #2d4a2d;
+  }
+  
+  .phone-number,
+  .whatsapp-number {
+    color: #e2e8f0;
+  }
+  
+  .phone-icon {
+    color: #60a5fa;
+  }
+  
+  .whatsapp-icon {
+    color: #34d399;
+  }
+  
+  .no-whatsapp {
+    background: #1e293b;
+    color: #64748b;
+  }
+  
+  .city-badge {
+    background: rgba(100, 116, 139, 0.15);
+    border-color: rgba(100, 116, 139, 0.3);
   }
 }

@@ -319,6 +319,71 @@ export const markCommandeAsDelivered = createAsyncThunk(
   }
 );
 
+// Mark order as sent/not sent
+export const markCommandeAsSent = createAsyncThunk(
+  "commandes/markAsSent",
+  async ({ id, is_sent }, thunkAPI) => {
+    try {
+      const response = await api.put(`/commandes/${id}/mark-sent`, { is_sent });
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, thunkAPI);
+    }
+  }
+);
+
+// Check stock status
+export const checkStockStatus = createAsyncThunk(
+  "commandes/checkStock",
+  async (livres, thunkAPI) => {
+    try {
+      const response = await api.post("/commandes/check-stock", { livres });
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, thunkAPI);
+    }
+  }
+);
+
+// ✅ NEW: Fetch status history for a commande
+export const fetchStatusHistory = createAsyncThunk(
+  "commandes/fetchStatusHistory",
+  async (id, thunkAPI) => {
+    try {
+      const response = await api.get(`/commandes/${id}/status-history`);
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, thunkAPI);
+    }
+  }
+);
+
+// ✅ NEW: Get commande with tracking (includes history)
+export const fetchCommandeWithTracking = createAsyncThunk(
+  "commandes/fetchWithTracking",
+  async (id, thunkAPI) => {
+    try {
+      const response = await api.get(`/commandes/${id}/with-tracking`);
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, thunkAPI);
+    }
+  }
+);
+
+// ✅ NEW: Sync all orders statuses
+export const syncAllStatuses = createAsyncThunk(
+  "commandes/syncAllStatuses",
+  async (_, thunkAPI) => {
+    try {
+      const response = await api.post("/commandes/sync-all-statuses");
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, thunkAPI);
+    }
+  }
+);
+
 // ==============================================
 // 💰 DEPENSES ACTIONS
 // ==============================================
@@ -448,7 +513,7 @@ export const deleteFinance = createAsyncThunk(
 );
 
 // ==============================================
-// 📚 BOOKS TOTAL VALUE ACTION (ADD THIS)
+// 📚 BOOKS TOTAL VALUE ACTION
 // ==============================================
 
 export const fetchBooksTotalValue = createAsyncThunk(
@@ -549,6 +614,82 @@ export const changePassword = createAsyncThunk(
         current_password,
         new_password
       });
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, thunkAPI);
+    }
+  }
+);
+
+// ==============================================
+// 📦 COMMANDE FOURNISSEURS ACTIONS
+// ==============================================
+
+export const fetchCommandesFournisseur = createAsyncThunk(
+  "commandesFournisseur/fetchAll",
+  async (_, thunkAPI) => {
+    try {
+      const response = await api.get("/commande-fournisseurs");
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, thunkAPI);
+    }
+  }
+);
+
+export const fetchCommandeFournisseur = createAsyncThunk(
+  "commandesFournisseur/fetchOne",
+  async (id, thunkAPI) => {
+    try {
+      const response = await api.get(`/commande-fournisseurs/${id}`);
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, thunkAPI);
+    }
+  }
+);
+
+export const createCommandeFournisseur = createAsyncThunk(
+  "commandesFournisseur/create",
+  async (data, thunkAPI) => {
+    try {
+      const response = await api.post("/commande-fournisseurs", data);
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, thunkAPI);
+    }
+  }
+);
+
+export const updateCommandeFournisseur = createAsyncThunk(
+  "commandesFournisseur/update",
+  async ({ id, ...data }, thunkAPI) => {
+    try {
+      const response = await api.put(`/commande-fournisseurs/${id}`, data);
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, thunkAPI);
+    }
+  }
+);
+
+export const deleteCommandeFournisseur = createAsyncThunk(
+  "commandesFournisseur/delete",
+  async (id, thunkAPI) => {
+    try {
+      await api.delete(`/commande-fournisseurs/${id}`);
+      return id;
+    } catch (error) {
+      return handleApiError(error, thunkAPI);
+    }
+  }
+);
+
+export const fetchCommandesByLivre = createAsyncThunk(
+  "commandesFournisseur/fetchByLivre",
+  async (livreId, thunkAPI) => {
+    try {
+      const response = await api.get(`/commande-fournisseurs/livre/${livreId}`);
       return response.data;
     } catch (error) {
       return handleApiError(error, thunkAPI);
@@ -745,11 +886,30 @@ const livresSlice = createSlice({
     },
     clearCurrentLivre: (state) => {
       state.currentLivre = null;
+    },
+    updateLivreStock: (state, action) => {
+      const { id, stock } = action.payload;
+      const livre = state.list.find(l => l.id === id);
+      if (livre) {
+        livre.stock = stock;
+      }
+      if (state.currentLivre?.id === id) {
+        state.currentLivre.stock = stock;
+      }
+    },
+    toggleLivreRunning: (state, action) => {
+      const { id, is_running } = action.payload;
+      const livre = state.list.find(l => l.id === id);
+      if (livre) {
+        livre.is_running = is_running;
+      }
+      if (state.currentLivre?.id === id) {
+        state.currentLivre.is_running = is_running;
+      }
     }
   },
   extraReducers: (builder) => {
     builder
-      // Fetch all livres
       .addCase(fetchLivres.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -763,7 +923,6 @@ const livresSlice = createSlice({
         state.error = action.payload;
         state.list = [];
       })
-      // Fetch single livre
       .addCase(fetchLivre.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -776,7 +935,6 @@ const livresSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Create livre
       .addCase(createLivre.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -792,7 +950,6 @@ const livresSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Update livre
       .addCase(updateLivre.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -812,14 +969,12 @@ const livresSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Delete livre
       .addCase(deleteLivre.fulfilled, (state, action) => {
         state.list = state.list.filter(l => l.id !== action.payload);
         if (state.currentLivre?.id === action.payload) {
           state.currentLivre = null;
         }
       })
-      // Delete livre image
       .addCase(deleteLivreImage.fulfilled, (state, action) => {
         const updatedLivre = action.payload.data || action.payload;
         if (updatedLivre && updatedLivre.id) {
@@ -836,7 +991,7 @@ const livresSlice = createSlice({
 });
 
 // ==============================================
-// 🛒 COMMANDES SLICE
+// 🛒 COMMANDES SLICE (UPDATED with status history)
 // ==============================================
 
 const commandesSlice = createSlice({
@@ -844,8 +999,15 @@ const commandesSlice = createSlice({
   initialState: {
     list: [],
     currentCommande: null,
+    statusHistory: [], // Store status history for current commande
     loading: false,
-    error: null
+    error: null,
+    syncProgress: {
+      isSyncing: false,
+      updated: 0,
+      failed: 0,
+      total: 0
+    }
   },
   reducers: {
     clearCommandeError: (state) => {
@@ -853,6 +1015,67 @@ const commandesSlice = createSlice({
     },
     clearCurrentCommande: (state) => {
       state.currentCommande = null;
+      state.statusHistory = [];
+    },
+    // ✅ NEW: Update status history locally
+    updateCommandeStatus: (state, action) => {
+      const { id, statut, statut_second, status_historique, statut_display } = action.payload;
+      const commande = state.list.find(c => c.id === id);
+      if (commande) {
+        commande.statut = statut;
+        commande.statut_second = statut_second;
+        commande.status_historique = status_historique;
+        commande.statut_display = statut_display || (statut_second && statut_second !== '' 
+          ? `${statut} - ${statut_second}` 
+          : statut);
+      }
+      if (state.currentCommande?.id === id) {
+        state.currentCommande.statut = statut;
+        state.currentCommande.statut_second = statut_second;
+        state.currentCommande.status_historique = status_historique;
+        state.currentCommande.statut_display = statut_display || (statut_second && statut_second !== '' 
+          ? `${statut} - ${statut_second}` 
+          : statut);
+        state.statusHistory = status_historique || [];
+      }
+    },
+    // ✅ NEW: Add a single status change
+    addStatusChange: (state, action) => {
+      const { id, statusChange } = action.payload;
+      const commande = state.list.find(c => c.id === id);
+      if (commande) {
+        if (!commande.status_historique) commande.status_historique = [];
+        commande.status_historique.push(statusChange);
+        // Update display status if needed
+        if (statusChange.new_status) {
+          commande.statut = statusChange.new_status;
+          commande.statut_second = statusChange.new_status_second;
+          commande.statut_display = statusChange.new_status_second && statusChange.new_status_second !== ''
+            ? `${statusChange.new_status} - ${statusChange.new_status_second}`
+            : statusChange.new_status;
+        }
+      }
+      if (state.currentCommande?.id === id) {
+        if (!state.currentCommande.status_historique) state.currentCommande.status_historique = [];
+        state.currentCommande.status_historique.push(statusChange);
+        state.statusHistory = state.currentCommande.status_historique;
+        if (statusChange.new_status) {
+          state.currentCommande.statut = statusChange.new_status;
+          state.currentCommande.statut_second = statusChange.new_status_second;
+          state.currentCommande.statut_display = statusChange.new_status_second && statusChange.new_status_second !== ''
+            ? `${statusChange.new_status} - ${statusChange.new_status_second}`
+            : statusChange.new_status;
+        }
+      }
+    },
+    // ✅ NEW: Clear sync progress
+    clearSyncProgress: (state) => {
+      state.syncProgress = {
+        isSyncing: false,
+        updated: 0,
+        failed: 0,
+        total: 0
+      };
     }
   },
   extraReducers: (builder) => {
@@ -878,6 +1101,7 @@ const commandesSlice = createSlice({
       .addCase(fetchCommande.fulfilled, (state, action) => {
         state.loading = false;
         state.currentCommande = action.payload;
+        state.statusHistory = action.payload.status_historique || [];
       })
       .addCase(fetchCommande.rejected, (state, action) => {
         state.loading = false;
@@ -890,7 +1114,10 @@ const commandesSlice = createSlice({
       })
       .addCase(createCommande.fulfilled, (state, action) => {
         state.loading = false;
-        state.list.push(action.payload.data || action.payload);
+        const newCommande = action.payload.data || action.payload;
+        if (newCommande && newCommande.id) {
+          state.list.unshift(newCommande);
+        }
       })
       .addCase(createCommande.rejected, (state, action) => {
         state.loading = false;
@@ -904,11 +1131,14 @@ const commandesSlice = createSlice({
       .addCase(updateCommande.fulfilled, (state, action) => {
         state.loading = false;
         const updatedCommande = action.payload.data || action.payload;
-        const index = state.list.findIndex(c => c.id === updatedCommande.id);
-        if (index !== -1) {
-          state.list[index] = updatedCommande;
+        if (updatedCommande && updatedCommande.id) {
+          const index = state.list.findIndex(c => c.id === updatedCommande.id);
+          if (index !== -1) {
+            state.list[index] = updatedCommande;
+          }
+          state.currentCommande = updatedCommande;
+          state.statusHistory = updatedCommande.status_historique || [];
         }
-        state.currentCommande = updatedCommande;
       })
       .addCase(updateCommande.rejected, (state, action) => {
         state.loading = false;
@@ -919,18 +1149,95 @@ const commandesSlice = createSlice({
         state.list = state.list.filter(c => c.id !== action.payload);
         if (state.currentCommande?.id === action.payload) {
           state.currentCommande = null;
+          state.statusHistory = [];
         }
       })
       // Mark as delivered
       .addCase(markCommandeAsDelivered.fulfilled, (state, action) => {
         const updatedCommande = action.payload.data || action.payload;
-        const index = state.list.findIndex(c => c.id === updatedCommande.id);
-        if (index !== -1) {
-          state.list[index] = updatedCommande;
+        if (updatedCommande && updatedCommande.id) {
+          const index = state.list.findIndex(c => c.id === updatedCommande.id);
+          if (index !== -1) {
+            state.list[index] = updatedCommande;
+          }
+          if (state.currentCommande?.id === updatedCommande.id) {
+            state.currentCommande = updatedCommande;
+            state.statusHistory = updatedCommande.status_historique || [];
+          }
         }
-        if (state.currentCommande?.id === updatedCommande.id) {
-          state.currentCommande = updatedCommande;
+      })
+      // Mark as sent/not sent
+      .addCase(markCommandeAsSent.fulfilled, (state, action) => {
+        const updatedCommande = action.payload.data || action.payload;
+        if (updatedCommande && updatedCommande.id) {
+          const index = state.list.findIndex(c => c.id === updatedCommande.id);
+          if (index !== -1) {
+            state.list[index] = updatedCommande;
+          }
+          if (state.currentCommande?.id === updatedCommande.id) {
+            state.currentCommande = updatedCommande;
+          }
         }
+      })
+      // ✅ NEW: Fetch status history
+      .addCase(fetchStatusHistory.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchStatusHistory.fulfilled, (state, action) => {
+        state.loading = false;
+        state.statusHistory = action.payload.status_history || [];
+      })
+      .addCase(fetchStatusHistory.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // ✅ NEW: Fetch commande with tracking
+      .addCase(fetchCommandeWithTracking.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchCommandeWithTracking.fulfilled, (state, action) => {
+        state.loading = false;
+        state.currentCommande = action.payload.order;
+        state.statusHistory = action.payload.order.status_historique || [];
+        state.trackingData = action.payload.tracking;
+      })
+      .addCase(fetchCommandeWithTracking.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // ✅ NEW: Sync all statuses
+      .addCase(syncAllStatuses.pending, (state) => {
+        state.syncProgress.isSyncing = true;
+        state.syncProgress.updated = 0;
+        state.syncProgress.failed = 0;
+        state.error = null;
+      })
+      .addCase(syncAllStatuses.fulfilled, (state, action) => {
+        state.syncProgress.isSyncing = false;
+        state.syncProgress.updated = action.payload.updated || 0;
+        state.syncProgress.failed = action.payload.failed || 0;
+        state.syncProgress.total = action.payload.total || 0;
+        // Update the list with synced data if returned
+        if (action.payload.results) {
+          action.payload.results.forEach(result => {
+            if (result.success && result.new_status) {
+              const commande = state.list.find(c => c.parcel_code === result.parcel_code);
+              if (commande) {
+                commande.statut = result.new_status;
+                commande.statut_second = result.new_secondary;
+                commande.statut_display = result.new_secondary && result.new_secondary !== ''
+                  ? `${result.new_status} - ${result.new_secondary}`
+                  : result.new_status;
+              }
+            }
+          });
+        }
+      })
+      .addCase(syncAllStatuses.rejected, (state, action) => {
+        state.syncProgress.isSyncing = false;
+        state.error = action.payload;
       });
   }
 });
@@ -957,7 +1264,6 @@ const depensesSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch all depenses
       .addCase(fetchDepenses.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -970,7 +1276,6 @@ const depensesSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Fetch single depense
       .addCase(fetchDepense.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -983,7 +1288,6 @@ const depensesSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Create depense
       .addCase(createDepense.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -996,7 +1300,6 @@ const depensesSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Update depense
       .addCase(updateDepense.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -1014,7 +1317,6 @@ const depensesSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Delete depense
       .addCase(deleteDepense.fulfilled, (state, action) => {
         state.list = state.list.filter(d => d.id !== action.payload);
         if (state.currentDepense?.id === action.payload) {
@@ -1025,7 +1327,7 @@ const depensesSlice = createSlice({
 });
 
 // ==============================================
-// 💰 FINANCES SLICE (UPDATED WITH TOTAL BOOKS VALUE)
+// 💰 FINANCES SLICE
 // ==============================================
 
 const financesSlice = createSlice({
@@ -1033,7 +1335,7 @@ const financesSlice = createSlice({
   initialState: {
     list: [],
     currentFinance: null,
-    totalBooksValue: 0, // ADD THIS
+    totalBooksValue: 0,
     loading: false,
     error: null
   },
@@ -1047,7 +1349,6 @@ const financesSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch all finances
       .addCase(fetchFinances.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -1055,16 +1356,14 @@ const financesSlice = createSlice({
       .addCase(fetchFinances.fulfilled, (state, action) => {
         state.loading = false;
         state.list = action.payload;
-        // Get the latest finance record for capital
         if (action.payload && action.payload.length > 0) {
-          state.currentFinance = action.payload[0]; // Assuming you want the latest
+          state.currentFinance = action.payload[0];
         }
       })
       .addCase(fetchFinances.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
-      // Fetch single finance
       .addCase(fetchFinance.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -1077,7 +1376,6 @@ const financesSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Create finance
       .addCase(createFinance.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -1094,7 +1392,6 @@ const financesSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Update finance
       .addCase(updateFinance.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -1114,14 +1411,12 @@ const financesSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Delete finance
       .addCase(deleteFinance.fulfilled, (state, action) => {
         state.list = state.list.filter(f => f.id !== action.payload);
         if (state.currentFinance?.id === action.payload) {
           state.currentFinance = null;
         }
       })
-      // ADD THIS: Fetch books total value
       .addCase(fetchBooksTotalValue.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -1159,7 +1454,6 @@ const utilisateursSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch all utilisateurs
       .addCase(fetchUtilisateurs.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -1174,7 +1468,6 @@ const utilisateursSlice = createSlice({
         state.error = action.payload;
         state.list = [];
       })
-      // Create utilisateur
       .addCase(createUtilisateur.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -1190,7 +1483,6 @@ const utilisateursSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Update utilisateur
       .addCase(updateUtilisateur.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -1210,14 +1502,12 @@ const utilisateursSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Delete utilisateur
       .addCase(deleteUtilisateur.fulfilled, (state, action) => {
         state.list = state.list.filter(u => u.id !== action.payload);
         if (state.currentUtilisateur?.id === action.payload) {
           state.currentUtilisateur = null;
         }
       })
-      // Toggle status
       .addCase(toggleUtilisateurStatus.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -1239,7 +1529,6 @@ const utilisateursSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Update role
       .addCase(updateUtilisateurRole.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -1256,6 +1545,108 @@ const utilisateursSlice = createSlice({
         }
       })
       .addCase(updateUtilisateurRole.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      });
+  }
+});
+
+// ==============================================
+// 📦 COMMANDE FOURNISSEURS SLICE
+// ==============================================
+
+const commandesFournisseurSlice = createSlice({
+  name: "commandesFournisseur",
+  initialState: {
+    list: [],
+    currentCommande: null,
+    loading: false,
+    error: null
+  },
+  reducers: {
+    clearCommandeFournisseurError: (state) => {
+      state.error = null;
+    },
+    clearCurrentCommandeFournisseur: (state) => {
+      state.currentCommande = null;
+    }
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchCommandesFournisseur.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchCommandesFournisseur.fulfilled, (state, action) => {
+        state.loading = false;
+        state.list = Array.isArray(action.payload) ? action.payload : [];
+      })
+      .addCase(fetchCommandesFournisseur.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+        state.list = [];
+      })
+      .addCase(fetchCommandeFournisseur.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchCommandeFournisseur.fulfilled, (state, action) => {
+        state.loading = false;
+        state.currentCommande = action.payload;
+      })
+      .addCase(fetchCommandeFournisseur.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(createCommandeFournisseur.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(createCommandeFournisseur.fulfilled, (state, action) => {
+        state.loading = false;
+        const newCommande = action.payload.data || action.payload;
+        if (newCommande && newCommande.id) {
+          state.list.push(newCommande);
+        }
+      })
+      .addCase(createCommandeFournisseur.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(updateCommandeFournisseur.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateCommandeFournisseur.fulfilled, (state, action) => {
+        state.loading = false;
+        const updatedCommande = action.payload.data || action.payload;
+        if (updatedCommande && updatedCommande.id) {
+          const index = state.list.findIndex(c => c.id === updatedCommande.id);
+          if (index !== -1) {
+            state.list[index] = updatedCommande;
+          }
+          state.currentCommande = updatedCommande;
+        }
+      })
+      .addCase(updateCommandeFournisseur.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(deleteCommandeFournisseur.fulfilled, (state, action) => {
+        state.list = state.list.filter(c => c.id !== action.payload);
+        if (state.currentCommande?.id === action.payload) {
+          state.currentCommande = null;
+        }
+      })
+      .addCase(fetchCommandesByLivre.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchCommandesByLivre.fulfilled, (state, action) => {
+        state.loading = false;
+        state.list = Array.isArray(action.payload) ? action.payload : [];
+      })
+      .addCase(fetchCommandesByLivre.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });
@@ -1284,7 +1675,6 @@ const messagesSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch all messages
       .addCase(fetchMessages.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -1298,7 +1688,6 @@ const messagesSlice = createSlice({
         state.error = action.payload;
         state.list = [];
       })
-      // Fetch single message
       .addCase(fetchMessage.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -1311,7 +1700,6 @@ const messagesSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Create message
       .addCase(createMessage.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -1327,7 +1715,6 @@ const messagesSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Delete message
       .addCase(deleteMessage.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -1410,7 +1797,8 @@ const store = configureStore({
     finances: financesSlice.reducer,
     utilisateurs: utilisateursSlice.reducer,
     messages: messagesSlice.reducer,
-    dashboard: dashboardSlice.reducer
+    dashboard: dashboardSlice.reducer,
+    commandesFournisseur: commandesFournisseurSlice.reducer
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
@@ -1429,10 +1817,21 @@ const store = configureStore({
 export const { clearAuthError, logout: logoutFromSlice } = authSlice.actions;
 
 // Livres actions
-export const { clearLivreError, clearCurrentLivre } = livresSlice.actions;
+export const { 
+  clearLivreError, 
+  clearCurrentLivre,
+  updateLivreStock,
+  toggleLivreRunning
+} = livresSlice.actions;
 
-// Commandes actions
-export const { clearCommandeError, clearCurrentCommande } = commandesSlice.actions;
+// Commandes actions (updated)
+export const { 
+  clearCommandeError, 
+  clearCurrentCommande,
+  updateCommandeStatus,
+  addStatusChange,
+  clearSyncProgress
+} = commandesSlice.actions;
 
 // Depenses actions
 export const { clearDepenseError, clearCurrentDepense } = depensesSlice.actions;
@@ -1448,6 +1847,12 @@ export const { clearMessageError, clearCurrentMessage } = messagesSlice.actions;
 
 // Dashboard actions
 export const { clearDashboardError } = dashboardSlice.actions;
+
+// Commandes Fournisseur actions
+export const { 
+  clearCommandeFournisseurError, 
+  clearCurrentCommandeFournisseur 
+} = commandesFournisseurSlice.actions;
 
 // ==============================================
 // 🎯 Selectors
@@ -1467,11 +1872,70 @@ export const selectCurrentLivre = (state) => state.livres.currentLivre;
 export const selectLivresLoading = (state) => state.livres.loading;
 export const selectLivresError = (state) => state.livres.error;
 
-// Commandes selectors
+// New selectors for is_running and stock
+export const selectLivreStock = (state, livreId) => {
+  const livre = state.livres.list.find(l => l.id === livreId);
+  return livre?.stock ?? 0;
+};
+
+export const selectLivreIsRunning = (state, livreId) => {
+  const livre = state.livres.list.find(l => l.id === livreId);
+  return livre?.is_running ?? false;
+};
+
+export const selectLowStockLivres = (state, threshold = 10) => {
+  return state.livres.list.filter(livre => livre.stock <= threshold);
+};
+
+export const selectRunningLivres = (state) => {
+  return state.livres.list.filter(livre => livre.is_running === true);
+};
+
+export const selectOutOfStockLivres = (state) => {
+  return state.livres.list.filter(livre => livre.stock === 0);
+};
+
+// Commandes selectors (updated)
 export const selectCommandes = (state) => state.commandes.list;
 export const selectCurrentCommande = (state) => state.commandes.currentCommande;
 export const selectCommandesLoading = (state) => state.commandes.loading;
 export const selectCommandesError = (state) => state.commandes.error;
+export const selectStatusHistory = (state) => state.commandes.statusHistory;
+export const selectSyncProgress = (state) => state.commandes.syncProgress;
+
+// ✅ NEW: Helper selector to get formatted status history
+export const selectFormattedStatusHistory = (state) => {
+  const history = state.commandes.statusHistory;
+  if (!history || !Array.isArray(history)) return [];
+  
+  return history.map(entry => ({
+    ...entry,
+    formattedOld: entry.old_status && entry.old_status_second 
+      ? `${entry.old_status} - ${entry.old_status_second}`
+      : entry.old_status,
+    formattedNew: entry.new_status && entry.new_status_second 
+      ? `${entry.new_status} - ${entry.new_status_second}`
+      : entry.new_status,
+    changedAtFormatted: entry.changed_at ? new Date(entry.changed_at).toLocaleString() : null,
+    sourceIcon: entry.source === 'webhook' ? '🔔' : 
+                 entry.source === 'manual_update' ? '✏️' :
+                 entry.source === 'tracking_api' ? '📍' :
+                 entry.source === 'batch_sync' ? '🔄' :
+                 entry.source === 'creation' ? '➕' : '📝'
+  }));
+};
+
+// ✅ NEW: Selector to get last status change
+export const selectLastStatusChange = (state) => {
+  const history = state.commandes.statusHistory;
+  if (!history || history.length === 0) return null;
+  return history[history.length - 1];
+};
+
+// ✅ NEW: Selector to get status change count
+export const selectStatusChangesCount = (state) => {
+  return state.commandes.statusHistory?.length || 0;
+};
 
 // Depenses selectors
 export const selectDepenses = (state) => state.depenses.list;
@@ -1482,7 +1946,7 @@ export const selectDepensesError = (state) => state.depenses.error;
 // Finances selectors
 export const selectFinances = (state) => state.finances.list;
 export const selectCurrentFinance = (state) => state.finances.currentFinance;
-export const selectTotalBooksValue = (state) => state.finances.totalBooksValue; // ADD THIS
+export const selectTotalBooksValue = (state) => state.finances.totalBooksValue;
 export const selectFinancesLoading = (state) => state.finances.loading;
 export const selectFinancesError = (state) => state.finances.error;
 
@@ -1503,5 +1967,11 @@ export const selectDashboardStats = (state) => state.dashboard.stats;
 export const selectMonthlyStats = (state) => state.dashboard.monthlyStats;
 export const selectDashboardLoading = (state) => state.dashboard.loading;
 export const selectDashboardError = (state) => state.dashboard.error;
+
+// Commandes Fournisseur selectors
+export const selectCommandesFournisseur = (state) => state.commandesFournisseur.list;
+export const selectCurrentCommandeFournisseur = (state) => state.commandesFournisseur.currentCommande;
+export const selectCommandesFournisseurLoading = (state) => state.commandesFournisseur.loading;
+export const selectCommandesFournisseurError = (state) => state.commandesFournisseur.error;
 
 export default store;

@@ -19,9 +19,12 @@ const BookCarousel = forwardRef(({ onShowDetails, allBooks = [] }, ref) => {
   const autoScrollEnabledRef = useRef(true);
   const clickProcessedRef = useRef(false);
 
-  // Get only the 20 latest books (assuming books are sorted by date added)
-  const latestBooks = books.slice(0, 20);
-  const loopedBooks = [...latestBooks, ...latestBooks, ...latestBooks];
+  // Filter books where is_running is true, then get only the 20 latest
+  const runningBooks = books
+    .filter(book => book.is_running === true)
+    .slice(0, 20);
+  
+  const loopedBooks = [...runningBooks, ...runningBooks, ...runningBooks];
 
   // Expose methods to parent component
   useImperativeHandle(ref, () => ({
@@ -46,7 +49,7 @@ const BookCarousel = forwardRef(({ onShowDetails, allBooks = [] }, ref) => {
 
   useEffect(() => {
     const track = trackRef.current;
-    if (!track || latestBooks.length === 0) return;
+    if (!track || runningBooks.length === 0) return;
 
     const SPEED = 0.8;
 
@@ -57,7 +60,7 @@ const BookCarousel = forwardRef(({ onShowDetails, allBooks = [] }, ref) => {
         const gap = 20;
         const itemWidth = cardWidth + gap;
         
-        if (posRef.current >= itemWidth * latestBooks.length) {
+        if (posRef.current >= itemWidth * runningBooks.length) {
           posRef.current = 0;
         }
         
@@ -73,7 +76,7 @@ const BookCarousel = forwardRef(({ onShowDetails, allBooks = [] }, ref) => {
         cancelAnimationFrame(animRef.current);
       }
     };
-  }, [latestBooks.length]);
+  }, [runningBooks.length]);
 
   // Mouse/Touch drag handlers
   const handleMouseDown = (e) => {
@@ -190,7 +193,7 @@ const BookCarousel = forwardRef(({ onShowDetails, allBooks = [] }, ref) => {
     }
   };
 
-  if (latestBooks.length === 0) {
+  if (runningBooks.length === 0) {
     return null;
   }
 
@@ -226,7 +229,7 @@ const BookCarousel = forwardRef(({ onShowDetails, allBooks = [] }, ref) => {
             >
               <BookCard 
                 book={book} 
-                allBooks={allBooks.length > 0 ? allBooks : latestBooks}
+                allBooks={allBooks.length > 0 ? allBooks.filter(b => b.is_running === true) : runningBooks}
                 onShowDetails={onShowDetails}
               />
             </div>

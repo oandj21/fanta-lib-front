@@ -22,6 +22,7 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import AdminMessages from "./pages/admin/AdminMessages";
 import AdminProfile from "./pages/admin/AdminProfile";
 import PublicTrackOrder from "./pages/PublicTrackOrder";
+import Fournisseurcommand from "./pages/admin/Fournisseurcommand"; // Import the new component
 
 // Title Updater Component - Updates document title based on current route
 const TitleUpdater = () => {
@@ -43,6 +44,7 @@ const TitleUpdater = () => {
       '/users': 'Utilisateurs',
       '/messages': 'Messages',
       '/profile': 'Profil',
+      '/fournisseur-command': 'Commandes Fournisseur', // Add title for new route
     };
 
     // Check if it's a tracking page
@@ -162,6 +164,18 @@ const App = () => (
               }
             >
               <Route index element={<AdminProfile />} />
+            </Route>
+
+            {/* New route for Fournisseurcommand */}
+            <Route
+              path="/fournisseur-command"
+              element={
+                <ProtectedRoute>
+                  <AdminLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<Fournisseurcommand />} />
             </Route>
             
             {/* Redirect old /admin routes */}

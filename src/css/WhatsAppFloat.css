@@ -1,4 +1,4 @@
-.whatsapp-float {
+.whatsapp-floats {
   position: fixed;
   bottom: 30px;
   left: 30px;
@@ -16,12 +16,12 @@
   z-index: 1000;
 }
 
-.whatsapp-float:hover {
+.whatsapp-floats:hover {
   transform: scale(1.1) rotate(5deg);
   box-shadow: 0 8px 25px rgba(37, 211, 102, 0.4);
 }
 
-.whatsapp-icon {
+.whatsapp-icons {
   width: 35px;
   height: 35px;
   fill: white;
@@ -91,14 +91,14 @@
 }
 
 @media (max-width: 768px) {
-  .whatsapp-float {
+  .whatsapp-floats {
     bottom: 20px;
     left: 20px;
     width: 50px;
     height: 50px;
   }
   
-  .whatsapp-icon {
+  .whatsapp-icons {
     width: 28px;
     height: 28px;
   }
@@ -107,7 +107,7 @@
     display: none;
   }
 }
-.whatsapp-float:hover {
+.whatsapp-floats:hover {
   animation: floatAndTurn 0.6s ease-in-out infinite;
   box-shadow: 0 8px 25px rgba(37, 211, 102, 0.4);
 }

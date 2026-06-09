@@ -555,14 +555,12 @@ export default function AdminExpenses() {
                         <button 
                           onClick={() => openEdit(expense)} 
                           className="btn-icon edit" 
-                          title="Modifier"
                         >
                           <Pencil size={16} />
                         </button>
                         <button 
                           onClick={() => handleDelete(expense.id)} 
                           className="btn-icon delete" 
-                          title="Supprimer"
                         >
                           <Trash2 size={16} />
                         </button>

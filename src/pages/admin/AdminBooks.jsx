@@ -165,6 +165,10 @@ export default function AdminBooks() {
   // State for stock update loading
   const [updatingStock, setUpdatingStock] = useState(null);
   
+  // State for inline stock adjustment
+  const [stockInputValues, setStockInputValues] = useState({});
+  const [showStockInput, setShowStockInput] = useState({});
+  
   const [form, setForm] = useState({
     titre: "",
     auteur: "",
@@ -329,11 +333,38 @@ export default function AdminBooks() {
     setShowDeleteConfirm(null);
   };
 
-  // Function to update stock quantity
-  const handleUpdateStock = async (bookId, currentStock, delta) => {
-    const newStock = Math.max(0, currentStock + delta);
+  // Function to show stock input
+  const showStockInputField = (bookId, type) => {
+    setStockInputValues(prev => ({ ...prev, [bookId]: { type, value: "" } }));
+    setShowStockInput(prev => ({ ...prev, [bookId]: true }));
+  };
+
+  // Function to handle stock input change
+  const handleStockInputChange = (bookId, value) => {
+    setStockInputValues(prev => ({
+      ...prev,
+      [bookId]: { ...prev[bookId], value }
+    }));
+  };
+
+  // Function to update stock with custom quantity
+  const handleStockUpdate = async (bookId, currentStock, type, quantityValue) => {
+    const quantity = parseInt(quantityValue);
+    if (isNaN(quantity) || quantity <= 0) {
+      alert("Veuillez entrer un nombre valide supérieur à 0");
+      return;
+    }
     
-    if (newStock === currentStock) return;
+    let newStock;
+    if (type === "add") {
+      newStock = currentStock + quantity;
+    } else {
+      if (quantity > currentStock) {
+        alert(`Impossible de retirer ${quantity} unités. Stock actuel: ${currentStock}`);
+        return;
+      }
+      newStock = currentStock - quantity;
+    }
     
     setUpdatingStock(bookId);
     
@@ -349,12 +380,22 @@ export default function AdminBooks() {
       await dispatch(updateLivre({ id: bookId, formData })).unwrap();
       dispatch(fetchLivres()); // Refresh the list
       
+      // Hide input and clear value
+      setShowStockInput(prev => ({ ...prev, [bookId]: false }));
+      setStockInputValues(prev => ({ ...prev, [bookId]: { type, value: "" } }));
+      
     } catch (error) {
       console.error('Error updating stock:', error);
       alert('Erreur lors de la mise à jour du stock');
     } finally {
       setUpdatingStock(null);
     }
+  };
+
+  // Cancel stock input
+  const cancelStockInput = (bookId) => {
+    setShowStockInput(prev => ({ ...prev, [bookId]: false }));
+    setStockInputValues(prev => ({ ...prev, [bookId]: { ...prev[bookId], value: "" } }));
   };
 
   // Function to toggle book activity (activate/deactivate)
@@ -910,7 +951,7 @@ export default function AdminBooks() {
                   }} className="sortable">
                     Prix {sortBy === 'prix_achat' && (sortOrder === 'asc' ? '↑' : '↓')}
                   </th>
-                  <th style={{ width: '140px' }}>Stock</th>
+                  <th style={{ width: '180px' }}>Stock</th>
                   <th style={{ width: '100px' }} onClick={() => {
                     setSortBy('status');
                     setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
@@ -925,6 +966,9 @@ export default function AdminBooks() {
                   const bookImages = getImagesArray(book.images);
                   const currentStock = Number(book.stock) || 0;
                   const categoryColors = getCategoryColor(book.categorie);
+                  const showInput = showStockInput[book.id];
+                  const inputValue = stockInputValues[book.id]?.value || "";
+                  const inputType = stockInputValues[book.id]?.type || "add";
                   
                   return (
                     <tr key={book.id}>
@@ -968,33 +1012,67 @@ export default function AdminBooks() {
                         {book.prix_achat ? Number(book.prix_achat).toFixed(2) : "0.00"} DH
                       </td>
                       <td className="book-stock-cell">
-                        <div className="stock-control">
-                          <button
-                            onClick={() => handleUpdateStock(book.id, currentStock, -1)}
-                            disabled={updatingStock === book.id || currentStock <= 0}
-                            className="stock-btn stock-btn-minus"
-                          >
-                            {updatingStock === book.id ? (
-                              <Loader size={14} className="spin" />
-                            ) : (
-                              <Minus size={14} />
-                            )}
-                          </button>
-                          <span className={`stock-value ${currentStock === 0 ? 'zero-stock' : ''}`}>
-                            {currentStock}
-                          </span>
-                          <button
-                            onClick={() => handleUpdateStock(book.id, currentStock, 1)}
-                            disabled={updatingStock === book.id}
-                            className="stock-btn stock-btn-plus"
-                          >
-                            {updatingStock === book.id ? (
-                              <Loader size={14} className="spin" />
-                            ) : (
-                              <PlusIcon size={14} />
-                            )}
-                          </button>
-                        </div>
+                        {!showInput ? (
+                          <div className="stock-control">
+                            <button
+                              onClick={() => showStockInputField(book.id, "subtract")}
+                              disabled={updatingStock === book.id || currentStock <= 0}
+                              className="stock-btn stock-btn-minus"
+                            >
+                              {updatingStock === book.id ? (
+                                <Loader size={14} className="spin" />
+                              ) : (
+                                <Minus size={14} />
+                              )}
+                            </button>
+                            <span className={`stock-value ${currentStock === 0 ? 'zero-stock' : ''}`}>
+                              {currentStock}
+                            </span>
+                            <button
+                              onClick={() => showStockInputField(book.id, "add")}
+                              disabled={updatingStock === book.id}
+                              className="stock-btn stock-btn-plus"
+                              
+                            >
+                              {updatingStock === book.id ? (
+                                <Loader size={14} className="spin" />
+                              ) : (
+                                <PlusIcon size={14} />
+                              )}
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="stock-input-container">
+                            <input
+                              type="number"
+                              min="1"
+                              step="1"
+                              value={inputValue}
+                              onChange={(e) => handleStockInputChange(book.id, e.target.value)}
+                              placeholder="Qté"
+                              className="stock-quantity-input"
+                              autoFocus
+                              onKeyPress={(e) => {
+                                if (e.key === 'Enter') {
+                                  handleStockUpdate(book.id, currentStock, inputType, inputValue);
+                                }
+                              }}
+                            />
+                            <button
+                              onClick={() => handleStockUpdate(book.id, currentStock, inputType, inputValue)}
+                              className="stock-confirm-btn"
+                              disabled={!inputValue || parseInt(inputValue) <= 0}
+                            >
+                              <Check size={14} />
+                            </button>
+                            <button
+                              onClick={() => cancelStockInput(book.id)}
+                              className="stock-cancel-btn"
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        )}
                       </td>
                       <td>
                         <span className={`status-badge ${book.status === "available" ? "available" : "out_of_stock"}`}>
@@ -1008,6 +1086,7 @@ export default function AdminBooks() {
                             onClick={() => handleToggleActivity(book)}
                             disabled={togglingActivity === book.id || (!book.is_running && !stats.canAddMore && stats.runningBooks >= stats.maxActiveBooks)}
                             className={`btn-icon ${book.is_running ? 'deactivate' : 'activate'}`}
+                            
                           >
                             {togglingActivity === book.id ? (
                               <Loader size={16} className="spin" />

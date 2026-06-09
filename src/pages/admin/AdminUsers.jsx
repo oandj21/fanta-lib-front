@@ -658,7 +658,7 @@ export default function AdminUsers() {
                           <button 
                             onClick={() => openEdit(user)} 
                             className="btn-icon edit"
-                            title="Modifier"
+                            
                           >
                             <Pencil size={16} />
                           </button>
@@ -669,7 +669,7 @@ export default function AdminUsers() {
                           <button 
                             onClick={() => openToggleConfirmation(user)} 
                             className={`btn-icon ${user.is_active ? 'warning' : 'success'}`}
-                            title={user.is_active ? "Désactiver" : "Activer"}
+                            
                           >
                             <Power size={16} className={user.is_active ? 'text-warning' : 'text-success'} />
                           </button>
@@ -680,7 +680,6 @@ export default function AdminUsers() {
                           <button 
                             onClick={() => openDeleteConfirmation(user)} 
                             className="btn-icon delete"
-                            title="Supprimer"
                           >
                             <Trash2 size={16} />
                           </button>

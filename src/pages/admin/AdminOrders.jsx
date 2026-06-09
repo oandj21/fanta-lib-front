@@ -450,6 +450,7 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
   return (
     <div className="city-autocomplete">
       <div className="autocomplete-input-wrapper">
+        <MapPin size={18} className="input-field-icon left" />
         <input
           type="text"
           value={query}
@@ -457,7 +458,7 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
           onFocus={() => query.length >= 1 && suggestions.length > 0 && setShowSuggestions(true)}
           onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
           placeholder="Tapez pour rechercher une ville..."
-          className="city-input"
+          className="city-input with-icon"
           disabled={disabled}
         />
         {loading && <Loader size={16} className="autocomplete-spinner" />}
@@ -624,14 +625,14 @@ const BookSelector = ({ selectedBooks, onBooksChange, onTotalQuantityChange }) =
     <div className="book-selector">
       <div className="book-search-container">
         <div className="book-search-input-wrapper">
-          <BookOpen size={18} className="book-search-icon" />
+          <BookOpen size={18} className="book-search-icon left-icon" />
           <input
             type="text"
             placeholder="Rechercher un livre par titre, auteur ou ISBN..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             onFocus={() => setShowDropdown(true)}
-            className="book-search-input"
+            className="book-search-input with-icon"
           />
           {booksLoading && <Loader size={16} className="book-search-spinner" />}
           {searchTerm && (
@@ -1447,8 +1448,8 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
   const [newOrderData, setNewOrderData] = useState({
     parcel_code: generateOrderCode(""), // Use default 'CITY' as prefix
     parcel_receiver: "",
-    parcel_phone: "",
     nmr_whatsapp: "",
+    parcel_phone: "",
     parcel_prd_qty: 0,
     parcel_city: "",
     parcel_address: "",
@@ -1802,79 +1803,93 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
           <div className="form-row">
             <div className="form-group">
               <label>Code colis</label>
-              <input
-                type="text"
-                name="parcel_code"
-                value={newOrderData.parcel_code}
-                onChange={handleNewOrderChange}
-                readOnly
-                className="readonly-input"
-              />
+              <div className="input-with-icon">
+                <Package size={20} className="input-icon" />
+                <input
+                  type="text"
+                  name="parcel_code"
+                  value={newOrderData.parcel_code}
+                  onChange={handleNewOrderChange}
+                  readOnly
+                  className="readonly-input with-icon"
+                />
+              </div>
               <small className="field-hint">Généré automatiquement</small>
             </div>
 
             <div className="form-group">
               <label>Date</label>
-              <input
-                type="date"
-                name="date"
-                value={newOrderData.date}
-                onChange={handleNewOrderChange}
-                required
-              />
+              <div className="input-with-icon">
+                <Calendar size={20} className="input-icon" />
+                <input
+                  type="date"
+                  name="date"
+                  value={newOrderData.date}
+                  onChange={handleNewOrderChange}
+                  required
+                  className="with-icon"
+                />
+              </div>
             </div>
           </div>
 
-          {/* Row 2: Client and Phone */}
+        {/* Row 2: WhatsApp Number */}
+<div className="form-roww">
+  <div className="form-groupp">
+    <label>WhatsApp <span className="optionall">(optionnel)</span></label>
+    <div className="input-with-iconn">
+      <MessageCircle size={20} className="input-iconn" />
+      <input
+        type="text"
+        name="nmr_whatsapp"
+        value={newOrderData.nmr_whatsapp}
+        onChange={handleNewOrderChange}
+        placeholder="10 chiffres"
+        maxLength="10"
+        pattern="[0-9]{10}"
+        className={whatsappError ? "input-error with-iconn" : "with-iconn"}
+      />
+    </div>
+    {whatsappError && <small className="error-hintt">{whatsappError}</small>}
+    <small className="field-hintt">Numéro WhatsApp du client (optionnel)</small>
+  </div>
+</div>
+
+          {/* Row 3: Client Name and Phone */}
           <div className="form-row">
             <div className="form-group">
               <label>Client <span className="required">*</span></label>
-              <input
-                type="text"
-                name="parcel_receiver"
-                value={newOrderData.parcel_receiver}
-                onChange={handleNewOrderChange}
-                placeholder="Nom du client"
-                required
-              />
+              <div className="input-with-icon">
+                <User size={20} className="input-icon" />
+                <input
+                  type="text"
+                  name="parcel_receiver"
+                  value={newOrderData.parcel_receiver}
+                  onChange={handleNewOrderChange}
+                  placeholder="Nom du client"
+                  required
+                  className="with-icon"
+                />
+              </div>
             </div>
 
             <div className="form-group">
               <label>Téléphone <span className="required">*</span></label>
-              <input
-                type="text"
-                name="parcel_phone"
-                value={newOrderData.parcel_phone}
-                onChange={handleNewOrderChange}
-                placeholder="10 chiffres"
-                maxLength="10"
-                pattern="[0-9]{10}"
-                className={phoneError ? "input-error" : ""}
-                required
-              />
-              {phoneError && <small className="error-hint">{phoneError}</small>}
-            </div>
-          </div>
-
-          {/* Row 3: WhatsApp Number */}
-          <div className="form-row">
-            <div className="form-group">
-              <label>WhatsApp <span className="optional">(optionnel)</span></label>
               <div className="input-with-icon">
-                <MessageCircle size={20} className="input-icon" />
+                <Phone size={20} className="input-icon" />
                 <input
                   type="text"
-                  name="nmr_whatsapp"
-                  value={newOrderData.nmr_whatsapp}
+                  name="parcel_phone"
+                  value={newOrderData.parcel_phone}
                   onChange={handleNewOrderChange}
                   placeholder="10 chiffres"
                   maxLength="10"
                   pattern="[0-9]{10}"
-                  className={whatsappError ? "input-error" : ""}
+                  className={phoneError ? "input-error with-icon" : "with-icon"}
+                  required
                 />
               </div>
-              {whatsappError && <small className="error-hint">{whatsappError}</small>}
-              <small className="field-hint">Numéro WhatsApp du client (optionnel)</small>
+              {phoneError && <small className="error-hint">{phoneError}</small>}
             </div>
           </div>
 
@@ -1892,14 +1907,18 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
 
             <div className="form-group">
               <label>Adresse <span className="required">*</span></label>
-              <input
-                type="text"
-                name="parcel_address"
-                value={newOrderData.parcel_address}
-                onChange={handleNewOrderChange}
-                placeholder="Adresse"
-                required
-              />
+              <div className="input-with-icon">
+                <MapPin size={20} className="input-icon" />
+                <input
+                  type="text"
+                  name="parcel_address"
+                  value={newOrderData.parcel_address}
+                  onChange={handleNewOrderChange}
+                  placeholder="Adresse"
+                  required
+                  className="with-icon"
+                />
+              </div>
             </div>
           </div>
 
@@ -1928,7 +1947,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
                   min="1"
                   required
                   readOnly
-                  className="readonly-input"
+                  className="readonly-input with-icon"
                 />
               </div>
             </div>
@@ -1946,6 +1965,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
                   min="0"
                   step="1"
                   required
+                  className="with-icon"
                 />
               </div>
             </div>
@@ -1965,6 +1985,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
                   placeholder="35"
                   min="0"
                   step="1"
+                  className="with-icon"
                 />
               </div>
             </div>
@@ -1981,6 +2002,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
                   placeholder="0"
                   min="0"
                   step="1"
+                  className="with-icon"
                 />
               </div>
             </div>
@@ -1997,7 +2019,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
                   name="total"
                   value={newOrderData.total === null ? '' : newOrderData.total}
                   readOnly
-                  className="readonly-input"
+                  className="readonly-input with-icon"
                   placeholder="Auto"
                 />
               </div>
@@ -2012,7 +2034,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
                   name="profit"
                   value={newOrderData.profit === null ? '' : newOrderData.profit}
                   readOnly
-                  className={`readonly-input ${newOrderData.profit < 0 ? 'negative' : ''}`}
+                  className={`readonly-input with-icon ${newOrderData.profit < 0 ? 'negative' : ''}`}
                   placeholder="Auto"
                 />
               </div>
@@ -2022,13 +2044,17 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
           {/* Row 9: Note */}
           <div className="form-group full-width">
             <label>Note</label>
-            <input
-              type="text"
-              name="parcel_note"
-              value={newOrderData.parcel_note}
-              onChange={handleNewOrderChange}
-              placeholder="Instructions spéciales"
-            />
+            <div className="input-with-icon">
+              <FileText size={20} className="input-icon" />
+              <input
+                type="text"
+                name="parcel_note"
+                value={newOrderData.parcel_note}
+                onChange={handleNewOrderChange}
+                placeholder="Instructions spéciales"
+                className="with-icon"
+              />
+            </div>
           </div>
 
           {/* Row 10: Checkbox */}
@@ -2431,75 +2457,89 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
           <div className="form-row">
             <div className="form-group">
               <label>Code colis</label>
-              <input
-                type="text"
-                value={order.parcel_code || order.code || ""}
-                readOnly
-                className="readonly-input"
-              />
+              <div className="input-with-icon">
+                <Package size={20} className="input-icon" />
+                <input
+                  type="text"
+                  value={order.parcel_code || order.code || ""}
+                  readOnly
+                  className="readonly-input with-icon"
+                />
+              </div>
             </div>
 
             <div className="form-group">
               <label>Date</label>
-              <input
-                type="date"
-                name="date"
-                value={formData.date}
-                onChange={handleInputChange}
-              />
+              <div className="input-with-icon">
+                <Calendar size={20} className="input-icon" />
+                <input
+                  type="date"
+                  name="date"
+                  value={formData.date}
+                  onChange={handleInputChange}
+                  className="with-icon"
+                />
+              </div>
             </div>
           </div>
 
-          {/* Row 2: Client and Phone */}
+         {/* Row 2: WhatsApp Number - Using new classnames */}
+<div className="form-roww">
+  <div className="form-groupp">
+    <label>WhatsApp <span className="optionall">(optionnel)</span></label>
+    <div className="input-with-iconn">
+      <MessageCircle size={20} className="input-iconn" />
+      <input
+        type="text"
+        name="nmr_whatsapp"
+        value={formData.nmr_whatsapp}
+        onChange={handleInputChange}
+        placeholder="10 chiffres"
+        maxLength="10"
+        pattern="[0-9]{10}"
+        className={whatsappError ? "input-error with-iconn" : "with-iconn"}
+      />
+    </div>
+    {whatsappError && <small className="error-hintt">{whatsappError}</small>}
+    <small className="field-hintt">Numéro WhatsApp du client (optionnel)</small>
+  </div>
+</div>
+
+          {/* Row 3: Client Name and Phone */}
           <div className="form-row">
             <div className="form-group">
               <label>Client <span className="required">*</span></label>
-              <input
-                type="text"
-                name="parcel_receiver"
-                value={formData.parcel_receiver}
-                onChange={handleInputChange}
-                placeholder="Nom du client"
-                required
-              />
+              <div className="input-with-icon">
+                <User size={20} className="input-icon" />
+                <input
+                  type="text"
+                  name="parcel_receiver"
+                  value={formData.parcel_receiver}
+                  onChange={handleInputChange}
+                  placeholder="Nom du client"
+                  required
+                  className="with-icon"
+                />
+              </div>
             </div>
 
             <div className="form-group">
               <label>Téléphone <span className="required">*</span></label>
-              <input
-                type="text"
-                name="parcel_phone"
-                value={formData.parcel_phone}
-                onChange={handleInputChange}
-                placeholder="10 chiffres"
-                maxLength="10"
-                pattern="[0-9]{10}"
-                className={phoneError ? "input-error" : ""}
-                required
-              />
-              {phoneError && <small className="error-hint">{phoneError}</small>}
-            </div>
-          </div>
-
-          {/* Row 3: WhatsApp Number */}
-          <div className="form-row">
-            <div className="form-group">
-              <label>WhatsApp <span className="optional">(optionnel)</span></label>
               <div className="input-with-icon">
-                <MessageCircle size={20} className="input-icon" />
+                <Phone size={20} className="input-icon" />
                 <input
                   type="text"
-                  name="nmr_whatsapp"
-                  value={formData.nmr_whatsapp}
+                  name="parcel_phone"
+                  value={formData.parcel_phone}
                   onChange={handleInputChange}
                   placeholder="10 chiffres"
                   maxLength="10"
                   pattern="[0-9]{10}"
-                  className={whatsappError ? "input-error" : ""}
+                  className={phoneError ? "input-error with-icon" : "with-icon"}
+                  required
                 />
               </div>
-              {whatsappError && <small className="error-hint">{whatsappError}</small>}
-              <small className="field-hint">Numéro WhatsApp du client (optionnel)</small>
+              {phoneError && <small className="error-hint">{phoneError}</small>}
             </div>
           </div>
 
@@ -2516,14 +2556,18 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
 
             <div className="form-group">
               <label>Adresse <span className="required">*</span></label>
-              <input
-                type="text"
-                name="parcel_address"
-                value={formData.parcel_address}
-                onChange={handleInputChange}
-                placeholder="Adresse"
-                required
-              />
+              <div className="input-with-icon">
+                <MapPin size={20} className="input-icon" />
+                <input
+                  type="text"
+                  name="parcel_address"
+                  value={formData.parcel_address}
+                  onChange={handleInputChange}
+                  placeholder="Adresse"
+                  required
+                  className="with-icon"
+                />
+              </div>
             </div>
           </div>
 
@@ -2531,46 +2575,52 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
           <div className="form-row">
             <div className="form-group">
               <label>Statut principal</label>
-              <select
-                name="statut"
-                value={formData.statut}
-                onChange={handleInputChange}
-                className="statut-select"
-              >
-                <option value="NEW_PARCEL">Nouveau colis</option>
-                <option value="PARCEL_CONFIRMED">Colis confirmé</option>
-                <option value="PICKED_UP">Ramassé</option>
-                <option value="DISTRIBUTION">En distribution</option>
-                <option value="IN_PROGRESS">En cours</option>
-                <option value="SENT">Expédié</option>
-                <option value="DELIVERED">Livré</option>
-                <option value="RETURNED">Retourné</option>
-                <option value="CANCELLED">Annulé</option>
-              </select>
+              <div className="input-with-icon">
+                <Truck size={20} className="input-icon" />
+                <select
+                  name="statut"
+                  value={formData.statut}
+                  onChange={handleInputChange}
+                  className="statut-select with-icon"
+                >
+                  <option value="NEW_PARCEL">Nouveau colis</option>
+                  <option value="PARCEL_CONFIRMED">Colis confirmé</option>
+                  <option value="PICKED_UP">Ramassé</option>
+                  <option value="DISTRIBUTION">En distribution</option>
+                  <option value="IN_PROGRESS">En cours</option>
+                  <option value="SENT">Expédié</option>
+                  <option value="DELIVERED">Livré</option>
+                  <option value="RETURNED">Retourné</option>
+                  <option value="CANCELLED">Annulé</option>
+                </select>
+              </div>
             </div>
 
             <div className="form-group">
               <label>Statut secondaire</label>
-              <select
-                name="statut_second"
-                value={formData.statut_second}
-                onChange={handleInputChange}
-                className="statut-select"
-              >
-                <option value="">Aucun</option>
-                <option value="REFUSE">Refusé</option>
-                <option value="NOANSWER">Pas de réponse</option>
-                <option value="UNREACHABLE">Injoignable</option>
-                <option value="HORS_ZONE">Hors zone</option>
-                <option value="POSTPONED">Reporté</option>
-                <option value="PROGRAMMER">Programmé</option>
-                <option value="DEUX">2ème tentative</option>
-                <option value="TROIS">3ème tentative</option>
-                <option value="ENVG">En voyage</option>
-                <option value="RETURN_BY_AMANA">Retour par Amana</option>
-                <option value="SENT_BY_AMANA">Envoyé par Amana</option>
-                <option value="CANCELED">Annulé</option>
-              </select>
+              <div className="input-with-icon">
+                <AlertCircle size={20} className="input-icon" />
+                <select
+                  name="statut_second"
+                  value={formData.statut_second}
+                  onChange={handleInputChange}
+                  className="statut-select with-icon"
+                >
+                  <option value="">Aucun</option>
+                  <option value="REFUSE">Refusé</option>
+                  <option value="NOANSWER">Pas de réponse</option>
+                  <option value="UNREACHABLE">Injoignable</option>
+                  <option value="HORS_ZONE">Hors zone</option>
+                  <option value="POSTPONED">Reporté</option>
+                  <option value="PROGRAMMER">Programmé</option>
+                  <option value="DEUX">2ème tentative</option>
+                  <option value="TROIS">3ème tentative</option>
+                  <option value="ENVG">En voyage</option>
+                  <option value="RETURN_BY_AMANA">Retour par Amana</option>
+                  <option value="SENT_BY_AMANA">Envoyé par Amana</option>
+                  <option value="CANCELED">Annulé</option>
+                </select>
+              </div>
             </div>
           </div>
 
@@ -2599,7 +2649,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
                   min="1"
                   required
                   readOnly
-                  className="readonly-input"
+                  className="readonly-input with-icon"
                 />
               </div>
               <small className="field-hint">Calculé automatiquement à partir des livres</small>
@@ -2618,6 +2668,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
                   min="0"
                   step="1"
                   required
+                  className="with-icon"
                 />
               </div>
             </div>
@@ -2637,6 +2688,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
                   placeholder="35"
                   min="0"
                   step="1"
+                  className="with-icon"
                 />
               </div>
             </div>
@@ -2653,6 +2705,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
                   placeholder="0"
                   min="0"
                   step="1"
+                  className="with-icon"
                 />
               </div>
             </div>
@@ -2669,7 +2722,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
                   name="total"
                   value={formData.total === null ? '' : formData.total}
                   onChange={handleInputChange}
-                  className={totalManuallyEdited ? "manual-edit-input" : ""}
+                  className={totalManuallyEdited ? "manual-edit-input with-icon" : "with-icon"}
                   placeholder="Auto"
                   step="1"
                 />
@@ -2688,7 +2741,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
                   name="profit"
                   value={formData.profit === null ? '' : formData.profit}
                   readOnly
-                  className={`readonly-input ${formData.profit < 0 ? 'negative' : ''}`}
+                  className={`readonly-input with-icon ${formData.profit < 0 ? 'negative' : ''}`}
                   placeholder="Auto"
                 />
               </div>
@@ -2698,13 +2751,17 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
           {/* Row 10: Note */}
           <div className="form-group full-width">
             <label>Note</label>
-            <textarea
-              name="parcel_note"
-              value={formData.parcel_note}
-              onChange={handleInputChange}
-              placeholder="Instructions spéciales"
-              rows="3"
-            />
+            <div className="input-with-icon">
+              <FileText size={20} className="input-icon" />
+              <textarea
+                name="parcel_note"
+                value={formData.parcel_note}
+                onChange={handleInputChange}
+                placeholder="Instructions spéciales"
+                rows="3"
+                className="with-icon"
+              />
+            </div>
           </div>
 
           {/* Row 11: Checkbox */}
@@ -2909,53 +2966,47 @@ const WebhookTestPanel = ({ onClose }) => {
   );
 };
 
-// WhatsApp Send Button Component - FIXED: Use WhatsApp API format for emojis
+// WhatsApp Send Button Component - UPDATED with new message format
 const WhatsAppSendButton = ({ order, onSent }) => {
   const dispatch = useDispatch();
   const [isSending, setIsSending] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   
   const generateWhatsAppMessage = (orderData) => {
     const trackingLink = `${window.location.origin}/track/${orderData.parcel_code}`;
     
-    // Return the message as is - WITH the actual emojis
-    return `🌸 مرحباً ${orderData.parcel_receiver}
+    // New message format with bold text using WhatsApp markdown (*text*)
+    return `*مرحبًا ${orderData.parcel_receiver} 🌸*
 
-✅ تم تسجيل طلبيتكم بنجاح
+*✅ تم تسجيل طلبيتكم 📦 بنجاح*
 
-📦 رقم الطلبية:
+*📦 رقم الطلبية:*
 *${orderData.parcel_code}*
 
-👤 الاسم: ${orderData.parcel_receiver}
-📞 رقم الهاتف: ${orderData.nmr_whatsapp || orderData.parcel_phone || "-"}
-📍 العنوان: ${orderData.parcel_address || "-"}
-🏙️ المدينة: ${orderData.parcel_city || "-"}
+*👤 الاسم:* ${orderData.parcel_receiver}
+*📞 رقم الهاتف:* ${orderData.nmr_whatsapp || orderData.parcel_phone || "-"}
+*📍 العنوان:* ${orderData.parcel_address || "-"}
+*🏙️ المدينة:* ${orderData.parcel_city || "-"}
 
 ━━━━━━━━━━━━
 
-🔗 رابط تتبع الطلبية:
+*🔗 رابط تتبع الطلبية:*
 ${trackingLink}
 
-📦 يمكنكم متابعة حالة الطلبية في أي وقت بسهولة عبر الرابط أعلاه
+*📦 يمكنكم متابعة حالة الطلبية في أي وقت بسهولة عبر الرابط أعلاه.*
 
-📖✨ نتمنى أن تصحبكم هذه الطلبية في رحلة ممتعة بين السطور، وأن تنال إعجابكم
+*🛎️🚚 لأي استفسار يخص التوصيل أو حالة الطلبات، يمكنكم التواصل مع فريق دعم التوصيل التابع لشركتنا.*
+*💬 0632935921*
 
-🛎️ نحن دائمًا رهن إشارتكم لأي استفسار
-
-مع خالص الشكر،
-🌿 فريق مكتبة فانتازيا`;
+*مع خالص الشكر،*
+*🌿فريق مكتبة فانتازيا🌿*`;
   };
 
-  const handleSendWhatsApp = async () => {
-    if (order.is_sent) {
-      return;
-    }
-    
+  const sendWhatsAppMessage = async () => {
     if (!order.nmr_whatsapp && !order.parcel_phone) {
       alert("⚠️ Aucun numéro de téléphone ou WhatsApp disponible pour cette commande.");
-      return;
+      return false;
     }
-    
-    setIsSending(true);
     
     try {
       const phoneNumber = order.nmr_whatsapp || order.parcel_phone;
@@ -2970,86 +3021,144 @@ ${trackingLink}
       
       const message = generateWhatsAppMessage(order);
       
-      // CRITICAL FIX: Don't use encodeURIComponent for the text parameter
-      // Instead, use the WhatsApp intent:// protocol which handles emojis better
-      
-      // Method 1: Try using a form submit approach (better for mobile)
+      // Open WhatsApp
       if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-        // Mobile device - use intent
         const whatsappUrl = `intent://send?phone=${whatsappNumber}&text=${encodeURIComponent(message)}#Intent;scheme=whatsapp;package=com.whatsapp;end`;
         window.location.href = whatsappUrl;
       } else {
-        // Desktop - use web.whatsapp.com with minimal encoding
-        // Try different encoding approach
-        const encodedText = encodeURI(message); // Use encodeURI instead of encodeURIComponent
+        const encodedText = encodeURI(message);
         const whatsappUrl = `https://web.whatsapp.com/send?phone=${whatsappNumber}&text=${encodedText}`;
         window.open(whatsappUrl, '_blank');
         
-        // Fallback: Also try wa.me
         setTimeout(() => {
           const fallbackUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
           window.open(fallbackUrl, '_blank');
         }, 500);
       }
       
-      // Mark as sent in the database
-      await dispatch(markCommandeAsSent({ id: order.id, is_sent: true })).unwrap();
-      
-      if (onSent) {
-        onSent(order.id);
-      }
-      
-      await dispatch(fetchCommandes());
-      
+      return true;
     } catch (error) {
       console.error("Error sending WhatsApp message:", error);
       alert("❌ Une erreur est survenue lors de l'envoi du message WhatsApp.");
-    } finally {
-      setIsSending(false);
+      return false;
     }
   };
+
+  const handleSendWhatsApp = async () => {
+    // If already sent, show confirmation dialog
+    if (order.is_sent) {
+      setShowConfirm(true);
+      return;
+    }
+    
+    setIsSending(true);
+    const sent = await sendWhatsAppMessage();
+    
+    if (sent) {
+      // Mark as sent in the database
+      try {
+        await dispatch(markCommandeAsSent({ id: order.id, is_sent: true })).unwrap();
+        if (onSent) {
+          onSent(order.id);
+        }
+        await dispatch(fetchCommandes());
+      } catch (error) {
+        console.error("Error marking as sent:", error);
+      }
+    }
+    
+    setIsSending(false);
+  };
+
+  const handleResendConfirm = async () => {
+    setShowConfirm(false);
+    setIsSending(true);
+    
+    const sent = await sendWhatsAppMessage();
+    
+    if (sent) {
+      console.log("WhatsApp message re-sent successfully");
+    }
+    
+    setIsSending(false);
+  };
+
+  const handleCancelResend = () => {
+    setShowConfirm(false);
+  };
   
-  const isSent = order.is_sent;
-  const buttonColor = isSent ? '#6b7280' : '#25D366';
-  const buttonTitle = isSent ? 'Message déjà envoyé' : 'Envoyer via WhatsApp';
+  const buttonColor = order.is_sent ? '#6b7280' : '#25D366';
+  const buttonTitle = order.is_sent ? 'Renvoyer le message WhatsApp' : 'Envoyer via WhatsApp';
   
   return (
-    <button
-      onClick={handleSendWhatsApp}
-      className={`btn-whatsapp-send ${isSent ? 'sent' : ''}`}
-      style={{ 
-        backgroundColor: buttonColor,
-        color: 'white',
-        border: 'none',
-        cursor: isSent ? 'not-allowed' : 'pointer',
-        opacity: isSent ? 0.6 : 1,
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: '36px',
-        height: '36px',
-        borderRadius: '6px',
-        transition: 'all 0.3s ease',
-        padding: 0
-      }}
-      disabled={isSent || isSending}
-      title={buttonTitle}
-    >
-      {isSending ? (
-        <Loader size={18} className="spinning" color="white" />
-      ) : (
-        <svg 
-          width="18" 
-          height="18" 
-          viewBox="0 0 24 24" 
-          fill="white" 
-          stroke="none"
-          style={{ display: 'block' }}
-        >
-          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-        </svg>
+    <>
+      <button
+        onClick={handleSendWhatsApp}
+        className={`btn-whatsapp-send ${order.is_sent ? 'sent' : ''}`}
+        style={{ 
+          backgroundColor: buttonColor,
+          color: 'white',
+          border: 'none',
+          cursor: 'pointer',
+          opacity: 1,
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '36px',
+          height: '36px',
+          borderRadius: '6px',
+          transition: 'all 0.3s ease',
+          padding: 0
+        }}
+        disabled={isSending}
+      >
+        {isSending ? (
+          <Loader size={18} className="spinning" color="white" />
+        ) : (
+          <svg 
+            width="18" 
+            height="18" 
+            viewBox="0 0 24 24" 
+            fill="white" 
+            stroke="none"
+            style={{ display: 'block' }}
+          >
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+          </svg>
+        )}
+      </button>
+
+      {/* Resend Confirmation Modal */}
+      {showConfirm && (
+        <div className="modal-overlay" onClick={handleCancelResend}>
+          <div className="resend-confirm-modal" onClick={e => e.stopPropagation()}>
+            <div className="resend-confirm-icon">
+              <MessageCircle size={48} color="#25D366" />
+            </div>
+            
+            <h3 className="resend-confirm-title">Renvoyer le message ?</h3>
+            
+            <p className="resend-confirm-message">
+              Un message a déjà été envoyé pour la commande <strong>#{order.parcel_code}</strong>.
+            </p>
+            
+            <p className="resend-confirm-question">
+              Souhaitez-vous renvoyer le message WhatsApp au client ?
+            </p>
+            
+            <div className="resend-confirm-actions">
+              <button onClick={handleCancelResend} className="btn-secondary">
+                Annuler
+              </button>
+              <button onClick={handleResendConfirm} className="btn-resend">
+                <MessageCircle size={16} />
+                Renvoyer
+              </button>
+            </div>
+          </div>
+        </div>
       )}
-    </button>
+    </>
   );
 };
 

@@ -1963,4 +1963,177 @@ textarea:focus-visible {
     max-width: 100px;
     font-size: 0.65rem;
   }
+}/* Inline Stock Input Styles - Add these to your existing CSS */
+
+.stock-input-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #f8fafc;
+  border-radius: 2rem;
+  padding: 0.25rem;
+  border: 1px solid #e2e8f0;
+  width: fit-content;
+  margin: 0 auto;
+}
+
+.stock-quantity-input {
+  width: 70px;
+  padding: 0.375rem 0.5rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 1.5rem;
+  font-size: 0.875rem;
+  text-align: center;
+  transition: all 0.2s;
+  font-family: 'Lato', sans-serif;
+  font-weight: 500;
+  color: #5c0202;
+  background-color: white;
+}
+
+.stock-quantity-input:focus {
+  outline: none;
+  border-color: #5c0202;
+  box-shadow: 0 0 0 3px rgba(74, 44, 42, 0.1);
+}
+
+.stock-quantity-input::-webkit-inner-spin-button,
+.stock-quantity-input::-webkit-outer-spin-button {
+  opacity: 0.5;
+}
+
+.stock-confirm-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: #10b981;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.stock-confirm-btn:hover:not(:disabled) {
+  background: #059669;
+  transform: scale(1.05);
+}
+
+.stock-confirm-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.stock-confirm-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.stock-cancel-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: #ef4444;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.stock-cancel-btn:hover {
+  background: #dc2626;
+  transform: scale(1.05);
+}
+
+.stock-cancel-btn:active {
+  transform: scale(0.95);
+}
+
+/* Responsive adjustments for inline stock input */
+@media (max-width: 768px) {
+  .stock-input-container {
+    gap: 0.25rem;
+    padding: 0.2rem;
+  }
+  
+  .stock-quantity-input {
+    width: 60px;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.375rem;
+  }
+  
+  .stock-confirm-btn,
+  .stock-cancel-btn {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .stock-confirm-btn svg,
+  .stock-cancel-btn svg {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .stock-input-container {
+    flex-direction: row;
+    justify-content: center;
+  }
+  
+  .stock-quantity-input {
+    width: 55px;
+    font-size: 0.7rem;
+  }
+}
+
+/* Animation for stock update */
+@keyframes stockUpdate {
+  0% {
+    transform: scale(1);
+    background-color: #d1fae5;
+  }
+  50% {
+    transform: scale(1.05);
+    background-color: #a7f3d0;
+  }
+  100% {
+    transform: scale(1);
+    background-color: transparent;
+  }
+}
+
+.stock-updated {
+  animation: stockUpdate 0.5s ease;
+}
+
+/* Ensure stock controls are properly aligned */
+.book-stock-cell {
+  text-align: center !important;
+}
+
+.stock-control,
+.stock-input-container {
+  margin: 0 auto;
+}/* Make title and author text bold */
+.data-table td.book-tit,
+.data-table td:nth-child(3) {
+  font-weight: 700;
+  color: #5c0202;
+}
+
+/* Alternative - If the above doesn't work, use this more specific selector */
+.book-tit {
+  font-weight: 700 !important;
+  color: #5c0202;
+}
+
+.data-table td:nth-child(3) {
+  font-weight: 700 !important;
+  color: #5c0202;
 }

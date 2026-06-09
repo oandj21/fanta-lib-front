@@ -85,11 +85,11 @@ ${items}
       onClick={handleClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className="whatsapp-float"
+      className="whatsapp-floats"
       aria-label="اطلب عبر الواتساب"
     >
       <svg 
-        className="whatsapp-icon" 
+        className="whatsapp-icons" 
         viewBox="0 0 24 24" 
         width="30" 
         height="30"

@@ -28,6 +28,35 @@ import autoTable from 'jspdf-autotable';
 import XLSX from "xlsx-js-style";
 import "../../css/Fournisseurcommand.css";
 
+// Function to generate consistent color for a category (same as AdminBooks)
+const getCategoryColor = (category) => {
+  if (!category) return { bg: '#f3f4f6', text: '#374151', border: '#e5e7eb' };
+  
+  // Generate a hash from the category name
+  let hash = 0;
+  for (let i = 0; i < category.length; i++) {
+    hash = ((hash << 5) - hash) + category.charCodeAt(i);
+    hash = hash & hash;
+  }
+  
+  // Predefined color palettes for better aesthetics
+  const colorPalettes = [
+    { bg: '#dbeafe', text: '#1e40af', border: '#bfdbfe' }, // Blue
+    { bg: '#dcfce7', text: '#166534', border: '#bbf7d0' }, // Green
+    { bg: '#fed7aa', text: '#9a3412', border: '#fdba74' }, // Orange
+    { bg: '#e9d5ff', text: '#6b21a8', border: '#d8b4fe' }, // Purple
+    { bg: '#fecdd3', text: '#9f1239', border: '#fda4af' }, // Pink
+    { bg: '#fef3c7', text: '#92400e', border: '#fde68a' }, // Amber
+    { bg: '#ccfbf1', text: '#115e59', border: '#99f6e4' }, // Teal
+    { bg: '#e0e7ff', text: '#3730a3', border: '#c7d2fe' }, // Indigo
+    { bg: '#ffedd5', text: '#9a3412', border: '#fed7aa' }, // Yellow-Orange
+    { bg: '#fce7f3', text: '#9d174d', border: '#fbcfe8' }, // Rose
+  ];
+  
+  const index = Math.abs(hash) % colorPalettes.length;
+  return colorPalettes[index];
+};
+
 const Fournisseurcommand = () => {
   const dispatch = useDispatch();
   const livres = useSelector(selectLivres);
@@ -110,11 +139,11 @@ const Fournisseurcommand = () => {
     // Calculate totals
     const totalQuantity = selectedItems.reduce((sum, livre) => sum + (quantities[livre.id] || 0), 0);
 
-    // Prepare data with header and summary (NO stock column)
+    // Prepare data with header and summary
     const data = [
       ["COMMANDE FOURNISSEUR"],
       [],
-      [`Date: ${new Date().toLocaleDateString()}`, `Heure: ${new Date().toLocaleTimeString()}`, "", `Total Livres: ${selectedItems.length}`, `Quantité Totale: ${totalQuantity}`],
+      [`Date: ${new Date().toLocaleDateString()}`, `Heure: ${new Date().toLocaleTimeString()}`],
       [],
       [
         "N°",
@@ -125,7 +154,7 @@ const Fournisseurcommand = () => {
       ]
     ];
 
-    // Add book data (NO stock)
+    // Add book data
     selectedItems.forEach((livre, index) => {
       const quantity = quantities[livre.id];
       data.push([
@@ -147,19 +176,19 @@ const Fournisseurcommand = () => {
 
     // Define merges
     ws["!merges"] = [
-      { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } }, // Title (5 columns)
-      { s: { r: 2, c: 0 }, e: { r: 2, c: 1 } }, // Date info
-      { s: { r: 2, c: 2 }, e: { r: 2, c: 2 } }, // Empty cell
-      { s: { r: 2, c: 3 }, e: { r: 2, c: 4 } }, // Total info
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } },
+      { s: { r: 2, c: 0 }, e: { r: 2, c: 1 } },
+      { s: { r: 2, c: 2 }, e: { r: 2, c: 2 } },
+      { s: { r: 2, c: 3 }, e: { r: 2, c: 4 } },
     ];
 
     // Column widths
     ws["!cols"] = [
-      { wch: 6 },  // N°
-      { wch: 40 }, // Titre
-      { wch: 25 }, // Auteur
-      { wch: 20 }, // Catégorie
-      { wch: 18 }  // Quantité
+      { wch: 6 },
+      { wch: 40 },
+      { wch: 25 },
+      { wch: 20 },
+      { wch: 18 }
     ];
 
     // Auto-filter
@@ -293,26 +322,6 @@ const Fournisseurcommand = () => {
           }
         };
       }
-
-      // Category column special style (column D - index 3)
-      const categoryCell = XLSX.utils.encode_cell({ r: row, c: 3 });
-      if (ws[categoryCell]) {
-        ws[categoryCell].s = {
-          ...ws[categoryCell].s,
-          font: {
-            ...ws[categoryCell].s.font,
-            bold: true
-          },
-          fill: {
-            fgColor: { rgb: "FFF3E0" },
-            patternType: "solid"
-          },
-          alignment: {
-            horizontal: "center",
-            vertical: "center"
-          }
-        };
-      }
     }
 
     // Summary rows styling (bottom of sheet)
@@ -383,10 +392,7 @@ const Fournisseurcommand = () => {
       `commande_fournisseur_${new Date().toISOString().split("T")[0]}.xlsx`
     );
 
-    showNotification(
-      "Fichier Excel professionnel exporté avec succès !",
-      "success"
-    );
+    showNotification("Fichier Excel exporté avec succès !", "success");
   };
 
   const exportToPDF = () => {
@@ -405,10 +411,9 @@ const Fournisseurcommand = () => {
     doc.setFontSize(10);
     doc.text(`Date: ${new Date().toLocaleDateString()}`, 14, 30);
     doc.text(`Heure: ${new Date().toLocaleTimeString()}`, 14, 36);
-    doc.text(`Total Livres: ${selectedItems.length}`, 14, 42);
+   
     doc.text(`Quantité Totale: ${Object.values(quantities).reduce((a, b) => a + (b || 0), 0)}`, 14, 48);
 
-    // Table data WITHOUT stock column
     const tableData = selectedItems.map((livre, index) => [
       index + 1,
       livre.titre || "-",
@@ -501,6 +506,9 @@ const Fournisseurcommand = () => {
       if (sortBy === "prix_achat") {
         aVal = Number(aVal) || 0;
         bVal = Number(bVal) || 0;
+      } else if (sortBy === "stock") {
+        aVal = Number(a.stock) || 0;
+        bVal = Number(b.stock) || 0;
       } else {
         aVal = String(aVal).toLowerCase();
         bVal = String(bVal).toLowerCase();
@@ -848,6 +856,7 @@ const Fournisseurcommand = () => {
                   const quantityValue = quantities[livre.id] || "";
                   const isPositive = quantityValue > 0;
                   const currentStock = livre.stock ?? 0;
+                  const categoryColors = getCategoryColor(livre.categorie);
                   
                   return (
                     <tr key={livre.id} className={isSelected ? 'fv-table-row-selected' : 'fv-table-row'}>
@@ -869,9 +878,31 @@ const Fournisseurcommand = () => {
                         )}
                       </td>
                       <td className="fv-book-title">{livre.titre || "-"}</td>
-                      <td>{livre.auteur || "-"}</td>
+                      <td className="fv-book-author">{livre.auteur || "-"}</td>
                       <td>
-                        <span className="fv-category-badge">{livre.categorie || "N/A"}</span>
+                        {livre.categorie ? (
+                          <span 
+                            className="fv-category-badge"
+                            style={{
+                              backgroundColor: categoryColors.bg,
+                              color: categoryColors.text,
+                              border: `1px solid ${categoryColors.border}`
+                            }}
+                          >
+                            {livre.categorie}
+                          </span>
+                        ) : (
+                          <span 
+                            className="fv-category-badge"
+                            style={{
+                              backgroundColor: '#f3f4f6',
+                              color: '#6b7280',
+                              border: '1px solid #e5e7eb'
+                            }}
+                          >
+                            N/A
+                          </span>
+                        )}
                       </td>
                       <td>
                         <span className={`fv-stock-badge ${getStockStatusClass(currentStock)}`}>

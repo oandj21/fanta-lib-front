@@ -226,13 +226,13 @@
 }
 /* Add to your existing CSS */
 .search-input:placeholder-shown {
-  direction: rtl;
-  text-align: right;
+  direction: ltr;
+  text-align: left;
 }
 
 /* Or more specifically for Arabic placeholder */
 .search-input::placeholder {
   color: #b8a9a0;
   font-weight: 300;
-  text-align: right; /* Force right alignment for placeholder */
+  text-align: left; /* Force right alignment for placeholder */
 }

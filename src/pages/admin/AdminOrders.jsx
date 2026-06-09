@@ -1944,7 +1944,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
                   onChange={handleNewOrderChange}
                   placeholder="Prix"
                   min="0"
-                  step="0.01"
+                  step="1"
                   required
                 />
               </div>
@@ -1964,7 +1964,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
                   onChange={handleNewOrderChange}
                   placeholder="35"
                   min="0"
-                  step="0.01"
+                  step="1"
                 />
               </div>
             </div>
@@ -1980,7 +1980,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
                   onChange={handleNewOrderChange}
                   placeholder="0"
                   min="0"
-                  step="0.01"
+                  step="1"
                 />
               </div>
             </div>
@@ -2616,7 +2616,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
                   onChange={handleInputChange}
                   placeholder="Prix"
                   min="0"
-                  step="0.01"
+                  step="1"
                   required
                 />
               </div>
@@ -2636,7 +2636,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
                   onChange={handleInputChange}
                   placeholder="35"
                   min="0"
-                  step="0.01"
+                  step="1"
                 />
               </div>
             </div>
@@ -2652,7 +2652,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
                   onChange={handleInputChange}
                   placeholder="0"
                   min="0"
-                  step="0.01"
+                  step="1"
                 />
               </div>
             </div>
@@ -2671,7 +2671,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
                   onChange={handleInputChange}
                   className={totalManuallyEdited ? "manual-edit-input" : ""}
                   placeholder="Auto"
-                  step="0.01"
+                  step="1"
                 />
                 {totalManuallyEdited && (
                   <span className="manual-edit-badge">Manuel</span>
@@ -2909,7 +2909,7 @@ const WebhookTestPanel = ({ onClose }) => {
   );
 };
 
-// WhatsApp Send Button Component - FIXED: Turns gray after clicking
+// WhatsApp Send Button Component - FIXED: Use WhatsApp API format for emojis
 const WhatsAppSendButton = ({ order, onSent }) => {
   const dispatch = useDispatch();
   const [isSending, setIsSending] = useState(false);
@@ -2917,38 +2917,39 @@ const WhatsAppSendButton = ({ order, onSent }) => {
   const generateWhatsAppMessage = (orderData) => {
     const trackingLink = `${window.location.origin}/track/${orderData.parcel_code}`;
     
-    return `*مرحبًا ${orderData.parcel_receiver} 🌸*
+    // Return the message as is - WITH the actual emojis
+    return `🌸 مرحباً ${orderData.parcel_receiver}
 
-*تم تسجيل طلبيتكم 📦 بنجاح✅*
-*رقم الطلبية:*
- *${orderData.parcel_code}* 
+✅ تم تسجيل طلبيتكم بنجاح
 
-*👤 الاسم:* ${orderData.parcel_receiver}
-*📞 رقم الهاتف:* ${orderData.nmr_whatsapp || orderData.parcel_phone || "-"}
-*📍 العنوان:* ${orderData.parcel_address || "-"}
-*🏙️ المدينة:* ${orderData.parcel_city || "-"}
-             ━━━━━━━━━━━━
+📦 رقم الطلبية:
+*${orderData.parcel_code}*
 
-*🔗 رابط تتبع الطلبية:*
+👤 الاسم: ${orderData.parcel_receiver}
+📞 رقم الهاتف: ${orderData.nmr_whatsapp || orderData.parcel_phone || "-"}
+📍 العنوان: ${orderData.parcel_address || "-"}
+🏙️ المدينة: ${orderData.parcel_city || "-"}
+
+━━━━━━━━━━━━
+
+🔗 رابط تتبع الطلبية:
 ${trackingLink}
 
-*📦 يمكنكم متابعة حالة الطلبية في أي وقت بسهولة عبر الرابط أعلاه.*
+📦 يمكنكم متابعة حالة الطلبية في أي وقت بسهولة عبر الرابط أعلاه
 
-*​نتمنى أن تصحبكم هذه الطلبية في رحلة ممتعة بين السطور، وأن تنال إعجابكم!* 📖✨
+📖✨ نتمنى أن تصحبكم هذه الطلبية في رحلة ممتعة بين السطور، وأن تنال إعجابكم
 
-🛎️*نحن دائمًا رهن إشارتكم لأي استفسار.*
+🛎️ نحن دائمًا رهن إشارتكم لأي استفسار
 
-*مع خالص الشكر،*
-🌿*فريق مكتبة فانتازيا*🌿`;
+مع خالص الشكر،
+🌿 فريق مكتبة فانتازيا`;
   };
 
   const handleSendWhatsApp = async () => {
-    // Check if already sent
     if (order.is_sent) {
       return;
     }
     
-    // Check if WhatsApp number exists
     if (!order.nmr_whatsapp && !order.parcel_phone) {
       alert("⚠️ Aucun numéro de téléphone ou WhatsApp disponible pour cette commande.");
       return;
@@ -2957,13 +2958,9 @@ ${trackingLink}
     setIsSending(true);
     
     try {
-      // Use WhatsApp number if available, otherwise use regular phone
       const phoneNumber = order.nmr_whatsapp || order.parcel_phone;
-      
-      // Remove any non-digit characters
       const cleanNumber = phoneNumber.replace(/\D/g, '');
       
-      // Ensure number has country code (212 for Morocco)
       let whatsappNumber = cleanNumber;
       if (!cleanNumber.startsWith('212') && cleanNumber.length === 10) {
         whatsappNumber = '212' + cleanNumber.substring(1);
@@ -2972,20 +2969,36 @@ ${trackingLink}
       }
       
       const message = generateWhatsAppMessage(order);
-      const encodedMessage = encodeURIComponent(message);
       
-      // Open WhatsApp Web/App with pre-filled message
-      window.open(`https://wa.me/${whatsappNumber}?text=${encodedMessage}`, '_blank');
+      // CRITICAL FIX: Don't use encodeURIComponent for the text parameter
+      // Instead, use the WhatsApp intent:// protocol which handles emojis better
+      
+      // Method 1: Try using a form submit approach (better for mobile)
+      if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+        // Mobile device - use intent
+        const whatsappUrl = `intent://send?phone=${whatsappNumber}&text=${encodeURIComponent(message)}#Intent;scheme=whatsapp;package=com.whatsapp;end`;
+        window.location.href = whatsappUrl;
+      } else {
+        // Desktop - use web.whatsapp.com with minimal encoding
+        // Try different encoding approach
+        const encodedText = encodeURI(message); // Use encodeURI instead of encodeURIComponent
+        const whatsappUrl = `https://web.whatsapp.com/send?phone=${whatsappNumber}&text=${encodedText}`;
+        window.open(whatsappUrl, '_blank');
+        
+        // Fallback: Also try wa.me
+        setTimeout(() => {
+          const fallbackUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+          window.open(fallbackUrl, '_blank');
+        }, 500);
+      }
       
       // Mark as sent in the database
       await dispatch(markCommandeAsSent({ id: order.id, is_sent: true })).unwrap();
       
-      // Update the order in the UI by refreshing the orders list
       if (onSent) {
         onSent(order.id);
       }
       
-      // Also refresh the orders list to update the is_sent status
       await dispatch(fetchCommandes());
       
     } catch (error) {
@@ -2996,24 +3009,45 @@ ${trackingLink}
     }
   };
   
-  // Determine button color: Green if not sent, Gray if sent
-  const buttonColor = order.is_sent ? '#9ca3af' : '#25D366';
+  const isSent = order.is_sent;
+  const buttonColor = isSent ? '#6b7280' : '#25D366';
+  const buttonTitle = isSent ? 'Message déjà envoyé' : 'Envoyer via WhatsApp';
   
   return (
     <button
       onClick={handleSendWhatsApp}
-      className={`btn-whatsapp-send ${order.is_sent ? 'sent' : ''}`}
+      className={`btn-whatsapp-send ${isSent ? 'sent' : ''}`}
       style={{ 
         backgroundColor: buttonColor,
-        cursor: order.is_sent ? 'not-allowed' : 'pointer',
-        opacity: order.is_sent ? 0.6 : 1
+        color: 'white',
+        border: 'none',
+        cursor: isSent ? 'not-allowed' : 'pointer',
+        opacity: isSent ? 0.6 : 1,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '36px',
+        height: '36px',
+        borderRadius: '6px',
+        transition: 'all 0.3s ease',
+        padding: 0
       }}
-      disabled={order.is_sent || isSending}
+      disabled={isSent || isSending}
+      title={buttonTitle}
     >
       {isSending ? (
-        <Loader size={18} className="spinning" />
+        <Loader size={18} className="spinning" color="white" />
       ) : (
-        <Send size={18} />
+        <svg 
+          width="18" 
+          height="18" 
+          viewBox="0 0 24 24" 
+          fill="white" 
+          stroke="none"
+          style={{ display: 'block' }}
+        >
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+        </svg>
       )}
     </button>
   );

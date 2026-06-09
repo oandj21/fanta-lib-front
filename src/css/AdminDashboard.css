@@ -1056,7 +1056,7 @@
   padding: 0.5rem 1rem;
   border-radius: 10px;
   border: 1px solid #e0d6cc;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: center;
 }
 
@@ -1161,7 +1161,7 @@
   background: #f9f7f5;
   padding: 8px 20px;
   border-radius: 50px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: center;
 }
 
@@ -1173,7 +1173,7 @@
   }
   
   .month-year-display {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     justify-content: center;
     gap: 8px;
   }

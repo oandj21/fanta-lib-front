@@ -1394,7 +1394,7 @@ select:focus-visible {
   padding: 0.5rem 1rem;
   border-radius: 10px;
   border: 1px solid #e0d6cc;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: center;
 }
 

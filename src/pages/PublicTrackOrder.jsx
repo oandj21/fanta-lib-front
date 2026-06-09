@@ -236,7 +236,7 @@ export default function PublicTrackOrder() {
     }
   }, [loading, order]);
 
-  /* Generate timeline from status history */
+  /* Generate timeline from history */
   const generateTimelineFromHistory = (history, currentStatus, currentSecondary) => {
     if (!history || history.length === 0) {
       // Fallback: generate from current status only
@@ -715,40 +715,6 @@ export default function PublicTrackOrder() {
             </div>
 
           </div>
-
-          {/* TIMELINE PROGRESS */}
-          {allStatuses.length > 0 && (
-            <div className="timeline-progress">
-              <h3 style={{ marginBottom: 15, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <TrendingUp size={20} />
-                Progression de la commande
-              </h3>
-              
-              <div className="timeline-horizontal">
-                {allStatuses.map((status, index) => (
-                  <div key={index} className={`timeline-step ${status.isCompleted ? 'completed' : ''} ${status.isCurrent ? 'current' : ''}`}>
-                    <div 
-                      className="timeline-step-dot"
-                      style={{
-                        background: status.isCompleted ? status.color : 
-                                   status.isCurrent ? status.color : '#e0e0e0',
-                        border: `2px solid ${status.color}40`
-                      }}
-                    >
-                      {status.isCompleted && <CheckCircle size={10} color="white" />}
-                    </div>
-                    <div className="timeline-step-label">{status.label}</div>
-                    {status.date && status.isCompleted && (
-                      <div className="timeline-step-date">{formatDate(status.date)}</div>
-                    )}
-                    {index < allStatuses.length - 1 && (
-                      <div className={`timeline-line ${status.isCompleted ? 'completed' : ''}`}></div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       )}
 
@@ -800,7 +766,7 @@ export default function PublicTrackOrder() {
             </div>
           )}
 
-          {/* TIMELINE VIEW */}
+          {/* PARCOURS DE LA COMMANDE - ONLY SHOW COMPLETED STATUSES IN COLOR */}
           {allStatuses.length > 0 && (
             <div className="timeline" style={{ marginTop: statusHistory.length > 0 ? 30 : 0 }}>
               <h3 style={{ marginBottom: 15, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -813,9 +779,8 @@ export default function PublicTrackOrder() {
                   <div 
                     className={`timeline-dot ${status.isCompleted ? 'completed' : ''} ${status.isCurrent ? 'current' : ''}`}
                     style={{
-                      background: status.isCompleted ? status.color : 
-                                 status.isCurrent ? status.color : '#e0e0e0',
-                      border: `4px solid ${status.color}30`
+                      background: status.isCompleted ? status.color : '#e0e0e0',
+                      border: status.isCompleted ? `4px solid ${status.color}30` : '4px solid #f0f0f0'
                     }}
                   >
                     {status.isCompleted && <CheckCircle size={12} color="white" />}
@@ -824,7 +789,7 @@ export default function PublicTrackOrder() {
                   <div 
                     className={`timeline-content ${status.isCompleted ? 'completed' : ''} ${status.isCurrent ? 'current' : ''}`}
                     style={{
-                      borderLeft: `3px solid ${status.isCompleted || status.isCurrent ? status.color : '#e0e0e0'}`
+                      borderLeft: status.isCompleted ? `3px solid ${status.color}` : '3px solid #e0e0e0'
                     }}
                   >
                     <span className="timeline-time">
@@ -834,7 +799,7 @@ export default function PublicTrackOrder() {
                     <span style={{ 
                       fontWeight: status.isCurrent ? 'bold' : 'normal',
                       color: status.isCompleted ? status.color : 
-                            status.isCurrent ? status.color : '#666'
+                            status.isCurrent ? status.color : '#999'
                     }}>
                       {status.label}
                       {status.isCurrent && status.hasSecondary && secondaryStatus && (

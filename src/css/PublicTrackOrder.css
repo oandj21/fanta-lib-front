@@ -360,6 +360,7 @@
   --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
   --transition: all 0.3s ease;
 }
+
 /* Track Tabs - Like finance-tabs */
 .track-tabs {
   display: flex;
@@ -496,6 +497,7 @@
     transform: translateY(0);
   }
 }
+
 /* Header title with logo */
 .header-title-container {
   display: flex;
@@ -528,7 +530,9 @@
   .header-title-container h1 {
     font-size: 20px;
   }
-}/* Welcome Message Overlay */
+}
+
+/* Welcome Message Overlay */
 .welcome-overlay {
   position: fixed;
   top: 0;

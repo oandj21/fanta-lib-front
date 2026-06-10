@@ -440,7 +440,7 @@ export default function AdminDashboard() {
             
             try {
               const response = await axios.get(
-                `https://fanta-lib-back-production-76f4.up.railway.app/api/welivexpress/trackparcel`,
+                `http://127.0.0.1:8000/api/welivexpress/trackparcel`,
                 {
                   params: { parcel_code: order.parcel_code },
                   headers: {
@@ -619,13 +619,13 @@ export default function AdminDashboard() {
     };
   }, [filteredDepenses, commandesStats]);
 
-  // Generate daily cumulative data for the chart
+  // Generate daily data showing actual daily values (increases/decreases based on what they reach each day)
   const dailyChartData = useMemo(() => {
     const daysInMonth = getDaysInMonth(selectedYear, selectedMonth);
     const dailyData = [];
     
     for (let day = 1; day <= daysInMonth; day++) {
-      // Get commandes and depenses for this specific day
+      // Get commandes and depenses for this specific day only (NOT cumulative)
       const dayCommandes = filteredCommandes.filter(commande => {
         const commandeDate = new Date(commande.date || commande.created_at);
         return commandeDate.getDate() === day;
@@ -636,33 +636,16 @@ export default function AdminDashboard() {
         return depenseDate.getDate() === day;
       });
       
-      // Calculate cumulative profit and expenses up to this day
-      let cumulativeProfit = 0;
-      let cumulativeExpenses = 0;
-      
-      // Sum all profits from day 1 to current day
-      for (let d = 1; d <= day; d++) {
-        const dayCommandesCumulative = filteredCommandes.filter(commande => {
-          const commandeDate = new Date(commande.date || commande.created_at);
-          return commandeDate.getDate() === d;
-        });
-        
-        const dayDepensesCumulative = filteredDepenses.filter(depense => {
-          const depenseDate = new Date(depense.date || depense.created_at);
-          return depenseDate.getDate() === d;
-        });
-        
-        cumulativeProfit += dayCommandesCumulative.reduce((sum, cmd) => sum + (Number(cmd.profit) || 0), 0);
-        cumulativeExpenses += dayDepensesCumulative.reduce((sum, dep) => sum + (Number(dep.montant) || 0), 0);
-      }
+      // Calculate DAILY profit and expenses (non-cumulative - these are the actual values for each day)
+      const dailyProfit = dayCommandes.reduce((sum, cmd) => sum + (Number(cmd.profit) || 0), 0);
+      const dailyExpenses = dayDepenses.reduce((sum, dep) => sum + (Number(dep.montant) || 0), 0);
       
       dailyData.push({
         day: day,
         date: `${day}/${selectedMonth}/${selectedYear}`,
-        profit: cumulativeProfit,
-        depenses: cumulativeExpenses,
-        dailyProfit: dayCommandes.reduce((sum, cmd) => sum + (Number(cmd.profit) || 0), 0),
-        dailyExpenses: dayDepenses.reduce((sum, dep) => sum + (Number(dep.montant) || 0), 0),
+        profit: dailyProfit,      // Actual daily profit - goes up and down each day
+        depenses: dailyExpenses,  // Actual daily expenses - goes up and down each day
+        netChange: dailyProfit - dailyExpenses,
         orderCount: dayCommandes.length
       });
     }
@@ -1249,11 +1232,11 @@ export default function AdminDashboard() {
 
       {/* Charts Section */}
       <div className="charts-grid">
-        {/* Period Summary - TWO LINES CHART with daily progression */}
+        {/* Period Summary - DAILY VALUES CHART (increases/decreases based on what they reach each day) */}
         <div className="chart-card">
           <div className="chart-header">
             <BarChart3 size={18} />
-            <h3>Résumé de la période - Évolution journalière</h3>
+            <h3>Évolution quotidienne - Profit vs Dépenses</h3>
           </div>
           <div className="chart-container">
             {dailyChartData.length > 0 ? (
@@ -1309,22 +1292,22 @@ export default function AdminDashboard() {
                     labelStyle={{ fontWeight: 'bold', color: '#5c0202' }}
                   />
 
-                  {/* RED LINE for Dépenses (Cumulative) */}
+                  {/* RED LINE for Dépenses (DAILY values - goes up and down) */}
                   <Line
                     type="monotone"
                     dataKey="depenses"
-                    name="Dépenses (cumul)"
+                    name="Dépenses du jour"
                     stroke="#ef4444"
                     strokeWidth={3}
                     dot={{ r: 4, fill: "#ef4444", strokeWidth: 2, stroke: "white" }}
                     activeDot={{ r: 6, fill: "#ef4444", stroke: "white", strokeWidth: 2 }}
                   />
                   
-                  {/* GREEN LINE for Profit (Cumulative) */}
+                  {/* GREEN LINE for Profit (DAILY values - goes up and down) */}
                   <Line
                     type="monotone"
                     dataKey="profit"
-                    name="Profit (cumul)"
+                    name="Profit du jour"
                     stroke="#10b981"
                     strokeWidth={3}
                     dot={{ r: 4, fill: "#10b981", strokeWidth: 2, stroke: "white" }}
@@ -1338,7 +1321,7 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Status Distribution Pie Chart - FIXED VERSION */}
+        {/* Status Distribution Pie Chart */}
         <div className="chart-card">
           <div className="chart-header">
             <PieChart size={18} />

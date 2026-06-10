@@ -4263,6 +4263,7 @@ textarea:focus-visible {
   vertical-align: middle !important;
   padding: 8px 12px !important;
   line-height: 1.4 !important;
+  text-align: center;
 }
 
 /* Phone Number Cell Styling */
@@ -4392,11 +4393,13 @@ textarea:focus-visible {
 .data-table th:nth-child(3), /* Phone */
 .data-table td:nth-child(3) {
   min-width: 120px;
+  text-align: center; 
 }
 
 .data-table th:nth-child(4), /* WhatsApp */
 .data-table td:nth-child(4) {
   min-width: 130px;
+  text-align: center;
 }
 
 /* City column */
@@ -4404,6 +4407,7 @@ textarea:focus-visible {
 .data-table td:nth-child(6) {
   min-width: 100px;
   max-width: 150px;
+  text-align: center;
 }
 
 /* ==============================================
@@ -5497,4 +5501,200 @@ input.input-error.with-iconn {
     height: 16px;
     left: 10px;
   }
+}/* Make input values bold */
+.form-group input,
+.form-group textarea,
+.form-group select,
+.city-input,
+.book-search-input,
+input.with-icon,
+input.with-iconn,
+select.with-icon,
+textarea.with-icon {
+  font-weight: 600 !important;
+}
+
+/* Make readonly inputs also bold */
+input.readonly-input,
+input.readonly-input.with-icon {
+  font-weight: 600 !important;
+}
+
+/* Make city autocomplete input bold */
+.city-autocomplete .city-input {
+  font-weight: 600 !important;
+}
+
+/* Make book search input bold */
+.book-search-input {
+  font-weight: 600 !important;
+}
+
+/* Make select dropdown values bold */
+select.statut-select {
+  font-weight: 600 !important;
+}
+
+/* Make manual edit inputs bold */
+.manual-edit-input {
+  font-weight: 600 !important;
+}
+
+/* Make price inputs bold */
+.price-input input {
+  font-weight: 700 !important;
+}
+
+/* Make negative profit inputs bold */
+input.readonly-input.negative {
+  font-weight: 600 !important;
+}
+
+/* Make table cell values bold */
+.data-table td {
+  font-weight: 500 !important;
+}
+
+/* Make order code and client name extra bold */
+.order-code,
+.order-client {
+  font-weight: 700 !important;
+}
+
+/* Make phone and WhatsApp numbers bold */
+.phone-number,
+.whatsapp-number {
+  font-weight: 600 !important;
+}
+
+/* Make city badge text bold */
+.city-badge {
+  font-weight: 600 !important;
+}
+
+/* Make status badges bold */
+.status-badge {
+  font-weight: 600 !important;
+}
+
+/* Make price values bold */
+.order-pri,
+.order-profit {
+  font-weight: 600 !important;
+}
+
+/* Make quantity bold */
+.order-qty {
+  font-weight: 600 !important;
+}/* Add this to your AdminOrders.css file */
+
+/* Quantity cell styling - matching the style of phone and city badges */
+.order-qty {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.qty-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 1px solid #fcd34d;
+  color: #92400e;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  min-width: 50px;
+  transition: all 0.2s ease;
+  font-family: 'Lato', sans-serif;
+  letter-spacing: 0.3px;
+}
+
+.qty-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+/* For high quantities - optional */
+.qty-badge.high-qty {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  border-color: #fca5a5;
+  color: #991b1b;
+}
+
+/* For very high quantities (10+) - optional */
+.qty-badge.very-high-qty {
+  background: linear-gradient(135deg, #fed7aa 0%, #fdba74 100%);
+  border-color: #fb923c;
+  color: #9a3412;
+}
+
+/* Ensure the quantity cell doesn't have extra line-height */
+.data-table td.order-qty {
+  vertical-align: middle;
+  text-align: center;
+  padding: 8px 4px !important;
+}/* ==============================================
+   CLIENT NAME & QUANTITY CELL STYLES
+   ============================================== */
+
+/* Client name cell - normal background */
+.order-client {
+  font-weight: 700 !important;
+  color: #5c0202;
+  background-color: transparent !important;
+  padding: 1rem 1.25rem !important;
+}
+
+/* Quantity cell - badge style like phone/city */
+.order-qty {
+  text-align: center;
+  vertical-align: middle;
+  padding: 8px 12px !important;
+}
+
+.qty-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 1px solid #fcd34d;
+  color: #92400e;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  min-width: 50px;
+  transition: all 0.2s ease;
+  font-family: 'Lato', sans-serif;
+  letter-spacing: 0.3px;
+}
+
+.qty-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+/* For high quantities (5+) - optional */
+.qty-badge.high-qty {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  border-color: #fca5a5;
+  color: #991b1b;
+}
+
+/* For very high quantities (10+) - optional */
+.qty-badge.very-high-qty {
+  background: linear-gradient(135deg, #fed7aa 0%, #fdba74 100%);
+  border-color: #fb923c;
+  color: #9a3412;
+}
+
+/* Ensure proper alignment */
+.data-table td.order-qty {
+  vertical-align: middle;
+  text-align: center;
+}.data-table td.order-client {
+  font-weight: 700 !important;
+  font-family: 'Lato', sans-serif;
 }

@@ -377,7 +377,7 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
       const token = localStorage.getItem("token");
       
       const response = await axios.get(
-        "https://fanta-lib-back-production-76f4.up.railway.app/api/welivexpress/listcities",
+        "http://127.0.0.1:8000/api/welivexpress/listcities",
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -458,7 +458,7 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
           onFocus={() => query.length >= 1 && suggestions.length > 0 && setShowSuggestions(true)}
           onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
           placeholder="Tapez pour rechercher une ville..."
-          className="city-input with-icon"
+          className="input with-icon"
           disabled={disabled}
         />
         {loading && <Loader size={16} className="autocomplete-spinner" />}
@@ -781,7 +781,7 @@ const OrderDetailsPage = ({ order, onBack }) => {
       const token = localStorage.getItem("token");
       
       const response = await axios.get(
-        `https://fanta-lib-back-production-76f4.up.railway.app/api/welivexpress/trackparcel`,
+        `http://127.0.0.1:8000/api/welivexpress/trackparcel`,
         {
           params: { parcel_code: parcelCode },
           headers: {
@@ -1464,7 +1464,19 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
     statut: "NEW_PARCEL",
     date: new Date().toISOString().split('T')[0]
   });
-
+  // Add this useEffect in AddOrderPage component (after the useEffect that resets totalManuallyEdited)
+useEffect(() => {
+  // Calculate total quantity from livres
+  const totalQty = (newOrderData.livres || []).reduce(
+    (sum, book) => sum + (book.quantity || 1), 0
+  );
+  
+  // Update parcel_prd_qty
+  setNewOrderData(prev => ({
+    ...prev,
+    parcel_prd_qty: totalQty
+  }));
+}, [newOrderData.livres]); // This will run whenever livres change
   // Reset manual edit flags when books change
   useEffect(() => {
     setTotalManuallyEdited(false);
@@ -1643,7 +1655,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
         
         // Call stock check endpoint
         const stockCheckResponse = await axios.post(
-            "https://fanta-lib-back-production-76f4.up.railway.app/api/commandes/check-stock",
+            "http://127.0.0.1:8000/api/commandes/check-stock",
             { livres: stockCheckData },
             {
                 headers: {
@@ -1957,7 +1969,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
               <div className="input-with-icon price-input">
                 <DollarSign size={20} className="input-icon" />
                 <input
-                  type="number"
+                  type="text"
                   name="parcel_price"
                   value={newOrderData.parcel_price === null ? '' : newOrderData.parcel_price}
                   onChange={handleNewOrderChange}
@@ -1978,7 +1990,7 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
               <div className="input-with-icon">
                 <Truck size={20} className="input-icon" />
                 <input
-                  type="number"
+                  type="text"
                   name="frais_livraison"
                   value={newOrderData.frais_livraison === null ? '' : newOrderData.frais_livraison}
                   onChange={handleNewOrderChange}
@@ -1995,9 +2007,9 @@ const AddOrderPage = ({ onBack, onSubmit }) => {
               <div className="input-with-icon">
                 <Box size={20} className="input-icon" />
                 <input
-                  type="number"
+                  type="text"
                   name="frais_packaging"
-                  value={newOrderData.frais_packaging === null ? '' : newOrderData.frais_packaging}
+                  value={newOrderData.frais_packaging === null ? '' : newOrderData.frais_packaging || ""}
                   onChange={handleNewOrderChange}
                   placeholder="0"
                   min="0"
@@ -2660,7 +2672,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
               <div className="input-with-icon price-input">
                 <DollarSign size={20} className="input-icon" />
                 <input
-                  type="number"
+                  type="text"
                   name="parcel_price"
                   value={formData.parcel_price === null ? '' : formData.parcel_price}
                   onChange={handleInputChange}
@@ -2681,7 +2693,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
               <div className="input-with-icon">
                 <Truck size={20} className="input-icon" />
                 <input
-                  type="number"
+                  type="text"
                   name="frais_livraison"
                   value={formData.frais_livraison === null ? '' : formData.frais_livraison}
                   onChange={handleInputChange}
@@ -2698,9 +2710,9 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
               <div className="input-with-icon">
                 <Box size={20} className="input-icon" />
                 <input
-                  type="number"
+                  type="text"
                   name="frais_packaging"
-                  value={formData.frais_packaging === null ? '' : formData.frais_packaging}
+                  value={formData.frais_packaging === null ? '' : formData.frais_packaging || ""}
                   onChange={handleInputChange}
                   placeholder="0"
                   min="0"
@@ -2831,7 +2843,7 @@ const WebhookTestPanel = ({ onClose }) => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.get(
-        "https://fanta-lib-back-production-76f4.up.railway.app/api/welivexpress/test-webhook",
+        "http://127.0.0.1:8000/api/welivexpress/test-webhook",
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -2860,7 +2872,7 @@ const WebhookTestPanel = ({ onClose }) => {
     try {
       const token = localStorage.getItem("token");
       await axios.delete(
-        "https://fanta-lib-back-production-76f4.up.railway.app/api/welivexpress/delete-webhook",
+        "http://127.0.0.1:8000/api/welivexpress/delete-webhook",
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -3569,15 +3581,11 @@ const filteredOrders = useMemo(() => {
     return vibrantColors[colorIndex];
   };
 
-  // Format phone number for better display
-  const formatPhoneNumber = (phone) => {
-    if (!phone) return '-';
-    const phoneStr = String(phone).replace(/\D/g, '');
-    if (phoneStr.length === 10) {
-      return `${phoneStr.slice(0, 5)} ${phoneStr.slice(5)}`;
-    }
-    return phoneStr;
-  };
+const formatPhoneNumber = (phone) => {
+  if (!phone) return '-';
+  // Remove all non-digit characters, return as a single block
+  return String(phone).replace(/\D/g, '');
+};
 
   // Default: List view
   return (
@@ -3735,10 +3743,10 @@ const filteredOrders = useMemo(() => {
                   <th>Client</th>
                   <th>Téléphone</th>
                   <th>WhatsApp</th>
-                  <th>Quantité</th>
+                  <th>Qn</th>
                   <th>Ville</th>
-                  <th>Statut Livraison</th>
-                  <th>Statut Paiement</th>
+                  <th>Livraison</th>
+                  <th>Paiement</th>
                   <th>Prix colis</th>
                   <th>Profit</th>
                   <th>Date</th>
@@ -3777,8 +3785,11 @@ const filteredOrders = useMemo(() => {
                           <span className="no-whatsapp">-</span>
                         )}
                       </td>
-                      <td className="order-qty">{order.parcel_prd_qty || 0}</td>
-                      <td className="orders-citys">
+<td className="order-qty">
+  <span className={`qty-badge ${(order.parcel_prd_qty || 0) >= 10 ? 'very-high-qty' : (order.parcel_prd_qty || 0) >= 5 ? 'high-qty' : ''}`}>
+    {order.parcel_prd_qty || 0}
+  </span>
+</td>                      <td className="orders-citys">
                         <span 
                           className="city-badge"
                           style={{ 

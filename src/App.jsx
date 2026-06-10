@@ -25,39 +25,7 @@ import PublicTrackOrder from "./pages/PublicTrackOrder";
 import Fournisseurcommand from "./pages/admin/Fournisseurcommand"; // Import the new component
 
 // Title Updater Component - Updates document title based on current route
-const TitleUpdater = () => {
-  const location = useLocation();
-  
-  useEffect(() => {
-    // Map paths to titles
-    const titles = {
-      '/': 'Accueil',
-      '/livres': 'Catalogue',
-      '/contact': 'Contact',
-      '/cart': 'Panier',
-      '/login': 'Connexion',
-      '/dashboard': 'Tableau de bord',
-      '/books': 'Livres',
-      '/orders': 'Commandes',
-      '/expenses': 'Dépenses',
-      '/finance': 'Finance',
-      '/users': 'Utilisateurs',
-      '/messages': 'Messages',
-      '/profile': 'Profil',
-      '/fournisseur-command': 'Commandes Fournisseur', // Add title for new route
-    };
 
-    // Check if it's a tracking page
-    if (location.pathname.startsWith('/track/')) {
-      document.title = 'Suivi de commande - Fantasia';
-    } else {
-      const title = titles[location.pathname] || 'Bibliothèque';
-      document.title = `${title} - Fantasia`;
-    }
-  }, [location]);
-
-  return null;
-};
 
 const App = () => (
   <Provider store={store}>

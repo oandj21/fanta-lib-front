@@ -40,6 +40,7 @@ import {
   fetchMonthlyStats,
   fetchCommandes, 
   fetchDepenses,
+  fetchLivres,
   selectDashboardStats,
   selectMonthlyStats,
   selectCommandes,
@@ -217,12 +218,15 @@ export default function AdminDashboard() {
   const monthlyStats = useSelector(selectMonthlyStats);
   const commandes = useSelector(selectCommandes);
   const depenses = useSelector(selectDepenses);
-  const livres = useSelector(selectLivres); // Added for inventory calculation
+  const livres = useSelector(selectLivres);
 
-  // Date selection state - Added day selection
+  // Loading state for livres
+  const [loadingLivres, setLoadingLivres] = useState(true);
+
+  // Date selection state
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
-  const [selectedDay, setSelectedDay] = useState(null); // null means "All days", otherwise specific day
+  const [selectedDay, setSelectedDay] = useState(null);
   
   const [trackingInfoMap, setTrackingInfoMap] = useState({});
   const [loadingTracking, setLoadingTracking] = useState({});
@@ -234,15 +238,31 @@ export default function AdminDashboard() {
   
   const initialProcessingDone = useRef(false);
 
+  // Debug logging
+  useEffect(() => {
+    console.log('Livres data from Redux:', livres);
+    console.log('Livres loading state:', loadingLivres);
+  }, [livres, loadingLivres]);
+
   // Calculate inventory total value (prix_achat * stock for all books)
   const inventoryTotalValue = useMemo(() => {
     if (!livres || livres.length === 0) return 0;
     
-    return livres.reduce((total, livre) => {
+    const total = livres.reduce((total, livre) => {
       const prixAchat = Number(livre.prix_achat) || 0;
       const stock = Number(livre.stock) || 0;
       return total + (prixAchat * stock);
     }, 0);
+    
+    console.log('Calculated inventory total:', total);
+    return total;
+  }, [livres]);
+
+  // Track when livres data is loaded
+  useEffect(() => {
+    if (livres !== undefined) {
+      setLoadingLivres(false);
+    }
   }, [livres]);
 
   // Generate available years (last 5 years to next year)
@@ -285,7 +305,7 @@ export default function AdminDashboard() {
     } else {
       setSelectedMonth(selectedMonth - 1);
     }
-    setSelectedDay(null); // Reset day selection when month changes
+    setSelectedDay(null);
   };
 
   // Navigate to next month
@@ -296,7 +316,7 @@ export default function AdminDashboard() {
     } else {
       setSelectedMonth(selectedMonth + 1);
     }
-    setSelectedDay(null); // Reset day selection when month changes
+    setSelectedDay(null);
   };
 
   // Filter data by selected month/year/day
@@ -308,12 +328,10 @@ export default function AdminDashboard() {
       const commandeYear = commandeDate.getFullYear();
       const commandeMonth = commandeDate.getMonth() + 1;
       
-      // First filter by year and month
       if (commandeYear !== selectedYear || commandeMonth !== selectedMonth) {
         return false;
       }
       
-      // Then filter by day if a specific day is selected
       if (selectedDay !== null) {
         const commandeDay = commandeDate.getDate();
         return commandeDay === selectedDay;
@@ -331,12 +349,10 @@ export default function AdminDashboard() {
       const depenseYear = depenseDate.getFullYear();
       const depenseMonth = depenseDate.getMonth() + 1;
       
-      // First filter by year and month
       if (depenseYear !== selectedYear || depenseMonth !== selectedMonth) {
         return false;
       }
       
-      // Then filter by day if a specific day is selected
       if (selectedDay !== null) {
         const depenseDay = depenseDate.getDate();
         return depenseDay === selectedDay;
@@ -375,6 +391,26 @@ export default function AdminDashboard() {
   useEffect(() => {
     localStorage.setItem('notified_order_ids', JSON.stringify(Array.from(notifiedOrderIds)));
   }, [notifiedOrderIds]);
+
+  // Fetch all data including livres
+  useEffect(() => {
+    const fetchAllData = async () => {
+      try {
+        await Promise.all([
+          dispatch(fetchDashboardStats()),
+          dispatch(fetchMonthlyStats()),
+          dispatch(fetchCommandes()),
+          dispatch(fetchDepenses()),
+          dispatch(fetchLivres()) // Important: Fetch livres data
+        ]);
+        console.log('All data fetched including livres');
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    };
+    
+    fetchAllData();
+  }, [dispatch]);
 
   // Notification logic for filtered commandes
   useEffect(() => {
@@ -433,14 +469,6 @@ export default function AdminDashboard() {
     }
   }, [filteredCommandes]);
 
-  // Fetch all data
-  useEffect(() => {
-    dispatch(fetchDashboardStats());
-    dispatch(fetchMonthlyStats());
-    dispatch(fetchCommandes());
-    dispatch(fetchDepenses());
-  }, [dispatch]);
-
   // Fetch tracking info
   useEffect(() => {
     if (filteredCommandes.length > 0) {
@@ -498,7 +526,7 @@ export default function AdminDashboard() {
     };
   };
 
-  // Calculate statistics for filtered period (month or specific day)
+  // Calculate statistics for filtered period
   const commandesStats = useMemo(() => {
     if (!filteredCommandes || filteredCommandes.length === 0) {
       return {
@@ -632,13 +660,12 @@ export default function AdminDashboard() {
     };
   }, [filteredDepenses, commandesStats]);
 
-  // Generate daily data showing actual daily values (increases/decreases based on what they reach each day)
+  // Generate daily data
   const dailyChartData = useMemo(() => {
     const daysInMonth = getDaysInMonth(selectedYear, selectedMonth);
     const dailyData = [];
     
     for (let day = 1; day <= daysInMonth; day++) {
-      // Get commandes and depenses for this specific day only (NOT cumulative)
       const dayCommandes = filteredCommandes.filter(commande => {
         const commandeDate = new Date(commande.date || commande.created_at);
         return commandeDate.getDate() === day;
@@ -649,26 +676,23 @@ export default function AdminDashboard() {
         return depenseDate.getDate() === day;
       });
       
-      // Calculate DAILY profit and expenses (non-cumulative - these are the actual values for each day)
       const dailyProfit = dayCommandes.reduce((sum, cmd) => sum + (Number(cmd.profit) || 0), 0);
       const dailyExpenses = dayDepenses.reduce((sum, dep) => sum + (Number(dep.montant) || 0), 0);
       
       dailyData.push({
         day: day,
         date: `${day}/${selectedMonth}/${selectedYear}`,
-        profit: dailyProfit,      // Actual daily profit - goes up and down each day
-        depenses: dailyExpenses,  // Actual daily expenses - goes up and down each day
+        profit: dailyProfit,
+        depenses: dailyExpenses,
         netChange: dailyProfit - dailyExpenses,
         orderCount: dayCommandes.length
       });
     }
     
-    // If a specific day is selected, only show data up to that day
     if (selectedDay !== null) {
       return dailyData.filter(d => d.day <= selectedDay);
     }
     
-    // If current month is selected, only show days up to today
     const currentDate = new Date();
     const isCurrentMonth = selectedYear === currentDate.getFullYear() && selectedMonth === currentDate.getMonth() + 1;
     if (isCurrentMonth) {
@@ -687,7 +711,7 @@ export default function AdminDashboard() {
       .slice(0, 10);
   }, [filteredCommandes]);
 
-  // Financial cards for selected period (UPDATED with inventory card)
+  // Financial cards for selected period
   const financialCards = [
     { 
       title: "Total dépenses", 
@@ -711,11 +735,12 @@ export default function AdminDashboard() {
       trend: `${commandesStats.total} commandes`
     },
     { 
-      title: "Valeur du stock",  // NEW CARD
-      value: inventoryTotalValue,  // NEW CARD
-      icon: Package,  // NEW CARD
-      color: "primary",  // NEW CARD
-      trend: `${livres.length} livres en stock`  // NEW CARD
+      title: "Valeur du stock",
+      value: loadingLivres ? null : inventoryTotalValue,
+      icon: Package,
+      color: "primary",
+      trend: loadingLivres ? "Chargement..." : `${livres?.length || 0} livres en stock`,
+      isLoading: loadingLivres
     },
     { 
       title: "Revenu net", 
@@ -756,7 +781,6 @@ export default function AdminDashboard() {
 
   // Handle card click to navigate to orders page with filter
   const handleStatusCardClick = (card) => {
-    // Store filter in localStorage to persist across navigation
     if (card.filterKey && card.filterValue) {
       localStorage.setItem('orders_filter_type', card.filterKey);
       localStorage.setItem('orders_filter_value', card.filterValue);
@@ -766,39 +790,32 @@ export default function AdminDashboard() {
       localStorage.setItem('orders_filter_value', 'pending');
       localStorage.setItem('orders_filter_label', card.title);
     } else {
-      // For total commandes, clear filters
       localStorage.removeItem('orders_filter_type');
       localStorage.removeItem('orders_filter_value');
       localStorage.removeItem('orders_filter_label');
     }
     
-    // Navigate to orders page
     navigate('/orders');
   };
 
-  // Pie chart data - Simplified version
+  // Pie chart data
   const pieChartData = useMemo(() => {
     if (!filteredCommandes || filteredCommandes.length === 0) {
-      console.log('No filtered commandes for pie chart');
       return [];
     }
     
     const statusCounts = {};
     
     filteredCommandes.forEach(commande => {
-      // Get the main status (prioritize delivery status)
       let mainStatus = commande.statut || commande.status || 'UNKNOWN';
       
-      // If we have tracking info, use that instead
       const tracking = trackingInfoMap[commande.parcel_code];
       if (tracking && tracking.parcel) {
         mainStatus = tracking.parcel.delivery_status || mainStatus;
       }
       
-      // Clean up the status
       let cleanStatus = mainStatus.toUpperCase();
       
-      // Map common status variations
       if (cleanStatus.includes('LIVR') || cleanStatus === 'DELIVERED') cleanStatus = 'DELIVERED';
       else if (cleanStatus.includes('RETOUR') || cleanStatus === 'RETURNED') cleanStatus = 'RETURNED';
       else if (cleanStatus.includes('ANNUL') || cleanStatus === 'CANCELLED' || cleanStatus === 'CANCELED') cleanStatus = 'CANCELLED';
@@ -811,13 +828,9 @@ export default function AdminDashboard() {
       else if (cleanStatus.includes('ATTENTE') || cleanStatus === 'WAITING_PICKUP') cleanStatus = 'WAITING_PICKUP';
       else if (cleanStatus.includes('REÇU') || cleanStatus === 'RECEIVED') cleanStatus = 'RECEIVED';
       
-      // Count the status
       statusCounts[cleanStatus] = (statusCounts[cleanStatus] || 0) + 1;
     });
     
-    console.log('Status counts for pie chart:', statusCounts);
-    
-    // Convert to array format for pie chart
     const pieData = Object.entries(statusCounts)
       .map(([name, value]) => ({
         name: name,
@@ -826,8 +839,6 @@ export default function AdminDashboard() {
       }))
       .filter(item => item.value > 0)
       .sort((a, b) => b.value - a.value);
-    
-    console.log('Final pie chart data:', pieData);
     
     return pieData;
   }, [filteredCommandes, trackingInfoMap]);
@@ -907,8 +918,8 @@ export default function AdminDashboard() {
         ['Revenu net', selectedPeriodStats.net],
         [],
         ['Détail du stock par livre'],
-        ['Titre du livre', 'Prix d\'achat (DH)', 'Stock', 'Valeur totale (DH)'],
-        ...livres.map(livre => [
+        ['Titre du livre', "Prix d'achat (DH)", 'Stock', 'Valeur totale (DH)'],
+        ...(livres || []).map(livre => [
           livre.titre,
           livre.prix_achat || 0,
           livre.stock || 0,
@@ -993,29 +1004,31 @@ export default function AdminDashboard() {
       });
 
       // Add inventory breakdown
-      doc.addPage();
-      doc.setFontSize(14);
-      doc.setTextColor(92, 2, 2);
-      doc.text('Détail du stock par livre', 14, 20);
+      if (livres && livres.length > 0) {
+        doc.addPage();
+        doc.setFontSize(14);
+        doc.setTextColor(92, 2, 2);
+        doc.text('Détail du stock par livre', 14, 20);
 
-      const inventoryData = [
-        ['Titre', 'Prix d\'achat', 'Stock', 'Valeur totale'],
-        ...livres.filter(l => (l.stock || 0) > 0).map(livre => [
-          livre.titre,
-          `${(livre.prix_achat || 0).toLocaleString()} DH`,
-          (livre.stock || 0).toString(),
-          `${((livre.prix_achat || 0) * (livre.stock || 0)).toLocaleString()} DH`
-        ])
-      ];
+        const inventoryData = [
+          ['Titre', "Prix d'achat", 'Stock', 'Valeur totale'],
+          ...livres.filter(l => (l.stock || 0) > 0).map(livre => [
+            livre.titre,
+            `${(livre.prix_achat || 0).toLocaleString()} DH`,
+            (livre.stock || 0).toString(),
+            `${((livre.prix_achat || 0) * (livre.stock || 0)).toLocaleString()} DH`
+          ])
+        ];
 
-      autoTable(doc, {
-        startY: 25,
-        head: [inventoryData[0]],
-        body: inventoryData.slice(1),
-        theme: 'striped',
-        headStyles: { fillColor: [92, 2, 2], textColor: [255, 255, 255] },
-        styles: { fontSize: 8 }
-      });
+        autoTable(doc, {
+          startY: 25,
+          head: [inventoryData[0]],
+          body: inventoryData.slice(1),
+          theme: 'striped',
+          headStyles: { fillColor: [92, 2, 2], textColor: [255, 255, 255] },
+          styles: { fontSize: 8 }
+        });
+      }
 
       doc.addPage();
       doc.setFontSize(14);
@@ -1246,10 +1259,16 @@ export default function AdminDashboard() {
           <div key={card.title} className={`stat-card ${card.color}`}>
             <div className="stat-content">
               <p className="stat-title">{card.title}</p>
-              <h3 className="stat-value">{formatCurrency(card.value)} DH</h3>
+              <h3 className="stat-value">
+                {card.isLoading ? (
+                  <span className="loading-skeleton">---</span>
+                ) : (
+                  `${formatCurrency(card.value)} DH`
+                )}
+              </h3>
               {card.trend && (
                 <span className="stat-trend">
-                  <ArrowUpRight size={12} />
+                  {!card.isLoading && <ArrowUpRight size={12} />}
                   {card.trend}
                 </span>
               )}
@@ -1260,6 +1279,7 @@ export default function AdminDashboard() {
           </div>
         ))}
       </div>
+
       {/* Commandes Status Cards - CLICKABLE */}
       <div className="section-title" style={{ marginTop: '2rem' }}>
         <h3>Statistiques des commandes</h3>
@@ -1287,7 +1307,7 @@ export default function AdminDashboard() {
 
       {/* Charts Section */}
       <div className="charts-grid">
-        {/* Period Summary - DAILY VALUES CHART (increases/decreases based on what they reach each day) */}
+        {/* Period Summary - DAILY VALUES CHART */}
         <div className="chart-card">
           <div className="chart-header">
             <BarChart3 size={18} />
@@ -1347,7 +1367,6 @@ export default function AdminDashboard() {
                     labelStyle={{ fontWeight: 'bold', color: '#5c0202' }}
                   />
 
-                  {/* RED LINE for Dépenses (DAILY values - goes up and down) */}
                   <Line
                     type="monotone"
                     dataKey="depenses"
@@ -1358,7 +1377,6 @@ export default function AdminDashboard() {
                     activeDot={{ r: 6, fill: "#ef4444", stroke: "white", strokeWidth: 2 }}
                   />
                   
-                  {/* GREEN LINE for Profit (DAILY values - goes up and down) */}
                   <Line
                     type="monotone"
                     dataKey="profit"

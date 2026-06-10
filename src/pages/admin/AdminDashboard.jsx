@@ -453,7 +453,7 @@ export default function AdminDashboard() {
             
             try {
               const response = await axios.get(
-                `http://127.0.0.1:8000/api/welivexpress/trackparcel`,
+                `https://fanta-lib-back-production-76f4.up.railway.app/api/welivexpress/trackparcel`,
                 {
                   params: { parcel_code: order.parcel_code },
                   headers: {

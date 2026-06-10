@@ -43,7 +43,8 @@ import {
   selectDashboardStats,
   selectMonthlyStats,
   selectCommandes,
-  selectDepenses
+  selectDepenses,
+  selectLivres
 } from "../../store/store";
 import NotificationCenter from "../../components/NotificationCenter";
 import DownloadMenu from "../../components/DownloadMenu";
@@ -216,6 +217,7 @@ export default function AdminDashboard() {
   const monthlyStats = useSelector(selectMonthlyStats);
   const commandes = useSelector(selectCommandes);
   const depenses = useSelector(selectDepenses);
+  const livres = useSelector(selectLivres); // Added for inventory calculation
 
   // Date selection state - Added day selection
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -231,6 +233,17 @@ export default function AdminDashboard() {
   const [notifiedOrderIds, setNotifiedOrderIds] = useState(new Set());
   
   const initialProcessingDone = useRef(false);
+
+  // Calculate inventory total value (prix_achat * stock for all books)
+  const inventoryTotalValue = useMemo(() => {
+    if (!livres || livres.length === 0) return 0;
+    
+    return livres.reduce((total, livre) => {
+      const prixAchat = Number(livre.prix_achat) || 0;
+      const stock = Number(livre.stock) || 0;
+      return total + (prixAchat * stock);
+    }, 0);
+  }, [livres]);
 
   // Generate available years (last 5 years to next year)
   const availableYears = useMemo(() => {
@@ -440,7 +453,7 @@ export default function AdminDashboard() {
             
             try {
               const response = await axios.get(
-                `https://fanta-lib-back-production-76f4.up.railway.app/api/welivexpress/trackparcel`,
+                `http://127.0.0.1:8000/api/welivexpress/trackparcel`,
                 {
                   params: { parcel_code: order.parcel_code },
                   headers: {
@@ -674,7 +687,7 @@ export default function AdminDashboard() {
       .slice(0, 10);
   }, [filteredCommandes]);
 
-  // Financial cards for selected period
+  // Financial cards for selected period (UPDATED with inventory card)
   const financialCards = [
     { 
       title: "Total dépenses", 
@@ -696,6 +709,13 @@ export default function AdminDashboard() {
       icon: ShoppingCart,
       color: "info",
       trend: `${commandesStats.total} commandes`
+    },
+    { 
+      title: "Valeur du stock",  // NEW CARD
+      value: inventoryTotalValue,  // NEW CARD
+      icon: Package,  // NEW CARD
+      color: "primary",  // NEW CARD
+      trend: `${livres.length} livres en stock`  // NEW CARD
     },
     { 
       title: "Revenu net", 
@@ -883,7 +903,17 @@ export default function AdminDashboard() {
         ['Total dépenses', selectedPeriodStats.depenses || 0],
         ['Profit total', commandesStats.totalProfit],
         ['Total des ventes', commandesStats.totalSales],
+        ['Valeur du stock', inventoryTotalValue],
         ['Revenu net', selectedPeriodStats.net],
+        [],
+        ['Détail du stock par livre'],
+        ['Titre du livre', 'Prix d\'achat (DH)', 'Stock', 'Valeur totale (DH)'],
+        ...livres.map(livre => [
+          livre.titre,
+          livre.prix_achat || 0,
+          livre.stock || 0,
+          ((livre.prix_achat || 0) * (livre.stock || 0)).toLocaleString()
+        ]),
         [],
         ['Statistiques des Commandes'],
         ['Statut', 'Nombre'],
@@ -949,6 +979,7 @@ export default function AdminDashboard() {
         ['Total dépenses', `${selectedPeriodStats.depenses.toLocaleString()} DH`],
         ['Profit total', `${commandesStats.totalProfit.toLocaleString()} DH`],
         ['Total des ventes', `${commandesStats.totalSales.toLocaleString()} DH`],
+        ['Valeur du stock', `${inventoryTotalValue.toLocaleString()} DH`],
         ['Revenu net', `${selectedPeriodStats.net.toLocaleString()} DH`]
       ];
 
@@ -959,6 +990,31 @@ export default function AdminDashboard() {
         theme: 'striped',
         headStyles: { fillColor: [92, 2, 2], textColor: [255, 255, 255] },
         styles: { fontSize: 10 }
+      });
+
+      // Add inventory breakdown
+      doc.addPage();
+      doc.setFontSize(14);
+      doc.setTextColor(92, 2, 2);
+      doc.text('Détail du stock par livre', 14, 20);
+
+      const inventoryData = [
+        ['Titre', 'Prix d\'achat', 'Stock', 'Valeur totale'],
+        ...livres.filter(l => (l.stock || 0) > 0).map(livre => [
+          livre.titre,
+          `${(livre.prix_achat || 0).toLocaleString()} DH`,
+          (livre.stock || 0).toString(),
+          `${((livre.prix_achat || 0) * (livre.stock || 0)).toLocaleString()} DH`
+        ])
+      ];
+
+      autoTable(doc, {
+        startY: 25,
+        head: [inventoryData[0]],
+        body: inventoryData.slice(1),
+        theme: 'striped',
+        headStyles: { fillColor: [92, 2, 2], textColor: [255, 255, 255] },
+        styles: { fontSize: 8 }
       });
 
       doc.addPage();
@@ -1085,7 +1141,7 @@ export default function AdminDashboard() {
           </button>
           
           <div className="month-year-display">
-            <Calendar size={20} className="calendar-icon" />
+            <Calendar size={50} className="calendar-icon" />
             <select 
               value={selectedMonth} 
               onChange={(e) => {
@@ -1204,7 +1260,6 @@ export default function AdminDashboard() {
           </div>
         ))}
       </div>
-
       {/* Commandes Status Cards - CLICKABLE */}
       <div className="section-title" style={{ marginTop: '2rem' }}>
         <h3>Statistiques des commandes</h3>
@@ -1397,7 +1452,7 @@ export default function AdminDashboard() {
           )}
         </div>
         <div className="recent-orders-card full-width">
-          <div className="orders-list">
+          <div className="orderss-list">
             {filteredRecentOrders.length > 0 ? (
               filteredRecentOrders.map((order) => {
                 const tracking = getTrackingStatus(order.parcel_code);
@@ -1504,6 +1559,10 @@ export default function AdminDashboard() {
         <div className="summary-item">
           <span>Dépenses totales</span>
           <span className="amount negative">{formatCurrency(selectedPeriodStats.depenses)} DH</span>
+        </div>
+        <div className="summary-item">
+          <span>Valeur du stock</span>
+          <span className="amount positive">{formatCurrency(inventoryTotalValue)} DH</span>
         </div>
         <div className="summary-item">
           <span>Revenu des commandes livrées</span>

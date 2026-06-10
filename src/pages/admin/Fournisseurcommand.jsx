@@ -863,7 +863,7 @@ const Fournisseurcommand = () => {
                       <td>
                         {bookImages.length > 0 ? (
                           <img 
-                            src={`https://fanta-lib-back-production-76f4.up.railway.app/storage/${bookImages[0]}`} 
+                            src={`http://127.0.0.1:8000/storage/${bookImages[0]}`} 
                             alt={livre.titre} 
                             className="fv-book-thumb"
                             onError={(e) => {

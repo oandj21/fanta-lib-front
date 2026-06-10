@@ -335,7 +335,7 @@ export default function AdminFinance() {
           </button>
           
           <div className="month-year-display">
-            <Calendar size={20} className="calendar-icon" />
+            <Calendar size={50} className="calendar-icon" />
             <select 
               value={selectedMonth} 
               onChange={(e) => setSelectedMonth(parseInt(e.target.value))}

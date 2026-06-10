@@ -907,7 +907,7 @@ const Fournisseurcommand = () => {
                       <td>
                         <span className={`fv-stock-badge ${getStockStatusClass(currentStock)}`}>
                           <Layers size={12} />
-                          {currentStock} {currentStock === 0 ? '(Rupture)' : currentStock < 5 ? '(Faible)' : ''}
+                          {currentStock} {currentStock === 0 ? '' : currentStock < 5 ? '' : ''}
                         </span>
                       </td>
                       <td>

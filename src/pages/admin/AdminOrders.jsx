@@ -377,7 +377,7 @@ const CityAutocomplete = ({ value, onChange, onSelect, disabled = false }) => {
       const token = localStorage.getItem("token");
       
       const response = await axios.get(
-        "http://127.0.0.1:8000/api/welivexpress/listcities",
+        "https://fanta-lib-back-production-76f4.up.railway.app/api/welivexpress/listcities",
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -781,7 +781,7 @@ const OrderDetailsPage = ({ order, onBack }) => {
       const token = localStorage.getItem("token");
       
       const response = await axios.get(
-        `http://127.0.0.1:8000/api/welivexpress/trackparcel`,
+        `https://fanta-lib-back-production-76f4.up.railway.app/api/welivexpress/trackparcel`,
         {
           params: { parcel_code: parcelCode },
           headers: {
@@ -1655,7 +1655,7 @@ useEffect(() => {
         
         // Call stock check endpoint
         const stockCheckResponse = await axios.post(
-            "http://127.0.0.1:8000/api/commandes/check-stock",
+            "https://fanta-lib-back-production-76f4.up.railway.app/api/commandes/check-stock",
             { livres: stockCheckData },
             {
                 headers: {
@@ -2843,7 +2843,7 @@ const WebhookTestPanel = ({ onClose }) => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.get(
-        "http://127.0.0.1:8000/api/welivexpress/test-webhook",
+        "https://fanta-lib-back-production-76f4.up.railway.app/api/welivexpress/test-webhook",
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -2872,7 +2872,7 @@ const WebhookTestPanel = ({ onClose }) => {
     try {
       const token = localStorage.getItem("token");
       await axios.delete(
-        "http://127.0.0.1:8000/api/welivexpress/delete-webhook",
+        "https://fanta-lib-back-production-76f4.up.railway.app/api/welivexpress/delete-webhook",
         {
           headers: {
             'Authorization': `Bearer ${token}`,

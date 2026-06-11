@@ -5501,75 +5501,6 @@ input.input-error.with-iconn {
     height: 16px;
     left: 10px;
   }
-}/* Make input values bold */
-.form-group input,
-.form-group textarea,
-.form-group select,
-.city-input,
-.book-search-input,
-input.with-icon,
-input.with-iconn,
-select.with-icon,
-textarea.with-icon {
-  font-weight: 600 !important;
-}
-
-/* Make readonly inputs also bold */
-input.readonly-input,
-input.readonly-input.with-icon {
-  font-weight: 600 !important;
-}
-
-/* Make city autocomplete input bold */
-.city-autocomplete .city-input {
-  font-weight: 600 !important;
-}
-
-/* Make book search input bold */
-.book-search-input {
-  font-weight: 600 !important;
-}
-
-/* Make select dropdown values bold */
-select.statut-select {
-  font-weight: 600 !important;
-}
-
-/* Make manual edit inputs bold */
-.manual-edit-input {
-  font-weight: 600 !important;
-}
-
-/* Make price inputs bold */
-.price-input input {
-  font-weight: 700 !important;
-}
-
-/* Make negative profit inputs bold */
-input.readonly-input.negative {
-  font-weight: 600 !important;
-}
-
-/* Make table cell values bold */
-.data-table td {
-  font-weight: 500 !important;
-}
-
-/* Make order code and client name extra bold */
-.order-code,
-.order-client {
-  font-weight: 700 !important;
-}
-
-/* Make phone and WhatsApp numbers bold */
-.phone-number,
-.whatsapp-number {
-  font-weight: 600 !important;
-}
-
-/* Make city badge text bold */
-.city-badge {
-  font-weight: 600 !important;
 }
 
 /* Make status badges bold */
@@ -5697,4 +5628,98 @@ input.readonly-input.negative {
 }.data-table td.order-client {
   font-weight: 700 !important;
   font-family: 'Lato', sans-serif;
+}/* ==============================================
+   ARABIC TEXT SUPPORT FOR CLIENT NAME INPUT - BOLD VERSION
+   ============================================== */
+
+/* Import Arabic fonts with bold variants */
+@import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Noto+Sans+Arabic:wght@400;500;600;700&family=Cairo:wght@400;500;600;700&display=swap');
+
+/* Alternative: Use system fonts that support Arabic well */
+:root {
+  --arabic-font: 'Noto Sans Arabic', 'Cairo', 'Amiri', 'Segoe UI', 'Tahoma', 'Traditional Arabic', sans-serif;
+}
+
+/* Client name input - Arabic support with bold */
+input[name="parcel_receiver"],
+input[name="parcel_receiver"].with-icon,
+.form-group input[name="parcel_receiver"] {
+  direction: rtl !important;
+  text-align: left !important;
+  font-family: var(--arabic-font) !important;
+  font-weight: 600 !important; /* Semi-bold for better readability */
+  letter-spacing: normal !important;
+  unicode-bidi: embed !important;
+  font-size: 1rem !important;
+}
+
+/* Client name display in table - Arabic support with bold */
+.order-client {
+  direction: rtl !important;
+  text-align: left !important;
+  font-family: var(--arabic-font) !important;
+  font-weight: 700 !important; /* Bold for table display */
+  unicode-bidi: embed !important;
+  font-size: 0.95rem !important;
+}
+
+/* Client name in order details page - bold */
+.order-info-value:has(> .client-name),
+.order-info-value.client-name {
+  direction: rtl !important;
+  text-align: left !important;
+  font-family: var(--arabic-font) !important;
+  font-weight: 600 !important;
+}
+
+/* Make placeholder text also support RTL properly with medium weight */
+input[name="parcel_receiver"]::placeholder,
+input[name="parcel_receiver"].with-icon::placeholder {
+  text-align: left !important;
+  direction: rtl !important;
+  font-weight: 500 !important;
+  color: #a38f89 !important;
+}
+
+/* Apply Arabic font with bold weight to specific elements */
+input[name="parcel_receiver"],
+.order-client {
+  font-family: var(--arabic-font) !important;
+  font-weight: 600 !important;
+}
+
+/* For better visual when writing Arabic - add slight text shadow for bold effect */
+input[name="parcel_receiver"] {
+  font-weight: 600 !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+}
+
+/* Optional: Make the font even bolder on hover/focus */
+input[name="parcel_receiver"]:focus {
+  font-weight: 700 !important;
+}
+
+/* For table client name - extra bold */
+.order-client {
+  font-weight: 700 !important;
+  text-shadow: 0 0 0.5px rgba(92, 2, 2, 0.1);
+}
+
+/* If you want to use Cairo font (very bold and clean for Arabic) */
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --arabic-font-bold: 'Cairo', 'Noto Sans Arabic', 'Amiri', sans-serif;
+}
+
+/* Alternative with even bolder option */
+input[name="parcel_receiver"],
+.order-client {
+  font-family: 'Cairo', 'Noto Sans Arabic', 'Amiri', sans-serif !important;
+  font-weight: 600 !important;
+}
+
+.order-client {
+  font-weight: 700 !important;
 }

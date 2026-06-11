@@ -694,7 +694,7 @@ const Fournisseurcommand = () => {
       <div className="fv-action-row">
         <div className="fv-batch-group">
           <input
-            type="number"
+            type="text"
             placeholder="Quantité pour tous"
             className="fv-batch-input"
             id="fvBatchQuantity"
@@ -912,7 +912,7 @@ const Fournisseurcommand = () => {
                       </td>
                       <td>
                         <input
-                          type="number"
+                          type="text"
                           min="0"
                           value={quantityValue}
                           onChange={(e) => handleQuantityChange(livre.id, e.target.value)}

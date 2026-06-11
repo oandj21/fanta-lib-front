@@ -2978,7 +2978,7 @@ const WebhookTestPanel = ({ onClose }) => {
   );
 };
 
-// WhatsApp Send Button Component - UPDATED with new message format
+// WhatsApp Send Button Component - Opens Desktop App Directly
 const WhatsAppSendButton = ({ order, onSent }) => {
   const dispatch = useDispatch();
   const [isSending, setIsSending] = useState(false);
@@ -3032,26 +3032,57 @@ ${trackingLink}
       }
       
       const message = generateWhatsAppMessage(order);
+      const encodedMessage = encodeURIComponent(message);
       
-      // Open WhatsApp
-      if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-        const whatsappUrl = `intent://send?phone=${whatsappNumber}&text=${encodeURIComponent(message)}#Intent;scheme=whatsapp;package=com.whatsapp;end`;
-        window.location.href = whatsappUrl;
-      } else {
-        const encodedText = encodeURI(message);
-        const whatsappUrl = `https://web.whatsapp.com/send?phone=${whatsappNumber}&text=${encodedText}`;
-        window.open(whatsappUrl, '_blank');
-        
-        setTimeout(() => {
-          const fallbackUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
-          window.open(fallbackUrl, '_blank');
-        }, 500);
-      }
+      // Check if user is on Windows or Mac
+      const isWindows = navigator.platform.toLowerCase().includes('win');
+      const isMac = navigator.platform.toLowerCase().includes('mac');
+      
+      // Use whatsapp:// protocol to open desktop app directly
+      // This works on both Windows and Mac when WhatsApp desktop is installed
+      const whatsappUrl = `whatsapp://send?phone=${whatsappNumber}&text=${encodedMessage}`;
+      
+      // Try to open with custom protocol first
+      window.location.href = whatsappUrl;
+      
+      // Small delay to check if it worked
+      setTimeout(() => {
+        // If the app didn't open, show instructions
+        if (document.hasFocus()) {
+          const shouldInstall = window.confirm(
+            "WhatsApp Desktop n'est pas installé ou n'a pas pu être ouvert.\n\n" +
+            "Souhaitez-vous :\n" +
+            "• Cliquez sur 'OK' pour ouvrir WhatsApp Web\n" +
+            "• Cliquez sur 'Annuler' pour rester sur cette page"
+          );
+          
+          if (shouldInstall) {
+            // Fallback to WhatsApp Web
+            const webUrl = `https://web.whatsapp.com/send?phone=${whatsappNumber}&text=${encodedMessage}`;
+            window.open(webUrl, '_blank');
+          }
+        }
+      }, 500);
       
       return true;
     } catch (error) {
       console.error("Error sending WhatsApp message:", error);
-      alert("❌ Une erreur est survenue lors de l'envoi du message WhatsApp.");
+      
+      // Fallback to web version on error
+      const phoneNumber = order.nmr_whatsapp || order.parcel_phone;
+      const cleanNumber = phoneNumber.replace(/\D/g, '');
+      let whatsappNumber = cleanNumber;
+      if (!cleanNumber.startsWith('212') && cleanNumber.length === 10) {
+        whatsappNumber = '212' + cleanNumber.substring(1);
+      } else if (cleanNumber.startsWith('0')) {
+        whatsappNumber = '212' + cleanNumber.substring(1);
+      }
+      
+      const message = generateWhatsAppMessage(order);
+      const encodedMessage = encodeURIComponent(message);
+      const webUrl = `https://web.whatsapp.com/send?phone=${whatsappNumber}&text=${encodedMessage}`;
+      window.open(webUrl, '_blank');
+      
       return false;
     }
   };
@@ -3100,7 +3131,6 @@ ${trackingLink}
   };
   
   const buttonColor = order.is_sent ? '#6b7280' : '#25D366';
-  const buttonTitle = order.is_sent ? 'Renvoyer le message WhatsApp' : 'Envoyer via WhatsApp';
   
   return (
     <>
@@ -3123,6 +3153,7 @@ ${trackingLink}
           padding: 0
         }}
         disabled={isSending}
+
       >
         {isSending ? (
           <Loader size={18} className="spinning" color="white" />

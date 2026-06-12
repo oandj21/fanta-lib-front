@@ -320,7 +320,7 @@ export default function AdminBooks() {
     setCategoryInput(book.categorie || "");
     setSelectedImages([]);
     setImagePreviews([]);
-    setRemovedImages([]); // Reset removed images
+    setRemovedImages([]);
     setShowModal(true);
   };
 
@@ -347,48 +347,48 @@ export default function AdminBooks() {
     }));
   };
 
-// Function to update stock WITHOUT automatically changing status
-const handleStockUpdate = async (bookId, currentStock, type, quantityValue) => {
-  const quantity = parseInt(quantityValue);
-  if (isNaN(quantity) || quantity <= 0) {
-    alert("Veuillez entrer un nombre valide supérieur à 0");
-    return;
-  }
-  
-  let newStock;
-  if (type === "add") {
-    newStock = currentStock + quantity;
-  } else {
-    if (quantity > currentStock) {
-      alert(`Impossible de retirer ${quantity} unités. Stock actuel: ${currentStock}`);
+  // Function to update stock WITHOUT automatically changing status
+  const handleStockUpdate = async (bookId, currentStock, type, quantityValue) => {
+    const quantity = parseInt(quantityValue);
+    if (isNaN(quantity) || quantity <= 0) {
+      alert("Veuillez entrer un nombre valide supérieur à 0");
       return;
     }
-    newStock = currentStock - quantity;
-  }
-  
-  setUpdatingStock(bookId);
-  
-  try {
-    const formData = new FormData();
-    formData.append('stock', newStock.toString());
-    formData.append('_method', 'PUT');
     
-    // No status update - stock only
+    let newStock;
+    if (type === "add") {
+      newStock = currentStock + quantity;
+    } else {
+      if (quantity > currentStock) {
+        alert(`Impossible de retirer ${quantity} unités. Stock actuel: ${currentStock}`);
+        return;
+      }
+      newStock = currentStock - quantity;
+    }
     
-    await dispatch(updateLivre({ id: bookId, formData })).unwrap();
-    dispatch(fetchLivres()); // Refresh the list
+    setUpdatingStock(bookId);
     
-    // Hide input and clear value
-    setShowStockInput(prev => ({ ...prev, [bookId]: false }));
-    setStockInputValues(prev => ({ ...prev, [bookId]: { type, value: "" } }));
-    
-  } catch (error) {
-    console.error('Error updating stock:', error);
-    alert('Erreur lors de la mise à jour du stock');
-  } finally {
-    setUpdatingStock(null);
-  }
-};
+    try {
+      const formData = new FormData();
+      formData.append('stock', newStock.toString());
+      formData.append('_method', 'PUT');
+      
+      // No status update - stock only
+      
+      await dispatch(updateLivre({ id: bookId, formData })).unwrap();
+      dispatch(fetchLivres()); // Refresh the list
+      
+      // Hide input and clear value
+      setShowStockInput(prev => ({ ...prev, [bookId]: false }));
+      setStockInputValues(prev => ({ ...prev, [bookId]: { type, value: "" } }));
+      
+    } catch (error) {
+      console.error('Error updating stock:', error);
+      alert('Erreur lors de la mise à jour du stock');
+    } finally {
+      setUpdatingStock(null);
+    }
+  };
 
   // Cancel stock input
   const cancelStockInput = (bookId) => {
@@ -556,6 +556,8 @@ const handleStockUpdate = async (bookId, currentStock, type, quantityValue) => {
       if (form[key] !== null && form[key] !== undefined) {
         if (key === 'stock') {
           formData.append(key, form[key].toString());
+        } else if (key === 'status') {
+          formData.append(key, form[key]);
         } else if (form[key] !== "") {
           formData.append(key, form[key]);
         }
@@ -1288,6 +1290,29 @@ const handleStockUpdate = async (bookId, currentStock, type, quantityValue) => {
                     placeholder="Description du livre (optionnel)"
                     rows="3"
                   />
+                </div>
+
+                {/* ✅ ADDED: Status Dropdown Field */}
+                <div className="form-group">
+                  <label htmlFor="status">Statut</label>
+                  <select
+                    id="status"
+                    value={form.status}
+                    onChange={(e) => setForm({...form, status: e.target.value})}
+                    className="form-select"
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      backgroundColor: 'white',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value="available">Disponible</option>
+                    <option value="out_of_stock">Rupture de stock</option>
+                  </select>
                 </div>
               </div>
 

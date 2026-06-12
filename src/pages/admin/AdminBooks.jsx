@@ -347,50 +347,48 @@ export default function AdminBooks() {
     }));
   };
 
-  // Function to update stock with custom quantity
-  const handleStockUpdate = async (bookId, currentStock, type, quantityValue) => {
-    const quantity = parseInt(quantityValue);
-    if (isNaN(quantity) || quantity <= 0) {
-      alert("Veuillez entrer un nombre valide supérieur à 0");
+// Function to update stock WITHOUT automatically changing status
+const handleStockUpdate = async (bookId, currentStock, type, quantityValue) => {
+  const quantity = parseInt(quantityValue);
+  if (isNaN(quantity) || quantity <= 0) {
+    alert("Veuillez entrer un nombre valide supérieur à 0");
+    return;
+  }
+  
+  let newStock;
+  if (type === "add") {
+    newStock = currentStock + quantity;
+  } else {
+    if (quantity > currentStock) {
+      alert(`Impossible de retirer ${quantity} unités. Stock actuel: ${currentStock}`);
       return;
     }
+    newStock = currentStock - quantity;
+  }
+  
+  setUpdatingStock(bookId);
+  
+  try {
+    const formData = new FormData();
+    formData.append('stock', newStock.toString());
+    formData.append('_method', 'PUT');
     
-    let newStock;
-    if (type === "add") {
-      newStock = currentStock + quantity;
-    } else {
-      if (quantity > currentStock) {
-        alert(`Impossible de retirer ${quantity} unités. Stock actuel: ${currentStock}`);
-        return;
-      }
-      newStock = currentStock - quantity;
-    }
+    // No status update - stock only
     
-    setUpdatingStock(bookId);
+    await dispatch(updateLivre({ id: bookId, formData })).unwrap();
+    dispatch(fetchLivres()); // Refresh the list
     
-    try {
-      const formData = new FormData();
-      formData.append('stock', newStock.toString());
-      formData.append('_method', 'PUT');
-      
-      // Auto-update status based on stock
-      const newStatus = newStock > 0 ? "available" : "out_of_stock";
-      formData.append('status', newStatus);
-      
-      await dispatch(updateLivre({ id: bookId, formData })).unwrap();
-      dispatch(fetchLivres()); // Refresh the list
-      
-      // Hide input and clear value
-      setShowStockInput(prev => ({ ...prev, [bookId]: false }));
-      setStockInputValues(prev => ({ ...prev, [bookId]: { type, value: "" } }));
-      
-    } catch (error) {
-      console.error('Error updating stock:', error);
-      alert('Erreur lors de la mise à jour du stock');
-    } finally {
-      setUpdatingStock(null);
-    }
-  };
+    // Hide input and clear value
+    setShowStockInput(prev => ({ ...prev, [bookId]: false }));
+    setStockInputValues(prev => ({ ...prev, [bookId]: { type, value: "" } }));
+    
+  } catch (error) {
+    console.error('Error updating stock:', error);
+    alert('Erreur lors de la mise à jour du stock');
+  } finally {
+    setUpdatingStock(null);
+  }
+};
 
   // Cancel stock input
   const cancelStockInput = (bookId) => {
@@ -1032,7 +1030,6 @@ export default function AdminBooks() {
                               onClick={() => showStockInputField(book.id, "add")}
                               disabled={updatingStock === book.id}
                               className="stock-btn stock-btn-plus"
-                              
                             >
                               {updatingStock === book.id ? (
                                 <Loader size={14} className="spin" />
@@ -1086,7 +1083,6 @@ export default function AdminBooks() {
                             onClick={() => handleToggleActivity(book)}
                             disabled={togglingActivity === book.id || (!book.is_running && !stats.canAddMore && stats.runningBooks >= stats.maxActiveBooks)}
                             className={`btn-icon ${book.is_running ? 'deactivate' : 'activate'}`}
-                            
                           >
                             {togglingActivity === book.id ? (
                               <Loader size={16} className="spin" />

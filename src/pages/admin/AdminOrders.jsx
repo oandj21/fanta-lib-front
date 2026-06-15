@@ -66,6 +66,7 @@ const normalizeArabicText = (text) => {
   
   // Convert to string
   let normalized = String(text);
+  normalized = normalized.normalize('NFD');
   
   // 1. Normalize Arabic character variations
   const charMap = {
@@ -2123,16 +2124,20 @@ useEffect(() => {
   );
 };
 
-// Update Order Page Component
+// Update Order Page Component (UPDATED with stock management)
 const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
   const dispatch = useDispatch();
   const [updateLoading, setUpdateLoading] = useState(false);
   const [updateError, setUpdateError] = useState(null);
   const [phoneError, setPhoneError] = useState("");
   const [whatsappError, setWhatsappError] = useState("");
+  const [toastError, setToastError] = useState(null);
   
   // Track if total was manually edited
   const [totalManuallyEdited, setTotalManuallyEdited] = useState(false);
+  
+  // Track original livres for stock comparison
+  const [originalLivres, setOriginalLivres] = useState([]);
   
   // Form state for update
   const [formData, setFormData] = useState({
@@ -2173,7 +2178,7 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
         }
       }
 
-      // Process livres data
+      // Process livres data and store original for stock comparison
       let processedLivres = [];
       if (order.livres && Array.isArray(order.livres)) {
         processedLivres = order.livres.map(book => ({
@@ -2185,6 +2190,9 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
           total: parseFloat(book.prix_achat || book.price || 0) * parseInt(book.quantity || 1)
         }));
       }
+      
+      // Store original livres for stock comparison
+      setOriginalLivres(JSON.parse(JSON.stringify(processedLivres)));
 
       // Calculate total from livres if not provided
       let calculatedTotal = order.total;
@@ -2314,6 +2322,121 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
     totalManuallyEdited
   ]);
 
+  // ✅ NEW: Function to check stock availability for new/modified books
+  const checkStockForUpdate = async (newLivres, oldLivres) => {
+    // Calculate stock differences
+    const stockChanges = [];
+    
+    // Create a map of old quantities
+    const oldQuantityMap = {};
+    oldLivres.forEach(book => {
+      oldQuantityMap[book.id] = book.quantity;
+    });
+    
+    // Create a map of new quantities
+    const newQuantityMap = {};
+    newLivres.forEach(book => {
+      newQuantityMap[book.id] = book.quantity;
+    });
+    
+    // Check for books that have increased quantity
+    for (const book of newLivres) {
+      const oldQty = oldQuantityMap[book.id] || 0;
+      const newQty = book.quantity;
+      
+      if (newQty > oldQty) {
+        const additionalQty = newQty - oldQty;
+        stockChanges.push({
+          id: book.id,
+          titre: book.titre,
+          requested_quantity: additionalQty,
+          current_quantity: oldQty,
+          new_quantity: newQty,
+          type: 'increase'
+        });
+      }
+    }
+    
+    // Also check for completely new books
+    for (const book of newLivres) {
+      if (!oldQuantityMap[book.id]) {
+        stockChanges.push({
+          id: book.id,
+          titre: book.titre,
+          requested_quantity: book.quantity,
+          current_quantity: 0,
+          new_quantity: book.quantity,
+          type: 'new'
+        });
+      }
+    }
+    
+    if (stockChanges.length === 0) {
+      return { hasInsufficientStock: false, errors: [] };
+    }
+    
+    try {
+      // Call stock check endpoint
+      const stockCheckData = stockChanges.map(change => ({
+        id: change.id,
+        quantity: change.requested_quantity
+      }));
+      
+      const stockCheckResponse = await axios.post(
+        "https://fanta-lib-back-production-76f4.up.railway.app/api/commandes/check-stock",
+        { livres: stockCheckData },
+        {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem("token")}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      const stockCheckResult = stockCheckResponse.data;
+      
+      if (stockCheckResult.has_insufficient_stock) {
+        // Map back to original book titles
+        const insufficientBooks = [];
+        for (const change of stockChanges) {
+          const stockInfo = stockCheckResult.books.find(b => b.id === change.id);
+          if (stockInfo && !stockInfo.sufficient) {
+            insufficientBooks.push({
+              ...change,
+              available_stock: stockInfo.available_stock,
+              shortage: stockInfo.shortage
+            });
+          }
+        }
+        
+        return {
+          hasInsufficientStock: true,
+          errors: insufficientBooks.map(book => ({
+            titre: book.titre,
+            requested_quantity: book.requested_quantity,
+            available_stock: book.available_stock,
+            shortage: book.shortage,
+            current_quantity: book.current_quantity,
+            new_quantity: book.new_quantity
+          }))
+        };
+      }
+      
+      return { hasInsufficientStock: false, errors: [] };
+      
+    } catch (error) {
+      console.error("Stock check failed:", error);
+      return {
+        hasInsufficientStock: true,
+        errors: [{ titre: "Erreur de vérification", message: "Impossible de vérifier le stock" }]
+      };
+    }
+  };
+
+  const handleCloseToast = () => {
+    setToastError(null);
+  };
+
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     
@@ -2375,19 +2498,46 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
         return;
     }
 
+    // ✅ CHECK STOCK BEFORE UPDATING
     setUpdateLoading(true);
     setUpdateError(null);
-
+    
     try {
+      // Check if livres have changed
+      const livresChanged = JSON.stringify(formData.livres) !== JSON.stringify(originalLivres);
+      
+      if (livresChanged && formData.livres.length > 0) {
+        // Check stock availability for new/increased quantities
+        const stockCheck = await checkStockForUpdate(formData.livres, originalLivres);
+        
+        if (stockCheck.hasInsufficientStock) {
+          // Show toast notification for stock errors
+          const stockDetails = stockCheck.errors.map(err => ({
+            title: err.titre,
+            available: err.available_stock,
+            requested: err.requested_quantity,
+            shortage: err.shortage
+          }));
+          
+          setToastError({
+            message: `Stock insuffisant pour ${stockCheck.errors.length} livre${stockCheck.errors.length > 1 ? 's' : ''}`,
+            details: stockDetails
+          });
+          
+          setUpdateLoading(false);
+          return;
+        }
+      }
+      
+      // Proceed with update
       const updateData = {};
       
       // Check all fields for changes
       Object.keys(formData).forEach(key => {
         if (key === 'livres') {
-          const currentLivres = JSON.stringify(formData.livres);
-          const originalLivres = JSON.stringify(order.livres || []);
-          
-          if (currentLivres !== originalLivres) {
+          if (livresChanged) {
+            // When livres change, we need to send the complete updated livres array
+            // The backend will handle stock returns and deductions
             updateData.livres = formData.livres;
           }
           return;
@@ -2417,16 +2567,39 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
 
       if (Object.keys(updateData).length === 0) {
         onBack();
+        setUpdateLoading(false);
         return;
       }
 
       await onSubmit(order.id, updateData);
+      
+      // Refresh the original livres after successful update
+      const updatedProcessedLivres = formData.livres.map(book => ({
+        id: book.id,
+        titre: book.titre,
+        auteur: book.auteur,
+        prix_achat: book.prix_achat,
+        quantity: book.quantity,
+        total: book.prix_achat * book.quantity
+      }));
+      setOriginalLivres(JSON.parse(JSON.stringify(updatedProcessedLivres)));
+      
       onBack();
       
     } catch (error) {
       console.error("Update failed:", error);
       
-      if (error.response) {
+      if (error.response?.data?.errors) {
+        setToastError({
+          message: "Erreur de stock",
+          details: error.response.data.errors.map(err => ({
+            title: err.book || err.titre || "Livre",
+            available: err.available_stock || 0,
+            requested: err.requested_quantity || 0,
+            shortage: err.shortage || 0
+          }))
+        });
+      } else if (error.response) {
         console.error("Server error response:", error.response.data);
         setUpdateError(
           error.response.data?.message || 
@@ -2442,12 +2615,22 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
     } finally {
       setUpdateLoading(false);
     }
-};
+  };
 
   if (!order) return null;
 
   return (
     <div className="update-order-page">
+      {/* Toast Notification for Stock Errors */}
+      {toastError && (
+        <ToastNotification 
+          message={toastError.message}
+          details={toastError.details}
+          onClose={handleCloseToast}
+          autoDismiss={8000}
+        />
+      )}
+      
       <div className="page-header">
         <button onClick={onBack} className="btn-back">
           <ArrowLeft size={20} />
@@ -2495,27 +2678,27 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
             </div>
           </div>
 
-         {/* Row 2: WhatsApp Number - Using new classnames */}
-<div className="form-roww">
-  <div className="form-groupp">
-    <label>WhatsApp <span className="optionall">(optionnel)</span></label>
-    <div className="input-with-iconn">
-      <MessageCircle size={20} className="input-iconn" />
-      <input
-        type="text"
-        name="nmr_whatsapp"
-        value={formData.nmr_whatsapp}
-        onChange={handleInputChange}
-        placeholder="10 chiffres"
-        maxLength="10"
-        pattern="[0-9]{10}"
-        className={whatsappError ? "input-error with-iconn" : "with-iconn"}
-      />
-    </div>
-    {whatsappError && <small className="error-hintt">{whatsappError}</small>}
-    <small className="field-hintt">Numéro WhatsApp du client (optionnel)</small>
-  </div>
-</div>
+          {/* Row 2: WhatsApp Number */}
+          <div className="form-roww">
+            <div className="form-groupp">
+              <label>WhatsApp <span className="optionall">(optionnel)</span></label>
+              <div className="input-with-iconn">
+                <MessageCircle size={20} className="input-iconn" />
+                <input
+                  type="text"
+                  name="nmr_whatsapp"
+                  value={formData.nmr_whatsapp}
+                  onChange={handleInputChange}
+                  placeholder="10 chiffres"
+                  maxLength="10"
+                  pattern="[0-9]{10}"
+                  className={whatsappError ? "input-error with-iconn" : "with-iconn"}
+                />
+              </div>
+              {whatsappError && <small className="error-hintt">{whatsappError}</small>}
+              <small className="field-hintt">Numéro WhatsApp du client (optionnel)</small>
+            </div>
+          </div>
 
           {/* Row 3: Client Name and Phone */}
           <div className="form-row">
@@ -2644,6 +2827,9 @@ const UpdateOrderPage = ({ order, onBack, onSubmit }) => {
               onBooksChange={handleBooksChange}
               onTotalQuantityChange={handleTotalQuantityChange}
             />
+            <small className="field-hint stock-hint">
+              ⚠️ Modification des livres : le stock sera automatiquement ajusté (retour pour les livres retirés, déduction pour les livres ajoutés)
+            </small>
           </div>
 
           {/* Row 7: Quantity and Parcel Price */}
@@ -2977,7 +3163,6 @@ const WebhookTestPanel = ({ onClose }) => {
     </div>
   );
 };
-
 // WhatsApp Send Button Component - Opens Desktop App Directly
 const WhatsAppSendButton = ({ order, onSent }) => {
   const dispatch = useDispatch();
